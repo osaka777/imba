@@ -42,10 +42,11 @@
 
 @media (max-width: 768px) {
   .closeBtn {
-    right: 10px;
-    top: 10px;
-    width: 30px;
-    height: 30px;
+    right: 12px;
+    top: 12px;
+    width: 32px;
+    height: 32px;
+    z-index: 100;
     border-radius: 8px;
     background: #f3f4f6;
     -webkit-tap-highlight-color: transparent;

@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { safeToast } from "~/shared/lib/safeToast";
 
-import { Button, Checkbox, Input, LoadingSpinner } from "~/shared/ui";
+import { Button, Checkbox, Input } from "~/shared/ui";
 
 import { signUp } from "../../api";
 import { getPartnerTag } from "../../lib";
@@ -180,13 +180,10 @@ export const RegisterForm = () => {
           styles.authButton,
           isSuccess && styles.authButton_success,
         )}
-        disabled={isPending}
+        disabled={isPending || isSuccess}
         type="submit"
       >
-        {isSuccess ? `Входим...` : `Зарегистрироваться`}
-        {(isPending || isSuccess) && (
-          <LoadingSpinner className={styles.loading} />
-        )}
+        {isPending || isSuccess ? `Авторизация...` : `Зарегистрироваться`}
       </Button>
     </form>
   );

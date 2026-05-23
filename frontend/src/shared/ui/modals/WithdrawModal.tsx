@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { WithdrawForm } from "~/entities/finance/ui/WithdrawForm/WithdrawForm";
+import withdrawFormStyles from "~/entities/finance/ui/WithdrawForm/WithdrawForm.module.css";
 import { Dialog, DialogContent } from "~/shared/ui";
 
 type Props = {
@@ -30,7 +31,11 @@ export const WithdrawModal = ({ onClose }: Props) => {
         if (!o) onClose();
       }}
     >
-      <DialogContent title="Вывод средств" onClick={(e) => e.stopPropagation()}>
+      <DialogContent
+        className={withdrawFormStyles.withdrawDialog}
+        title="Вывод средств"
+        onClick={(e) => e.stopPropagation()}
+      >
         <WithdrawForm />
       </DialogContent>
     </Dialog>

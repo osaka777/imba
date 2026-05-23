@@ -18,6 +18,7 @@ import { ManualForeignCardPage } from "~/entities/finance/ui/ManualForeignCardPa
 import { trackDepositOrder, untrackDepositOrder } from "~/shared/lib/appNotifications";
 import paymentModalStyles from "./PaymentModal.module.css";
 import styles from "./NirvanaPayForm.module.css";
+import { DepositFormHeading } from "../DepositFormHeading";
 
 interface FormShape {
   amount: number;
@@ -80,7 +81,7 @@ export const ForeignKztInitForm = ({ forceCurrency }: { forceCurrency?: string }
   return (
     <>
       <form className={styles.NirvanaPayForm} onSubmit={handleSubmit(onSubmit)}>
-        <h2 className={styles.heading}>Пополнение — Иностранная карта</h2>
+        <DepositFormHeading subtitle="Иностранная карта" />
 
         <div className={styles.amountField}>
           <Input

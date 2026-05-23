@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+import { DepositForm } from "~/entities/finance";
 import { ToggleIcon, UserIcon } from "~/shared/assets";
 import { Button } from "~/shared/ui";
+import { Dialog, DialogContent } from "~/shared/ui/Dialog";
 import { deleteSessionClient } from "~/entities/user";
+import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
 import { TelegramSvgrepoIcon } from "~/shared/assets/icons";
 import { Auth } from "./Auth";
 import styles from "./Content.module.css";
+import depositStyles from "./Deposit.module.css";
 import { Deposit } from "./Deposit";
 import { NotificationsBell } from "./NotificationsBell";
 import { List } from "./List";
@@ -24,7 +28,14 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string | null>(null);
+  const [headerDepositOpen, setHeaderDepositOpen] = useState(false);
+  const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const router = useRouter();
+
+  const openHeaderDeposit = useCallback(() => {
+    armGuard();
+    scheduleDialogOpen(setHeaderDepositOpen);
+  }, [armGuard]);
 
   const MENU_ORDER = [
     { id: "voucher", name: "Ваучер" },
@@ -147,7 +158,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
               />
             </a>
           </div> */}
-          <Deposit />
+          <Deposit onOpenDeposit={openHeaderDeposit} />
           <NotificationsBell />
           <div className={styles.profile_wrapper}>
             <Button
@@ -210,6 +221,17 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
           {renderModalContent()}
         </div>
       )}
+
+      <Dialog open={headerDepositOpen} onOpenChange={setHeaderDepositOpen}>
+        <DialogContent
+          className={depositStyles.dialog}
+          title="Пополнение счета"
+          onInteractOutside={blockIfArmed}
+          onPointerDownOutside={blockIfArmed}
+        >
+          {headerDepositOpen ? <DepositForm /> : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -5,8 +5,10 @@ import styles from "./WithdrawForm.module.css";
 
 export const WithdrawForm = () => {
   return (
-    <div className={styles.DepositForm}>
-      <BovaForm />
+    <div className={styles.withdrawDialogScroll}>
+      <div className={styles.DepositForm}>
+        <BovaForm />
+      </div>
     </div>
   );
 };

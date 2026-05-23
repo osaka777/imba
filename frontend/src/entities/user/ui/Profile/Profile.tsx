@@ -5,12 +5,13 @@ import getSymbolFromCurrency from "currency-symbol-map";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalStorage } from "usehooks-ts";
 
-import { DialogContent, Dialog, DialogTrigger } from "~/shared/ui";
+import { DialogContent, Dialog } from "~/shared/ui";
 import styles from "./Profile.module.css";
 import { Withdraw } from "./Withdraw";
 import { SignOut } from "./SignOut";
 import { CategoryItem } from "./CategoryItem";
 import { DepositForm } from "~/entities/finance/ui/DepositForm";
+import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
 import { DetailsIcon, SettingsIcon, FavoritesIcon, HistorysIcon, SupportIcon, VoucherIcon } from "~/shared/assets/icons";
 import { KztImage, RubImage, UahImage, UsdImage, KgsImage, AznImage, TjsImage, UzsImage, TryImage } from "~/shared/assets/images";
 import { useRouter } from "next-nprogress-bar";
@@ -123,6 +124,7 @@ export const Profile = React.memo(() => {
   const { currency, setCurrency } = useCurrency();
   const [depositCurrency, setDepositCurrency] = useState<string>("");
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const { selectedAccountType, setSelectedAccountType, isClient } = useAccountType();
 
   // Автоматическое обновление данных профиля
@@ -228,18 +230,19 @@ export const Profile = React.memo(() => {
   );
 
   // Оптимизированные обработчики
+  const openDepositModal = useCallback((currencyCode?: string) => {
+    armGuard();
+    setDepositCurrency(currencyCode ?? currency);
+    scheduleDialogOpen(setIsDepositOpen);
+  }, [armGuard, currency]);
+
   const handleDepositClick = useCallback((currencyCode: string) => {
-    setDepositCurrency(currencyCode);
-    setIsDepositOpen(true);
-  }, []);
+    openDepositModal(currencyCode);
+  }, [openDepositModal]);
 
   const handleWalletManagementClick = useCallback(() => {
     router.push('/profile/wallets');
   }, [router]);
-
-  const handleDepositClose = useCallback((open: boolean) => {
-    if (!open) setIsDepositOpen(false);
-  }, []);
 
   // Показываем загрузку если данные еще загружаются
   if (userLoading) {
@@ -311,12 +314,17 @@ export const Profile = React.memo(() => {
               {selectedAccountType === 'main' ? (
                 <>
                   <Withdraw />
-                  <Dialog>
-                    <DialogTrigger className={styles.Deposit}>{`Пополнить`}</DialogTrigger>
-                    <DialogContent className={styles.dialog} title="Пополнение счета">
-                      <DepositForm />
-                    </DialogContent>
-                  </Dialog>
+                  <button
+                    type="button"
+                    className={styles.Deposit}
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openDepositModal();
+                    }}
+                  >
+                    Пополнить
+                  </button>
                 </>
               ) : (
                 <div className={styles.bonusInfo}>
@@ -405,10 +413,17 @@ export const Profile = React.memo(() => {
 
       <Dialog
         open={isDepositOpen}
-        onOpenChange={handleDepositClose}
+        onOpenChange={setIsDepositOpen}
       >
-        <DialogContent className={styles.dialog} title="Пополнение счета">
-          <DepositForm forceCurrency={depositCurrency} />
+        <DialogContent
+          className={styles.dialog}
+          title="Пополнение счета"
+          onInteractOutside={blockIfArmed}
+          onPointerDownOutside={blockIfArmed}
+        >
+          {isDepositOpen ? (
+            <DepositForm forceCurrency={depositCurrency || undefined} />
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>

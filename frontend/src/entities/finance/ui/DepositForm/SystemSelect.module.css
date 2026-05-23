@@ -34,23 +34,55 @@
   color: #1d4ed8 !important;
 }
 
+@media screen and (min-width: 769px) {
+  .SystemSelect {
+    min-height: 68px;
+  }
+
+  .systemSelectTextMini {
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .icons {
+    height: 26px;
+  }
+}
+
 @media screen and (max-width: 768px) {
   .SystemSelect {
-    flex: 1;
+    width: 100%;
     min-width: 0;
     max-width: none;
-    height: 72px;
+    min-height: 56px;
+    height: 56px;
     margin: 0;
-    border-radius: 12px;
+    border-radius: 10px;
+    gap: 3px;
+    padding: 6px 4px;
   }
 
   .SystemSelect:hover {
     transform: none;
   }
+
+  .icons {
+    height: 22px;
+    padding: 0 4px;
+  }
+
+  .systemSelectTextMini {
+    font-size: 10px;
+    line-height: 1.2;
+    text-align: center;
+    padding: 0 2px;
+  }
 }
 @media screen and (max-width: 425px) {
   .SystemSelect {
-    height: 85px;
+    min-height: 56px;
+    height: 56px;
     max-width: 100%;
   }
 }

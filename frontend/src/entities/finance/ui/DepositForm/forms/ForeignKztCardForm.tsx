@@ -6,6 +6,7 @@ import { useReadLocalStorage } from "usehooks-ts";
 import { toast } from "react-toastify";
 import { Button, Input, LoadingSpinner } from "~/shared/ui";
 import styles from "./ForeignKztCardForm.module.css";
+import { DepositFormHeading } from "../DepositFormHeading";
 import { uploadKztForeignCardReceipt } from "../../../api/deposit";
 
 interface FormShape {
@@ -75,7 +76,7 @@ export const ForeignKztCardForm = ({ forceCurrency }: { forceCurrency?: string }
 
   return (
     <form className={styles.ForeignKztCardForm} onSubmit={handleSubmit(onSubmit)}>
-      <h2 className={styles.heading}>Пополнение — Иностранная карта</h2>
+      <DepositFormHeading subtitle="Иностранная карта" />
 
       <div className={styles.timerRow}>
         <span>Время для перевода:</span>

@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { useRouter } from "next-nprogress-bar";
 import { useForm } from "react-hook-form";
 
-import { Button, Input, LoadingSpinner } from "~/shared/ui";
+import { Button, Input } from "~/shared/ui";
 import { safeToast } from "~/shared/lib/safeToast";
 
 import { verifyUser, login } from "../../api";
@@ -92,13 +92,10 @@ export const LoginForm = () => {
           styles.authButton,
           isSuccess && styles.authButton_success,
         )}
-        disabled={isPending}
+        disabled={isPending || isSuccess}
         type="submit"
       >
-        {isSuccess ? `Вход выполнен...` : `Войти`}
-        {(isPending || isSuccess) && (
-          <LoadingSpinner className={styles.loading} />
-        )}
+        {isPending || isSuccess ? `Авторизация...` : `Войти`}
       </Button>
     </form>
   );

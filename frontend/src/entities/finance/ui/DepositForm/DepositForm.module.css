@@ -18,13 +18,11 @@
     min-height: auto;
     flex-direction: column;
     background: #ffffff;
+    padding-top: 0;
   }
 
   .mobileHeaderSpacer {
-    display: block;
-    width: 100%;
-    height: 44px;
-    flex-shrink: 0;
+    display: none;
   }
 }
 
@@ -35,43 +33,61 @@
 }
 
 .systemSelectSection {
-  padding: 16px 16px 12px;
-  width: 240px;
+  padding: 16px 12px 12px;
+  width: 280px;
   height: 100%;
   background: #fafbfc;
   border-right: 1px solid #eef1f5;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  align-content: start;
   transition: all 0.3s ease;
+}
+
+.systemSelectSection > :only-child {
+  grid-column: 1 / -1;
 }
 
 @media screen and (max-width: 768px) {
   .systemSelectSection {
     width: 100%;
-    padding: 8px 16px 12px;
+    padding: 52px 12px 10px;
     border-right: none;
     border-bottom: none;
     background: transparent;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+    align-items: stretch;
+  }
+
+  .systemSelectSection > :only-child {
+    grid-column: 1 / -1;
   }
 }
 
 .formSection {
   position: relative;
-  width: 320px;
+  width: 280px;
   height: 100%;
   transition: all 0.3s ease;
   background: #ffffff;
 }
 
+.formSection :is(h1, h2, h3).heading,
+.formSection h2 {
+  padding-right: 44px;
+  line-height: 1.3;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
 @media screen and (max-width: 768px) {
   .formSection {
     width: 100%;
-    padding: 0;
+    padding: 0 12px;
     background: #ffffff;
     border-radius: 0;
     box-shadow: none;

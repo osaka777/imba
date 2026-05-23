@@ -1,12 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import styles from "./Wallets.module.css";
-import { DialogTrigger } from "~/shared/ui/Dialog";
 import { DepositForm } from "~/entities/finance/ui/DepositForm";
 import { DialogContent } from "~/shared/ui/Dialog";
 import { Withdraw } from "../Profile/Withdraw";
 import { Dialog } from "~/shared/ui/Dialog";
+import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
 import { KztImage, RubImage, UahImage, UsdImage, TryImage, UzsImage } from "~/shared/assets/images";
 
 const getCurrencyIcon = (currencyCode: string) => {
@@ -44,6 +44,15 @@ export const Wallets = ({
   onChangeCurrency: (currency: string) => void;
 }) => {
   const [modalWallet, setModalWallet] = useState<null | typeof wallets[0]>(null);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [depositCurrency, setDepositCurrency] = useState<string | undefined>();
+  const { armGuard, blockIfArmed } = useDialogOutsideGuard();
+
+  const openDepositModal = useCallback((currencyCode?: string) => {
+    armGuard();
+    setDepositCurrency(currencyCode);
+    scheduleDialogOpen(setDepositOpen);
+  }, [armGuard]);
 
   return (
     <div className={styles.walletsPage}>
@@ -62,12 +71,17 @@ export const Wallets = ({
           </div>
           <div className={styles.mainActions}>
             <Withdraw />
-            <Dialog>
-              <DialogTrigger className={styles.depositBtn}>{`Пополнить`}</DialogTrigger>
-              <DialogContent className={styles.dialog} title="Пополнение счета">
-                <DepositForm />
-              </DialogContent>
-            </Dialog>
+            <button
+              type="button"
+              className={styles.depositBtn}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openDepositModal();
+              }}
+            >
+              Пополнить
+            </button>
           </div>
         </div>
       </section>
@@ -153,16 +167,35 @@ export const Wallets = ({
               )}
 
               <Withdraw />
-              <Dialog>
-                <DialogTrigger className={styles.depositBtn}>{`Пополнить`}</DialogTrigger>
-                <DialogContent className={styles.dialog} title="Пополнение счета">
-                  <DepositForm forceCurrency={modalWallet.currencyCode} />
-                </DialogContent>
-              </Dialog>
+              <button
+                type="button"
+                className={styles.depositBtn}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setModalWallet(null);
+                  openDepositModal(modalWallet.currencyCode);
+                }}
+              >
+                Пополнить
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      <Dialog open={depositOpen} onOpenChange={setDepositOpen}>
+        <DialogContent
+          className={styles.dialog}
+          title="Пополнение счета"
+          onInteractOutside={blockIfArmed}
+          onPointerDownOutside={blockIfArmed}
+        >
+          {depositOpen ? (
+            <DepositForm forceCurrency={depositCurrency} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

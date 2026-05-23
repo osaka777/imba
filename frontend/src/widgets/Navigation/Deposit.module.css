@@ -1,14 +1,21 @@
 .Deposit {
   position: relative;
+  border: none;
   border-radius: 8px;
   padding: 0 21px;
   background: var(--green-gradient);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: white;
   font-weight: 500;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
@@ -27,6 +34,7 @@
   top: calc(50% - 62px);
   width: 92px;
   height: 92px;
+  pointer-events: none;
   background-image: radial-gradient(19.58% 37.96% at 16.68% 41.55%,
       rgba(255, 255, 255, 0.6) 0%,
       rgba(255, 255, 255, 0) 100%);
@@ -87,235 +95,138 @@
 
 @media screen and (max-width: 768px) {
   .depositWrapper {
-    padding: 2px 2px 2px 4px;
-    gap: 2px;
+    padding: 4px 6px 4px 10px;
+    gap: 8px;
     border-radius: 8px;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
   }
-  
+
+  .balanceBlock {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 76px);
+    gap: 0;
+    line-height: 1.1;
+  }
+
   .Deposit {
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 6px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    padding: 0 11px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 7px;
+    position: relative;
+    z-index: 2;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
-  
+
   .balance {
-    padding-right: 4px;
+    padding-right: 0;
     font-size: 12px;
     gap: 2px;
   }
-  
+
   .balanceTitle {
-    gap: 1px;
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 600;
   }
-  
+
+  .currencyText {
+    font-size: 11px;
+  }
+
   .Deposit:before {
-    width: 60px;
-    height: 60px;
-    top: calc(50% - 30px);
+    display: none;
   }
 }
 
 @media screen and (max-width: 576px) {
   .depositWrapper {
-    padding: 1px 1px 1px 3px;
-    gap: 1px;
-    border-radius: 6px;
+    padding: 4px 5px 4px 8px;
+    gap: 6px;
   }
-  
+
   .Deposit {
-    padding: 4px 8px;
-    font-size: 11px;
-    border-radius: 4px;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    padding: 0 10px;
+    font-size: 10px;
   }
-  
+
   .balance {
-    padding-right: 3px;
     font-size: 11px;
-    gap: 1px;
   }
-  
+
   .balanceTitle {
-    gap: 0;
-  }
-  
-  .Deposit:before {
-    width: 40px;
-    height: 40px;
-    top: calc(50% - 20px);
+    font-size: 11px;
   }
 }
 
 @media screen and (max-width: 480px) {
   .depositWrapper {
-    padding: 1px;
-    gap: 1px;
-    border-radius: 4px;
+    padding: 3px 4px 3px 8px;
+    gap: 6px;
   }
-  
+
   .Deposit {
-    padding: 3px 6px;
-    font-size: 10px;
-    border-radius: 3px;
-  }
-  
-  .balance {
-    padding-right: 2px;
-    font-size: 10px;
-  }
-  
-  .Deposit:before {
-    width: 30px;
     height: 30px;
-    top: calc(50% - 15px);
+    min-height: 30px;
+    max-height: 30px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+
+  .balance {
+    font-size: 11px;
   }
 }
 
-/* Специальные стили для iPhone 12 и других устройств с шириной ~390px */
 @media screen and (max-width: 390px) {
   .depositWrapper {
-    padding: 0;
-    gap: 2px;
-    border-radius: 4px;
+    padding: 3px 4px 3px 7px;
+    gap: 5px;
     min-width: 0;
-    flex-wrap: nowrap;
-  } 
-  
-  .Deposit {
-    padding: 4px 8px;
-    font-size: 10px;
-    border-radius: 3px;
-    white-space: nowrap;
-    flex-shrink: 0;
   }
-  
-  .balance {
-    padding-right: 2px;
+
+  .Deposit {
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 0 8px;
     font-size: 10px;
-    gap: 1px;
+  }
+
+  .balance {
     min-width: 0;
     overflow: hidden;
-    flex: 1;
-    min-width: 0;
   }
-  
+
   .balanceTitle {
-    gap: 1px;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    display: flex;
-    align-items: center;
-  }
-  
-  .currencyText {
-    font-size: 9px;
-    opacity: 0.8;
-    flex-shrink: 0;
-  }
-  
-  .Deposit:before {
-    width: 20px;
-    height: 20px;
-    top: calc(50% - 10px);
   }
 }
 
-/* Специальные стили для очень узких экранов (iPhone SE и подобные) */
 @media screen and (max-width: 375px) {
-  .depositWrapper {
-    padding: 0;
-    gap: 1px;
-    border-radius: 3px;
-    min-width: 0;
-  }
-  
   .Deposit {
-    padding: 3px 6px;
+    padding: 0 7px;
     font-size: 9px;
-    border-radius: 2px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  
-  .balance {
-    padding-right: 1px;
-    font-size: 9px;
-    gap: 0;
-    min-width: 0;
-    overflow: hidden;
-    flex: 1;
-  }
-  
-  .balanceTitle {
-    gap: 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-  }
-  
-  .currencyText {
-    font-size: 8px;
-    opacity: 0.7;
-    flex-shrink: 0;
-  }
-  
-  .Deposit:before {
-    width: 18px;
-    height: 18px;
-    top: calc(50% - 9px);
   }
 }
 
-/* Специальные стили для очень старых iPhone (320px) */
 @media screen and (max-width: 320px) {
-  .depositWrapper {
-    padding: 0;
-    gap: 1px;
-    border-radius: 2px;
-    min-width: 0;
-  }
-  
   .Deposit {
-    padding: 2px 4px;
-    font-size: 8px;
-    border-radius: 1px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  
-  .balance {
-    padding-right: 0;
-    font-size: 8px;
-    gap: 0;
-    min-width: 0;
-    overflow: hidden;
-    flex: 1;
-  }
-  
-  .balanceTitle {
-    gap: 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-  }
-  
-  .currencyText {
-    font-size: 7px;
-    opacity: 0.6;
-    flex-shrink: 0;
-  }
-  
-  .Deposit:before {
-    width: 15px;
-    height: 15px;
-    top: calc(50% - 7.5px);
+    padding: 0 6px;
+    font-size: 9px;
   }
 }
 
@@ -340,33 +251,22 @@ div.dialog {
 /* Медиа-запросы для диалогового окна */
 @media screen and (max-width: 768px) {
   div.dialog {
-    border-radius: 22px;
+    border-radius: 18px;
     max-width: min(360px, calc(100vw - 32px));
     margin: 0;
-  }
-}
-
-@media screen and (max-width: 576px) {
-  div.dialog {
-    max-width: min(360px, calc(100vw - 24px));
+    overflow: hidden;
   }
 }
 
 @media screen and (max-width: 480px) {
   div.dialog {
-    max-width: calc(100vw - 20px);
+    max-width: min(340px, calc(100vw - 28px));
   }
 }
 
 @media screen and (max-width: 390px) {
   div.dialog {
-    max-width: calc(100vw - 16px);
-  }
-}
-
-@media screen and (max-width: 320px) {
-  div.dialog {
-    max-width: calc(100vw - 12px);
+    max-width: min(320px, calc(100vw - 24px));
   }
 }
 
@@ -374,10 +274,36 @@ div.dialog {
   position: relative;
   display: flex;
   flex-direction: row;
+  align-items: center;
   background: rgb(35, 45, 69);
   border-radius: 10px;
   padding: 2px 2px 2px 10px;
   gap: 5px;
+}
+
+@media screen and (min-width: 769px) {
+  .Deposit {
+    height: auto;
+    min-height: 36px;
+    max-height: none;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+}
+
+.balanceBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.balanceAmount {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .balanceTitle {

@@ -1,10 +1,10 @@
+"use client";
+
 import { useLocalStorage } from "usehooks-ts";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-import { DepositForm } from "~/entities/finance";
 import { getUser } from "~/entities/user/api";
-import { Dialog, DialogContent, DialogTrigger } from "~/shared/ui/Dialog";
 import { useAccountType } from "~/shared/model/useAccountType";
 import { useCurrency } from "~/shared/model/useCurrency";
 
@@ -12,17 +12,19 @@ import { CurrencySelector } from "./CurrencySelector";
 
 import styles from "./Deposit.module.css";
 
-export const Deposit = () => {
+type DepositProps = {
+  onOpenDeposit: () => void;
+};
+
+export const Deposit = ({ onOpenDeposit }: DepositProps) => {
   const { currency, setCurrency } = useCurrency();
   const [hideBalance, setHideBalance] = useLocalStorage<boolean>("hideBalance", false);
   const { selectedAccountType } = useAccountType();
-  const [forceUpdate, setForceUpdate] = useState(0);
 
   useEffect(() => {
     const handleHideBalanceChange = () => {
       const newValue = localStorage.getItem("hideBalance") === "true";
       setHideBalance(newValue);
-      setForceUpdate(prev => prev + 1);
     };
     
     if (typeof window !== "undefined") {
@@ -34,13 +36,11 @@ export const Deposit = () => {
   const { data } = useQuery({
     queryKey: ["user", currency],
     queryFn: getUser,
-    staleTime: 5 * 60 * 1000, // 5 минут кэширования
-    gcTime: 10 * 60 * 1000, // 10 минут в памяти
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    // Отложенная загрузка - запрос выполняется только когда компонент действительно нужен
     enabled: typeof window !== 'undefined',
-    // Агрессивное кэширование для предотвращения лишних запросов
     placeholderData: (previousData) => previousData,
   });
 
@@ -51,7 +51,6 @@ export const Deposit = () => {
     minimumFractionDigits: 2,
   }).format(Number(balance));
 
-  // Получаем бонусный баланс
   const bonusBalanceData = (data as any)?.bonusBalances?.find(({ currencyCode }: { currencyCode: string }) => currencyCode === currency);
   const bonusBalance = bonusBalanceData?.amount ?? "0";
   const formattedBonusBalance = Intl.NumberFormat("ru-RU", {
@@ -72,11 +71,12 @@ export const Deposit = () => {
     UZS: "so'm",
   };
   const getCurrencySymbol = (code: string) => currencySymbols[code] || code;
+
   return (
     <div className={styles.depositWrapper}>
-      <div className="flex flex-col items-center">
+      <div className={styles.balanceBlock}>
         <CurrencySelector currency={'Баланс'} setCurrency={setCurrency} />
-        <div className="flex flex-col items-center">
+        <div className={styles.balanceAmount}>
           {hideBalance ? (
             <div className={styles.balanceTitle}>
               <span>{data?.email}</span>
@@ -96,12 +96,16 @@ export const Deposit = () => {
           )}
         </div>
       </div>
-      <Dialog>
-        <DialogTrigger className={styles.Deposit}>{`Пополнить`}</DialogTrigger>
-        <DialogContent className={styles.dialog} title="Пополнение счета">
-          <DepositForm />
-        </DialogContent>
-      </Dialog>
+      <button
+        className={styles.Deposit}
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenDeposit();
+        }}
+      >
+        Пополнить
+      </button>
     </div>
   );
 };

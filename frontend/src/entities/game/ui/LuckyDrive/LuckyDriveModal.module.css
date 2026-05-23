@@ -160,6 +160,19 @@
     overflow: hidden;
 }
 
+@media screen and (max-width: 768px) {
+  .depositDialog {
+    max-width: min(360px, calc(100vw - 32px));
+    border-radius: 18px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .depositDialog {
+    max-width: min(340px, calc(100vw - 28px));
+  }
+}
+
 .authDialog {
     padding: 0 !important;
     max-width: min(440px, calc(100vw - 32px)) !important;

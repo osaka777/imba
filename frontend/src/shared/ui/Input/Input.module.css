@@ -53,7 +53,7 @@
   display: block;
 }
 
-.inputWrapperPill .icon svg path {
+.inputWrapperPill .icon svg:not([data-card-brand]) path {
   fill: #6b7280 !important;
 }
 
@@ -99,7 +99,7 @@
     min-height: 18px;
   }
 
-  .inputWrapperPill .icon svg path {
+  .inputWrapperPill .icon svg:not([data-card-brand]) path {
     fill: #6b7280 !important;
   }
 
