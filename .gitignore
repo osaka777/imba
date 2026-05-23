@@ -61,3 +61,6 @@ backend/docs/
 # Misc
 .vercel
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Large binaries
+*.apk
