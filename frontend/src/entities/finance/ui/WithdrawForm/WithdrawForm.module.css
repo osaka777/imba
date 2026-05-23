@@ -1,0 +1,82 @@
+.DepositForm {
+  border-radius: 15px;
+  overflow: hidden;
+
+  min-height: fit-content;
+
+  display: flex;
+  align-items: flex-start;
+}
+@media screen and (max-width: 425px) {
+  .DepositForm {
+    height: auto;
+
+    flex-direction: column;
+  }
+}
+.systemSelectSection {
+  padding: 12px;
+
+  width: 280px;
+  height: 100%;
+
+  background-color: var(--gray-40-transparent);
+
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+@media screen and (max-width: 768px) {
+  .systemSelectSection {
+    flex-direction: column;
+  }
+}
+@media screen and (max-width: 425px) {
+  .systemSelectSection {
+    padding-top: 42px;
+
+    height: auto;
+  }
+}
+.systemSelect {
+  border-radius: 10px;
+
+  padding: 10px;
+
+  background: var(--dark-blue-gradient);
+
+  width: 120px;
+  height: 80px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.systemSelect_active {
+  background: var(--light-blue-gradient);
+}
+@media screen and (max-width: 768px) {
+  .systemSelect {
+    width: 100%;
+  }
+}
+.systemSelectIcon {
+  width: 100%;
+  height: 40px;
+}
+
+.systemSelectText {
+  font-weight: 500;
+}
+
+.formSection {
+  width: 280px;
+  height: 100%;
+}
+
+@media screen and (max-width: 425px) {
+  .formSection {
+    height: auto;
+  }
+}

@@ -1,0 +1,139 @@
+.Search {
+}
+.result {
+  border-radius: 8px;
+
+  padding: 8px;
+
+  background-color: var(--blue-20);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.game {
+  border-radius: 8px;
+
+  padding: 8px 8px;
+
+  background-color: var(--white);
+
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+}
+@media screen and (max-width: 768px) {
+  .game {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+.game:hover {
+  background-color: var(--gray-60);
+}
+@media screen and (max-width: 768px) {
+  .game:hover {
+    background-color: var(--white);
+  }
+}
+.separator {
+  background: var(--light-blue-gradient);
+
+  width: 4px;
+  height: 24px;
+}
+@media screen and (max-width: 768px) {
+  .separator {
+    display: none;
+  }
+}
+.icon {
+  border-radius: 100%;
+
+  padding: 4px;
+
+  background-color: var(--blue-30);
+
+  width: 24px;
+
+  fill: var(--white);
+  color: var(--white);
+}
+.text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 11px;
+  color: var(--black);
+}
+.err {
+  border-radius: 8px;
+
+  padding: 12px 8px;
+
+  background-color: var(--blue-20);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bar {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.submit {
+  border-radius: 100%;
+
+  padding: 6px;
+
+  background-color: var(--white);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submitIcon {
+  fill: var(--blue-30);
+  color: var(--blue-30);
+  stroke: var(--blue-30);
+}
+.submit:disabled > .submitIcon {
+  fill: var(--black);
+  color: var(--black);
+  stroke: var(--black);
+}
+.loader {
+  position: absolute;
+  right: 78px;
+}
+.priority {
+}
+.statusIconsText {
+  border-radius: 8px;
+
+  padding: 2px 8px;
+
+  background: var(--light-blue-gradient);
+
+  color: var(--white);
+}
+.statusIconsLive {
+  border-radius: 100%;
+
+  padding: 2px;
+
+  background-color: var(--red-10);
+
+  width: 24px;
+  height: 24px;
+
+  text-transform: uppercase;
+  color: var(--white);
+  fill: var(--white);
+}

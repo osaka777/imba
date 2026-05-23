@@ -1,0 +1,170 @@
+.Auth {
+  margin-left: 24px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media screen and (max-width: 768px) {
+  .Auth {
+    margin: 0;
+
+    width: 100%;
+
+    justify-content: flex-end;
+  }
+}
+
+.icon_wrapper {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-image: linear-gradient(
+    210deg,
+    rgba(255, 255, 255, 0) 25%,
+    rgba(255, 255, 255, 0.06) 48%,
+    #fff 133%
+  );
+  margin-right: 12px;
+  margin-left: -5px;
+}
+.authButton {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.authLogin {
+  padding: 6px 15px;
+
+  background-color: var(--blue-30);
+}
+
+@media screen and (max-width: 768px) {
+  .authLogin {
+    background-color: var(--blue-30);
+    padding: 4px 13px;
+    font-size: 12px;
+  }
+}
+
+.authSignIn {
+  padding: 6px 15px;
+  overflow: hidden;
+  background: var(--green-gradient);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.authSignIn:before {
+  animation: flare-2 5s infinite ease-in-out;
+  content: "";
+  position: absolute;
+  top: calc(50% - 62px);
+  width: 92px;
+  height: 92px;
+  background-image: radial-gradient(
+    19.58% 37.96% at 16.68% 41.55%,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+@keyframes flare-2 {
+  0% {
+    transform: translate(-115%) rotate(-45deg);
+  }
+  20% {
+    transform: translate(160%) rotate(-45deg);
+  }
+  100% {
+    transform: translate(160%) rotate(-45deg);
+  }
+}
+@media screen and (max-width: 768px) {
+  .authSignIn {
+    padding: 3px 13px;
+
+    font-size: 12px;
+  }
+}
+
+.authSignInIcon {
+  width: 15px;
+  height: 15px;
+
+  fill: white;
+}
+
+div .authForm {
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.authDialog {
+  padding: 0 !important;
+  max-width: min(440px, calc(100vw - 32px)) !important;
+  width: 100% !important;
+  border-radius: 22px !important;
+  overflow: hidden;
+  background: #ffffff !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+@media screen and (max-width: 768px) {
+  .authDialog {
+    max-width: min(360px, calc(100vw - 36px)) !important;
+    max-height: min(calc(100dvh - 28px), 660px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 20px !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .authDialog {
+    max-width: min(340px, calc(100vw - 32px)) !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media screen and (max-width: 390px) {
+  .authDialog {
+    max-width: min(320px, calc(100vw - 28px)) !important;
+  }
+}
+
+.modal {
+  padding: 8px;
+}
+.SocialList_link {
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.3s ease-out;
+  align-items: center;
+  display: flex;
+  height: 35px;
+  justify-content: center;
+  text-align: center;
+  min-width: 45px;
+  font-size: 15px;
+}
+.SocialItemWrapper_telegram {
+  background: linear-gradient(240.2deg, #0fb1d6 0%, #08c 61.34%);
+  box-shadow: 0 5px 16px #4ca2f64d;
+}
+@media (max-width: 768px) {
+  .SocialList_link {
+    height: 25px;
+  }
+  .SocialList_link > svg {
+    height: 20px;
+  }
+}

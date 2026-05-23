@@ -1,0 +1,51 @@
+.select>span {
+  font-size: 12px;
+  letter-spacing: 0;
+  line-height: 16px;
+  font-weight: 500;
+  color: rgb(148, 166, 205);
+  padding: 0 2px;
+}
+
+/* Медиа-запросы для CurrencySelector */
+@media screen and (max-width: 1200px) {
+  .select>span {
+    font-size: 11px;
+    line-height: 15px;
+    padding: 0 1px;
+  }
+}
+
+@media screen and (max-width: 992px) {
+  .select>span {
+    font-size: 10px;
+    line-height: 14px;
+    padding: 0 1px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .select>span {
+    font-size: 9px;
+    line-height: 13px;
+    padding: 0;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .select>span {
+    font-size: 8px;
+    line-height: 12px;
+    padding: 0;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .select>span {
+    font-size: 7px;
+    line-height: 11px;
+    padding: 0;
+  }
+}
+
+

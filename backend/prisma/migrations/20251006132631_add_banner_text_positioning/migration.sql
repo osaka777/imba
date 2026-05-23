@@ -1,0 +1,12 @@
+-- AlterTable
+ALTER TABLE "Banner" ADD COLUMN     "descColor" TEXT NOT NULL DEFAULT '#ffffff',
+ADD COLUMN     "descSize" INTEGER NOT NULL DEFAULT 13,
+ADD COLUMN     "imagePath" TEXT,
+ADD COLUMN     "textOffsetX" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "textOffsetY" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "textPosition" TEXT NOT NULL DEFAULT 'center',
+ADD COLUMN     "textShadow" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "textVerticalPos" TEXT NOT NULL DEFAULT 'center',
+ADD COLUMN     "titleColor" TEXT NOT NULL DEFAULT '#ffffff',
+ADD COLUMN     "titleSize" INTEGER NOT NULL DEFAULT 28,
+ALTER COLUMN "imageUrl" DROP NOT NULL;

@@ -1,0 +1,50 @@
+.List {
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+@media screen and (max-width: 768px) {
+  .List {
+    display: none;
+  }
+}
+
+.item {
+  height: 100%;
+
+  transition: 0.2s;
+
+  display: flex;
+  align-items: center;
+}
+
+.item_current {
+  position: relative;
+}
+
+.link {
+  transition: 0.2s;
+  font-weight: 600;
+  display: block;
+}
+
+.link:hover {
+  color: var(--blue-40);
+}
+.item_current > .link {
+  font-weight: 600;
+}
+
+.underline {
+  position: absolute;
+  bottom: 0;
+
+  background: var(--light-blue-gradient);
+  transition: 0.2s;
+
+  width: 100%;
+  height: 4px;
+}

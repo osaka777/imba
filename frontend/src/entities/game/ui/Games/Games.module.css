@@ -1,0 +1,30 @@
+.Games {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.loading {
+  align-self: center;
+}
+
+.hidden {
+  display: none;
+}
+.loadMore {
+  border-radius: 8px;
+
+  padding: 12px;
+
+  width: max-content;
+  height: 50px;
+
+  background: var(--light-blue-gradient);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  gap: 8px;
+}

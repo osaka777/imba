@@ -1,0 +1,27 @@
+.Navigation {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 10px;
+    background-color: var(--blue-00);
+    height: 65px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    justify-content: center;
+}
+
+@media screen and (max-width: 768px) {
+    .Navigation {
+        padding: 0 24px;
+        justify-content: space-between;
+    }
+}
+
+.logo {
+    padding: 5px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

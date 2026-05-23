@@ -1,0 +1,100 @@
+.Content {
+}
+
+.trigger {
+    display: none;
+}
+@media screen and (max-width: 768px) {
+    .trigger {
+        display: flex;
+    }
+}
+.triggerIcon {
+}
+
+.contentWrapper {
+    height: 100%;
+}
+
+@media screen and (max-width: 768px) {
+    .contentWrapper {
+        position: fixed;
+        top: 0;
+        right: -100%;
+
+        width: 100%;
+
+        background-color: var(--blue-10-transparent);
+        transition: 0.2s;
+
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+@media screen and (max-width: 768px) {
+    .contentWrapper_opened {
+        right: 0;
+    }
+}
+.content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+@media screen and (max-width: 768px) {
+    .content {
+        border-radius: 12px;
+
+        padding: 24px;
+        padding-bottom: 48px;
+
+        background-color: var(--blue-20);
+
+        width: 320px;
+
+        flex-direction: column;
+        align-items: flex-end;
+    }
+}
+
+.close {
+    padding: 12px;
+
+    display: none;
+}
+@media screen and (max-width: 768px) {
+    .close {
+        display: block;
+    }
+}
+.closeIcon {
+    width: 18px;
+    height: 18px;
+
+    fill: var(--white);
+}
+
+.myProfile {
+    border-radius: 8px;
+
+    padding: 6px 15px;
+
+    background-color: var(--blue-30);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media screen and (max-width: 768px) {
+    .myProfile {
+        padding: 8px 15px;
+
+        width: 100%;
+
+        font-size: 18px;
+    }
+}

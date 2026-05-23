@@ -1,0 +1,194 @@
+.NirvanaPayForm {
+  padding: 24px 20px 28px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media screen and (max-width: 768px) {
+  .NirvanaPayForm {
+    padding: 4px 16px 20px;
+    gap: 14px;
+  }
+}
+
+.heading {
+  color: #111827 !important;
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+@media screen and (max-width: 768px) {
+  .heading {
+    font-size: 18px;
+    text-align: left;
+    margin-bottom: 6px;
+  }
+}
+
+.input {
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 14px !important;
+  background: #ffffff !important;
+  border: 1.5px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.input::placeholder {
+  color: #9ca3af !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
+.input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  outline: none;
+}
+
+.amountField {
+  width: 100%;
+}
+
+.amountField label {
+  display: block;
+  margin-bottom: 6px !important;
+  padding-left: 2px;
+  color: #6b7280 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+.quickSetAmount {
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.quickSetAmountButton {
+  border-radius: 10px;
+  padding: 10px 8px;
+  background: #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151 !important;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  flex: 1;
+}
+
+.quickSetAmountButton:hover {
+  background: #dbeafe;
+  color: #2563eb !important;
+  border-color: #bfdbfe;
+  transform: none;
+}
+
+.submit {
+  position: relative;
+  border-radius: 12px;
+  padding: 13px 12px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  animation: none;
+  width: 100%;
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  margin-top: 4px;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.28);
+}
+
+.submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+}
+
+@media screen and (max-width: 768px) {
+  .submit {
+    padding: 13px 12px;
+    font-size: 15px;
+    border-radius: 12px;
+    margin-top: 6px;
+  }
+}
+
+.bankSelection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bankSelectionTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--black);
+  margin: 0;
+}
+
+.bankButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bankButton {
+  border-radius: 8px;
+  padding: 8px 16px;
+  background-color: var(--gray-20-transparent);
+  color: var(--black-20);
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.bankButton:hover {
+  background-color: var(--gray-30-transparent);
+  color: var(--black);
+}
+
+.bankButtonActive {
+  background-color: var(--green-10);
+  color: var(--white);
+  border-color: var(--green-20);
+}
+
+.bankButtonActive:hover {
+  background-color: var(--green-20);
+}
+
+.loader {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+
+  border-radius: 4px;
+
+  padding: 4px;
+
+  background-color: var(--blue-00);
+}
+.error {
+  color: var(--red-10);
+}

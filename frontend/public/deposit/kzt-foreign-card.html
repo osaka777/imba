@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Пополнение — Иностранная карта (KZT)</title>
+  <!-- Montserrat font to match reference design -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue-30: #60a5fa;
+      --primary: #f8b822; /* reference yellow */
+      --bg-dark: #0d0d0d; /* body bg */
+      --panel: rgb(26,26,26); /* containers */
+      --panel-2: rgb(38,38,38); /* inputs/secondary blocks */
+      --text: rgb(243,243,243);
+      --muted: rgb(156,156,156);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+      color: var(--text);
+      background: var(--bg-dark);
+    }
+    .pageWrap {
+      display: grid;
+      place-items: center;
+      background: none;
+      min-height: 100dvh;
+      padding: 16px; /* tighter outer padding */
+      box-sizing: border-box;
+    }
+    .card {
+      width: 100%;
+      max-width: 548px; /* match reference max width */
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 16px; /* tighter padding like reference */
+      box-shadow: 0 12px 60px rgba(31,31,36,0.25);
+    }
+    .header { margin-bottom: 12px; }
+    .title { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+    .subtitle { font-size: 14px; color: var(--muted); margin: 0; }
+    .subimportant { font-size: 14px; color: var(--primary); margin: 6px 0 0; }
+    .badgeRow { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; font-size: 12px; background: rgba(248,184,34,0.15); border: 1px solid rgba(248,184,34,0.35); color: var(--text); }
+
+    .infoBox { border: 1px dashed rgba(248,184,34,0.5); border-radius: 12px; padding: 12px; margin: 12px 0 8px; background: rgba(26,26,26,1); }
+    .infoRow { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; }
+    .infoLabel { color: var(--muted); }
+    .infoValueWrap { display: inline-flex; align-items: center; gap: 8px; }
+    .infoValue { font-weight: 700; color: #fff; }
+    .copyBtn { appearance: none; border: none; background: #ffffff22; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+    .copyBtn:active { transform: translateY(1px); }
+    .note { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.75); }
+
+    .form { display: grid; gap: 12px; margin-top: 8px; }
+    .label { font-size: 14px; display: grid; gap: 6px; color: var(--muted); }
+    .input { width: 100%; height: 60px; padding: 12px; border-radius: 8px; border: 1px solid transparent; background: var(--panel-2); color: #fff; box-sizing: border-box; font-size: 16px; }
+
+    .quickRow { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { border: 1px solid transparent; background: var(--panel-2); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; color: #fff; min-height: 32px; }
+    .pill:hover { background: #ffc800; color: #000; }
+
+    .uploadArea { position: relative; display: block; border: 1px dashed var(--primary); border-radius: 12px; padding: 18px; text-align: center; cursor: pointer; background: var(--panel); }
+    .fileInput { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .uploadText { color: var(--muted); }
+    .previewImg { display: block; max-width: 100%; max-height: 220px; margin: 0 auto; border-radius: 12px; object-fit: contain; background: rgba(0,0,0,0.2); }
+
+    .submitBtn { height: 56px; border-radius: 8px; background: var(--primary); color: #000; font-weight: 700; border: none; cursor: pointer; transform: translateZ(0); transition: transform .1s ease-in-out; font-size: 16px; }
+    .submitBtn:hover { transform: scale(1.01); }
+    .submitBtn[disabled] { background: rgb(54,54,54); color: rgb(92,92,92); cursor: not-allowed; }
+
+    .errorBox { border: 1px solid rgba(255,0,0,0.6); background: rgba(58,30,30,0.9); border-radius: 12px; padding: 10px; color: #ffb4b4; font-size: 14px; }
+
+    .statusBox { border: 1px solid rgba(68,68,68,1); border-radius: 12px; padding: 16px; background: var(--panel); }
+    .statusTitle { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: #fff; }
+    .statusText { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+    .timerBox { font-size: 14px; }
+    .timer { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--primary); }
+
+    .hidden { display: none !important; }
+
+    /* Hide legacy blocks in favor of new header/method design */
+    .header, .infoBox { display: none !important; }
+
+    /* New design helpers */
+    .topHeader { display: flex; flex-direction: column; gap: 1.5rem; }
+    .topRow { display: flex; align-items: center; justify-content: space-between; }
+    .langBtn { display: inline-flex; align-items: center; gap: .25rem; font-size: 14px; color: var(--muted); padding: .5rem .75rem; border-radius: 6px; background: var(--panel-2); height: 36px; }
+    .payLink { display: flex; align-items: center; gap: .75rem; min-height: 48px; padding: 12px; border-radius: 1rem; background: var(--panel); text-decoration: none; color: var(--text); }
+    .payLink .brand { display: flex; align-items: center; gap: .5rem; }
+    .countdown { display: flex; align-items: center; gap: .5rem; }
+    .countdown .circleWrap { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+    .countdown .circleBg { position:absolute; inset:0; border-radius:50%; border:5px solid #513710; }
+    .countdown svg { position:absolute; inset:0; transform: rotate(-90deg); }
+    .countdown svg circle { stroke: var(--primary); stroke-width: 3px; fill: none; stroke-linecap: round; transition: stroke-dashoffset .2s linear; }
+    .countdown .label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
+    .countdown .value { font-weight: 700; color: var(--primary); }
+    .amountBox { display: flex; align-items: center; justify-content: space-between; }
+    .amountBox p { color: var(--muted); font-weight: 700; }
+    .amountBox h6 { display: flex; align-items: center; gap: .375rem; font-size: 26px; font-weight: 600; line-height: 1; }
+    .cardRow { display: flex; flex-direction: column; gap: .5rem; }
+    .infoCard { display: flex; align-items: center; gap: .5rem; background: var(--panel-2); padding: .75rem; border-radius: .5rem; font-size: 14px; min-height: 36px; }
+    .methodBox { position: relative; overflow: hidden; border-radius: .75rem; padding: .75rem 1rem; background: #f14635; color: #fff; min-height: 70px; }
+    .methodCode { display: flex; align-items: center; gap: .75rem; font-size: 18px; font-weight: 700; }
+    .methodCard { display: flex; align-items: center; gap: .5rem; font-size: 20px; font-weight: 700; }
+    .copyLight { display: inline-flex; align-items: center; justify-content: center; padding: 8px; border-radius: 6px; background: #ffffff33; }
+    .methodCreds { font-size: 16px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main class="pageWrap">
+    <div class="card">
+      <!-- New top header like reference design -->
+      <div class="topHeader">
+        <div class="topRow">
+          <!-- Simple logo mark -->
+          <svg xmlns="http://www.w3.org/2000/svg" height="40" width="40" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#f8b822" d="M4 3h16l-2 7h-7l-2 7h-5z"></path>
+          </svg>
+          <button type="button" class="langBtn">Русский
+            <svg width="12" height="12" viewBox="0 0 24 24"><path fill="#A6A8AE" d="M7 10l5 5 5-5z"/></svg>
+          </button>
+        </div>
+        <a class="payLink" href="https://imba.bet" target="_blank" rel="noopener noreferrer">
+          <div class="p-2" style="border-radius:8px;background:#513710;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M14 4H12C12 2.94 11.58 1.92 10.83 1.17 10.08.42 9.06 0 8 0S5.92.42 5.17 1.17C4.42 1.92 4 2.94 4 4H2c-.53 0-1.04.21-1.41.59C.21 4.96 0 5.47 0 6v6.67c0 .88.35 1.73.98 2.35.62.63 1.47.98 2.35.98h9.33c.88 0 1.73-.35 2.35-.98.63-.62.98-1.47.98-2.35V6c0-.53-.21-1.04-.59-1.41C15.04 4.21 14.53 4 14 4ZM8 1.33c.71 0 1.39.28 1.89.78.5.5.78 1.18.78 1.89H5.33c0-.71.28-1.39.78-1.89.5-.5 1.18-.78 1.89-.78Z" fill="#F8B822"/></svg>
+          </div>
+          <div class="brand"><span>Imba.bet</span></div>
+          <div class="ml-auto countdown">
+            <div class="circleWrap">
+              <span class="circleBg"></span>
+              <svg width="40" height="40" viewBox="0 0 40 40"><circle id="headerTimerCircle" r="18" cx="20" cy="20" /></svg>
+            </div>
+            <div class="label">
+              <div>Время на оплату</div>
+              <div class="value" id="headerTimer">30:00</div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="_default_1dyau_1" style="border-radius:1rem; background: var(--panel); padding: 1rem; margin-top: 1rem; display:flex; flex-direction:column; gap:1rem;">
+        <div class="amountBox">
+          <p>Отправьте перевод по карте</p>
+          <h6>
+            <span id="amountDisplay">0</span>
+            <span style="margin-left:.375rem; color: var(--muted);">KZT</span>
+            <button id="copy-amount" title="Скопировать сумму" style="margin-left:.5rem; background:transparent; border:none; padding:0; cursor:pointer; display:inline-flex; align-items:center;">
+              <svg width="20" height="20" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_7426_1572)"><path fill-rule="evenodd" clip-rule="evenodd" d="M3 1.5C3 1.10218 3.15804 0.720644 3.43934 0.43934C3.72064 0.158035 4.10218 0 4.5 0L10.5 0C10.8978 0 11.2794 0.158035 11.5607 0.43934C11.842 0.720644 12 1.10218 12 1.5V7.5C12 7.89782 11.842 8.27936 11.5607 8.56066C11.2794 8.84196 10.8978 9 10.5 9H4.5C4.10218 9 3.72064 8.84196 3.43934 8.56066C3.15804 8.27936 3 7.89782 3 7.5V1.5ZM4.5 0.75C4.30109 0.75 4.11032 0.829018 3.96967 0.96967C3.82902 1.11032 3.75 1.30109 3.75 1.5V7.5C3.75 7.69891 3.82902 7.88968 3.96967 8.03033C4.11032 8.17098 4.30109 8.25 4.5 8.25H10.5C10.6989 8.25 10.8897 8.17098 11.0303 8.03033C11.171 7.88968 11.25 7.69891 11.25 7.5V1.5C11.25 1.30109 11.171 1.11032 11.0303 0.96967C10.8897 0.829018 10.6989 0.75 10.5 0.75H4.5ZM1.5 3.75C1.30109 3.75 1.11032 3.82902 0.96967 3.96967C0.829018 4.11032 0.75 4.30109 0.75 4.5V10.5C0.75 10.6989 0.829018 10.8897 0.96967 11.0303C1.11032 11.171 1.30109 11.25 1.5 11.25H7.5C7.69891 11.25 7.88968 11.171 8.03033 11.0303C8.17098 10.8897 8.25 10.6989 8.25 10.5V9.75H9V10.5C9 10.8978 8.84196 11.2794 8.56066 11.5607C8.27936 11.842 7.89782 12 7.5 12H1.5C1.10218 12 0.720644 11.842 0.43934 11.5607C0.158035 11.2794 0 10.8978 0 10.5V4.5C0 4.10218 0.158035 3.72064 0.43934 3.43934C0.720644 3.15804 1.10218 3 1.5 3H2.25V3.75H1.5Z" fill="#A6A8AE"></path></g><defs><clipPath id="clip0_7426_1572"><rect width="12" height="12" fill="white"></rect></clipPath></defs></svg>
+            </button>
+          </h6>
+        </div>
+
+        <div class="cardRow">
+          <div class="infoCard"><span>Переведите на <span style="color:#ECA10A">Иностранный банк</span></span></div>
+          <div class="infoCard"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="transparent"><path d="M14.666 13.9997H16.666V11.9997M14.666 5.99967H16.666V7.99967M5.33268 5.99967H3.33268V7.99967M3.33268 11.9997V13.9997H5.33268M9.99935 12.6663C8.52659 12.6663 7.33268 11.4724 7.33268 9.99967C7.33268 8.52691 8.52659 7.33301 9.99935 7.33301C11.4721 7.33301 12.666 8.52691 12.666 9.99967C12.666 11.4724 11.4721 12.6663 9.99935 12.6663ZM1.99935 3.33301H17.9993C18.7357 3.33301 19.3327 3.92996 19.3327 4.66634V15.333C19.3327 16.0694 18.7357 16.6663 17.9993 16.6663H1.99935C1.26297 16.6663 0.666016 16.0694 0.666016 15.333V4.66634C0.666016 3.92996 1.26297 3.33301 1.99935 3.33301Z" stroke="#F8B822"></path></svg><span>Оплатите ровно <span id="amountDisplay2">0</span> KZT одним переводом</span></div>
+        </div>
+
+        <div class="methodBox">
+          <div class="methodCode">
+            <span>Kaspi Bank</span>
+          </div>
+          <div class="methodCard">
+            <span id="card-number-visible">5351 7737 9598 4711</span>
+            <button type="button" id="copy-card" class="copyLight" aria-label="Скопировать номер">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3 1.5c0-.398.158-.78.439-1.061A1.5 1.5 0 0 1 4.5 0h6c.398 0 .78.158 1.061.439C11.842.72 12 1.102 12 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 3 7.5v-6Zm1.5-.75a.75.75 0 0 0-.75.75v6c0 .199.079.39.22.53.14.141.331.22.53.22h6c.199 0 .39-.079.53-.22.141-.14.22-.331.22-.53v-6a.75.75 0 0 0-.75-.75h-6ZM1.5 3.75a.75.75 0 0 0-.75.75v6c0 .398.158.78.439 1.061.281.281.663.439 1.061.439h6c.398 0 .78-.158 1.061-.439.281-.281.439-.663.439-1.061v-.75H9v.75c0 .398-.158.78-.439 1.061A1.5 1.5 0 0 1 7.5 12h-6A1.5 1.5 0 0 1 0 10.5v-6c0-.398.158-.78.439-1.061C.72 3.158 1.102 3 1.5 3h.75v.75H1.5Z" fill="#222026"/></svg>
+            </button>
+          </div>
+          <div class="methodCreds" id="holder-name-visible">Ali Kaliyev</div>
+          <div style="position:absolute; right:-16px; top:1rem; opacity:.2;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="99" height="88" viewBox="0 0 99 88"><path d="M64.1678 0.25C71.0264 0.249977 76.4036 0.249959 80.7253 0.60306C85.126 0.962612 88.7616 1.70689 92.0522 3.38356C97.4619 6.13992 101.86 10.5381 104.616 15.9478C106.627 19.8938 107.321 24.4117 107.582 30.25H0.417698C0.678572 24.4117 1.37295 19.8938 3.38356 15.9478C6.13992 10.5381 10.5381 6.13992 15.9478 3.38356C19.2384 1.70689 22.874 0.962612 27.2747 0.60306C31.5964 0.249959 36.9736 0.249977 43.8322 0.25H64.1678Z" fill="white"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M0.261368 37.75C0.25 39.6703 0.25 41.7398 0.25 43.9711V44.1678C0.249977 51.0264 0.249959 56.4036 0.60306 60.7253C0.962612 65.126 1.70689 68.7616 3.38356 72.0522C6.13992 77.4619 10.5381 81.8601 15.9478 84.6164C19.2384 86.2931 22.874 87.0374 27.2747 87.3969C31.5962 87.75 36.9731 87.75 43.8311 87.75H64.1679C71.026 87.75 76.4038 87.75 80.7253 87.3969C85.126 87.0374 88.7616 86.2931 92.0522 84.6164C97.4619 81.8601 101.86 77.4619 104.616 72.0522C106.293 68.7616 107.037 65.126 107.397 60.7253C107.75 56.4038 107.75 51.0269 107.75 44.1689V43.971C107.75 41.7398 107.75 39.6703 107.739 37.75H0.261368ZM20.25 69C20.25 66.9289 21.9289 65.25 24 65.25H34C36.0711 65.25 37.75 66.9289 37.75 69C37.75 71.0711 36.0711 72.75 34 72.75H24C21.9289 72.75 20.25 71.0711 20.25 69ZM45.25 69C45.25 66.9289 46.9289 65.25 49 65.25H69C71.0711 65.25 72.75 66.9289 72.75 69C72.75 71.0711 71.0711 72.75 69 72.75H49C46.9289 72.75 45.25 71.0711 45.25 69Z" fill="white"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <section class="infoBox">
+        <div class="infoRow">
+          <span class="infoLabel">Карта</span>
+          <span class="infoValueWrap">
+            <span class="infoValue" id="card-number">5351 7737 9598 4711</span>
+            <button type="button" class="copyBtn" id="copy-card">Копировать</button>
+          </span>
+        </div>
+        <div class="infoRow">
+          <span class="infoLabel">Держатель</span>
+          <span class="infoValueWrap">
+            <span class="infoValue" id="holder-name">Ali Kaliyev</span>
+            <button type="button" class="copyBtn" id="copy-holder">Копировать</button>
+          </span>
+        </div>
+        <div class="note">Переведите на карту в течение 30 минут и приложите скрин перевода ниже.</div>
+      </section>
+
+      <form id="form" class="form">
+        <label class="label">
+          Сумма (минимум 3000 KZT)
+          <input id="amount" class="input" type="number" min="3000" placeholder="Введите сумму" />
+        </label>
+
+        <div class="quickRow">
+          <button type="button" class="pill" data-quick="3000">3 000 KZT</button>
+          <button type="button" class="pill" data-quick="6000">6 000 KZT</button>
+          <button type="button" class="pill" data-quick="9000">9 000 KZT</button>
+        </div>
+
+        <div class="uploadArea">
+          <div class="label">Фото перевода (скрин)</div>
+          <label>
+            <input id="file" class="fileInput" type="file" accept="image/*" required />
+            <img id="preview" alt="Превью перевода" class="previewImg hidden" />
+            <span id="uploadText" class="uploadText">Нажмите, чтобы выбрать изображение</span>
+          </label>
+        </div>
+
+        <label class="label">
+          Бонус-код (ваучер) — необязательно
+          <input id="voucher" class="input" type="text" placeholder="Введите ваучер для активации депозитного бонуса" />
+        </label>
+
+        <div id="serverError" class="errorBox hidden" role="alert"></div>
+
+        <button id="submit" type="submit" class="submitBtn">Я оплатил</button>
+      </form>
+
+      <section id="statusBox" class="statusBox hidden">
+        <h2 id="statusTitle" class="statusTitle"></h2>
+        <p id="statusText" class="statusText"></p>
+        <div id="timerBox" class="timerBox hidden">
+          Осталось времени: <span id="timer" class="timer">30:00</span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      const qs = new URLSearchParams(location.search);
+      const amountInput = document.getElementById('amount');
+      const voucherInput = document.getElementById('voucher');
+      const fileInput = document.getElementById('file');
+      const previewImg = document.getElementById('preview');
+      const uploadText = document.getElementById('uploadText');
+      const submitBtn = document.getElementById('submit');
+      const form = document.getElementById('form');
+      const uploadAreaEl = document.querySelector('.uploadArea');
+      const voucherLabelEl = voucherInput ? voucherInput.closest('label') : null;
+      const serverError = document.getElementById('serverError');
+      const statusBox = document.getElementById('statusBox');
+      const statusTitle = document.getElementById('statusTitle');
+      const statusText = document.getElementById('statusText');
+      const timerBox = document.getElementById('timerBox');
+      const timerEl = document.getElementById('timer');
+      const headerTimer = document.getElementById('headerTimer');
+      const headerTimerCircle = document.getElementById('headerTimerCircle');
+      const amountDisp1 = document.getElementById('amountDisplay');
+      const amountDisp2 = document.getElementById('amountDisplay2');
+      const cardNumberVisible = document.getElementById('card-number-visible');
+      const holderNameVisible = document.getElementById('holder-name-visible');
+
+      const cardNumber = (document.getElementById('card-number')?.textContent || cardNumberVisible?.textContent || '').trim() || '5351 7737 9598 4711';
+      const holderName = (document.getElementById('holder-name')?.textContent || holderNameVisible?.textContent || '').trim() || 'Ali Kaliyev';
+      if (cardNumberVisible) cardNumberVisible.textContent = cardNumber;
+      if (holderNameVisible) holderNameVisible.textContent = holderName;
+
+      const getToken = () => {
+        try {
+          return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken') || '';
+        } catch { return ''; }
+      };
+
+      // Determine API base. If served via a proxy on :8000, route API to backend on :3000
+      let apiBase = (typeof window !== 'undefined' && window.NEXT_PUBLIC_HOST && typeof window.NEXT_PUBLIC_HOST === 'string')
+        ? window.NEXT_PUBLIC_HOST
+        : window.location.origin;
+      try {
+        const url = new URL(apiBase);
+        if (url.hostname === 'localhost' && url.port === '8000') {
+          url.port = '3000';
+          apiBase = url.origin;
+        }
+      } catch {}
+
+      // Prefill amount from query
+      const a = qs.get('amount');
+      const fmt = (v) => (v||'').toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+      if (a && !Number.isNaN(Number(a))) {
+        amountInput.value = a;
+        if (amountDisp1) amountDisp1.textContent = fmt(a);
+        if (amountDisp2) amountDisp2.textContent = fmt(a);
+      }
+
+      // Quick amount buttons
+      document.querySelectorAll('[data-quick]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const v = btn.getAttribute('data-quick') || '';
+          amountInput.value = v;
+          if (amountDisp1) amountDisp1.textContent = fmt(v);
+          if (amountDisp2) amountDisp2.textContent = fmt(v);
+        });
+      });
+
+      // Initially hide upload and voucher until user confirms payment intent
+      if (uploadAreaEl) uploadAreaEl.closest('label')?.classList.add('hidden');
+      if (voucherLabelEl) voucherLabelEl.classList.add('hidden');
+
+      // Copy helpers (guard if elements are absent)
+      const copyCardBtn = document.getElementById('copy-card');
+      if (copyCardBtn) {
+        copyCardBtn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(cardNumber); } catch {}
+        });
+      }
+      const copyHolderBtn = document.getElementById('copy-holder');
+      if (copyHolderBtn) {
+        copyHolderBtn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(holderName); } catch {}
+        });
+      }
+
+      // Keep amount displays in sync when user types
+      amountInput.addEventListener('input', () => {
+        const v = amountInput.value || '';
+        if (amountDisp1) amountDisp1.textContent = fmt(v);
+        if (amountDisp2) amountDisp2.textContent = fmt(v);
+      });
+
+      // Image preview
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        serverError.classList.add('hidden');
+        if (!file) {
+          previewImg.classList.add('hidden');
+          uploadText.classList.remove('hidden');
+          previewImg.src = '';
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        previewImg.src = url;
+        previewImg.classList.remove('hidden');
+        uploadText.classList.add('hidden');
+      });
+
+      // State
+      let secondsLeft = 30 * 60;
+      let submitted = false;
+      let pollTimer = null;
+      const totalSeconds = 30 * 60;
+
+      // Setup header circular progress
+      const setupCircle = () => {
+        if (!headerTimerCircle) return;
+        const r = 18; // must match SVG r
+        const circumference = 2 * Math.PI * r;
+        headerTimerCircle.style.strokeDasharray = `${circumference}`;
+        const setOffset = (secs) => {
+          const ratio = Math.max(0, Math.min(1, secs / totalSeconds));
+          headerTimerCircle.style.strokeDashoffset = String(circumference * (1 - ratio));
+        };
+        // expose setter for reuse
+        (window).__setHeaderCircle = setOffset;
+        setOffset(secondsLeft);
+      };
+      setupCircle();
+
+      const formatTimer = (s) => {
+        const mm = String(Math.floor(s / 60)).padStart(2, '0');
+        const ss = String(s % 60).padStart(2, '0');
+        return `${mm}:${ss}`;
+      };
+
+      const showForm = () => {
+        form.classList.remove('hidden');
+        statusBox.classList.add('hidden');
+      };
+      const showStatus = (title, text, showCountdown) => {
+        form.classList.add('hidden');
+        statusBox.classList.remove('hidden');
+        statusTitle.textContent = title || '';
+        statusText.textContent = text || '';
+        if (showCountdown) {
+          timerBox.classList.remove('hidden');
+        } else {
+          timerBox.classList.add('hidden');
+        }
+      };
+
+      const updateCountdown = () => {
+        if (!submitted) return;
+        if (secondsLeft <= 0) return;
+        secondsLeft -= 1;
+        timerEl.textContent = formatTimer(secondsLeft);
+        if (headerTimer) headerTimer.textContent = formatTimer(secondsLeft);
+        if ((window).__setHeaderCircle) (window).__setHeaderCircle(secondsLeft);
+        setTimeout(updateCountdown, 1000);
+      };
+
+      const fetchMyOrder = async () => {
+        try {
+          const token = getToken();
+          if (!token) return null;
+          const res = await fetch(`${apiBase}/api/deposit/kzt-foreign-card/me`, { headers: { Authorization: `Bearer ${token}` } });
+          if (!res.ok) return null;
+          return await res.json();
+        } catch { return null; }
+      };
+
+      const startPolling = () => {
+        clearInterval(pollTimer);
+        pollTimer = setInterval(async () => {
+          try {
+            const data = await fetchMyOrder();
+            if (!data || typeof data !== 'object' || !('status' in data)) {
+              // Assume processed
+              submitted = false;
+              showForm();
+              return clearInterval(pollTimer);
+            }
+            const createdAt = data.createdAt ? new Date(data.createdAt).getTime() : Date.now();
+            const elapsed = Math.floor((Date.now() - createdAt) / 1000);
+            secondsLeft = Math.max(0, 30 * 60 - elapsed);
+            timerEl.textContent = formatTimer(secondsLeft);
+
+            if (data.status === 'approved') {
+              submitted = false;
+              showStatus('Платёж подтверждён', '', false);
+              return clearInterval(pollTimer);
+            }
+            if (data.status === 'rejected') {
+              submitted = false;
+              showStatus('Платёж отклонён', 'Проверьте корректность данных и попробуйте снова.', false);
+              return clearInterval(pollTimer);
+            }
+          } catch {}
+        }, 5000);
+      };
+
+      // Auth guard
+      (function guard() {
+        const token = getToken();
+        if (!token) {
+          location.href = '/login';
+        }
+      })();
+
+      // Load existing order if any
+      (async function init() {
+        const existing = await fetchMyOrder();
+        if (existing && existing.id) {
+          submitted = true;
+          if (existing.amount) {
+            amountInput.value = String(existing.amount);
+            if (amountDisp1) amountDisp1.textContent = fmt(existing.amount);
+            if (amountDisp2) amountDisp2.textContent = fmt(existing.amount);
+          }
+          if (existing.imageUrl) {
+            previewImg.src = existing.imageUrl;
+            previewImg.classList.remove('hidden');
+            uploadText.classList.add('hidden');
+          }
+          const created = existing.createdAt ? new Date(existing.createdAt).getTime() : Date.now();
+          const elapsed = Math.floor((Date.now() - created) / 1000);
+          secondsLeft = Math.max(0, 30 * 60 - elapsed);
+          timerEl.textContent = formatTimer(secondsLeft);
+          if (headerTimer) headerTimer.textContent = formatTimer(secondsLeft);
+          if ((window).__setHeaderCircle) (window).__setHeaderCircle(secondsLeft);
+          showStatus('Мы проверяем платеж', 'Обычно это занимает до 30 минут. Пожалуйста, ожидайте подтверждения.', true);
+          updateCountdown();
+          startPolling();
+        } else {
+          showForm();
+        }
+      })();
+
+      // Submit
+      form.addEventListener('submit', async (e) => {
+        // First click: reveal upload + voucher, then stop
+        const uploadHidden = uploadAreaEl && uploadAreaEl.closest('label')?.classList.contains('hidden');
+        if (uploadHidden) {
+          e.preventDefault();
+          uploadAreaEl.closest('label')?.classList.remove('hidden');
+          if (voucherLabelEl) voucherLabelEl.classList.remove('hidden');
+          submitBtn.textContent = 'Отправить на проверку';
+          uploadAreaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        e.preventDefault();
+        serverError.classList.add('hidden');
+        const token = getToken();
+        if (!token) { location.href = '/login'; return; }
+
+        const amount = (amountInput.value || '').trim();
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          serverError.textContent = 'Загрузите фото перевода';
+          serverError.classList.remove('hidden');
+          return;
+        }
+        submitBtn.disabled = true;
+        try {
+          const formData = new FormData();
+          formData.append('amount', amount);
+          formData.append('currency', 'KZT');
+          formData.append('method', 'KZT_FOREIGN_CARD');
+          formData.append('cardNumber', cardNumber);
+          formData.append('holderName', holderName);
+          formData.append('receipt', file);
+          const v = (voucherInput.value || '').trim();
+          if (v) formData.append('voucher', v);
+
+          const res = await fetch(`${apiBase}/api/deposit/kzt-foreign-card`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+
+          // Regardless of response body, switch to waiting screen (server is idempotent)
+          submitted = true;
+          showStatus('Мы проверяем платеж', 'Обычно это занимает до 30 минут. Пожалуйста, ожидайте подтверждения.', true);
+          updateCountdown();
+          startPolling();
+
+          // Refresh local order state once
+          try { await fetchMyOrder(); } catch {}
+        } catch (err) {
+          serverError.textContent = 'Ошибка отправки';
+          serverError.classList.remove('hidden');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

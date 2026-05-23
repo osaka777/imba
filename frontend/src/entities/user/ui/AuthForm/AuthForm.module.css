@@ -1,0 +1,220 @@
+.AuthForm {
+  border-radius: 0;
+  padding: 22px 22px 24px;
+  background-color: var(--white);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: #374151;
+}
+
+.heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+  padding-right: 36px;
+}
+
+.fieldIcon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.input {
+  background: transparent !important;
+}
+
+.checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.authCheckbox {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.authCheckboxBox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  margin-top: 2px;
+  padding: 0 !important;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--gray-10-transparent) !important;
+  flex-shrink: 0;
+}
+
+.authCheckboxBox_checked {
+  padding: 4px !important;
+  background: var(--light-blue-gradient) !important;
+}
+
+.authCheckboxIcon {
+  width: 8px;
+  height: 7px;
+}
+
+.authCheckboxIcon path {
+  fill: #ffffff !important;
+}
+
+.checkboxText {
+  display: block !important;
+  flex: 1;
+  min-width: 0;
+  color: #374151 !important;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: normal;
+  word-break: break-word;
+}
+
+.checkboxLink {
+  display: inline;
+  color: #2563eb !important;
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-decoration: none;
+  white-space: normal;
+}
+
+.checkboxLink:hover {
+  text-decoration: underline;
+}
+
+.authButton {
+  position: relative;
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-height: 48px;
+  background: var(--green-gradient);
+  transition: 0.2s;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+@media screen and (max-width: 768px) {
+  .AuthForm {
+    padding: 18px 16px 20px;
+    gap: 14px;
+  }
+
+  .heading {
+    font-size: 19px;
+    padding-right: 38px;
+  }
+
+  .form {
+    gap: 12px;
+  }
+
+  .checkboxes {
+    gap: 14px;
+  }
+
+  .authCheckbox {
+    gap: 10px;
+  }
+
+  .authCheckboxBox {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  .checkboxText {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .authButton {
+    min-height: 46px;
+    padding: 12px 15px;
+    font-size: 14px;
+    border-radius: 11px;
+  }
+
+  .changeAuthMethod {
+    padding-top: 2px;
+  }
+
+  .changeAuthMethodText {
+    font-size: 12px;
+  }
+
+  .changeAuthMethodButton {
+    font-size: 12px;
+  }
+}
+
+.authButton:disabled {
+  filter: grayscale(1);
+}
+
+.authButton_success {
+  background: var(--light-blue-gradient);
+}
+
+.loading {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  border-radius: 4px;
+
+  padding: 2px;
+
+  background-color: var(--black);
+
+  width: 16px;
+  height: 16px;
+}
+
+.error {
+  color: var(--yellow-00);
+  font-size: 11px;
+  text-align: center;
+}
+
+.changeAuthMethod {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.changeAuthMethodText {
+  color: #6b7280 !important;
+  font-size: 12px;
+  letter-spacing: normal;
+}
+
+.changeAuthMethodButton {
+  color: #2563eb !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+/* Toast стили перенесены в глобальные стили */

@@ -1,0 +1,63 @@
+.closeBtn {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #374151 !important;
+  transition: color 0.15s ease;
+}
+
+.closeBtn svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #374151 !important;
+  stroke: #374151 !important;
+}
+
+.closeBtn:hover {
+  color: #111827 !important;
+}
+
+.closeBtn:hover svg {
+  color: #111827 !important;
+  stroke: #111827 !important;
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.45);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .closeBtn {
+    right: 10px;
+    top: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .closeBtn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+  }
+
+  .closeBtn:active {
+    background: #e5e7eb;
+  }
+}

@@ -1,0 +1,79 @@
+.CrocoPayForm {
+  padding: 32px 12px;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@keyframes depositShimmer {
+  0% { background-position: 200% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@media screen and (max-width: 425px) {
+  .CrocoPayForm {
+    padding: 12px;
+  }
+}
+.heading {
+  color: var(--black);
+  font-weight: 500;
+  font-size: 24px;
+}
+.input {
+}
+.quickSetAmount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.quickSetAmountButton {
+  border-radius: 8px;
+
+  padding: 4px 8px;
+
+  background-color: var(--gray-20-transparent);
+
+  display: flex;
+  align-items: center;
+
+  color: var(--black-20);
+  font-size: 12px;
+}
+.error {
+  color: var(--red-10);
+}
+.submit {
+  position: relative;
+  border-radius: 10px;
+  padding: 12px 8px;
+  background: linear-gradient(90deg, #22c55e, #16a34a, #22c55e);
+  background-size: 200% 100%;
+  animation: depositShimmer 2.2s linear infinite;
+  width: 100%;
+
+  font-size: 18px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+}
+.loader {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+
+  border-radius: 4px;
+
+  padding: 4px;
+
+  background-color: var(--blue-00);
+}

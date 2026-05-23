@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="21" viewBox="0 0 25 21"
+    aria-hidden="true" role="img">
+    <defs>
+        <linearGradient id="telegram_svg__a" x1="66%" x2="85.1%" y1="43.7%" y2="80.2%">
+            <stop offset="0%" stop-color="#EFF7FC"></stop>
+            <stop offset="100%" stop-color="#FFF"></stop>
+        </linearGradient>
+    </defs>
+    <g fill="none" fill-rule="evenodd">
+        <g fill-rule="nonzero">
+            <g>
+                <g>
+                    <g>
+                        <path fill="#C8DAEA"
+                            d="M9.554 19.148c-.709 0-.588-.267-.833-.942l-2.082-6.852 16.028-9.509"></path>
+                        <path fill="#A9C9DD"
+                            d="M9.554 19.148c.546 0 .787-.25 1.092-.546l2.914-2.834-3.635-2.192"></path>
+                        <path fill="url(#telegram_svg__a)"
+                            d="M9.311 13.156l8.808 6.507c1.005.555 1.73.267 1.98-.933l3.586-16.895c.367-1.472-.56-2.14-1.522-1.703L1.11 8.25C-.327 8.826-.32 9.628.848 9.985l5.402 1.687L18.758 3.78c.59-.359 1.133-.166.688.229"
+                            transform="translate(.614 .421)"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

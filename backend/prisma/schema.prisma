@@ -1,0 +1,710 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Currency {
+  isoCode             String                @id
+  name                String
+  Balance             Balance[]
+  Bet                 Bet[]
+  BonusBalance        BonusBalance[]
+  BonusBet            BonusBet[]
+  BonusHistory        BonusHistory[]
+  Deposit             Deposit[]
+  ExpressBet          ExpressBet[]
+  Operation           Operation[]
+  PartnerBonusAccount PartnerBonusAccount[]
+  Promo               Promo[]
+  WithdrawRequest     WithdrawRequest[]
+}
+
+model Balance {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  currencyCode String
+  amount       Decimal  @default(0) @db.Decimal(16, 2)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  currency     Currency @relation(fields: [currencyCode], references: [isoCode])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, currencyCode])
+  @@index([userId])
+  @@index([currencyCode])
+}
+
+model BonusBalance {
+  id                      Int      @id @default(autoincrement())
+  userId                  Int
+  currencyCode            String
+  amount                  Decimal  @default(0)
+  totalBonusReceived      Decimal  @default(0)
+  totalWagered            Decimal  @default(0)
+  requiredWager           Decimal  @default(0)
+  minOdds                 Decimal  @default(1.8)
+  consecutiveWins         Int      @default(0)
+  requiredConsecutiveWins Int      @default(3)
+  currentBetAmount        Decimal  @default(0)
+  isActive                Boolean  @default(true)
+  promoId                 Int?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  totalTokens             Int      @default(0)
+  remainingTokens         Int      @default(0)
+  tokensPerBet            Int      @default(1)
+  isTokenBased            Boolean  @default(false)
+  currency                Currency @relation(fields: [currencyCode], references: [isoCode])
+  promo                   Promo?   @relation("BonusBalancePromo", fields: [promoId], references: [id])
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currencyCode])
+  @@index([userId])
+  @@index([currencyCode])
+  @@index([promoId])
+  @@index([isActive])
+}
+
+model User {
+  id               Int               @id @default(autoincrement())
+  email            String            @unique
+  password         String?
+  affiliatedById   Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  affilator        Affilator?        @relation("affilatorData")
+  balances         Balance[]
+  bets             Bet[]
+  bonusBalances    BonusBalance[]
+  bonusBets        BonusBet[]
+  bonusHistories   BonusHistory[]
+  deposits         Deposit[]
+  expressBets      ExpressBet[]
+  operations       Operation[]
+  promoOnUsers     PromoOnUsers[]
+  affiliatedBy     Affilator?        @relation("affilatedBy", fields: [affiliatedById], references: [userId])
+  withdrawRequests WithdrawRequest[]
+
+  @@index([email])
+}
+
+model Affilator {
+  userId            Int           @id
+  type              AffilatorType
+  meta              Json?
+  trafficSource     String        @unique
+  uid               String        @unique @default(uuid())
+  percent           Decimal       @default(50) @db.Decimal(16, 2)
+  affilatorsPercent Decimal       @default(10) @db.Decimal(16, 2)
+  user              User          @relation("affilatorData", fields: [userId], references: [id])
+  users             User[]        @relation("affilatedBy")
+
+  @@index([userId])
+}
+
+model Game {
+  eventId       String        @id
+  eventName     String
+  leagueName    String
+  sport         String
+  team1         String
+  team2         String
+  score         String
+  status        GameStatus    @default(PREMATCH)
+  meta          Json?
+  priority      Int?          @default(0)
+  subcategoryId Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  Bet           Bet[]
+  BonusBet      BonusBet[]
+  EventMarkets  EventMarkets?
+  subcategory   Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  GameMarkets   GameMarkets?
+  SubGames      SubGame[]
+
+  @@index([eventId])
+  @@index([sport])
+  @@index([status])
+  @@index([createdAt])
+  @@index([sport, status])
+  @@index([subcategoryId])
+  @@index([status, sport, subcategoryId])
+  @@index([priority, createdAt])
+  @@index([createdAt, updatedAt])
+  @@index([sport, priority, status])
+  @@index([sport, leagueName, status])
+  @@index([status, priority, createdAt])
+  @@index([sport, priority, createdAt])
+}
+
+model GameMarkets {
+  eventId   String   @id
+  markets   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  game      Game     @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+
+  @@index([updatedAt])
+}
+
+model Subcategory {
+  id         Int      @id @default(autoincrement())
+  code       String
+  name       String
+  sport      String
+  type       String?
+  flag       String?
+  isActive   Boolean  @default(true)
+  isPriority Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  games      Game[]
+
+  @@unique([code, sport])
+  @@index([sport])
+  @@index([isActive])
+  @@index([isPriority])
+  @@index([sport, isActive])
+  @@index([sport, isPriority])
+  @@index([sport, type, isActive])
+  @@index([code])
+}
+
+model ExpressBet {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  amount         Decimal   @db.Decimal(16, 2)
+  cf             Decimal   @db.Decimal(16, 2)
+  currencyCode   String
+  status         BetStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  couponId       Int?
+  betApiStatus   Int       @default(1)
+  betApiResponse Json?
+  betCode        String?
+  bets           Bet[]
+  currency       Currency  @relation(fields: [currencyCode], references: [isoCode])
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@index([id])
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([couponId])
+  @@index([betCode])
+  @@index([betApiStatus])
+}
+
+model Bet {
+  id                 Int         @id @default(autoincrement())
+  userId             Int
+  gameId             String
+  betType            String
+  betVariant         BetVariants
+  amount             Decimal     @db.Decimal(16, 2)
+  cf                 Decimal     @db.Decimal(16, 2)
+  currencyCode       String
+  status             BetStatus   @default(PENDING)
+  expressBetId       Int?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  betInfo            String?
+  couponId           Int?
+  ocId               Int?
+  gameIdExternal     Int?
+  betApiStatus       Int         @default(1)
+  betApiResponse     Json?
+  betCode            String?
+  amountOut          Decimal?    @db.Decimal(16, 2)
+  betApiExtStatus    Int?
+  lastExtStatus      Int?
+  lastStatus         Int?
+  lifecycleState     BetStatus   @default(PENDING)
+  subGameId          Int?
+  subGameName        String?
+  processedCallbacks String[]    @default([])
+  currency           Currency    @relation(fields: [currencyCode], references: [isoCode])
+  ExpressBet         ExpressBet? @relation(fields: [expressBetId], references: [id])
+  game               Game        @relation(fields: [gameId], references: [eventId], onUpdate: Restrict)
+  subGame            SubGame?    @relation(fields: [subGameId], references: [id])
+  user               User        @relation(fields: [userId], references: [id])
+
+  @@index([id])
+  @@index([gameId])
+  @@index([userId])
+  @@index([status])
+  @@index([gameId, betType])
+  @@index([gameId, betType, status])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([expressBetId])
+  @@index([couponId])
+  @@index([betApiStatus])
+  @@index([ocId])
+  @@index([gameIdExternal])
+  @@index([subGameId])
+  @@index([userId, createdAt])
+  @@index([betApiStatus, updatedAt])
+  @@index([status, betApiStatus])
+  @@index([gameId, userId, status])
+  @@index([currencyCode, status, createdAt])
+  @@index([gameId, subGameId, status])
+}
+
+model Promo {
+  id             Int            @id @default(autoincrement())
+  code           String         @unique
+  validUntil     DateTime
+  available      Int            @default(1)
+  type           PromoType
+  value          Json
+  partnerId      String?
+  createdAt      DateTime       @default(now())
+  currencyCode   String?
+  bonusBalances  BonusBalance[] @relation("BonusBalancePromo")
+  bonusBets      BonusBet[]
+  bonusHistories BonusHistory[]
+  currency       Currency?      @relation(fields: [currencyCode], references: [isoCode])
+  promoOnUsers   PromoOnUsers[]
+
+  @@index([validUntil])
+  @@index([available])
+  @@index([type])
+  @@index([createdAt])
+  @@index([partnerId])
+  @@index([currencyCode])
+}
+
+model PromoOnUsers {
+  promoId Int
+  userId  Int
+  status  PromoStatus
+  promo   Promo       @relation(fields: [promoId], references: [id])
+  user    User        @relation(fields: [userId], references: [id])
+
+  @@id([promoId, userId])
+  @@index([status])
+  @@index([userId])
+  @@index([promoId, status])
+}
+
+model Operation {
+  id           Int             @id @default(autoincrement())
+  userId       Int
+  source       OperationSource
+  status       OperationStatus
+  type         OperationType
+  amount       Decimal         @db.Decimal(16, 2)
+  currencyCode String
+  meta         Json?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deposit      Deposit?
+  currency     Currency        @relation(fields: [currencyCode], references: [isoCode])
+  user         User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([userId, status])
+  @@index([userId, type])
+  @@index([status, createdAt])
+  @@index([source])
+  @@index([userId, type, status])
+  @@index([source, status, createdAt])
+  @@index([currencyCode, status])
+  @@index([type, createdAt])
+}
+
+model WithdrawRequest {
+  id           Int             @id @default(autoincrement())
+  userId       Int
+  status       OperationStatus
+  type         String
+  bank         String?
+  wallet       String
+  amount       Decimal         @db.Decimal(16, 2)
+  currencyCode String
+  reason       String?
+  meta         Json?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  currency     Currency        @relation(fields: [currencyCode], references: [isoCode])
+  user         User            @relation(fields: [userId], references: [id])
+}
+
+model Deposit {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  externalId    String        @unique
+  paymentSystem String
+  amount        Decimal       @db.Decimal(16, 2)
+  currencyCode  String
+  status        DepositStatus @default(PENDING)
+  operationId   Int?          @unique
+  paymentUrl    String?
+  callbackData  Json?
+  meta          Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  currency      Currency      @relation(fields: [currencyCode], references: [isoCode])
+  operation     Operation?    @relation(fields: [operationId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([externalId])
+  @@index([status])
+  @@index([paymentSystem])
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model GreengoRequests {
+  id          Int      @id @default(autoincrement())
+  orderId     String
+  operationId Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GameBetApi {
+  eventId               String         @id
+  sgame_id              String
+  stat_id               String
+  ext_game_id           Int?
+  game_id               Int
+  game_mid              Int
+  game_num              Int
+  game_dop_name         String
+  game_dop_name_langs   Json?
+  game_start            Int
+  game_oc_counter       Int
+  country_id            Int
+  country_name          String
+  tournament_id         Int
+  tournament_name       String
+  tournament_name_langs Json?
+  opp_1_name            String
+  opp_1_name_langs      Json?
+  opp_2_name            String
+  opp_2_name_langs      Json?
+  opp_1_id              Int
+  opp_1_ids             Int[]
+  opp_2_id              Int
+  opp_2_ids             Int[]
+  opp_1_icon            String
+  opp_2_icon            String
+  sport_name            String
+  sport_name_langs      Json?
+  sport_id              Int
+  score_full            String
+  score_extra           String
+  score_period          String
+  period_name           String
+  stat_list             Json
+  stat_list_extra       Json?
+  timer                 Int
+  extra_time            String
+  pitch                 String?
+  game_plan             String?
+  finale                Boolean
+  game_desk             String
+  game_oc_list          Json
+  game_oc_list_id       Int?
+  type                  GameBetApiType
+  status                GameStatus
+  priority              Int?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  eventName             String
+  leagueName            String
+  sport                 String
+}
+
+model BonusBet {
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  gameId       String
+  betType      String
+  betVariant   BetVariants
+  realAmount   Decimal     @default(0) @db.Decimal(16, 2)
+  bonusAmount  Decimal     @default(0) @db.Decimal(16, 2)
+  cf           Decimal     @db.Decimal(16, 2)
+  currencyCode String
+  status       BetStatus   @default(PENDING)
+  promoId      Int?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  currency     Currency    @relation(fields: [currencyCode], references: [isoCode])
+  game         Game        @relation(fields: [gameId], references: [eventId], onUpdate: Restrict)
+  promo        Promo?      @relation(fields: [promoId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@index([id])
+  @@index([gameId])
+  @@index([userId])
+  @@index([status])
+  @@index([gameId, betType])
+  @@index([gameId, betType, status])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([promoId])
+}
+
+model PartnerBonusAccount {
+  id                  Int      @id @default(autoincrement())
+  partnerId           String
+  currencyCode        String
+  totalBonusGiven     Decimal  @default(0) @db.Decimal(16, 2)
+  totalBonusWagered   Decimal  @default(0) @db.Decimal(16, 2)
+  totalBonusWithdrawn Decimal  @default(0) @db.Decimal(16, 2)
+  commissionEarned    Decimal  @default(0) @db.Decimal(16, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  currency            Currency @relation(fields: [currencyCode], references: [isoCode])
+
+  @@unique([partnerId, currencyCode])
+  @@index([partnerId])
+  @@index([currencyCode])
+}
+
+model BonusHistory {
+  id                      Int         @id @default(autoincrement())
+  userId                  Int
+  promoId                 Int
+  promoCode               String
+  promoType               PromoType
+  promoValue              Json
+  status                  BonusStatus @default(PENDING)
+  appliedAt               DateTime    @default(now())
+  expiredAt               DateTime?
+  completedAt             DateTime?
+  totalBonusReceived      Decimal     @default(0) @db.Decimal(16, 2)
+  totalWagered            Decimal     @default(0) @db.Decimal(16, 2)
+  requiredWager           Decimal     @default(0) @db.Decimal(16, 2)
+  consecutiveWins         Int         @default(0)
+  requiredConsecutiveWins Int         @default(0)
+  totalTokens             Int         @default(0)
+  remainingTokens         Int         @default(0)
+  tokensPerBet            Int         @default(1)
+  isTokenBased            Boolean     @default(false)
+  currencyCode            String
+  notes                   String?
+  currency                Currency    @relation(fields: [currencyCode], references: [isoCode])
+  promo                   Promo       @relation(fields: [promoId], references: [id])
+  user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([appliedAt])
+  @@index([userId, status])
+  @@index([promoId])
+  @@index([currencyCode])
+  @@index([status, appliedAt])
+  @@index([userId, promoType, status])
+  @@index([promoId, status, appliedAt])
+  @@index([currencyCode, status, appliedAt])
+}
+
+model EventMarkets {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @unique
+  markets   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  game      Game     @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+
+  @@index([updatedAt])
+}
+
+model SubGame {
+  id            Int       @id @default(autoincrement())
+  parentEventId String
+  subEventId    String    @unique
+  gameId        Int
+  gameNum       Int
+  gameName      String
+  gameStart     Int?
+  status        String?
+  score         String?
+  markets       Json?
+  meta          Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  eventName     String?
+  leagueName    String?
+  priority      Int?      @default(0)
+  sport         String?
+  startTime     DateTime?
+  team1         String?
+  team2         String?
+  bets          Bet[]
+  parentGame    Game      @relation(fields: [parentEventId], references: [eventId], onDelete: Cascade)
+
+  @@index([parentEventId])
+  @@index([subEventId])
+  @@index([gameId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([sport])
+  @@index([leagueName])
+  @@index([status])
+}
+
+model Banner {
+  id              Int      @id @default(autoincrement())
+  title           String?
+  description     String?
+  imageUrl        String?
+  linkUrl         String?
+  isActive        Boolean  @default(true)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  descColor       String   @default("#ffffff")
+  descSize        Int      @default(13)
+  imagePath       String?
+  textOffsetX     Int      @default(0)
+  textOffsetY     Int      @default(0)
+  textPosition    String   @default("center")
+  textShadow      Boolean  @default(true)
+  textVerticalPos String   @default("center")
+  titleColor      String   @default("#ffffff")
+  titleSize       Int      @default(28)
+  buttonPosXPct   Int?
+  buttonPosYPct   Int?
+  buttonText      String?
+  descPosXPct     Int?
+  descPosYPct     Int?
+  showButton      Boolean  @default(false)
+  showDesc        Boolean  @default(true)
+  showTitle       Boolean  @default(true)
+  titlePosXPct    Int?
+  titlePosYPct    Int?
+
+  @@index([isActive, order])
+}
+
+model Slide {
+  id              Int      @id @default(autoincrement())
+  title           String?
+  description     String?
+  imageUrl        String?
+  imagePath       String?
+  linkUrl         String?
+  isActive        Boolean  @default(true)
+  order           Int      @default(0)
+  textPosition    String   @default("center")
+  textVerticalPos String   @default("center")
+  textOffsetX     Int      @default(0)
+  textOffsetY     Int      @default(0)
+  titlePosXPct    Int?
+  titlePosYPct    Int?
+  descPosXPct     Int?
+  descPosYPct     Int?
+  showTitle       Boolean  @default(true)
+  showDesc        Boolean  @default(true)
+  showButton      Boolean  @default(false)
+  buttonText      String?
+  buttonPosXPct   Int?
+  buttonPosYPct   Int?
+  titleColor      String   @default("#ffffff")
+  titleSize       Int      @default(28)
+  descColor       String   @default("#ffffff")
+  descSize        Int      @default(13)
+  textShadow      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive, order])
+  @@map("slide")
+}
+
+enum GameStatus {
+  PREMATCH
+  STARTING
+  IN_PROGRESS
+  FINISHED
+  CANCELED
+}
+
+enum PromoStatus {
+  APPLIED
+  EXPIRED
+}
+
+enum PromoType {
+  DIRECT_BONUS
+  DEPOSIT_BONUS
+  VOUCHER
+}
+
+enum BetVariants {
+  ORDINAR
+  EXPRESS
+}
+
+enum OperationType {
+  INCOME
+  OUTCOME
+}
+
+enum AffilatorType {
+  REVSHARE
+  CPA
+}
+
+enum OperationStatus {
+  WAITING
+  SUCCESS
+  FAILED
+}
+
+enum BetStatus {
+  PENDING
+  WIN
+  LOSE
+  RETURN
+  CALCULATED
+  RECALCULATED
+  CLOSED
+}
+
+enum OperationSource {
+  BET
+  BONUS_BET
+  BONUS_COMPLETE
+  PAYMENT_SYSTEM
+  PROMO
+  AFFILIATE
+  AFFILIATE_BONUS
+}
+
+enum GameBetApiType {
+  LIVE
+  LINE
+}
+
+enum BonusStatus {
+  PENDING
+  WIN
+  LOSE
+  EXPIRED
+  CANCELLED
+}
+
+enum DepositStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+}

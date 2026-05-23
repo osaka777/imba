@@ -1,0 +1,679 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import getSymbolFromCurrency from "currency-symbol-map";
+import { useEffect, useState, useMemo } from "react";
+import { toast } from "react-toastify";
+import { useLocalStorage, useReadLocalStorage } from "usehooks-ts";
+
+import { useCurrency, useGamesBettingContext } from "~/app/providers";
+import { getUser } from "~/entities/user/api";
+import { TrashIcon } from "~/shared/assets";
+import { cn } from "~/shared/lib";
+import { Button, Checkbox, Input } from "~/shared/ui";
+import { useAccountType } from "~/shared/model/useAccountType";
+import type { User } from "~/shared/types";
+
+import { createBet } from "../../api";
+import { Rate, Rates } from "../../types";
+import { BetList } from "./BetList";
+import styles from "./BetTab.module.css";
+
+type BetTabProps = {
+  classNameContainer?: string;
+  setIsOpen: (value: React.SetStateAction<boolean | undefined>) => void;
+};
+type Variant = "express" | "ordinar" | "series";
+
+export const BetTab: React.FC<BetTabProps> = ({
+  classNameContainer,
+  setIsOpen,
+}) => {
+  const { currency } = useCurrency();
+  const { isAuth } = useGamesBettingContext();
+  const { selectedAccountType } = useAccountType();
+  const queryClient = useQueryClient();
+  const [rates, setRates] = useLocalStorage<Rates>("rates", [], {
+    initializeWithValue: false,
+  });
+
+  const [variant, setVariant] = useState<Variant>("ordinar");
+  const [agree, setAgree] = useState<boolean>(true);
+  const [sum, setSum] = useState("");
+  const [kf, setKf] = useState(0);
+  const [isCreatingBet, setIsCreatingBet] = useState(false);
+
+  const { data, refetch } = useQuery({
+    queryFn: getUser,
+    queryKey: ["user"],
+  });
+
+  const userData = data as User | null;
+
+  useEffect(() => {
+    if (rates.length < 2) {
+      setVariant("ordinar");
+    } else if (rates.length > 1) {
+      setVariant("express");
+    }
+    // console.log(rates);
+    setKf(
+      rates
+        .map((rate) => +rate.coef)
+        .reduce((partialProduct, a) => partialProduct * a, 1),
+    );
+  }, [rates]);
+
+  // Автоматически корректируем сумму при переключении на бонусный счет
+  useEffect(() => {
+    if (selectedAccountType === 'bonus' && sum) {
+      const bonusBalance = userData?.bonusBalances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      );
+      
+      if (bonusBalance?.isTokenBased) {
+        const currentSum = parseFloat(sum);
+        const maxTokens = bonusBalance.tokensPerBet;
+        
+        if (currentSum > maxTokens) {
+          setSum(maxTokens.toString());
+          toast(`⚠️ Сумма скорректирована до ${maxTokens} жетона`, { position: "top-right" });
+        }
+      }
+    }
+  }, [selectedAccountType, userData, currency, sum]);
+
+  // Проверка наличия игр в базе данных и удаление ставок с несуществующими eventId
+  useEffect(() => {
+    const validateRates = async () => {
+      if (rates.length === 0) return;
+
+      try {
+        const eventIds = rates.map(rate => rate.eventId);
+        
+        // Используем правильный формат для отправки массива параметров
+        const params = new URLSearchParams();
+        eventIds.forEach(id => params.append('ids[]', id));
+        
+        // Используем полный URL для backend API
+        const API_URL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000';
+        const url = `${API_URL}/api/gamesByIds?${params.toString()}`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          console.error(`API error: ${response.status} - ${response.statusText}`);
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get("content-type");
+        
+        if (!contentType || !contentType.includes("application/json")) {
+          const responseText = await response.text();
+          
+          // Если получаем HTML, это означает, что backend не отвечает
+          if (responseText.includes('<!DOCTYPE html>')) {
+            console.warn("Backend seems to be down, skipping rate validation");
+            return; // Просто выходим, не показываем ошибку
+          }
+          
+          throw new Error("API did not return JSON");
+        }
+        
+        const games = await response.json();
+        
+        const validEventIds = games.map((game: { eventId: string }) => game.eventId);
+        const invalidRates = rates.filter(rate => !validEventIds.includes(rate.eventId));
+        
+        // Проверяем актуальность коэффициентов
+        const outdatedRates = [];
+        const updatedRates = [...rates];
+        
+        for (let i = 0; i < updatedRates.length; i++) {
+          const rate = updatedRates[i];
+          const game = games.find((g: any) => g.eventId === rate.eventId);
+          
+          if (game && game.groupedMarkets) {
+            // Ищем актуальный коэффициент для этого маркета
+            let currentCf = null;
+            for (const [groupKey, markets] of Object.entries(game.groupedMarkets)) {
+              if (Array.isArray(markets)) {
+                const market = markets.find((m: any) => m.market === rate.market);
+                if (market) {
+                  currentCf = market.cf;
+                  break;
+                }
+              }
+            }
+            
+            // Если коэффициент изменился более чем на 0.01, считаем ставку устаревшей
+            if (currentCf !== null) {
+              const cfDiff = Math.abs(Number(currentCf) - Number(rate.coef));
+              if (cfDiff >= 0.01) {
+                outdatedRates.push(rate);
+                // Обновляем коэффициент в ставке
+                updatedRates[i] = {
+                  ...rate,
+                  coef: String(currentCf)
+                };
+              }
+            }
+          }
+        }
+        
+        if (invalidRates.length > 0) {
+          setRates(prevRates => prevRates.filter(rate => validEventIds.includes(rate.eventId)));
+          toast.info("Некоторые ставки были удалены, так как игры больше не существуют");
+        }
+        
+        if (outdatedRates.length > 0) {
+          setRates(updatedRates);
+          toast.info(`Коэффициенты в ${outdatedRates.length} ставках были обновлены`);
+        }
+      } catch (error: any) {
+        console.error("Error validating rates:", error);
+        // Не показываем toast для ошибок валидации, чтобы не спамить пользователя
+        // toast.error("Ошибка проверки ставок: " + (error?.message || "Неизвестная ошибка"));
+      }
+    };
+
+    validateRates();
+    // Увеличиваем интервал до 2 минут, чтобы не спамить запросами
+    const intervalId = setInterval(validateRates, 120000);
+    return () => clearInterval(intervalId);
+  }, [rates.length]); // Зависимость от длины, чтобы не создавать лишние интервалы
+
+  const inputOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newSum = event.target.value;
+    
+    // Для жетонных бонусов ограничиваем ввод
+    if (selectedAccountType === 'bonus') {
+      const bonusBalance = userData?.bonusBalances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      );
+      
+      if (bonusBalance?.isTokenBased) {
+        // Для жетонных бонусов можно вводить только количество жетонов за ставку
+        const maxTokens = bonusBalance.tokensPerBet;
+        const numericValue = parseFloat(newSum);
+        
+        if (isNaN(numericValue) || numericValue < 0) {
+          setSum('0');
+          return;
+        }
+        
+        if (numericValue > maxTokens) {
+          setSum(maxTokens.toString());
+          toast(`⚠️ Максимальная ставка для жетонного бонуса: ${maxTokens} жетон`, { position: "top-right" });
+          return;
+        }
+      }
+    }
+    
+    // Обычная валидация для десятичных чисел
+    if (newSum.includes(".")) {
+      const strAfterDot = newSum.split(".", 2)[1];
+      if (strAfterDot.length <= 2) {
+        setSum(newSum);
+      } else {
+        const strBeforeDot = newSum.split(".", 1)[0];
+        setSum(strBeforeDot + "." + strAfterDot[0] + strAfterDot[1]);
+      }
+    } else {
+      setSum(newSum);
+    }
+  };
+  const checkBoxOnChangeHandler = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setVariant(event.target.value as Variant);
+  };
+
+  const agreeOnChangeHandler = () => {
+    setAgree((prev) => !prev);
+  };
+
+  const trashButtonOnClickHandler = () => {
+    setRates([]);
+  };
+  const deleteButtonOnClickHandler = (item: Rate) => {
+    const updatedRates = rates.filter((rate) => rate.coef !== item.coef);
+    return setRates(updatedRates);
+  };
+
+  const isAllOpen =
+    rates.filter((rate) => rate.isOpen === false || rate.coef === `--`)
+      .length === 0;
+
+  const createBetOnClick = async () => {
+    // Защита от множественных кликов
+    if (isCreatingBet) return;
+    
+    if (!rates.length) return;
+    if (!isAllOpen) {
+      return toast("⚠️ Нельзя поставить на закрытое событие", {
+        position: "top-right",
+      });
+    }
+    if (!isAuth) {
+      return toast("⚠️ Войдите или зарегистрируйтесь для создания ставки", {
+        position: "top-right",
+      });
+    }
+    if (!agree) {
+      return toast("⚠️ Подтвердите соглашение для создания ставки", {
+        position: "top-right",
+      });
+    }
+    if (!currency) return;
+
+    // Проверяем баланс в зависимости от выбранного типа счета
+    if (selectedAccountType === 'main') {
+      const userBalance = userData?.balances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      )?.amount;
+      if (userBalance == null || Number(userBalance) < Number(sum)) {
+        toast("⚠️ На вашем основном счету недостаточно средств", { position: "top-right" });
+        refetch();
+        return;
+      }
+    } else if (selectedAccountType === 'bonus') {
+      const bonusBalance = userData?.bonusBalances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      );
+      
+      if (!bonusBalance) {
+        toast("⚠️ У вас нет активного бонусного счета", { position: "top-right" });
+        refetch();
+        return;
+      }
+
+      // Проверяем минимальный коэффициент для бонусных ставок
+      const minOdds = Number(bonusBalance.minOdds) || 1.8;
+      const hasLowOdds = rates.some(rate => Number(rate.coef) < minOdds);
+      
+      if (hasLowOdds) {
+        toast(`⚠️ Для бонусных ставок минимальный коэффициент: ${minOdds}`, { position: "top-right" });
+        return;
+      }
+
+      if (bonusBalance.isTokenBased) {
+        // Для жетонных бонусов проверяем количество жетонов
+        if (bonusBalance.remainingTokens < bonusBalance.tokensPerBet) {
+          toast("⚠️ Недостаточно жетонов для ставки", { position: "top-right" });
+          refetch();
+          return;
+        }
+        // Для жетонных бонусов сумма ставки должна быть равна 1 жетону
+        if (Number(sum) !== bonusBalance.tokensPerBet) {
+          toast(`⚠️ Для жетонного бонуса ставка должна быть ${bonusBalance.tokensPerBet} ${currency}`, { position: "top-right" });
+          return;
+        }
+      } else {
+        // Для обычных бонусов проверяем сумму
+        if (Number(bonusBalance.amount) < Number(sum)) {
+          toast("⚠️ На вашем бонусном счету недостаточно средств", { position: "top-right" });
+          refetch();
+          return;
+        }
+        // Для обычных бонусов нужно ставить всю сумму
+        if (Number(sum) !== Number(bonusBalance.amount)) {
+          toast(`⚠️ Для бонусного счета нужно ставить всю сумму: ${bonusBalance.amount} ${currency}`, { position: "top-right" });
+          return;
+        }
+      }
+    }
+
+    setIsCreatingBet(true);
+    // Показываем индикатор загрузки
+    const toastId = toast.loading("Создание ставки...");
+
+    try {
+      await createBet({
+        amount: Number(sum),
+        currencyCode: currency,
+        rates: rates,
+        type: variant,
+        accountType: selectedAccountType,
+      } as any);
+      
+      // Закрываем loading toast без показа успешного уведомления
+      // (успешное уведомление придет через WebSocket)
+      toast.dismiss(toastId);
+      
+      // Небольшая задержка перед закрытием купона, чтобы пользователь увидел WebSocket уведомление
+      setTimeout(() => {
+        setIsOpen(false);
+        setRates([]);
+      }, 500);
+      
+      // Параллельно обновляем все необходимые данные
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ["bets", "pending"] }),
+        queryClient.invalidateQueries({ queryKey: ["user"] })
+      ]);
+      
+    } catch (e: any) {
+      let errorMessage = "Произошла ошибка при создании ставки";
+      
+      if (e?.message?.includes("market with provided betName not found")) {
+        errorMessage = "Ставка устарела. Коэффициенты изменились, обновите страницу";
+        // Автоматически очищаем устаревшие ставки
+        setRates([]);
+      } else if (e?.message?.includes("insufficient funds")) {
+        errorMessage = "Недостаточно средств на счету";
+      } else if (e?.message?.includes("game not found")) {
+        errorMessage = "Игра не найдена или завершена";
+        // Очищаем ставки на несуществующие игры
+        setRates([]);
+      } else if (e?.message?.includes("market is closed")) {
+        errorMessage = "Ставка недоступна. Маркет закрыт";
+        // Очищаем ставки на закрытые маркеты
+        setRates([]);
+      } else if (e?.message?.includes("coefficient changed")) {
+        errorMessage = "Коэффициент изменился. Ставка обновлена автоматически";
+        // Не очищаем ставки, так как они уже обновлены в валидации
+      } else if (e?.message) {
+        errorMessage = e.message;
+      }
+      
+      // Показываем toast только для ошибок
+      toast.update(toastId, {
+        render: `⚠️ ${errorMessage}`,
+        type: "error", 
+        isLoading: false,
+        autoClose: 5000,
+      });
+    } finally {
+      setIsCreatingBet(false);
+    }
+  };
+
+  rates.forEach((rate) => {
+    if (rate.sum) {
+      setSum(sum + Number(rate.sum));
+    }
+  });
+
+  const betAllMoney = () => {
+    let balance = "0";
+    
+    if (selectedAccountType === 'main') {
+      balance = userData?.balances?.find(({ currencyCode }) => currencyCode === currency)
+        ?.amount ?? "0";
+    } else if (selectedAccountType === 'bonus') {
+      const bonusBalance = userData?.bonusBalances?.find(({ currencyCode }) => currencyCode === currency);
+      
+      if (bonusBalance?.isTokenBased) {
+        // Для жетонных бонусов устанавливаем сумму равную tokensPerBet
+        balance = bonusBalance.tokensPerBet.toString();
+      } else {
+        // Для обычных бонусов устанавливаем всю сумму бонуса
+        balance = bonusBalance?.amount ?? "0";
+      }
+    }
+    
+    setSum(balance);
+  };
+
+  // Вычисляем сумму всех ставок (если rate.sum есть)
+  const totalSum = useMemo(
+    () => rates.reduce((acc, rate) => acc + (Number(rate.sum) || 0), 0),
+    [rates]
+  );
+
+
+  return (
+    <>
+      <div className={`${styles.BetTab} ${classNameContainer}`}>
+        <div className={styles.couponTypeRadiogroup}>
+          <Checkbox
+            checked={variant === "ordinar"}
+            classNames={{
+              Checkbox: styles.checkbox,
+              icon: styles.icon,
+              iconBox: styles.iconBox,
+              text: styles.checkboxText,
+            }}
+            disabled={rates.length > 1}
+            onChange={checkBoxOnChangeHandler}
+            value="ordinar"
+          >{`Ординар`}</Checkbox>
+          <Checkbox
+            checked={variant === "express"}
+            classNames={{
+              Checkbox: styles.checkbox,
+              icon: styles.icon,
+              iconBox: styles.iconBox,
+              text: styles.checkboxText,
+            }}
+            disabled={rates.length < 2}
+            onChange={checkBoxOnChangeHandler}
+            value="express"
+          >{`Экспресс`}</Checkbox>
+        </div>
+
+        <BetList
+          deleteButtonOnClickHandler={deleteButtonOnClickHandler}
+          rates={rates}
+          variant={variant}
+        />
+
+        {rates.length === 0 && (
+          <>
+            <div className={styles.totalWin}>
+              <p className={styles.totalWinText}>{`Возможный выигрыш`}</p>
+              <p className={styles.totalWinText}>
+                {currency && `0.00${getSymbolFromCurrency(currency)}`}
+              </p>
+            </div>
+            <div className={styles.totalSumRow}>
+              <p className={styles.totalSumLabel}>Сумма всех ставок:</p>
+              <p className={styles.totalSumValue}>{totalSum.toFixed(2)}{currency && getSymbolFromCurrency(currency)}</p>
+            </div>
+            <div className={styles.baseCouponBetForm}>
+              <Input
+                className={styles.BaseCouponInput}
+                disabled
+                placeholder="Сумма ставки"
+              />
+              <Button className={cn(styles.allInButton, styles.allIn)} disabled>
+                Поставить все
+              </Button>
+            </div>
+          </>
+        )}
+
+        {rates.length > 0 && (
+          <>
+            <div className={styles.totalWin}>
+              <p className={styles.totalWinText}>
+                {selectedAccountType === 'bonus' && (() => {
+                  const bonusBalance = userData?.bonusBalances?.find(
+                    ({ currencyCode }) => currencyCode === currency,
+                  );
+                  if (bonusBalance?.isTokenBased) {
+                    return 'Возможный выигрыш (на основной счет)';
+                  }
+                  return 'Возможный выигрыш';
+                })() || 'Возможный выигрыш'}
+              </p>
+              <p className={styles.totalWinText}>
+                {currency &&
+                  `${(Number(kf) * Number(sum)).toFixed(2)}${getSymbolFromCurrency(currency)}`}
+              </p>
+            </div>
+            <div className={styles.totalSumRow}>
+              <p className={styles.totalSumLabel}>
+                {selectedAccountType === 'bonus' && (() => {
+                  const bonusBalance = userData?.bonusBalances?.find(
+                    ({ currencyCode }) => currencyCode === currency,
+                  );
+                  if (bonusBalance?.isTokenBased) {
+                    return 'Жетоны для ставки:';
+                  }
+                  return 'Сумма всех ставок:';
+                })() || 'Сумма всех ставок:'}
+              </p>
+              <p className={styles.totalSumValue}>
+                {selectedAccountType === 'bonus' && (() => {
+                  const bonusBalance = userData?.bonusBalances?.find(
+                    ({ currencyCode }) => currencyCode === currency,
+                  );
+                  if (bonusBalance?.isTokenBased) {
+                    return `${totalSum.toFixed(0)} жетонов`;
+                  }
+                  return `${totalSum.toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
+                })() || `${totalSum.toFixed(2)}${currency && getSymbolFromCurrency(currency)}`}
+              </p>
+            </div>
+            <div className={styles.baseCouponBetForm}>
+              <Input
+                className={styles.BaseCouponInput}
+                inputMode="decimal"
+                min={0}
+                max={
+                  selectedAccountType === 'bonus' && (() => {
+                    const bonusBalance = userData?.bonusBalances?.find(
+                      ({ currencyCode }) => currencyCode === currency,
+                    );
+                    if (bonusBalance?.isTokenBased) {
+                      return bonusBalance.tokensPerBet;
+                    }
+                    return undefined;
+                  })() || undefined
+                }
+                onChange={inputOnChange}
+                onKeyDown={(e) => {
+                  if (e.code === "Minus") {
+                    e.preventDefault();
+                  }
+                }}
+                placeholder={
+                  selectedAccountType === 'bonus' && (() => {
+                    const bonusBalance = userData?.bonusBalances?.find(
+                      ({ currencyCode }) => currencyCode === currency,
+                    );
+                    if (bonusBalance?.isTokenBased) {
+                      return `Макс: ${bonusBalance.tokensPerBet} жетон`;
+                    }
+                    return `Сумма ставки`;
+                  })() || "Сумма ставки"
+                }
+                type="number"
+                value={
+                  selectedAccountType === 'bonus' && (() => {
+                    const bonusBalance = userData?.bonusBalances?.find(
+                      ({ currencyCode }) => currencyCode === currency,
+                    );
+                    if (bonusBalance?.isTokenBased) {
+                      // Для жетонных бонусов показываем только число, но в placeholder и подсказках указываем "жетон"
+                      return sum;
+                    }
+                    return sum;
+                  })() || sum
+                }
+              />
+              <Button
+                className={`${styles.allInButton} ${styles.allIn}`}
+                onClick={betAllMoney}
+              >
+                {selectedAccountType === 'bonus' && (() => {
+                  const bonusBalance = userData?.bonusBalances?.find(
+                    ({ currencyCode }) => currencyCode === currency,
+                  );
+                  if (bonusBalance?.isTokenBased) {
+                    return `Поставить ${bonusBalance.tokensPerBet} жетон`;
+                  }
+                  return 'Поставить все';
+                })() || 'Поставить все'}
+              </Button>
+            </div>
+            {selectedAccountType === 'bonus' && (() => {
+              const bonusBalance = userData?.bonusBalances?.find(
+                ({ currencyCode }) => currencyCode === currency,
+              );
+              if (bonusBalance?.isTokenBased) {
+                return (
+                  <div className={styles.tokenHint}>
+                    <small>💡 Жетоны - это не деньги! Вы ставите жетоны, а выигрыш получаете в реальных деньгах на основной счет</small>
+                    <br />
+                    <small>🎯 Можно ставить только {bonusBalance.tokensPerBet} жетон за раз</small>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </>
+        )}
+
+        <div className={styles.agree}>
+          <Checkbox
+            checked={agree}
+            classNames={{
+              Checkbox: styles.agreeCheckbox,
+              text: styles.agreeText,
+            }}
+            onChange={agreeOnChangeHandler}
+          >{`Всегда соглашаться с изменением коэффициента`}</Checkbox>
+          <Button className={styles.remove} onClick={trashButtonOnClickHandler}>
+            <TrashIcon className={styles.removeIcon} />
+          </Button>
+        </div>
+
+        {/* Индикатор типа счета */}
+        <div className={`${styles.accountTypeIndicator} ${
+          selectedAccountType === 'bonus' && (() => {
+            const bonusBalance = userData?.bonusBalances?.find(
+              ({ currencyCode }) => currencyCode === currency,
+            );
+            return bonusBalance?.isTokenBased ? styles.tokenBasedIndicator : '';
+          })() || ''
+        }`}>
+          <span className={styles.accountTypeLabel}>
+            {selectedAccountType === 'main' ? (
+              '💰 Основной счет'
+            ) : (
+              <>
+                🎁 Бонусный счет
+                {(() => {
+                  const bonusBalance = userData?.bonusBalances?.find(
+                    ({ currencyCode }) => currencyCode === currency,
+                  );
+                  if (bonusBalance?.isTokenBased) {
+                    return (
+                      <span className={styles.tokenInfo}>
+                        {' '}({bonusBalance.remainingTokens} жетонов осталось)
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+              </>
+            )}
+          </span>
+        </div>
+
+        <Button
+          className={styles.baseCouponSubmit}
+          disabled={Number(sum) <= 0 || !agree || isCreatingBet}
+          onClick={createBetOnClick}
+          type="submit"
+        >
+          {isCreatingBet ? "Создание..." : 
+            selectedAccountType === 'bonus' ? 
+              (() => {
+                const bonusBalance = userData?.bonusBalances?.find(
+                  ({ currencyCode }) => currencyCode === currency,
+                );
+                if (bonusBalance?.isTokenBased) {
+                  return `Поставить ${bonusBalance.tokensPerBet} жетон`;
+                }
+                return 'Поставить бонус';
+              })() : 
+              'Поставить'
+          }
+        </Button>
+      </div>
+    </>
+  );
+};

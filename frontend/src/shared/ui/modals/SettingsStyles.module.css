@@ -1,0 +1,540 @@
+.settingsModal {
+    background: var(--blue-00);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 16px 4px;
+    background: var(--blue-00);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerTitle {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.accountInfo {
+    display: flex;
+    align-items: center;
+}
+
+.accountNumber {
+    font-size: 14px;
+    color: #9299A2;
+    margin-right: 10px;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    color: #99A2AD;
+}
+
+.closeButton:hover {
+    color: #333;
+}
+
+.headerSubtitle {
+    font-size: 14px;
+    color: #9299A2;
+    padding: 4px 16px 16px;
+}
+
+.modalContent {
+    padding: 0 0 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.formRow {
+    position: relative;
+    margin-bottom: 8px;
+    padding: 0 16px;
+}
+
+.controlInputWrapper {
+    width: 100%;
+    position: relative;
+    background: var(--blue-20);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.controlInputWrapperPassword {
+    width: 100%;
+    background: var(--blue-20);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.insideInputPlaceholder {
+    font-size: 12px;
+    color: #9299A2;
+}
+
+.inputPassword {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+}
+
+.input {
+    width: 100%;
+    font-size: 14px;
+    color: #000;
+    outline: none;
+}
+
+.input.success {
+    border-left: 2px solid #52c41a;
+    padding-left: 10px;
+}
+
+.input.readonly {
+    color: #9299A2;
+    cursor: not-allowed;
+}
+
+.fieldLabel {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9299A2;
+    font-size: 14px;
+    pointer-events: none;
+    transition: all 0.2s;
+}
+
+.required {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #52c41a;
+}
+
+.countryDropdown {
+    position: relative;
+    background: #F4F4F8;
+    border-radius: 8px;
+    padding: 16px 12px;
+}
+
+.countryInput {
+    display: flex;
+    align-items: center;
+    padding-top: 14px;
+}
+
+.countryIcon {
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.countryFlag {
+    border-radius: 50%;
+}
+
+.telInput {
+    position: relative;
+    background: #F4F4F8;
+    border-radius: 8px;
+    padding: 16px 12px;
+    display: flex;
+    align-items: center;
+}
+
+.dropdownContainer {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.countryCode {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.arrowIcon {
+    width: 8px;
+    height: 4px;
+    color: #9299A2;
+}
+
+.profileValidationField {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--blue-20);
+    border-radius: 8px;
+}
+
+.mainBlock {
+    display: flex;
+    align-items: center;
+}
+
+.labelText {
+    font-size: 14px;
+    color: #ccc;
+    width: 80px;
+    opacity: 0.8;
+}
+
+.valueText {
+    font-size: 14px;
+    color: #fff;
+    flex-grow: 1;
+    opacity: 1;
+}
+
+.statusContainer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 20px;
+}
+
+.statusVerifiedCircle {
+    width: 6px;
+    height: 6px;
+    background: #52c41a;
+    border-radius: 50%;
+}
+
+.passwordRow {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    margin-bottom: 8px;
+}
+
+.passwordRowLeft {
+    flex-grow: 1;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.passwordRowRight {
+    flex-shrink: 0;
+}
+
+.changePasswordButton {
+    background: #0095ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.changePasswordButton:hover {
+    background: #0077cc;
+}
+
+.passwordChangeForm {
+    border-radius: 8px;
+}
+
+.passwordFormActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 0 16px;
+}
+
+.submitButton {
+    flex-grow: 1;
+    padding: 12px;
+    background: #0095ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: #0077cc;
+}
+
+.submitButton:disabled {
+    background: #E5E7EB;
+    color: #99A2AD;
+    cursor: not-allowed;
+}
+
+.cancelButton {
+    padding: 12px;
+    background: #F9FAFB;
+    color: #333;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.cancelButton:hover {
+    background: #f0f0f0;
+}
+
+.otherSettingsTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    padding: 16px 16px 8px;
+}
+
+.otherSettings {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+}
+
+.otherSettingsRow {
+    margin-bottom: 8px;
+}
+
+.settingBlock {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--blue-20);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.leftContent {
+    flex-grow: 1;
+}
+
+.settingHeader {
+    margin-bottom: 4px;
+}
+
+.settingTitle {
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.settingDescription {
+    font-size: 12px;
+    color: #ccc;
+}
+
+.rightContent {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.checkboxContainer {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    border-radius: 28px;
+    background-color: #E0E0E0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.checkboxInput {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #fff;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.checkboxInput:checked + .checkmark {
+    background-color: #2c3756;
+    transform: translateX(24px);
+}
+
+.checkmarkActive {
+    background-color: #0095ff;
+    transform: translateX(16px);
+}
+
+.checkmarkIcon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.settingButtonContainer {
+    display: flex;
+    align-items: center;
+}
+
+.settingButton {
+    padding: 8px 12px;
+    background: #F9FAFB;
+    color: #E0413B;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.settingButton:hover {
+    background: #f0f0f0;
+}
+
+.submitButtonRow {
+    margin: 24px 16px 0;
+}
+
+.saveButton {
+    width: 100%;
+    padding: 14px;
+    background: #0095ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+    background: #0077cc;
+}
+
+.saveButton.disabled {
+    background: #E5E7EB;
+    color: #99A2AD;
+    cursor: not-allowed;
+}
+
+.errorMessage {
+    color: #f5222d;
+    font-size: 14px;
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff1f0;
+    border-radius: 8px;
+}
+
+.successMessage {
+    color: #00a854;
+    font-size: 14px;
+    margin-top: 10px;
+    padding: 10px;
+    background: #f6ffed;
+    border-radius: 8px;
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 768px) {
+    .settingsModal {
+        margin: 20px;
+        max-width: none;
+        width: calc(100% - 40px);
+    }
+
+    .input {
+        font-size: 16px;
+    }
+}
+
+/* Переключатель типа счета */
+.toggleSwitch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.toggleInput {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggleSlider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #E0E0E0;
+    border-radius: 28px;
+    transition: all 0.3s ease;
+}
+
+.toggleSlider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggleInput:checked + .toggleSlider:before {
+    transform: translateX(24px);
+    background: #2c3756;
+}

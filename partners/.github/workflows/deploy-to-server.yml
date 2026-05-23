@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: build and restart compose
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.HOST }}
+                  username: ${{ secrets.USERNAME }}
+                  key: ${{ secrets.KEY }}
+                  script: |
+                      cd /root/onex/partners
+                      git fetch
+                      git reset --hard origin/master
+                      docker compose build
+                      docker compose up -d

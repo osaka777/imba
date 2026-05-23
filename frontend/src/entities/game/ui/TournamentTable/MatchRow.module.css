@@ -1,0 +1,516 @@
+.MatchRow {
+  border-top: 1px solid rgb(128, 128, 128, 0.2);
+  border-bottom: 1px solid rgb(128, 128, 128, 0.2);
+
+  background-color: var(--white-20);
+
+  height: 40px;
+
+  display: grid;
+  align-content: center;
+  grid-template-columns: 1fr auto;
+}
+.statsc{
+  fill: var(--blue-60);
+  width: 12px;
+  height: auto;
+  margin-left: 5px;
+}
+
+@media screen and (max-width: 768px) {
+  .MatchRow {
+    height: auto;
+    border-bottom: none;
+
+    display: flex;
+    flex-direction: column;
+  }
+}
+.MatchRow .startAt {
+  display: flex;
+  width: min-content;
+  font-size: 11px;
+}
+.MatchRow * {
+  color: var(--black);
+  font-size: 12px;
+}
+@media screen and (min-width: 1024px) {
+  .MatchRow:hover {
+    background-color: var(--black-blue);
+  }
+  .MatchRow:hover
+    *:not(
+      .oddCell_special,
+      .oddCell_special > .oddCoefficient,
+      .oddCell_up,
+      .oddCell_down,
+      .matchScorePeriods,
+      .teamBadge,
+      .matchAdditional,
+      .statusIconsText,
+      .matchAdditional *
+    ) {
+    background-color: var(--black-blue);
+
+    color: var(--white);
+  }
+  .MatchRow:hover .oddCell_special {
+    background-color: var(--black-20);
+  }
+  .MatchRow:hover .oddCell_special > .oddCoefficient {
+    background-color: var(--black-20);
+    color: var(--white);
+  }
+  .MatchRow:hover .broadcastIcon {
+    fill: var(--white);
+  }
+}
+.matchInfo {
+  padding: 0 8px;
+}
+@media screen and (max-width: 768px) {
+  .matchInfo {
+    padding: 12px 8px;
+  }
+}
+
+.matchInfoLink {
+  height: 40px;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.matchStart {
+  width: 50px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.matchStartDate {
+  width: 100%;
+
+  text-align: center;
+  font-size: 12px;
+}
+.matchStartTime {
+  width: 100%;
+
+  text-align: center;
+  font-size: 12px;
+}
+.matchSeparator {
+  background: var(--light-blue-gradient);
+  opacity: 0.8;
+
+  width: 3px;
+  height: 24px;
+}
+.matchTeamsBlock {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+}
+.teamName {
+  font-size: 11px;
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+}
+.teamBadge {
+  margin-top: 3px;
+  margin-left: 5px;
+
+  border-radius: 50%;
+
+  width: 8px;
+  height: 8px;
+
+  background: #9ad066;
+
+  display: inline-block;
+}
+.matchFeatures {
+  margin: 0 10px;
+
+  padding: 6px 0;
+
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.broadcastIcon {
+  width: 14px;
+}
+
+.statsIcon {
+  width: 12px;
+
+  fill: var(--blue-60);
+}
+.matchStatisticsContainer {
+  margin-left: auto;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.matchStatisticsLine {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+@media screen and (max-width: 768px) {
+  .matchStatisticsLine {
+    padding: 2px 0;
+  }
+}
+.tennisScores {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.matchScoreTotal {
+  font-size: 10px;
+  font-weight: 500;
+}
+.matchAdditionalDetails {
+  color: #0dc35d;
+}
+.time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.timeIcon {
+  width: 12px;
+  fill: var(--blue-60);
+}
+.timeText {
+  font-size: 10px;
+}
+.matchScorePeriods {
+  color: #888;
+  font-size: 10px;
+}
+.matchAdditional {
+  border-radius: 8px;
+
+  padding: 0 8px;
+
+  height: 29px;
+
+  background-color: #b3c9f6;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.totalOddsCount {
+  font-weight: 500;
+}
+
+.cellsWrapper {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+}
+.marketsCount {
+  margin: 0 12px;
+
+  border-radius: 8px;
+
+  padding: 8px;
+
+  background: var(--light-blue-gradient);
+
+  font-weight: 500;
+  color: var(--white);
+}
+.cells {
+  height: 100%;
+
+  display: grid;
+  grid-auto-flow: column;
+  align-content: center;
+}
+
+@media screen and (max-width: 768px) {
+  .cells {
+    border-bottom: 0.5px solid rgb(128, 128, 128, 0.2);
+
+    padding: 8px;
+
+    width: 100%;
+
+    display: grid;
+    grid-auto-flow: column;
+    align-content: center;
+    justify-items: center;
+    gap: 8px;
+  }
+}
+
+.oddCell {
+  width: 45px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+@media screen and (max-width: 768px) {
+  .oddCell {
+    border-radius: 8px;
+
+    padding: 0 12px;
+
+    background-color: var(--gray-10-transparent);
+
+    width: 100%;
+    height: auto;
+
+    justify-content: space-between;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .oddCell {
+    display: none;
+  }
+  .oddCell[data-market="WIN__P1"],
+  .oddCell[data-market="WIN__P2"],
+  .oddCell[data-market="WIN__PX"],
+  .oddCell[data-market="WIN_RT__P1"],
+  .oddCell[data-market="WIN_RT__P2"],
+  .oddCell[data-market="WIN_RT__PX"],
+  .oddCell[data-market="WIN_OT__P1"],
+  .oddCell[data-market="WIN_OT__P2"],
+  .oddCell[data-market="WIN_OT__PX"] {
+    display: flex;
+  }
+}
+
+.oddCell_special {
+  background-color: var(--gray-20-transparent);
+  cursor: auto;
+}
+
+@media screen and (max-width: 768px) {
+  .oddCell_special {
+    background-color: unset;
+  }
+}
+
+.lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 8px;
+  opacity: 0.5;
+  width: 20px;
+  height: 20px;
+}
+
+.oddCoefficient {
+  border-radius: 8px;
+
+  padding: 6px;
+
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+}
+@media screen and (max-width: 768px) {
+  .MatchRow:hover .oddCell_special > .oddCoefficient:hover {
+    background-color: transparent;
+  }
+}
+.oddCoefficient_up {
+  animation: coefup 0.8s ease-out;
+}
+.oddCoefficient_down {
+  animation: coefdown 0.8s ease-out;
+}
+
+@keyframes coefup {
+  0% {
+    color: var(--red);
+    background-color: rgba(255, 0, 0, 0.1);
+  }
+  50% {
+    color: var(--red);
+    background-color: rgba(255, 0, 0, 0.05);
+  }
+  100% {
+    color: unset;
+    background-color: transparent;
+  }
+}
+
+@keyframes coefdown {
+  0% {
+    color: var(--green-10);
+    background-color: rgba(0, 255, 0, 0.1);
+  }
+  50% {
+    color: var(--green-10);
+    background-color: rgba(0, 255, 0, 0.05);
+  }
+  100% {
+    color: unset;
+    background-color: transparent;
+  }
+}
+@media screen and (max-width: 768px) {
+  .oddCell_added {
+    background: var(--light-blue-gradient);
+  }
+}
+
+.oddCoefficient_added {
+  background: var(--light-blue-gradient);
+  color: var(--white);
+}
+
+@media screen and (max-width: 768px) {
+  .oddCoefficient_added {
+    background: unset;
+  }
+}
+
+.addedGameName {
+  display: none;
+}
+.oddCell_added > .addedGameName {
+  color: var(--white);
+}
+@media screen and (max-width: 768px) {
+  .addedGameName {
+    display: block;
+  }
+}
+.statusIcons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.statusIconsContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+@media screen and (max-width: 768px) {
+}
+.statusIconsText {
+  border-radius: 8px;
+
+  padding: 2px 8px;
+
+  background: var(--red-10);
+
+  color: var(--white);
+}
+@media screen and (max-width: 768px) {
+  .statusIconsText {
+    display: none;
+  }
+}
+.priority {
+  width: 16px;
+}
+
+.live {
+  color: var(--red-10);
+  fill: var(--red-10);
+
+  width: 16px;
+}
+
+.processingMessage {
+  color: var(--orange-60);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: 8px 12px;
+  background: var(--orange-10);
+  border-radius: 6px;
+  border: 1px solid var(--orange-30);
+  max-width: 200px;
+  line-height: 1.3;
+}
+
+@media screen and (max-width: 768px) {
+  .processingMessage {
+    font-size: 11px;
+    padding: 6px 10px;
+    max-width: 180px;
+  }
+}
+
+/* SubGames styles */
+.subGamesButton {
+  background: var(--blue-40);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.subGamesButton:hover {
+  background: var(--light-blue-gradient);
+  transform: translateY(-1px);
+}
+
+.subGamesButtonActive {
+  background: var(--light-blue-gradient);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .subGamesButton {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .subGamesContainer {
+    margin: 0 -8px;
+  }
+}

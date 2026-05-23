@@ -1,0 +1,19 @@
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  ::-webkit-scrollbar {
+    height: 4px;
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: var(--black-blue);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+
+  background: var(--blue-30);
+}

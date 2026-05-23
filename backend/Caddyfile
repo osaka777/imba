@@ -1,0 +1,54 @@
+imba.bet {
+  @api {
+    path /api/*
+  }
+  @uploads {
+    path /uploads/*
+  }
+  @tg {
+    path /tg/*
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  }
+
+  reverse_proxy @api backend:3000
+  reverse_proxy @uploads backend:3000
+
+  handle_path /tg/* {
+    reverse_proxy imba-bot:8088
+  }
+
+  reverse_proxy frontend:8000
+  tls /etc/caddy/certs/imba.bet.pem /etc/caddy/certs/imba.bet.key
+}
+
+cdn.imba.bet {
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  reverse_proxy admin-panel:9000
+  tls /etc/caddy/certs/imba.bet.pem /etc/caddy/certs/imba.bet.key
+}
+
+kendall.bot, www.kendall.bot {
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  reverse_proxy kendall-landing:3001
+  encode gzip
+  tls /etc/caddy/certs/kendall.bot.pem /etc/caddy/certs/kendall.bot.key
+}

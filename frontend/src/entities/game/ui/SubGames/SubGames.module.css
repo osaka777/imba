@@ -1,0 +1,84 @@
+.subGamesContainer {
+  overflow-x: auto;
+
+  border-radius: 8px;
+
+  max-width: 100%;
+
+}
+
+.oddMenuList {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: auto;
+  /* Firefox */
+  scrollbar-color: var(--blue-40) #1e293b;
+  padding: 0 0 12px 0;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.oddMenuList::-webkit-scrollbar {
+  height: 8px;
+}
+
+.oddMenuList::-webkit-scrollbar-track {
+  background: #1e293b;
+  /* фон дорожки */
+  border-radius: 4px;
+}
+
+.oddMenuList::-webkit-scrollbar-thumb {
+  background: var(--blue-40);
+  border-radius: 4px;
+  border: 2px solid #1e293b;
+  /* контраст */
+}
+
+.oddMenuList::-webkit-scrollbar-thumb:hover {
+  background: var(--light-blue-gradient);
+}
+
+.oddMenuList button {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  background: var(--blue-gray);
+  border-radius: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.oddMenuList .activeButton {
+  background: var(--light-blue-gradient);
+}
+
+.loadingDot {
+  margin-left: 4px;
+  font-size: 10px;
+}
+
+/* Стили для состояний загрузки и ошибок */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: #dc2626;
+  font-size: 14px;
+}

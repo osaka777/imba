@@ -1,0 +1,51 @@
+:root {
+    --white: rgb(255, 255, 255);
+    --white-10: rgb(237, 240, 247);
+    --white-20: rgb(237, 242, 255);
+    --white-30: rgb(228, 235, 255);
+    --black: rgb(0, 0, 0);
+
+    --gray-transparent: rgba(255, 255, 255, 0.2);
+    --gray-10-transparent: rgba(148, 166, 205, 0.2);
+    --gray-20-transparent: rgba(151, 174, 225, 0.2);
+    --gray-30-transparent: rgba(106, 118, 144, 0.7);
+    --gray-40-transparent: rgb(158, 166, 183);
+    --gray-50: rgb(220, 228, 249);
+    --gray-60: rgb(185, 197, 227);
+
+    --black-transparent: rgba(0, 0, 0, 0.2);
+    --black-transparent-10: rgba(7, 12, 25, 0.8);
+    --black-blue: rgb(20, 27, 46);
+    --black-20: rgb(38, 45, 55);
+
+    --blue-00: rgb(9, 15, 30);
+    --blue-10-transparent: rgba(20, 27, 46, 0.6);
+    --blue-20: rgb(30, 40, 63);
+    --blue-30: rgb(8, 85, 196);
+    --blue-40: rgb(16, 141, 231);
+    --blue-50: rgb(177, 209, 255);
+    --blue-60: rgb(135, 162, 218);
+    --blue-gray: rgb(37, 47, 75);
+
+    --light-blue-gradient: linear-gradient(103deg, var(--blue-40) -30%, var(--blue-30) 100%);
+    --dark-blue-gradient: linear-gradient(92deg, var(--blue-20), var(--blue-10-transparent));
+
+    --green-00: rgb(8, 158, 78);
+    --green-10: rgb(49, 188, 105);
+    --green-gradient: linear-gradient(70deg, var(--green-10) -8%, var(--green-00) 96%);
+
+    --yellow-00: rgb(255, 148, 0);
+    --yellow-10: rgb(255, 202, 77);
+    --yllow-gradient: linear-gradient(107deg, var(--yellow-10) 0%, var(--yellow-00) 100%);
+
+    --red: red;
+    --red-10: rgb(211, 72, 72);
+
+    --desktop-w: 1920px;
+    --laptopL-w: 1440px;
+    --laptop-w: 1366px;
+    --laptopM-w: 1080px;
+    --tablet-w: 768px;
+    --mobile-w: 425px;
+    --mobileM-w: 320px;
+}

@@ -1,0 +1,44 @@
+.wrapper{
+  position:relative;
+  display:block;
+  width:100%;
+  border-radius:12px;
+  padding:20px 24px;
+  margin-bottom:16px;
+  color:#fff;
+  background-image:linear-gradient(141deg,#EF64FF 0.72%,#005CFF 100%);
+  overflow:hidden;
+  height: 100%;
+
+  text-decoration:none;
+}
+.picture{display:block}
+.bg{
+  position:absolute;
+  right:0;
+  bottom:0;
+  opacity:.9;
+  z-index:1;
+  pointer-events:none;
+  max-width:90%;
+}
+.content{position:relative;z-index:2;color:#fff;display:flex;flex-direction:column}
+.badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:9999px;background:rgba(255,255,255,0.15);font-size:12px;font-weight:600;margin-bottom:8px;color:#fff}
+.badgeText{ font-weight:600 }
+.desc{margin-top:0;display:flex;align-items:center;gap:8px;color:#fff}
+.desc p{margin:0;font-size:10px;width:120px;color:#fff}
+.pulse{position:relative;width:10px;height:10px}
+.pulseDot{position:absolute;inset:0;border-radius:50%;background:#fff;opacity:.35}
+
+/* Desktop: fixed card height for two-up layout */
+@media (min-width: 1080px){
+  .wrapper{ aspect-ratio: 2/1; }
+}   
+
+/* Mobile: compact card with fixed height and image in corner */
+@media (max-width: 1080px){
+  .wrapper{ min-height: 120px; padding: 16px; margin-bottom:0px;}
+  .badge{ font-size: 11px; padding: 5px 9px; }
+  .desc p{ font-size: 11px; width: 110px; }
+  .bg{ width: 180px; max-width: 60%; }
+}

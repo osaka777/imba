@@ -1,0 +1,42 @@
+.Checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.input {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.iconBox {
+    border-radius: 4px;
+
+    padding: 8px;
+
+    background-color: var(--gray-10-transparent);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.iconBox_checked {
+    padding: 4px;
+
+    background: var(--light-blue-gradient);
+}
+
+.icon {
+}
+
+.text {
+    display: flex;
+
+    color: var(--gray-30-transparent);
+    font-size: 11px;
+}

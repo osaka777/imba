@@ -1,0 +1,139 @@
+.Coupon {
+  position: sticky;
+  top: 60px;
+  border-radius: 12px;
+  padding: 12px;
+  background-image: linear-gradient(135deg, #233358, rgba(20, 27, 46, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media screen and (max-width: 768px) {
+  .Coupon {
+    top: 70px;
+    padding: 8px;
+    gap: 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .Coupon {
+    top: 65px;
+    padding: 6px;
+    gap: 8px;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.closeButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.closeIcon {
+  width: 16px;
+  height: 16px;
+  fill: #ffffff;
+}
+
+@media screen and (max-width: 1080px) {
+  .closeButton {
+    display: flex;
+  }
+  
+  .tabbar {
+    flex: 1;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .closeButton {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .closeIcon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .header {
+    gap: 6px;
+  }
+}
+.tabbar {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+}
+
+@media screen and (max-width: 480px) {
+  .tabbar {
+    gap: 8px;
+  }
+}
+
+.tab {
+  position: relative;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.08);
+  transition: background 0.2s ease, color 0.2s ease;
+  height: 34px;
+  display: flex;
+  flex: auto;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8 !important;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+@media screen and (max-width: 480px) {
+  .tab {
+    height: 32px;
+    font-size: 11px;
+  }
+}
+
+.active {
+  background-image: linear-gradient(103deg, #108de7 -30%, #0855c4 100%);
+  color: #ffffff !important;
+  font-weight: 600;
+}
+.counter {
+  top: -4px;
+  right: -4px;
+  position: absolute;
+  z-index: 2;
+  background-color: white;
+  color: black;
+  border-radius: 100%;
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -1,0 +1,484 @@
+.BetTab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.couponTypeRadiogroup {
+  padding: 0 5px;
+
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.checkbox {
+  gap: 5px;
+  align-items: center;
+}
+
+.iconBox {
+  border-radius: 50%;
+}
+
+.icon {
+  border-radius: 50%;
+
+  background-color: var(--white);
+}
+
+.checkboxText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff !important;
+  letter-spacing: normal;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: auto;
+}
+
+.totalCoefficient {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 12px;
+}
+
+.CouponTotalCoefficientRoot {
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.oddText {
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.CouponTotalCoefficientText {
+  color: #94a3b8 !important;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-align: center;
+}
+
+.totalWin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.totalWinText {
+  color: #22c55e !important;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: normal;
+}
+
+.totalSumRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.totalSumLabel {
+  color: #94a3b8 !important;
+  font-size: 12px;
+  letter-spacing: normal;
+}
+
+.totalSumValue {
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.baseCouponBetForm {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.couponStakeField {
+  flex: 1;
+  min-width: 0;
+}
+
+.couponStakeField > div {
+  width: 100%;
+}
+
+.couponStakeField input {
+  width: 100%;
+  height: 40px;
+  min-height: 40px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  background: #eceff3 !important;
+  color: #111827 !important;
+  font-size: 14px !important;
+  letter-spacing: normal;
+}
+
+.couponStakeField input::placeholder {
+  color: #6b7280 !important;
+  opacity: 1;
+}
+
+.couponStakeField input:disabled {
+  background: #e5e7eb !important;
+  color: #9ca3af !important;
+  cursor: not-allowed;
+}
+
+@media screen and (max-width: 480px) {
+  .baseCouponBetForm {
+    gap: 6px;
+  }
+
+  .couponStakeField input {
+    height: 42px;
+    min-height: 42px !important;
+    font-size: 16px !important;
+  }
+}
+
+.allInButton {
+  border-radius: 10px;
+  padding: 0 12px;
+  background-image: linear-gradient(107.15deg, #0095ff 0%, #0855c4 100%);
+  min-width: 108px;
+  height: 40px;
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: normal;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media screen and (max-width: 480px) {
+  .allInButton {
+    height: 42px;
+    font-size: 12px;
+    padding: 0 10px;
+    min-width: 96px;
+  }
+}
+
+.allInButton:disabled {
+  opacity: 0.7;
+}
+
+.agree {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agreeCheckbox {
+  align-items: center;
+}
+
+.agreeText {
+  color: #cbd5e1 !important;
+  font-size: 11px;
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+
+.remove {
+  border-radius: 8px;
+
+  background-color: var(--black-blue);
+
+  height: 35px;
+  width: 35px;
+
+  display: flex;
+  align-items: center;
+  flex: none;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.removeIcon {
+  height: 16px;
+
+  fill: var(--white);
+}
+
+.baseCouponSubmit {
+  border-radius: 8px;
+
+  width: 100%;
+  height: 40px;
+
+  background: linear-gradient(98deg, #ffe036, #ffc600);
+  box-shadow: 0 2px 24px #ffca094d;
+
+  color: #090f1e;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 13px;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.baseCouponSubmit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 28px #ffca0966;
+}
+
+.baseCouponSubmit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.baseCouponSubmit:disabled {
+  background: #4b5563 !important;
+  color: #e5e7eb !important;
+  box-shadow: none;
+  opacity: 1;
+  cursor: not-allowed;
+  text-shadow: none;
+}
+
+@media screen and (max-width: 480px) {
+  .baseCouponSubmit {
+    height: 44px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+}
+
+.coupon_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 11px 10px 10px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.coupon_item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 7px;
+}
+
+@media screen and (max-width: 480px) {
+  .coupon_wrapper {
+    padding: 8px;
+    gap: 5px;
+  }
+}
+
+.coupon_wrapper_lock {
+  filter: brightness(0.7);
+}
+
+.lock {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+  width: 20px;
+  height: 20px;
+}
+
+.coupon_name {
+  color: #000;
+}
+
+.coefficient_wrapper {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.coefficient {
+  padding: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  align-items: center;
+  background: linear-gradient(143.56deg, #0095ff -58.98%, #0855c4 95.86%);
+  border-radius: 8px;
+  box-shadow: 0 6px 22px #056dda33;
+  color: #fff;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-self: stretch;
+  margin-right: 8px;
+  width: 46px;
+  min-width: 46px;
+}
+
+@media screen and (max-width: 480px) {
+  .coefficient {
+    width: 42px;
+    min-width: 42px;
+    padding: 5px;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+}
+
+.coefficient_name {
+  margin-right: 10px;
+  color: #096dff;
+  font-weight: 700;
+  font-size: 11px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media screen and (max-width: 480px) {
+  .coefficient_name {
+    font-size: 10px;
+    margin-right: 6px;
+  }
+}
+
+.closeBtn {
+  align-self: flex-start;
+}
+
+.closeBtnIcon {
+  position: relative;
+  width: 15px;
+  height: 15px;
+}
+
+.betListItems {
+  padding-right: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media screen and (max-width: 1024px) {
+  .betListItems {
+    max-height: 240px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .betListItems {
+    max-height: 200px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .betListItems {
+    max-height: 160px;
+    gap: 8px;
+  }
+}
+
+@media screen and (max-width: 425px) {
+  .betListItems {
+    max-height: 140px;
+  }
+}
+
+/* Индикатор типа счета */
+.accountTypeIndicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.tokenBasedIndicator {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  border: 2px solid #ff8c00;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+.accountTypeLabel {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tokenBasedIndicator .accountTypeLabel {
+  color: #333;
+  font-weight: 700;
+}
+
+.tokenInfo {
+  color: #333;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.tokenHint {
+  text-align: center;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border-radius: 8px;
+  margin-top: 8px;
+  border: 2px solid #ffb300;
+}
+
+.tokenHint small {
+  color: #333;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  display: block;
+}
+
+/* Toast стили перенесены в глобальные стили */

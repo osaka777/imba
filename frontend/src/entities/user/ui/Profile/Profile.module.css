@@ -1,0 +1,524 @@
+.profileContainer {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.profileContent {
+  border-radius: 8px;
+  background-color: transparent;
+  width: 100%;
+  padding: 0;
+}
+
+.loading {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  color: white;
+}
+
+.loadingMessage {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  color: var(--blue-70);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.errorMessage {
+  width: 100%;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-size: 16px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  padding: 20px;
+  text-align: center;
+}
+
+.errorMessage button {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.errorMessage button:hover {
+  background: #ff5252;
+}
+
+.errorActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.errorActions button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.errorActions button:hover {
+  background: #0056b3;
+}
+
+.errorActions button:last-child {
+  background: #28a745;
+}
+
+.errorActions button:last-child:hover {
+  background: #1e7e34;
+}
+
+.walletsList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Main Balance Section */
+.mainBalanceSection {
+  border-radius: 8px;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.balanceHeaderContainer {
+  position: relative;
+  padding: 0px 16px 8px;
+}
+
+.balanceHeaderContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
+  width: 5px;
+  border-radius: 10px;
+  background: linear-gradient(to top, #00ff86, #00a858);
+}
+
+.balanceHeader {
+  font-size: 14px;
+  color: var(--blue-70);
+}
+
+.balanceAmount {
+  font-size: 22px;
+  font-weight: 600;
+  color: white;
+}
+
+.balanceActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Bonus Section */
+.bonusSection {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  padding: 0px 16px 8px;
+}
+
+.bonusSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
+  width: 5px;
+  border-radius: 10px;
+  background: linear-gradient(to top, #ff7b99, #c04df8);
+}
+
+.bonusHeader {
+  font-size: 14px;
+  color: var(--blue-70);
+}
+
+.bonusAmount {
+  font-size: 22px;
+  font-weight: 600;
+  color: white;
+}
+
+.bonusIcon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+/* Bonus Balance Section */
+.bonusBalanceSection {
+  border-radius: 8px;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.bonusBalanceAmount {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.bonusBalanceInfo {
+  padding: 0 16px;
+  color: #ffd700;
+  font-size: 12px;
+}
+
+
+.mainInfo {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+  background: var(--light-black-blue-gradient);
+  border-radius: 8px;
+}
+
+/* money List */
+.moneyList {
+  border-radius: 8px;
+  padding: 8px 0;
+  /* overflow: hidden; */
+}
+
+.moneyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.moneyItem:last-child {
+  border-bottom: none;
+}
+
+.moneyInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.moneyIconContainer {
+  width: 30px;
+  height: 30px;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.moneyIcon {
+  width: 16px;
+  height: 16px;
+
+  border-radius: 50%;
+  color: white;
+  font-size: 14px;
+}
+
+.moneyName {
+  font-size: 16px;
+  color: white;
+}
+
+.moneyBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: white;
+}
+
+.addButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #26C95E;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding: 0;
+  min-width: unset;
+}
+
+/* Common Section Styles */
+.supportSection {
+  display: flex;
+  flex-direction: column;
+  background: var(--light-black-blue-gradient);
+  gap: 8px;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.sectionContent {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sectionInput::placeholder {
+  color: var(--gray-20-transparent);
+}
+
+.sectionInput {
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(to right, #121829, #121829 100%, #121829 10%);
+  padding: 2px 16px 0px 16px;
+}
+
+.sectionHeaderTitle {
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sectionDesc {
+  color: var(--blue-70);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.sectionIconImg {
+  width: 30px;
+  height: 30px;
+}
+
+.accountManagement {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--light-black-blue-gradient);
+  padding: 8px 0;
+}
+
+.sectionSettings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionSettingsIcon {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--blue-40);
+  position: relative;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.sectionSettingsIcon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid white;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  z-index: 1;
+  transform: translate(-2.4px, -2.4px)
+}
+
+.sectionSettingsIconImg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.sectionHeader {
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+}
+
+.sectionIcon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.arrowIcon {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+}
+
+
+/* Voucher Section */
+.voucherButton {
+  margin-top: 12px;
+  background-color: var(--light-black-blue-gradient);
+  border-radius: 8px;
+  padding: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+}
+
+
+
+.divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 16px 0;
+}
+
+.Deposit {
+  flex: 1;
+  background-color: #23b260;
+  box-shadow: 0 0 8px rgba(35, 178, 96, 0.5);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.balance {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 10px;
+  border-right: 1px solid rgb(128, 128, 128, 0.2);
+}
+
+.balanceTitle {
+  font-size: 9px;
+  color: rgb(128, 128, 128, 0.6);
+}
+
+div.dialog {
+  border-radius: 15px;
+
+  padding: 0;
+
+  max-width: max-content;
+}
+
+.depositWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  background: rgb(35, 45, 69);
+  border-radius: 10px;
+  padding: 2px 2px 2px 10px;
+  gap: 5px;
+}
+
+/* Переключатель счетов */
+.accountTypeSelector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.accountTypeButton {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.accountTypeButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.accountTypeButton.active {
+  background: #00b894;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 184, 148, 0.3);
+}
+
+.bonusInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--blue-70);
+  font-size: 12px;
+}
+
+.bonusDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.bonusDetails small {
+  color: var(--gray-20-transparent);
+  font-size: 10px;
+}

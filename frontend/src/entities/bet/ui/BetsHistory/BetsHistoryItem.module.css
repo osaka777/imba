@@ -1,0 +1,194 @@
+.BetsHistoryItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  position: relative;
+  z-index: 1;
+
+  border-radius: 8px;
+
+  padding: 12px;
+
+  background-color: var(--blue-gray);
+
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+@media screen and (max-width: 768px) {
+  .heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+.betVariant {
+  border-radius: 8px;
+
+  padding: 2px 8px;
+
+  background: var(--light-blue-gradient);
+
+  width: 80px;
+
+  text-align: center;
+}
+
+.date {
+  width: 130px;
+}
+
+.id {
+  width: 40px;
+
+  color: var(--gray-30-transparent);
+}
+
+.cf {
+  width: 80px;
+}
+
+.indicator {
+  border-radius: 8px;
+
+  width: 80px;
+}
+
+.indicator_win {
+  background-color: var(--green-10);
+}
+
+.indicator_lose {
+  background-color: var(--red-10);
+}
+
+.indicator_pending {
+  background-color: var(--yellow-00);
+}
+
+.indicator_return {
+  background-color: var(--gray-30-transparent);
+}
+
+.indicator_unknown {
+  background-color: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.ammount {}
+
+@media screen and (max-width: 768px) {
+
+  .date,
+  .id,
+  .cf {
+    width: auto;
+  }
+}
+
+.toogleIcon {
+  margin-left: auto;
+
+  width: 12px;
+  transition: 0.2s;
+
+  fill: var(--white);
+}
+
+.toogleIcon_active {
+  transform: rotate(-180deg);
+}
+
+.body {
+  position: relative;
+  z-index: 0;
+  top: -8px;
+
+  border-radius: 0 0 8px 8px;
+
+  padding: 12px;
+  padding-top: 20px;
+
+  background-color: var(--black-transparent-10);
+
+  width: 100%;
+
+  display: none;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.body_open {
+  display: flex;
+}
+
+.gameInfo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+@media screen and (max-width: 768px) {
+  .gameInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+.gameSport {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon {
+  width: 32px;
+  fill: white;
+  color: white;
+}
+
+.gameInfoSport {
+  width: 150px;
+
+  font-size: 18px;
+  font-weight: 500;
+}
+
+@media screen and (max-width: 768px) {
+  .gameInfoSport {
+    width: auto;
+  }
+}
+
+.gameInfoTextContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.gameInfoText {
+  width: 320px;
+}
+
+@media screen and (max-width: 768px) {
+  .gameInfoText {
+    width: auto;
+  }
+}
+
+.coefficient {
+  transition: color 1s;
+}
+.cf_up {
+  color: #16a34a !important; /* зелёный */
+  transition: color 1s;
+}
+.cf_down {
+  color: #dc2626 !important; /* красный */
+  transition: color 1s;
+}

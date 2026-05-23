@@ -1,0 +1,18 @@
+<svg viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g class="ethereum_svg__color">
+        <path d="M9.068 0l-.121.41v11.902l.121.12 5.548-3.265L9.068 0z" fill="#343434"></path>
+        <path d="M9.068 0L3.52 9.167l5.548 3.266V0z" fill="#8C8C8C"></path>
+        <path d="M9.068 13.479L9 13.562v4.24l.068.198 5.552-7.785-5.552 3.264z" fill="#3C3C3B"></path>
+        <path d="M9.068 18v-4.521L3.52 10.215 9.068 18z" fill="#8C8C8C"></path>
+        <path d="M9.068 12.433l5.548-3.266-5.548-2.511v5.777z" fill="#141414"></path>
+        <path d="M3.52 9.167l5.548 3.266V6.656L3.52 9.167z" fill="#393939"></path>
+    </g>
+    <g class="ethereum_svg__mono">
+        <path d="M9.068 0l-.121.41v11.902l.121.12 5.548-3.265L9.068 0z" fill="#414653"></path>
+        <path d="M9.068 0L3.52 9.167l5.548 3.266V0z" fill="#34405E"></path>
+        <path d="M9.068 13.479L9 13.562v4.24l.068.198 5.552-7.785-5.552 3.264z" fill="#414653"></path>
+        <path d="M9.068 18v-4.521L3.52 10.215 9.068 18z" fill="#34405E"></path>
+        <path d="M9.068 12.433l5.548-3.266-5.548-2.511v5.777z" fill="#2E3038"></path>
+        <path d="M3.52 9.167l5.548 3.266V6.656L3.52 9.167z" fill="#3B3E49"></path>
+    </g>
+</svg>

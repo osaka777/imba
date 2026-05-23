@@ -1,0 +1,105 @@
+.header {
+    background-color: #090F1E;
+    padding: 30px 30px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    width: 100px;
+}
+
+.logo > svg {
+    width: 160px;
+}
+
+.logo > svg > g > path {
+    fill: white;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+.icon {
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, .1);
+    border-radius: 10px;
+}
+
+.icon > svg {
+    width: 21px;
+    height: 21px;
+}
+
+.data {
+    display: flex;
+    flex-direction: row;
+    height: 40px;
+    background-color: rgba(255, 255, 255, .1);
+    border-radius: .75rem;
+}
+
+.data_item_menu,
+.data_item {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    padding: 0 1.5rem;
+    font-size: 16px;
+    font-weight: 700;
+    position: relative;
+    height: 40px;
+    border-radius: .75rem;
+}
+
+.data_balance_menu {
+    z-index: 3;
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background-color: #222735;
+    min-width: 160px;
+    border-radius: .75rem;
+}
+
+.data_item_menu {
+    cursor: pointer;
+}
+
+@media screen and (max-width: 690px) {
+    .logo {
+        display: none;
+    }
+    .wrapper {
+        justify-content: center;
+    }
+}
+
+@media screen and (max-width: 490px) {
+    .logo {
+        display: none;
+    }
+    .wrapper {
+        justify-content: center;
+    }
+    .data_item {
+        font-size: 12px;
+    }
+}

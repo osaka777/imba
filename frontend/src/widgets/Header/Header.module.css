@@ -1,0 +1,54 @@
+.Header {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: flex-start;
+  gap: 15px;
+  overflow: hidden;
+}
+
+/* Make slider flex to fill remaining width, and allow it to shrink */
+.Header .slider {
+  position: relative;
+  flex: 1 1 auto;      /* was width: 100% */
+  min-width: 0;        /* allow shrinking in flex row */
+  height: 100%;
+  display: block;      /* flex not needed here; the inner slider manages layout */
+  overflow: hidden;    /* prevent internal overflow */
+  aspect-ratio: 55/22;
+}
+
+/* Make promos have fixed or bounded width on desktop */
+.mobilePromos {
+  align-self: stretch;            /* force it to fill Header’s cross-axis */
+  min-width: 320px;
+  max-width: 320px;
+  height: auto;                   /* ensure content height doesn’t cap it */
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+/* Mobile: stack vertically and restore full width */
+@media screen and (max-width: 1080px) {
+  .Header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .Header .slider {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .mobilePromos {
+ display: none  ;
+  }
+}

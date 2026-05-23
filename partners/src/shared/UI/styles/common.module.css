@@ -1,0 +1,12 @@
+.pageContainer {
+    padding-top: 15px;
+    overflow-x: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.wrapper {
+    max-width: 1440px;
+    margin: 0 auto;
+}

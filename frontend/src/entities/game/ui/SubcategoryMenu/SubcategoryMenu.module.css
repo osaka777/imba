@@ -1,0 +1,166 @@
+.menu {
+  overflow-x: auto;
+
+  border-radius: 8px;
+
+  padding: 12px;
+
+  max-width: 100%;
+
+  background-color: var(--blue-20);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--black-blue);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: var(--blue-80);
+}
+
+.backIcon {
+  width: 16px;
+  height: 16px;
+  transform: rotate(180deg);
+  fill: var(--white);
+}
+
+.currentSport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--light-blue-gradient);
+  border-radius: 6px;
+}
+
+.sportIcon {
+  width: 18px;
+  height: 18px;
+  fill: var(--white);
+}
+
+.flag {
+  width: 20px;
+  height: 15px;
+  object-fit: contain;
+  border-radius: 2px;
+  margin-right: 8px;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.sportName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: max-content;
+  flex-wrap: wrap;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  background: var(--black-blue);
+  transition: all 0.2s ease;
+}
+
+.item:hover {
+  background: var(--blue-80);
+}
+
+.item_active {
+  background: var(--light-blue-gradient);
+}
+
+.text {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.count {
+  font-size: 12px;
+  color: var(--white);
+  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.item_priority {
+  border: 1px solid var(--yellow);
+  position: relative;
+}
+
+.priority {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  margin-right: 4px;
+  width: 20px;
+  height: 20px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--white);
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.loading::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid var(--white);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #ef4444;
+  font-size: 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

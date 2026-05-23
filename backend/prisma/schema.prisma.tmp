@@ -1,0 +1,304 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Currency {
+  isoCode String @id
+  name    String
+
+  Balance         Balance[]
+  ExpressBet      ExpressBet[]
+  Bet             Bet[]
+  Operation       Operation[]
+  WithdrawRequest WithdrawRequest[]
+}
+
+model Balance {
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+  currency     Currency @relation(fields: [currencyCode], references: [isoCode])
+  currencyCode String
+
+  amount Decimal @default(0) @db.Decimal(16, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id             Int        @id @default(autoincrement())
+  email          String     @unique
+  password       String?
+  affiliatedById Int?
+  affiliatedBy   Affilator? @relation("affilatedBy", fields: [affiliatedById], references: [userId])
+
+  affilator Affilator? @relation("affilatorData")
+
+  balances         Balance[]
+  bets             Bet[]
+  operations       Operation[]
+  expressBets      ExpressBet[]
+  withdrawRequests WithdrawRequest[]
+  promoOnUsers     PromoOnUsers[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Affilator {
+  user   User @relation("affilatorData", fields: [userId], references: [id])
+  userId Int  @id
+
+  type AffilatorType
+  meta Json?
+
+  trafficSource String @unique
+  uid           String @unique @default(uuid())
+
+  users             User[]  @relation("affilatedBy")
+  percent           Decimal @default(50) @db.Decimal(16, 2)
+  affilatorsPercent Decimal @default(10) @db.Decimal(16, 2)
+}
+
+model Game {
+  eventId    String     @id
+  bets       Bet[]
+  eventName  String
+  leagueName String
+  sport      String
+  team1      String
+  team2      String
+  score      String
+  status     GameStatus @default(PREMATCH)
+  meta       Json?
+  priority   Int?       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GameStatus {
+  PREMATCH
+  STARTING
+  IN_PROGRESS
+  FINISHED
+  CANCELED
+}
+
+model ExpressBet {
+  id           Int       @id @default(autoincrement())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       Int
+  bets         Bet[]
+  amount       Decimal   @db.Decimal(16, 2)
+  cf           Decimal   @db.Decimal(16, 2)
+  currency     Currency  @relation(fields: [currencyCode], references: [isoCode])
+  currencyCode String
+  status       BetStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Bet {
+  id           Int         @id @default(autoincrement())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       Int
+  game         Game        @relation(fields: [gameId], references: [eventId], onDelete: Restrict, onUpdate: Restrict)
+  gameId       String
+  betType      String
+  betVariant   BetVariants
+  amount       Decimal     @db.Decimal(16, 2)
+  cf           Decimal     @db.Decimal(16, 2)
+  currency     Currency    @relation(fields: [currencyCode], references: [isoCode])
+  currencyCode String
+  status       BetStatus   @default(PENDING)
+
+  ExpressBet   ExpressBet? @relation(fields: [expressBetId], references: [id])
+  expressBetId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Promo {
+  id         Int       @id @default(autoincrement())
+  code       String
+  validUntil DateTime
+  available  Int       @default(1)
+  type       PromoType
+  value      Json
+
+  promoOnUsers PromoOnUsers[]
+
+  createdAt DateTime @default(now())
+}
+
+model PromoOnUsers {
+  promoId Int
+  promo   Promo       @relation(fields: [promoId], references: [id])
+  userId  Int
+  user    User        @relation(fields: [userId], references: [id])
+  status  PromoStatus
+
+  @@id([promoId, userId])
+}
+
+enum PromoStatus {
+  APPLIED
+  EXPIRED
+}
+
+enum PromoType {
+  ON_DEPOSIT
+}
+
+model Operation {
+  id           Int             @id @default(autoincrement())
+  user         User            @relation(fields: [userId], references: [id])
+  userId       Int
+  source       OperationSource
+  status       OperationStatus
+  type         OperationType
+  amount       Decimal         @db.Decimal(16, 2)
+  currency     Currency        @relation(fields: [currencyCode], references: [isoCode])
+  currencyCode String
+  meta         Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WithdrawRequest {
+  id           Int             @id @default(autoincrement())
+  user         User            @relation(fields: [userId], references: [id])
+  userId       Int
+  status       OperationStatus
+  type         String
+  bank         String?
+  wallet       String
+  amount       Decimal         @db.Decimal(16, 2)
+  currency     Currency        @relation(fields: [currencyCode], references: [isoCode])
+  currencyCode String
+  meta         Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GreengoRequests {
+  id          Int    @id @default(autoincrement())
+  orderId     String
+  operationId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BetVariants {
+  ORDINAR
+  EXPRESS
+}
+
+enum OperationType {
+  INCOME
+  OUTCOME
+}
+
+enum AffilatorType {
+  REVSHARE
+  CPA
+}
+
+enum OperationStatus {
+  WAITING
+  SUCCESS
+  FAILED
+}
+
+enum BetStatus {
+  PENDING
+  WIN
+  LOSE
+  RETURN
+}
+
+enum OperationSource {
+  BET
+  PAYMENT_SYSTEM
+  PROMO
+  AFFILIATE
+}
+
+enum GameBetApiType {
+  LIVE
+  LINE
+}
+
+model GameBetApi {
+  eventId               String  @id
+  sgame_id              String
+  stat_id               String
+  ext_game_id           Int?
+  game_id               Int
+  game_mid              Int
+  game_num              Int
+  game_dop_name         String
+  game_dop_name_langs   Json?
+  game_start            Int
+  game_oc_counter       Int
+  country_id            Int
+  country_name          String
+  tournament_id         Int
+  tournament_name       String
+  tournament_name_langs Json?
+  opp_1_name            String
+  opp_1_name_langs      Json?
+  opp_2_name            String
+  opp_2_name_langs      Json?
+  opp_1_id              Int
+  opp_1_ids             Int[]
+  opp_2_id              Int
+  opp_2_ids             Int[]
+  opp_1_icon            String
+  opp_2_icon            String
+  sport_name            String
+  sport_name_langs      Json?
+  sport_id              Int
+  score_full            String
+  score_extra           String
+  score_period          String
+  period_name           String
+  stat_list             Json
+  stat_list_extra       Json?
+  timer                 Int
+  extra_time            String
+  pitch                 String?
+  game_plan             String?
+  finale                Boolean
+  game_desk             String
+  game_oc_list          Json
+  game_oc_list_id       Int?
+
+  // bets     Bet[]
+  type     GameBetApiType
+  status   GameStatus
+  priority Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventName  String
+  leagueName String
+  sport      String
+}

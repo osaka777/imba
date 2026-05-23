@@ -1,0 +1,219 @@
+.pageWrap {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(60% 60% at 50% 40%, rgba(59,130,246,0.15), transparent 60%);
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  background: rgba(16, 24, 39, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+}
+
+.subimportant {
+  font-size: 14px;
+  color: red;
+}
+
+.badgeRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.35);
+}
+
+.infoBox {
+  border: 1px dashed rgba(255,255,255,0.25);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 12px 0 8px;
+  background: rgba(255,255,255,0.03);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.infoValueWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copyBtn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.copyBtn:active {
+  transform: translateY(1px);
+}
+
+.infoLabel {
+  color: var(--blue-30);
+}
+
+.infoValue {
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.quickRow {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.label {
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+}
+
+.uploadArea {
+  position: relative;
+  display: block;
+  border: 1px dashed rgba(255,255,255,0.25);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255,255,255,0.03);
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uploadText {
+  color: rgba(255,255,255,0.75);
+}
+
+.previewImg {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  margin: 0 auto;
+  border-radius: 12px;
+  object-fit: contain;
+  background: rgba(0,0,0,0.2);
+}
+
+.submitBtn {
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  font-weight: 700;
+  border: none;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+}
+
+.statusBox {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 16px;
+  background: rgba(255,255,255,0.04);
+}
+
+.statusSuccess {
+  border-color: rgba(34,197,94,0.4);
+  background: rgba(34,197,94,0.08);
+}
+
+.statusError {
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.08);
+}
+
+.statusTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.statusText {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 10px;
+}
+
+.timerBox {
+  font-size: 14px;
+}
+
+.timer {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}

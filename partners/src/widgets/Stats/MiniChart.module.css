@@ -1,0 +1,50 @@
+.container {
+    width: 100%;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.noData {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.tooltip {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    font-size: 12px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+/* Скрываем оси и сетку для мини-графика */
+.container :global(.recharts-cartesian-axis),
+.container :global(.recharts-cartesian-grid) {
+    display: none;
+}
+
+/* Показываем tooltip */
+.container :global(.recharts-tooltip-wrapper) {
+    pointer-events: auto;
+}
+
+.container :global(.recharts-tooltip) {
+    background-color: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+}

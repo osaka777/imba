@@ -1,0 +1,70 @@
+.main {
+    flex: 1;
+    background-color: white;
+    position: relative;
+}
+
+.wrapper {
+    position: absolute;
+    padding: 20px;
+    top: -70px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.card {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 12px 19px -5px rgba(0, 0, 0, .13);
+    color: #0f0e27;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card_header {
+    font-size: 24px;
+    color: black;
+    font-weight: 700;
+}
+
+.cards_wrapper .card {
+    flex: 1;
+}
+
+
+.cards_wrapper {
+    gap: 16px;
+    display: flex;
+    flex-direction: row;
+}
+
+.card_contact > svg > g > path {
+   fill: #6221A1;
+}
+
+.card_contact > svg > g > path:first-child {
+    fill: white;
+}
+
+.card_contact {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #351d78;
+    gap: 12px;
+}
+
+@media screen and (max-width: 649px) {
+    .cards_wrapper {
+        flex-direction: column;
+        justify-content: center;
+    }
+}

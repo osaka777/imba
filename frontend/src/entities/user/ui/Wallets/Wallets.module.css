@@ -1,0 +1,975 @@
+.walletsContainer {
+  width: 100%;
+  padding: 24px;
+  background: var(--blue-20, #232d45);
+  border-radius: 16px;
+}
+
+.header {
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.walletsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.walletItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px;
+  padding: 18px 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.walletItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.walletInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.currencyIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.currencyCode {
+  font-size: 18px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.balance {
+  font-size: 16px;
+  color: #8a94a6;
+}
+
+.mainBadge {
+  background: #0095ff;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  margin-left: 12px;
+}
+
+.walletActions {
+  display: flex;
+  gap: 12px;
+}
+
+.depositBtn {
+  background: #23b260;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.setMainBtn {
+  background: #0095ff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mainInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Main Balance Section */
+.mainBalanceSection {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.balanceHeaderContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.balanceHeader {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.balanceAmount {
+  font-size: 22px;
+  font-weight: 600;
+  color: white;
+}
+
+.balanceActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.withdrawButton {
+  flex: 1;
+  background-color: var(--blue-20);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.depositButton {
+  flex: 1;
+  background-color: #26C95E;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Bonus Section */
+.bonusSection {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bonusHeader {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.bonusAmount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.bonusIcon {
+  display: flex;
+  align-items: center;
+}
+
+.bonusIconImg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Money List */
+.moneyList {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.moneyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.moneyItem:last-child {
+  border-bottom: none;
+}
+
+.moneyInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.moneyIconContainer {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.moneyIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.moneyName {
+  font-size: 16px;
+  color: white;
+}
+
+.moneyBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: white;
+}
+
+.addButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #26C95E;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding: 0;
+  min-width: unset;
+}
+
+/* Account Management */
+.accountManagement {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.accountManagement:hover {
+  background-color: var(--blue-10);
+}
+
+.sectionSettings {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionSettingsIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sectionSettingsIconImg {
+  width: 20px;
+  height: 20px;
+}
+
+.arrowIcon {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+}
+
+/* Crypto Section */
+.cryptoSection {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+}
+
+.cryptoList {
+  display: flex;
+  flex-direction: column;
+}
+
+.cryptoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cryptoItem:last-child {
+  border-bottom: none;
+}
+
+.cryptoInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cryptoIconContainer {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.cryptoIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.cryptoName {
+  font-size: 16px;
+  color: white;
+}
+
+.cryptoBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: white;
+}
+
+.twinCoinSection {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coinTitle {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.exchangeButton {
+  background-color: #26C95E;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.coinDesc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.coinBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+}
+
+.coinIcon {
+  color: #FF5C5C;
+}
+
+.managementDialog {
+  background-color: var(--blue-00);
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  padding: 20px;
+}
+
+.dialogTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.dialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.walletOptionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background-color: var(--blue-10);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.walletOptionItem:hover {
+  background-color: var(--blue-20);
+}
+
+.optionIcon {
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--blue-20);
+  border-radius: 50%;
+}
+
+.optionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.optionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+}
+
+.optionDesc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.closeButton {
+  background-color: var(--blue-20);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.loading {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .walletsContainer {
+    max-width: 100%;
+  }
+
+  .mainBalanceSection,
+  .bonusSection,
+  .accountManagement,
+  .cryptoSection,
+  .twinCoinSection {
+    padding: 14px;
+  }
+}
+
+.walletsPage {
+  width: 100%;
+  padding: 24px 0;
+}
+
+.pageTitleWrapper {
+  margin-bottom: 16px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  color: #fff;
+  font-weight: 600;
+  padding-left: 24px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.profileHeader {
+  background: #181f2c;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mainBalanceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mainBalanceTitle {
+  color: #8a94a6;
+  font-size: 15px;
+}
+
+.mainBalanceValue {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.profileHeaderButtons {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.withdrawBtn,
+.depositBtn {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.withdrawBtn {
+  background: #232d45;
+  color: #fff;
+}
+
+.depositBtn {
+  background: #23b260;
+  color: #fff;
+}
+
+.walletList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wallet {
+  background: #181f2c;
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.walletMiddle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.walletName {
+  color: #8a94a6;
+  font-size: 15px;
+}
+
+.walletValue {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.walletControl {
+  display: flex;
+  align-items: center;
+}
+
+.walletDotsWrapper {
+  width: 32px;
+  height: 32px;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #181f2c;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.modalHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.modalCurrencyIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.modalBalance {
+  font-size: 16px;
+  color: #8a94a6;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: #8a94a6;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalClose:hover {
+  color: #fff;
+}
+
+.modalActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalBtn {
+  background: #0095ff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modalBtn:hover {
+  background: #0080e6;
+}
+
+.walletDots {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.dotsIcon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dotsIcon span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3a4152;
+  display: block;
+}
+
+.lightBlackBlueGradient {
+  background: linear-gradient(107.15deg, #232d45, #181f2c);
+}
+
+.mainBlock {
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.mainTitle {
+  color: #8a94a6;
+  font-size: 15px;
+}
+
+.mainValue {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.mainActions {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.withdrawBtn,
+.depositBtn {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.withdrawBtn {
+  background: #232d45;
+  color: #fff;
+}
+
+.depositBtn {
+  background: #23b260;
+  color: #fff;
+}
+
+.walletList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.walletItem {
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.walletName {
+  color: #8a94a6;
+  font-size: 15px;
+}
+
+.walletValue {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.walletDots {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dotsIcon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dotsIcon span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3a4152;
+  display: block;
+}
+
+.modalOverlay {
+  position: fixed;
+  height: 100%;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+
+.modal {
+  background: #fff;
+  border-radius: 16px 16px;
+  width: 90%;
+  max-width: 100%;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: modalIn 0.2s;
+}
+
+@media screen and (max-width: 768px) {
+  .modal {
+    margin-bottom: 70px;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.currencyIcon {
+  width: 32px;
+  height: 32px;
+  /* вставьте SVG или иконку */
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #232d45;
+}
+
+.modalBalance {
+  font-size: 16px;
+  color: #8a94a6;
+}
+
+.modalClose {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #8a94a6;
+  cursor: pointer;
+}
+
+.modalActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalBtn {
+  background: #eaf0ff;
+  color: #232d45;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.Deposit {
+  flex: 1;
+  background-color: #23b260;
+  box-shadow: 0 0 8px rgba(35, 178, 96, 0.5);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+
+div.dialog {
+  border-radius: 15px;
+
+  padding: 0;
+
+  max-width: max-content;
+}
+
+.modalBtnPrimary {
+  background: #23b260;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}

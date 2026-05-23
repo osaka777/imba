@@ -1,0 +1,75 @@
+.GreengoForm {
+  padding: 32px 12px;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media screen and (max-width: 425px) {
+  .GreengoForm {
+    padding: 12px;
+  }
+}
+.heading {
+  color: var(--black);
+  font-weight: 500;
+  font-size: 24px;
+}
+.input {
+}
+.quickSetAmount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.quickSetAmountButton {
+  border-radius: 8px;
+
+  padding: 4px 8px;
+
+  background-color: var(--gray-20-transparent);
+
+  display: flex;
+  align-items: center;
+
+  color: var(--black-20);
+  font-size: 12px;
+}
+.error {
+  color: var(--red-10);
+}
+.submit {
+  position: relative;
+
+  border-radius: 8px;
+
+  padding: 8px 4px;
+
+  background-color: var(--green-10);
+
+  width: 100%;
+
+  font-size: 18px;
+}
+.loader {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+
+  border-radius: 4px;
+
+  padding: 4px;
+
+  background-color: var(--blue-00);
+}
+.text {
+  color: var(--black);
+}
+.textBold {
+  font-weight: 500;
+  color: var(--black);
+}

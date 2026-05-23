@@ -1,0 +1,649 @@
+.pageWrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 28px 16px;
+  min-height: 100vh;
+  background: #0f111a;
+}
+
+.pageWrap .card {
+  padding: 0;
+}
+
+.card {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #dde2f5;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 20px 20px 26px;
+  box-sizing: border-box;
+}
+
+.cardModal {
+  padding: 4px 16px 20px;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .cardModal {
+    padding: 0 14px 18px;
+    gap: 12px;
+  }
+}
+
+/* ── QR section ── */
+.qrSection {
+  background: #181b28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.qrLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bankLogo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e8480e, #c12d00);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(232, 72, 14, 0.35);
+}
+
+.qrDesc {
+  font-size: 13px;
+  color: #8e98bc;
+  line-height: 1.5;
+  max-width: 340px;
+  margin: 0;
+}
+
+.orderIdHint {
+  margin: 0;
+  color: #6f7ba0;
+  font-size: 12px;
+}
+
+.qrDesc strong {
+  color: #4b9eff;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.qrImg {
+  width: 150px;
+  height: 150px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.qrPlaceholder {
+  width: 150px;
+  height: 150px;
+  border-radius: 10px;
+  background: #1e2133;
+  border: 1.5px dashed rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4d5570;
+  font-size: 12px;
+  text-align: center;
+  padding: 14px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+/* ── Bottom 2-col ── */
+.bottomRow {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 8px;
+}
+
+/* ── Requisites ── */
+.requisitesBox {
+  background: #181b28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.requisitesTitle {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c5cce8;
+}
+
+.reqRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reqRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.reqIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7b86ad;
+  flex-shrink: 0;
+}
+
+.reqBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.reqLabel {
+  display: block;
+  font-size: 11px;
+  color: #6f7ba0;
+  margin-bottom: 2px;
+}
+
+.reqValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #eef1ff;
+  word-break: break-word;
+}
+
+.copyIconBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #6f7ba0;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.copyIconBtn:hover {
+  color: #4b9eff;
+  background: rgba(75, 158, 255, 0.1);
+}
+
+/* ── Warning ── */
+.warningBox {
+  background: #181b28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.warningIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(75, 158, 255, 0.15);
+  color: #4b9eff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.warningText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #8e98bc;
+}
+
+/* ── Actions ── */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 4px;
+}
+
+.timerWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 10px;
+  padding: 0 2px;
+}
+
+.timerBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #8e98bc;
+}
+
+.timerValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #eef1ff;
+}
+
+.timerProgress {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.timerProgressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb, #4b9eff);
+  transition: width 1s linear;
+}
+
+.paidBtn {
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.35);
+  transition: opacity 0.15s;
+}
+
+.paidBtn:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.paidBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #f87171;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px;
+  text-align: center;
+  transition: color 0.15s;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  color: #fca5a5;
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.statusBox {
+  background: #181b28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  color: #7a84a8;
+  font-size: 15px;
+}
+
+.statusTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #eef1ff;
+  margin: 0 0 8px;
+}
+
+.statusText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #8e98bc;
+}
+
+.errorBox {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #8e98bc;
+}
+
+.input {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  background: #181b28;
+  color: #eef1ff;
+  outline: none;
+}
+
+.quickRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  background: #181b28;
+  color: #dde2f5;
+  cursor: pointer;
+}
+
+.submitBtn {
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loadingWrap {
+  padding: 32px;
+  text-align: center;
+  color: #8e98bc;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 14px;
+    gap: 7px;
+  }
+
+  .cardModal .qrSection {
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 16px;
+    gap: 14px;
+    border-radius: 16px;
+  }
+
+  .cardModal .qrImg,
+  .cardModal .qrPlaceholder {
+    width: 136px;
+    height: 136px;
+    border-radius: 12px;
+    align-self: center;
+    order: 1;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  .cardModal .qrLeft {
+    flex: none;
+    width: 100%;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding-top: 0;
+    order: 2;
+  }
+
+  .cardModal .bankLogo {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .cardModal .qrDesc {
+    max-width: none;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .cardModal .orderIdHint {
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .cardModal .bottomRow {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .cardModal .requisitesBox {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .cardModal .requisitesTitle {
+    font-size: 14px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .cardModal .reqRow {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-bottom: none;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    gap: 12px;
+  }
+
+  .cardModal .reqRow:last-child {
+    margin-bottom: 0;
+    padding-bottom: 12px;
+  }
+
+  .cardModal .reqIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(75, 158, 255, 0.12);
+    color: #4b9eff;
+  }
+
+  .cardModal .reqLabel {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .cardModal .reqValue {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  .cardModal .copyIconBtn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+  }
+
+  .cardModal .warningBox {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(75, 158, 255, 0.08);
+    border-color: rgba(75, 158, 255, 0.18);
+  }
+
+  .cardModal .warningIcon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .cardModal .warningText {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #a8b4d4;
+    text-align: left;
+  }
+
+  .cardModal .actions {
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 10px;
+  }
+
+  .cardModal .paidBtn {
+    height: 50px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+
+  .cardModal .cancelBtn {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .cardModal .timerWrap {
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .cardModal .timerBadge {
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .cardModal .timerProgress {
+    height: 4px;
+    margin-top: 2px;
+  }
+
+  /* Standalone page (non-modal) keeps compact horizontal QR */
+  .qrSection {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 14px 16px;
+    gap: 12px;
+  }
+
+  .qrDesc {
+    max-width: none;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .qrLeft {
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+    padding-top: 2px;
+  }
+
+  .bankLogo {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .qrImg,
+  .qrPlaceholder {
+    width: 108px;
+    height: 108px;
+    align-self: flex-start;
+    flex-shrink: 0;
+  }
+
+  .bottomRow {
+    grid-template-columns: 1fr;
+  }
+
+  .warningBox {
+    flex-direction: row;
+    text-align: left;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .timerWrap {
+    display: flex;
+    width: 100%;
+    margin: 6px 0 10px;
+    padding: 0 2px;
+  }
+
+  .timerBadge {
+    width: 100%;
+    justify-content: center;
+  }
+}

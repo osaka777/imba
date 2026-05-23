@@ -1,0 +1,131 @@
+.section {
+    padding-top: 100px;
+    padding-bottom: 40px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+.container {
+    max-width: 1116px;
+    padding: 0 20px;
+    width: 100%;
+}
+.content {
+    display: flex;
+    justify-content: space-between;
+}
+.content::after {
+    position: absolute;
+    right: -6%;
+    background: url(/vector_bg.svg) no-repeat 50% / contain;
+    content: "";
+    height: 578px;
+    left: -80px;
+    top: -70px;
+    width: 649px;
+    z-index: 1;
+}
+.body {
+    display: flex;
+    flex-direction: column;
+    max-width: 575px;
+    position: relative;
+    z-index: 5;
+    margin-right: 40px;
+}
+.imageWrapper {
+    display: grid;
+}
+.textWrapper {
+    max-width: 780px;
+}
+.peopleImg {
+    margin-bottom: 16px;
+    width: 116px;
+    height: 45px;
+}
+.title {
+    color: #fff;
+    white-space: pre-line;
+    font-size: 56px;
+    line-height: 62px;
+    font-weight: 700;
+}
+.text {
+    margin-top: 24px;
+    max-width: 100%;
+    color: #82848e;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 22px;
+}
+.contactSocials {
+    display: block;
+    margin-top: 200px;
+}
+.socialsText {
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 22px;
+}
+.items {
+    display: flex;
+    flex-direction: row;
+}
+.telegramLink {
+    align-items: center;
+    background: #13171e;
+    border-radius: 16px;
+    display: flex;
+    padding: 12px 24px 12px 12px;
+    transition: background-color 0.2s;
+}
+.iconWrapper {
+    background-color: #2856ff;
+    border-radius: 8px;
+    color: #fff;
+    display: flex;
+    padding: 8px;
+}
+.linkBody {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16px;
+}
+.linkTitle {
+    color: #828694;
+    font-weight: 500;
+}
+.linkText {
+    color: #fff;
+    font-weight: 700;
+}
+.registrationForm {
+}
+
+@media screen and (max-width: 960px) {
+    .content {
+        flex-direction: column;
+        gap: 24px;
+    }
+    .contactSocials{
+        display: none;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .title {
+        font-size: 44px;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .title {
+        font-size: 36px;
+        line-height: 40px
+    }
+}
+

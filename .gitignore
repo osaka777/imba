@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.swp
+credentials.json
+secrets.json
+
+# Logs & runtime
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids/
+*.pid
+*.seed
+
+# OS & IDE
+.DS_Store
+.idea/
+.vscode/
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# Docker & local data
+data/postgres/
+data/logs/
+backend/postgres/
+backend/uploads/
+.temp/
+.tmp/
+
+# Generated
+frontend/src/shared/api/api.d.ts
+frontend/certificates/
+backend/docs/
+
+# Misc
+.vercel
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

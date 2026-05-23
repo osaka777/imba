@@ -1,0 +1,154 @@
+.openTab {
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+  gap: 16px;
+  max-height: 80vh;
+  overflow-y: scroll;
+}
+
+.notFound {
+  margin: auto;
+}
+
+.bets {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.coupon_wrapper {
+  display: flex;
+  align-items: start;
+  overflow: hidden;
+  position: relative;
+
+  background-color: #fff;
+  border-radius: 10px;
+
+  flex-direction: column;
+  position: relative;
+}
+
+.coupon_padding {
+  padding: 11px 10px 10px;
+
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.betInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coupon_name {
+  color: #000;
+}
+
+.coefficient_wrapper {
+  display: flex;
+  position: relative;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.coefficient {
+  padding: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  align-items: center;
+  background: linear-gradient(143.56deg, #0095ff -58.98%, #0855c4 95.86%);
+  border-radius: 8px;
+  box-shadow: 0 6px 22px #056dda33;
+  color: #fff;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-self: stretch;
+  margin-right: 8px;
+  width: 46px;
+}
+
+.coefficient_name p{
+
+  margin-right: 10px;
+  color: #096dff;
+  font-weight: 700;
+  font-size: 11px;
+
+}
+.coefficient_name{
+    display: flex;
+  flex-direction: column;
+}
+
+.coupon_active {
+  background-color: white;
+  border-radius: 10px;
+  padding: 11px 10px;
+  border-top: 1px dashed black;
+}
+
+.coupon_active_info {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.info_wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.coupon_info_title {
+  font-size: 10px;
+  color: black;
+  opacity: 0.5;
+}
+
+.coupon_info_value {
+  font-size: 10px;
+  color: black;
+}
+
+.header {
+  background-color: #0663d1;
+  padding: 11px 10px 10px;
+  width: 100%;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.id {
+  opacity: 0.4;
+}
+
+.coupon_subname {
+  opacity: 0.6;
+  color: black;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.goToEvent {
+  z-index: 10;
+  border-radius: 8px;
+
+  padding: 6px 2px;
+
+  background: var(--light-blue-gradient);
+
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}

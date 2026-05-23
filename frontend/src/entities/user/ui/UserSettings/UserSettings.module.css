@@ -1,0 +1,203 @@
+.UserSettingsFormContainer {
+  border-radius: 15px;
+  background: var(--blue-00);
+  padding: 32px 24px;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.UserSettingsHeader {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.UserSettingsSubtitle {
+  font-size: 16px;
+  color: #8a94a6;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.UserSettingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.UserSettingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.UserSettingsLabel {
+  font-size: 14px;
+  color: #8a94a6;
+  margin-bottom: 2px;
+}
+
+.UserSettingsValueText {
+  font-size: 16px;
+  color: #fff;
+}
+
+.UserSettingsValue,
+.UserSettingsInput {
+  font-size: 16px;
+  background: var(--blue-20);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 14px;
+  outline: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+
+.UserSettingsInput:focus {
+  border-color: #0095ff;
+}
+
+.UserSettingsVerified {
+  width: 8px;
+  height: 8px;
+  background: #52c41a;
+  border-radius: 50%;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+.UserSettingsPasswordRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.UserSettingsPasswordBtn {
+  background: #0095ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.UserSettingsPasswordBtn:hover {
+  background: #007acc;
+}
+
+.UserSettingsPasswordChange {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.UserSettingsPasswordActions {
+  display: flex;
+  gap: 12px;
+}
+
+.UserSettingsSaveBtn {
+  background: #0095ff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.UserSettingsSaveBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.UserSettingsSaveBtn:hover:not(:disabled) {
+  background: #007acc;
+}
+
+.UserSettingsSwitchRowTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.UserSettingsSwitchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--blue-20);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 8px;
+}
+
+.UserSettingsSwitchLabel {
+  font-size: 15px;
+  color: #fff;
+}
+
+.UserSettingsSwitchDesc {
+  font-size: 13px;
+  color: #8a94a6;
+}
+
+.UserSettingsSwitch {
+  width: 44px;
+  height: 24px;
+  position: relative;
+  display: inline-block;
+}
+
+.UserSettingsSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.UserSettingsSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  transition: .4s;
+}
+
+.UserSettingsSlider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+.UserSettingsSwitch input:checked+.UserSettingsSlider {
+  background-color: #0095ff;
+}
+
+.UserSettingsSwitch input:checked+.UserSettingsSlider:before {
+  transform: translateX(20px);
+}

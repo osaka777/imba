@@ -1,0 +1,292 @@
+.level {
+  justify-content: space-between;
+}
+
+.ruIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 10px;
+}
+
+.level .level-left {
+  justify-content: flex-start;
+}
+
+.level .level-center {
+  justify-content: center;
+}
+
+.level .level-right {
+  justify-content: flex-end;
+}
+
+.level .level-item {
+  position: relative;
+}
+
+.panel {
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  max-height: 100%;
+}
+
+.panel:not(:last-child) {
+  margin-bottom: 1.25rem;
+}
+
+.panel.grow1 {
+  flex-grow: 1;
+}
+
+.headerLineTop {
+  justify-content: space-between;
+  padding-left: 15px;
+  padding-right: 15px;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  background-color: #090f1e;
+  position: relative;
+}
+
+@media screen and (max-width: 768px) {
+  .headerLineTop {
+    display: none;
+  }
+}
+
+.headerLineLeft {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.levelItem {
+  align-items: center;
+  display: flex;
+  margin-right: 1rem;
+}
+
+.button {
+  background-image: linear-gradient(103deg, #108de7 -30%, #0855c4 100%);
+  color: #fff;
+  font-weight: 600;
+  justify-content: center;
+  padding: 0 15px;
+  text-align: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  border-width: 0;
+  min-height: 30px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.ttn {
+  text-transform: none !important;
+}
+
+.headerButton {
+  border-radius: 5px;
+  min-height: 0;
+  height: 30px;
+  width: 31px;
+  padding: 3px;
+  margin-right: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mobileIcon {
+  height: 1.5em !important;
+  font-size: 14px;
+}
+
+.miniIcon {
+  fill: white;
+  background: rgba(78, 93, 134, 0.3);
+  transition: background 0.2s;
+}
+
+.divider {
+  background-color: #fff;
+  opacity: 0.2;
+  width: 1px;
+  height: 14px;
+  margin: 0 12px 0 0;
+}
+
+.FreeMoneyLink_text_wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.FreeMoneyLink_wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.FreeMoneyLink_root_sudSD {
+  padding: 2.5px 5px 2.5px 30px;
+  border-radius: 50px;
+  background: rgb(35, 45, 69);
+  font-weight: 600;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.FreeMoneyLink_liveIcon_wrapper {
+  background-color: #f04447;
+  border-radius: 50%;
+  padding: 2px;
+}
+
+.FreeMoneyLink_liveIcon {
+  width: 12px;
+  height: 12px;
+  fill: #fff;
+}
+
+.FreeMoneyLink_text {
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+}
+
+.FreeMoneyLink_description {
+  font-size: 10px;
+  color: #fff;
+  opacity: 0.5;
+}
+
+.FreeMoneyLink_image {
+  width: 57px;
+  height: 22px;
+  background-size: 100%;
+}
+
+.icon {
+  display: inherit;
+  flex: none;
+  height: 1em;
+  overflow: visible;
+  font-size: var(--vicon-with-gradient-problem__size);
+}
+
+.iconArrowRight {
+  position: absolute;
+  top: 0;
+  right: 10px;
+  bottom: 0;
+  margin: auto;
+  color: #0000004d;
+}
+
+
+.headerLineRight {
+  display: flex;
+  align-items: center;
+  background: rgb(35, 45, 69);
+  border-radius: 10px;
+  padding: 5px 10px;
+}
+
+
+.df {
+  display: flex;
+  align-items: center;
+}
+
+
+.ChangeLanguage_button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.ChangeLanguage_buttonTitle_eh_mm {
+  font-size: 12px;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.icon {
+  display: inherit;
+  flex: none;
+  height: 1em;
+  overflow: visible;
+  font-size: var(--vicon-with-gradient-problem__size);
+  fill: currentColor;
+}
+
+.iconSmoothArrowUp {}
+
+.sm {
+  font-size: inherit;
+}
+
+.ChangeLanguage_buttonIcon {
+  width: 7px;
+  height: 4px;
+  margin: 0 7px 0 4px;
+  color: #ffffff80;
+  transform: rotate(180deg);
+  transition: transform 0.2s ease-in-out;
+}
+
+.CountryIcon_root_Uixdl {
+  height: calc(var(--1f87e29d) * 1px);
+  width: calc(var(--1f87e29d) * 1px);
+  min-width: calc(var(--1f87e29d) * 1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.CountryIcon_image {
+  width: 100%;
+  height: 100%;
+}
+
+.CountryIcon_rounded {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.carImage {
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 57px;
+  height: 22px;
+}
+
+
+.FreeMoneyLink_prefix {
+  width: 28px;
+  height: 28px;
+  background-image: linear-gradient(161deg, rgb(0, 179, 255) 1%, rgb(0, 61, 218) 100%);
+  background-image: linear-gradient(161deg, #00c2ff, #0009da), linear-gradient(135deg, #3a0887, #5196ff);
+  border-radius: 50%;
+  box-shadow: 0 3px 5px #557aff66;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 50%;
+  left: -20px;
+  transform: translate(-50%, -50%);
+}
+

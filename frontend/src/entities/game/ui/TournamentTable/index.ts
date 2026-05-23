@@ -1,0 +1,1 @@
+export { TournamentTable } from "./TournamentTable";

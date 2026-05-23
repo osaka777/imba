@@ -1,0 +1,27 @@
+.main {
+  padding-top: 12px;
+
+  width: 100%;
+  max-width: 100%;
+
+  display: grid;
+  grid-template-areas:
+    "header coupon"
+    "table coupon";
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+@media screen and (max-width: 1080px) {
+  .main {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.coupon {
+  grid-area: coupon;
+  width: 320px;
+  min-width: 320px;
+}

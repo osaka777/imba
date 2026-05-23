@@ -1,0 +1,90 @@
+.SystemSelect {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  width: 100%;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  border: 2px solid #e5e7eb;
+  box-shadow: none;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+  will-change: border-color, background-color;
+}
+
+.SystemSelect:hover {
+  border-color: #cbd5e1;
+}
+
+.systemSelect_active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: none;
+}
+
+.systemSelect_active .icons {
+  background-color: transparent;
+}
+
+.systemSelect_active .systemSelectTextMini {
+  color: #1d4ed8 !important;
+}
+
+@media screen and (max-width: 768px) {
+  .SystemSelect {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    height: 72px;
+    margin: 0;
+    border-radius: 12px;
+  }
+
+  .SystemSelect:hover {
+    transform: none;
+  }
+}
+@media screen and (max-width: 425px) {
+  .SystemSelect {
+    height: 85px;
+    max-width: 100%;
+  }
+}
+.icons {
+  padding: 2px 8px;
+
+  background-color: white;
+
+  width: 100%;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.icons img {
+  height: 20px;
+  width: auto;
+  object-fit: contain;
+}
+.systemSelectIcon {
+  fill: unset;
+  color: unset;
+}
+
+.systemSelectText {
+  font-weight: 500;
+}
+.systemSelectTextMini {
+  font-size: 12px;
+}
+.systemSelectText,
+.systemSelectTextMini {
+  color: var(--black);
+}

@@ -1,0 +1,24 @@
+.nav {
+    display: flex;
+    flex-direction: row;
+    gap: 20px
+}
+
+.nav_item {
+    color: #9392aa;
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.nav_item:hover {
+    color: white;
+}
+
+.nav_item_active{
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-transform: uppercase;
+}

@@ -1,0 +1,64 @@
+.FinanceHistory {
+  border-radius: 8px;
+
+  padding: 8px;
+
+  background-color: var(--blue-00);
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heading {
+  padding: 12px 0;
+
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+  color: #fff;
+}
+
+.financeItem {
+  border-radius: 8px;
+
+  padding: 12px;
+
+  background-color: var(--blue-20);
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media screen and (max-width: 768px) {
+  .financeItem {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+.id {
+  width: 70px;
+  color: #ccc;
+}
+
+.date {
+  width: 120px;
+  color: #fff;
+}
+
+.amount {
+  width: 120px;
+  color: #fff;
+}
+
+@media screen and (max-width: 768px) {
+
+  .date,
+  .id,
+  .amount {
+    width: auto;
+  }
+}

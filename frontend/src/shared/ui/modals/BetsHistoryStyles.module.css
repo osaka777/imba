@@ -1,0 +1,503 @@
+.modalContent {
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    text-align: start;
+}
+
+.modalTitle {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: black;
+}
+
+.modalDescription {
+    font-size: 14px;
+    color: #070C19;
+    margin-bottom: 20px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.input {
+    padding: 12px;
+    border-radius: 8px;
+    background-color: var(--blue-20);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 14px;
+}
+
+.submitButton {
+    padding: 12px;
+    background-color: var(--blue-30);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.closeButton {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--blue-20);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+.coinBalance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.coinIcon {
+    font-size: 24px;
+    color: #FFD700;
+}
+
+.coinAmount {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.coinOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.coinButton {
+    padding: 12px;
+    background-color: var(--blue-30);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.settingsGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.settingItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--blue-20);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #26C95E;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+.settingsActions {
+    display: flex;
+    gap: 12px;
+}
+
+.saveButton,
+.cancelButton {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.saveButton {
+    background-color: #26C95E;
+}
+
+.cancelButton {
+    background-color: var(--blue-20);
+}
+
+.transactionsContainer {
+    margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.transactionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.transactionItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--blue-20);
+    border-radius: 8px;
+}
+
+.transactionInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.transactionType {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.transactionDate {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.transactionAmount {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.positive {
+    color: #26C95E;
+}
+
+.negative {
+    color: #FF5C5C;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+    .modalContent {
+        padding: 16px;
+    }
+
+    .settingsActions {
+        flex-direction: column;
+    }
+}
+
+.detailsModal {
+    max-width: 340px;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    margin: 10px auto;
+    background: var(--blue-00);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+    position: relative;
+    z-index: 1000;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    background: var(--blue-00);
+    padding: 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 40px;
+}
+
+.headerTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.headerAccount {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #9299A2;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 0 16px;
+    background: var(--blue-00);
+    flex-shrink: 0;
+}
+
+.tabItem {
+    padding: 6px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    color: #9299A2;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+    font-weight: 500;
+}
+
+.tabItem.active {
+    background: #0095ff;
+    color: #fff;
+    font-weight: 500;
+}
+
+.content {
+    padding: 10px;
+    background: var(--blue-00);
+    min-height: 80px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.emptyBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 0;
+}
+
+.emptyTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ccc;
+    margin-bottom: 8px;
+}
+
+.emptyText {
+    font-size: 13px;
+    color: #ccc;
+    text-align: center;
+}
+
+.loadingText {
+    text-align: center;
+    color: #ccc;
+    font-size: 14px;
+    padding: 20px 0;
+}
+
+.operationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.betItem {
+    background: var(--blue-20);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+}
+
+.betItem.clickable:hover {
+    background: var(--blue-30);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.betItem.clickable {
+    cursor: pointer;
+}
+
+.betHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.betHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.betDate {
+    font-size: 11px;
+    color: #9299A2;
+}
+
+.betType {
+    font-size: 11px;
+    color: #0095ff;
+    background: rgba(0,149,255,0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.betStatus {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.statusWin {
+    color: #52c41a;
+}
+
+.statusLose {
+    color: #f5222d;
+}
+
+.statusPending {
+    color: #faad14;
+}
+
+.statusReturn {
+    color: #1890ff;
+}
+
+.betContent {
+    padding: 10px;
+}
+
+.betEvent {
+    font-size: 12px;
+    color: #fff;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.betChoice {
+    font-size: 11px;
+    color: #9299A2;
+}
+
+.betFooter {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.02);
+}
+
+.betCoefficient, .betAmount {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.betCoefficientLabel, .betAmountLabel {
+    color: #9299A2;
+}
+
+.betCoefficientValue {
+    color: #f5222d;
+    font-weight: 600;
+}
+
+.betAmountValue {
+    color: #fff;
+    font-weight: 500;
+}
+
+@media (max-height: 600px) {
+    .detailsModal {
+        margin: 5px auto;
+        max-height: 95vh;
+    }
+    
+    .headerRow {
+        min-height: 32px;
+    }
+    
+    .tabs {
+        padding: 8px 12px 0 12px;
+    }
+    
+    .tabItem {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    .content {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 360px) {
+    .betHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .betFooter {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

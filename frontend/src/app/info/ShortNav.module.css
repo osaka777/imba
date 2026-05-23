@@ -1,0 +1,69 @@
+.wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-width: 1200px;
+}
+.logo {
+  font-size: 10px;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 72px;
+  background-color: azure;
+  border-radius: 10px;
+}
+.container {
+  height: 47px;
+  width: 1008px;
+  display: flex;
+  align-items: center;
+  border-radius: 0 0 10px 10px;
+  background-image: linear-gradient(to right, #1e283f, #0f1627);
+  padding: 0 15px;
+  justify-content: space-between;
+}
+.content__right {
+}
+.support {
+  display: flex;
+}
+.support__text {
+  text-align: right;
+  margin-right: 10px;
+  font-size: 10px;
+}
+.support__title {
+  font-weight: 600;
+  line-height: 1.3;
+}
+.support__desc {
+  line-height: 1;
+  color: #ffffff80;
+}
+.support__button {
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  -webkit-backdrop-filter: blur(13.6px);
+  backdrop-filter: blur(13.6px);
+  background-color: #4e5d864d;
+  background-image: linear-gradient(0deg, transparent 0%, transparent 100%);
+  transition:
+    background-color 255ms,
+    opacity 255ms;
+  padding: 0;
+  min-height: 24px;
+}
+.cloud {
+  width: 11px;
+}

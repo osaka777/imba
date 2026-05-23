@@ -1,0 +1,315 @@
+.container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--blue-00);
+  color: #fff;
+}
+
+.title {
+  display: none;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+/* Статистика */
+.stats {
+  display: none;
+}
+
+/* Табы */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 0 16px;
+  background: var(--blue-00);
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px;
+  color: #9299A2;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  border: none;
+}
+
+.tab:hover {
+  background: rgba(0, 149, 255, 0.1);
+}
+
+.tab.active {
+  background: #0095ff;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Список бонусов */
+.bonusList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px 10px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  font-size: 13px;
+  color: #ccc;
+  text-align: center;
+}
+
+/* Карточка бонуса */
+.bonusCard {
+  background: var(--blue-10);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.bonusCard:hover {
+  background: var(--blue-20);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.bonusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bonusCode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.codeLabel {
+  font-size: 12px;
+  color: #9299A2;
+}
+
+.codeValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0095ff;
+}
+
+.bonusStatus {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusPending {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}
+
+.statusWin {
+  background: rgba(38, 201, 94, 0.15);
+  color: #26C95E;
+}
+
+.statusLose {
+  background: rgba(255, 92, 92, 0.15);
+  color: #FF5C5C;
+}
+
+.statusExpired {
+  background: rgba(146, 153, 162, 0.15);
+  color: #9299A2;
+}
+
+.statusCancelled {
+  background: rgba(255, 92, 92, 0.15);
+  color: #FF5C5C;
+}
+
+.statusUnknown {
+  background: rgba(146, 153, 162, 0.15);
+  color: #9299A2;
+}
+
+/* Информация о бонусе */
+.bonusInfo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bonusType,
+.bonusAmount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.typeLabel,
+.amountLabel {
+  font-size: 11px;
+  color: #9299A2;
+}
+
+.typeValue,
+.amountValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* Прогресс отыгрыша */
+.bonusProgress {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: var(--blue-20);
+  border-radius: 6px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.progressPercentage {
+  font-weight: 600;
+  color: #0095ff;
+}
+
+.progressBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progressLow {
+  background: #FF5C5C;
+}
+
+.progressMedium {
+  background: #ffc107;
+}
+
+.progressHigh {
+  background: #26C95E;
+}
+
+.tokenInfo,
+.wagerInfo {
+  font-size: 12px;
+  color: #9299A2;
+  text-align: center;
+}
+
+/* Даты */
+.bonusDates {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--blue-20);
+  border-radius: 6px;
+}
+
+.dateItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.dateLabel {
+  color: #9299A2;
+}
+
+.dateValue {
+  font-weight: 500;
+  color: #fff;
+}
+
+/* Примечания */
+.bonusNotes {
+  padding: 10px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.notesLabel {
+  font-weight: 600;
+  color: #ffc107;
+  margin-right: 8px;
+}
+
+.notesValue {
+  color: #fff;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .bonusHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .bonusInfo {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+} 

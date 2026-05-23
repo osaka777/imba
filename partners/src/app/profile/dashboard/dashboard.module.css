@@ -1,0 +1,242 @@
+.main {
+    background-color: #FBFBFB;
+    padding: 30px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.statistic_section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: auto;
+}
+
+.statistic_filters_item > svg {
+    width: 42px;
+    height: 42px;
+}
+
+.statistic_filters_item:first-child {
+    color: #2f2f53;
+    font-size: 24px;
+    font-weight: 800;
+    gap: 6px;
+}
+
+.statistic_filters_separator {
+    background-color: #b9bac6;
+    width: 1px;
+    height: 24px;
+    display: flex;
+    margin: auto 0;
+}
+
+.statistic_filters_item {
+    color: black;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.statistic_filters_item_active {
+    opacity: 1;
+}
+
+.statistic_filters_item:hover {
+    opacity: 1;
+}
+
+.statistic_filters {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+}
+
+.statistic_main {
+    display: flex;
+    flex-direction: row;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 .25rem 2rem rgba(0, 0, 0, .12);
+}
+
+.statistic_card {
+    border-right: 1px solid rgba(0, 0, 0, .1);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 24px 32px;
+    gap: 16px;
+}
+
+.statistic_card:last-child {
+    border-left: 0;
+}
+
+.statistic_card_stat {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.statistic_card_stat:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.statistic_card_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.statistic_card_name{
+    color: #64748b;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+}
+
+.statistic_card_value {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 18px;
+    margin: 0;
+}
+
+.statistic_locked {
+    position: relative;
+}
+
+.statistic_locked_wrapper {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(1.75px);
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.statistic_locked_wrapper > svg {
+    width: 100px;
+    height: 100px;
+    opacity: .6;
+}
+
+.chart_section {
+    position: relative;
+}
+
+.chart {
+    min-height: 500px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart > * {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 400px !important;
+}
+
+.chart > img {
+    width: 100%;
+}
+
+.chart_header {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chart_title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.currency_selector {
+    width: 192px;
+}
+
+.chart_filters {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    position: absolute;
+    top: -90px;
+    left: 0;
+    flex-wrap: wrap;
+    z-index: 10;
+}
+
+.chart_filter {
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    background-color: #3c3464;
+    padding: 14px 28px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 11;
+    position: relative;
+}
+
+.chart_filter_active {
+    background-color: #3b82f6;
+}
+
+.chart_filter:hover {
+    background-color: #3b82f6;
+}
+
+.chart_filter > svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media screen and (max-width: 960px) {
+    .chart_filters {
+        display: none;
+    }
+    .statistic_card:not(:first-child) {
+        display: none;
+    }
+    .statistic_filters_item:not(:first-child) {
+        display: none;
+    }
+    .statistic_filters_separator {
+        display: none;
+    }
+    .chart_header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .currency_selector {
+        width: 100%;
+    }
+}

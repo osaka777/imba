@@ -1,0 +1,19 @@
+<svg width="49" height="15" viewBox="0 0 49 15" fill="none" xmlns="http://www.w3.org/2000/svg"
+    id="card_mir">
+    <g class="mir_svg__color">
+        <path
+            d="M43.122 0h-9.22c.496 3.321 3.47 6.429 6.742 6.429h7.336c.099-.322.099-.75.099-1.072 0-3-2.181-5.357-4.957-5.357z"
+            fill="url(#mir_svg__a)"></path>
+        <path
+            d="M34.696 6.964V15h4.461v-4.286h3.966c2.18 0 4.064-1.607 4.659-3.75H34.696zM18.835 0v15H22.8s.991 0 1.487-1.072l3.47-7.5h.495V15h4.461V0h-3.965s-.991.107-1.487 1.071l-3.47 7.5h-.495V0h-4.461zM0 15V0h4.46s1.29 0 1.984 2.143C8.228 7.82 8.426 8.57 8.426 8.57s.397-1.392 1.983-6.428C11.103 0 12.39 0 12.39 0h4.461v15h-4.46V6.964h-.496L9.417 15H7.436L4.957 6.964H4.46V15H0z"
+            fill="#4DB45F"></path>
+        <defs>
+            <linearGradient id="mir_svg__a" x1="33.877" y1="3.214" x2="48.079" y2="3.214"
+                gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#00B4E6"></stop>
+                <stop offset="100%" stop-color="#088CCB"></stop>
+            </linearGradient>
+        </defs>
+    </g>
+
+</svg>

@@ -1,0 +1,32 @@
+.BetsHistory {
+  border-radius: 8px;
+
+  padding: 8px;
+
+  background-color: var(--blue-20);
+
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heading {
+  padding: 12px 0;
+
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

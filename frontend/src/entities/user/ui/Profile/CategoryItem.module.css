@@ -1,0 +1,429 @@
+.profileContainer {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profileContent {
+  border-radius: 8px;
+  background-color: transparent;
+  width: 100%;
+  padding: 0;
+}
+
+.loading {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  color: white;
+}
+
+.walletsList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Main Balance Section */
+.mainBalanceSection {
+  border-radius: 8px;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.balanceHeaderContainer {
+  position: relative;
+  padding: 0px 16px 8px;
+}
+
+.balanceHeaderContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
+  width: 5px;
+  border-radius: 10px;
+  background: linear-gradient(to top, #00ff86, #00a858);
+}
+
+.balanceHeader {
+  font-size: 14px;
+  color: var(--blue-70);
+}
+
+.balanceAmount {
+  font-size: 22px;
+  font-weight: 600;
+  color: white;
+}
+
+.balanceActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+
+.depositButton {
+  flex: 1;
+  background-color: #23b260;
+  box-shadow: 0 0 8px rgba(35, 178, 96, 0.5);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Bonus Section */
+.bonusSection {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  padding: 0px 16px 8px;
+}
+
+.bonusSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
+  width: 5px;
+  border-radius: 10px;
+  background: linear-gradient(to top, #ff7b99, #c04df8);
+}
+
+.bonusHeader {
+  font-size: 14px;
+  color: var(--blue-70);
+}
+
+.bonusAmount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+
+.bonusIcon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+
+.mainInfo {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+  background: var(--light-black-blue-gradient);
+  border-radius: 8px;
+}
+
+/* money List */
+.moneyList {
+  border-radius: 8px;
+  padding: 8px 0;
+  /* overflow: hidden; */
+}
+
+.moneyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.moneyItem:last-child {
+  border-bottom: none;
+}
+
+.moneyInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.moneyIconContainer {
+  width: 30px;
+  height: 30px;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.moneyIcon {
+  width: 16px;
+  height: 16px;
+
+  border-radius: 50%;
+  color: white;
+  font-size: 14px;
+}
+
+.moneyName {
+  font-size: 16px;
+  color: white;
+}
+
+.moneyBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: white;
+}
+
+.addButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #26C95E;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding: 0;
+  min-width: unset;
+}
+
+/* Common Section Styles */
+.supportSection {
+  display: flex;
+  flex-direction: column;
+  background: var(--light-black-blue-gradient);
+  gap: 8px;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.sectionContent {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sectionInput::placeholder {
+  color: var(--gray-20-transparent);
+}
+
+.sectionInput {
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(to right, #121829, #121829 100%, #121829 10%);
+  padding: 2px 16px 0px 16px;
+}
+
+.sectionHeaderTitle {
+  display: flex;
+  flex-direction: column; 
+  gap: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sectionDesc {
+  color: var(--blue-70);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.sectionIconImg {
+  width: 30px;
+  height: 30px;
+}
+
+.accountManagement {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--light-black-blue-gradient);
+  padding: 8px 0;
+}
+
+.sectionSettings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionSettingsIcon {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--blue-40);
+  position: relative;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.sectionSettingsIcon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid white;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  z-index: 1;
+  /* Помещаем белый бордер под основной элемент */
+  transform: translate(-2.4px, -2.4px)
+}
+
+.sectionSettingsIconImg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.sectionHeader {
+  /* display: flex;
+  align-items: center;
+  justify-content: space-between; */
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+}
+
+.sectionIcon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.arrowIcon {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+}
+
+.twinCoinSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coinTitle {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.exchangeButton {
+  background-color: #26C95E;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+
+/* Voucher Section */
+.voucherButton {
+  margin-top: 12px;
+  background-color: var(--light-black-blue-gradient);
+  border-radius: 8px;
+  padding: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+}
+
+
+.divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 16px 0;
+}
+
+/* Voucher Input Container */
+.voucherInputContainer {
+  width: 100%;
+}
+
+.voucherInputContainer .inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.voucherInputContainer .sectionInput {
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(to right, #121829, #121829 100%, #121829 10%);
+  padding: 2px 100px 0px 16px; /* Увеличиваем правый padding для кнопки */
+  border: none;
+  color: var(--blue-70);
+  font-size: 14px;
+}
+
+.voucherInputContainer .sectionInput::placeholder {
+  color: var(--gray-20-transparent);
+}
+
+.voucherInputContainer .sectionInput:focus {
+  outline: none;
+  background: linear-gradient(to right, #1a2332, #1a2332 100%, #1a2332 10%);
+  color: white;
+}
+
+.activateButton {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(90.77deg, #0095ff .96%, #0855c4 99.87%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 70px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activateButton:hover:not(:disabled) {
+  background: linear-gradient(90.77deg, #0077cc .96%, #0645a3 99.87%);
+  transform: translateY(-50%) scale(1.02);
+}
+
+.activateButton:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--gray-20-transparent);
+  cursor: not-allowed;
+  transform: translateY(-50%);
+}

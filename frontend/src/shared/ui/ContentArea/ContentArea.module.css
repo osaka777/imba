@@ -1,0 +1,56 @@
+.wrapper {
+  position: relative;
+  flex-grow: 1;
+  padding: 20px;
+}
+.text {
+}
+.title {
+  padding-left: 20px;
+  position: relative;
+  font-weight: 700;
+  font-size: 27px;
+  line-height: 32px;
+  margin-bottom: 20px;
+}
+.title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(91deg, #0095ff, #0855c4);
+  box-shadow: 0 6px 22px #056dda4d;
+  border-radius: 12px;
+}
+.content {
+  position: relative;
+}
+
+.content::before {
+  position: absolute;
+  content: "";
+  width: 1px;
+  background-color: #252f4bb3;
+  top: 10px;
+  bottom: 10px;
+}
+.content > div > ol > li {
+  list-style-type: decimal;
+}
+.content > div {
+  margin-top: 15px;
+  font-size: 14px;
+  line-height: 18px;
+  margin-left: 20px;
+  padding-left: 20px;
+}
+.content > div > p {
+  margin: 10px 0 10px 0;
+  font-size: 14px;
+}
+.content > div > ol {
+  margin: 10px 0 10px 30px;
+  font-size: 14px;
+}

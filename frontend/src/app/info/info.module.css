@@ -1,0 +1,15 @@
+.pageContainer {
+  display: flex;
+  position: relative;
+  min-height: 100vh;
+  max-width: 1008px;
+  margin: 30px auto;
+}
+@media (max-width: 768px) {
+  .pageContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+.container {
+}

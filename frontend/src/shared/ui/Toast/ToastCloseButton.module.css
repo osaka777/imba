@@ -1,0 +1,44 @@
+.closeBtn {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9ca3af !important;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.closeBtn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: inherit !important;
+  stroke: currentColor !important;
+  stroke-width: 2.25;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #eef1ff !important;
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .closeBtn {
+    width: 32px;
+    height: 32px;
+  }
+}

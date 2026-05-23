@@ -1,0 +1,86 @@
+<svg viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g class="jbc_svg__color">
+        <g clip-path="url(#jbc_svg__a)">
+            <path
+                d="M23.536 14.325a3.602 3.602 0 01-3.598 3.597H.367V3.675A3.602 3.602 0 013.963.078h19.573v14.247z"
+                fill="#fff"></path>
+            <path
+                d="M17.163 10.67h1.487c.042 0 .141-.014.184-.014a.663.663 0 00.524-.665c0-.34-.241-.595-.524-.666-.043-.014-.128-.014-.184-.014h-1.487v1.36z"
+                fill="url(#jbc_svg__b)"></path>
+            <path
+                d="M18.48 1.281a2.578 2.578 0 00-2.578 2.578v2.676h3.64c.085 0 .184 0 .255.015.821.042 1.43.467 1.43 1.203 0 .581-.41 1.077-1.175 1.176v.028c.835.057 1.473.524 1.473 1.246 0 .78-.708 1.29-1.643 1.29h-3.994v5.24h3.781a2.578 2.578 0 002.578-2.578V1.28H18.48z"
+                fill="url(#jbc_svg__c)"></path>
+            <path
+                d="M19.174 7.923c0-.34-.241-.566-.524-.609-.029 0-.1-.014-.142-.014h-1.345v1.247h1.345c.043 0 .128 0 .142-.015a.602.602 0 00.524-.609z"
+                fill="url(#jbc_svg__d)"></path>
+            <path
+                d="M4.233 1.281A2.578 2.578 0 001.655 3.86v6.359c.722.354 1.473.58 2.224.58.892 0 1.373-.538 1.373-1.274V6.52h2.21V9.51c0 1.16-.723 2.11-3.173 2.11-1.487 0-2.648-.326-2.648-.326v5.424h3.781A2.578 2.578 0 008 14.141V1.28H4.233z"
+                fill="url(#jbc_svg__e)"></path>
+            <path
+                d="M11.356 1.281A2.578 2.578 0 008.78 3.86v3.37c.651-.552 1.784-.906 3.611-.821.977.042 2.025.312 2.025.312v1.09a4.903 4.903 0 00-1.954-.566c-1.388-.1-2.224.58-2.224 1.77 0 1.204.836 1.884 2.224 1.77.807-.057 1.43-.311 1.954-.566v1.09s-1.034.27-2.025.312c-1.827.085-2.96-.27-3.611-.822v5.949h3.781a2.578 2.578 0 002.578-2.578V1.28h-3.782z"
+                fill="url(#jbc_svg__f)"></path>
+        </g>
+        <defs>
+            <linearGradient id="jbc_svg__b" x1="15.9" y1="9.993" x2="22.264" y2="9.993"
+                gradientUnits="userSpaceOnUse">
+                <stop stop-color="#007940"></stop>
+                <stop offset=".229" stop-color="#00873F"></stop>
+                <stop offset=".743" stop-color="#40A737"></stop>
+                <stop offset="1" stop-color="#5CB531"></stop>
+            </linearGradient>
+            <linearGradient id="jbc_svg__c" x1="15.9" y1="9.001" x2="22.264" y2="9.001"
+                gradientUnits="userSpaceOnUse">
+                <stop stop-color="#007940"></stop>
+                <stop offset=".229" stop-color="#00873F"></stop>
+                <stop offset=".743" stop-color="#40A737"></stop>
+                <stop offset="1" stop-color="#5CB531"></stop>
+            </linearGradient>
+            <linearGradient id="jbc_svg__d" x1="15.9" y1="7.922" x2="22.264" y2="7.922"
+                gradientUnits="userSpaceOnUse">
+                <stop stop-color="#007940"></stop>
+                <stop offset=".229" stop-color="#00873F"></stop>
+                <stop offset=".743" stop-color="#40A737"></stop>
+                <stop offset="1" stop-color="#5CB531"></stop>
+            </linearGradient>
+            <linearGradient id="jbc_svg__e" x1="1.652" y1="9.001" x2="8.115" y2="9.001"
+                gradientUnits="userSpaceOnUse">
+                <stop stop-color="#1F286F"></stop>
+                <stop offset=".475" stop-color="#004E94"></stop>
+                <stop offset=".826" stop-color="#0066B1"></stop>
+                <stop offset="1" stop-color="#006FBC"></stop>
+            </linearGradient>
+            <linearGradient id="jbc_svg__f" x1="8.742" y1="9.001" x2="15.019" y2="9.001"
+                gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6C2C2F"></stop>
+                <stop offset=".173" stop-color="#882730"></stop>
+                <stop offset=".573" stop-color="#BE1833"></stop>
+                <stop offset=".859" stop-color="#DC0436"></stop>
+                <stop offset="1" stop-color="#E60039"></stop>
+            </linearGradient>
+            <clipPath id="jbc_svg__a">
+                <path fill="#fff" transform="translate(.289)" d="M0 0h23.325v18H0z"></path>
+            </clipPath>
+        </defs>
+    </g>
+    <g class="jbc_svg__mono">
+        <g clip-path="url(#jbc_svg__g)">
+            <path
+                d="M23.535 14.325a3.602 3.602 0 01-3.597 3.597H.366V3.675A3.602 3.602 0 013.963.078h19.572v14.247z"
+                fill="#1D2438"></path>
+            <path
+                d="M17.162 10.67h1.487c.043 0 .142-.014.184-.014a.664.664 0 00.525-.665c0-.34-.241-.595-.524-.666-.043-.014-.128-.014-.185-.014h-1.487v1.36z"
+                fill="#4A5370"></path>
+            <path
+                d="M18.48 1.281a2.578 2.578 0 00-2.578 2.578v2.676h3.64c.085 0 .184 0 .255.015.821.042 1.43.467 1.43 1.203 0 .581-.41 1.077-1.175 1.176v.028c.835.057 1.472.524 1.472 1.246 0 .78-.708 1.29-1.642 1.29h-3.994v5.24h3.781a2.578 2.578 0 002.578-2.578V1.28H18.48z"
+                fill="#4A5370"></path>
+            <path
+                d="M19.173 7.923c0-.34-.24-.566-.524-.609-.028 0-.099-.014-.141-.014h-1.346v1.247h1.346c.042 0 .127 0 .141-.015a.603.603 0 00.524-.609zM4.232 1.281A2.578 2.578 0 001.655 3.86v6.359c.722.354 1.473.58 2.223.58.892 0 1.374-.538 1.374-1.274V6.52h2.21V9.51c0 1.16-.723 2.11-3.173 2.11-1.487 0-2.648-.326-2.648-.326v5.424h3.781A2.578 2.578 0 008 14.141V1.28H4.232zM11.356 1.281A2.578 2.578 0 008.778 3.86v3.37c.652-.552 1.785-.906 3.612-.821.977.042 2.025.312 2.025.312v1.09a4.903 4.903 0 00-1.954-.566c-1.388-.1-2.224.58-2.224 1.77 0 1.204.836 1.884 2.224 1.77.807-.057 1.43-.311 1.954-.566v1.09s-1.034.27-2.025.312c-1.827.085-2.96-.27-3.612-.822v5.949h3.782a2.578 2.578 0 002.577-2.578V1.28h-3.781z"
+                fill="#4A5370"></path>
+        </g>
+        <defs>
+            <clipPath id="jbc_svg__g">
+                <path fill="#fff" transform="translate(.288)" d="M0 0h23.325v18H0z"></path>
+            </clipPath>
+        </defs>
+    </g>
+</svg>

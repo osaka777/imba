@@ -1,0 +1,1 @@
+export { BetsHistory } from "./BetsHistory";
