@@ -25,7 +25,6 @@ type MarketPairRowProps = {
   pivot: ReactNode;
   showPivot?: boolean;
   totalsLayout?: boolean;
-  rowClassName?: string;
 };
 
 export function MarketPairButton({
@@ -90,7 +89,6 @@ export function MarketPairRow({
   pivot,
   showPivot = true,
   totalsLayout = false,
-  rowClassName,
 }: MarketPairRowProps) {
   return (
     <div
@@ -99,7 +97,6 @@ export function MarketPairRow({
         styles.oddsBlockPair,
         showPivot && styles.oddsBlockPairOU,
         totalsLayout && styles.oddsTotalsRow,
-        rowClassName,
       )}
     >
       {left ? <MarketPairButton labelAlign="start" side={left} totalsLayout={totalsLayout} /> : null}

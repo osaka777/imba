@@ -334,34 +334,6 @@
   background: #edf1ff;
 }
 
-/* Handicap: Ф1 (-1.5) | Ф2 (+1.5) — same row as 1win, line in label */
-.oddsHandicapRow {
-  position: relative;
-}
-
-.oddsHandicapRow::after {
-  content: "";
-  position: absolute;
-  top: 12%;
-  bottom: 12%;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-50%);
-  background: rgb(17 24 39 / 0.1);
-  pointer-events: none;
-}
-
-.oddsHandicapRow .oddTotals {
-  gap: 8px;
-}
-
-.oddsHandicapRow .pairSideLabel_start,
-.oddsHandicapRow .pairSideLabel_end {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151 !important;
-}
-
 .oddsTotalsRow > .oddsItem {
   border-bottom: none;
   display: flex;

@@ -40,18 +40,6 @@ function formatHandicapLine(value: number): string {
   return String(value);
 }
 
-export function formatSignedHandicapLine(value: number): string {
-  if (value > 0) return `+${formatHandicapLine(value)}`;
-  return formatHandicapLine(value);
-}
-
-export function handicapOutcomeLabel(outcome: WcMarketOutcome): string {
-  const side = handicapSideLabel(outcome);
-  const line = lineFromHandicapOutcome(outcome);
-  if (line == null) return side;
-  return `${side} (${formatSignedHandicapLine(line)})`;
-}
-
 export function handicapSideLabel(outcome: WcMarketOutcome): string {
   if (outcome.outcomeKey.startsWith("HOME_HCP_") || /^Ф1\b/i.test(outcome.name.trim())) {
     return "Ф1";

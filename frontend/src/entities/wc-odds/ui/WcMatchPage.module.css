@@ -159,9 +159,63 @@
     font-weight: 700;
   }
 
-  .wcMatchPage :global(.oddsHandicapRow .pairSideLabel_start),
-  .wcMatchPage :global(.oddsHandicapRow .pairSideLabel_end) {
-    font-size: 11px;
+  .wcMatchPage :global(.oddsHandicapPair) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3.25rem minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair > .oddsItem) {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair > .oddsItem:first-of-type) {
+    grid-row: 1;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair > .oddsItem:last-of-type:not(:first-of-type)) {
+    grid-row: 2;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair .odd) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3.25rem minmax(0, 1fr);
+    align-items: center;
+    min-height: 28px;
+    padding: 3px 8px;
+    gap: 0;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair .pairSideLabel_end) {
+    grid-column: 1;
+    justify-self: start;
+    width: auto;
+    font-size: 12px;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair .oddCoef) {
+    grid-column: 3;
+    justify-self: end;
+    padding: 0;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .wcMatchPage :global(.oddsHandicapPair > .totalsPivot) {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
+    justify-self: center;
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    height: 1.375rem;
+    min-width: 2.25rem;
+    max-width: 3.25rem;
+    font-size: 10px;
   }
 }
 

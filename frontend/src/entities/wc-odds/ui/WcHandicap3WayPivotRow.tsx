@@ -4,8 +4,8 @@ import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/w
 import { MarketPairButton } from "~/entities/markets/ui/MarketPairRow";
 import {
   handicapDrawLabel,
-  handicapOutcomeLabel,
   handicapPivotLabel,
+  handicapSideLabel,
 } from "~/entities/wc-odds/lib/wcHandicapPairs";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
@@ -59,7 +59,7 @@ export function WcHandicap3WayPivotRow({
     >
       <MarketPairButton
         side={{
-          label: handicapOutcomeLabel(home),
+          label: handicapSideLabel(home),
           value: homeValue,
           selected: isSelected(home),
           bettable: isBettable(home),
@@ -84,7 +84,7 @@ export function WcHandicap3WayPivotRow({
       />
       <MarketPairButton
         side={{
-          label: handicapOutcomeLabel(away),
+          label: handicapSideLabel(away),
           value: awayValue,
           selected: isSelected(away),
           bettable: isBettable(away),

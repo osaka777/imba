@@ -1,11 +1,12 @@
 "use client";
 
 import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/wc-odds/api/client";
-import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
-import { handicapOutcomeLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
+import { MarketPairButton } from "~/entities/markets/ui/MarketPairRow";
+import { handicapSideLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
 import { formatHandicapScopeLabel, isScopeCaptionRedundant } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
+import { cn } from "~/shared/lib";
 import { usePrevious } from "~/shared/model";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
@@ -26,6 +27,7 @@ export function WcHandicapPair({
   group,
   home,
   away,
+  point,
   bettingOpen,
   categoryName,
   showScopeHeader = false,
@@ -47,38 +49,46 @@ export function WcHandicapPair({
   return (
     <div className={showScopeCaption ? styles.totalsScopedRow : undefined}>
       {showScopeCaption ? <p className={styles.totalsScopeCaption}>{scopeLabel}</p> : null}
-      <MarketPairRow
-        showPivot={false}
-        totalsLayout
-        pivot=""
-        rowClassName={styles.oddsHandicapRow}
-        left={
-          home
-            ? {
-                label: handicapOutcomeLabel(home),
-                value: homeValue,
-                selected: isSelected(home),
-                bettable: isBettable(home),
-                flashCell: homeFlash.cell,
-                flashCoef: homeFlash.coef,
-                onClick: () => toggle(home),
-              }
-            : undefined
-        }
-        right={
-          away
-            ? {
-                label: handicapOutcomeLabel(away),
-                value: awayValue,
-                selected: isSelected(away),
-                bettable: isBettable(away),
-                flashCell: awayFlash.cell,
-                flashCoef: awayFlash.coef,
-                onClick: () => toggle(away),
-              }
-            : undefined
-        }
-      />
+      <div
+        className={cn(
+          styles.oddsBlock,
+          styles.oddsBlockPair,
+          styles.oddsBlockPairOU,
+          styles.oddsHandicapPair,
+        )}
+      >
+        {away ? (
+          <MarketPairButton
+            labelAlign="end"
+            side={{
+              label: handicapSideLabel(away),
+              value: awayValue,
+              selected: isSelected(away),
+              bettable: isBettable(away),
+              flashCell: awayFlash.cell,
+              flashCoef: awayFlash.coef,
+              onClick: () => toggle(away),
+            }}
+          />
+        ) : null}
+
+        {point !== "" ? <div className={styles.totalsPivot}>{point}</div> : null}
+
+        {home ? (
+          <MarketPairButton
+            labelAlign="end"
+            side={{
+              label: handicapSideLabel(home),
+              value: homeValue,
+              selected: isSelected(home),
+              bettable: isBettable(home),
+              flashCell: homeFlash.cell,
+              flashCoef: homeFlash.coef,
+              onClick: () => toggle(home),
+            }}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
