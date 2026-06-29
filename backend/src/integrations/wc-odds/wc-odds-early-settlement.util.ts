@@ -1,0 +1,16 @@
+export {
+  resolveDeterminateBetResult,
+  resolveVerifiedBetResult,
+  resolveDeucePointBet,
+  resolveNextPointGameBet,
+  resolveRaceToPointGameBet,
+  resolveRaceToGameBet,
+  resolveScoreSetGameBet,
+  resolveMultiscoreSetBet,
+  resolveMatchCorrectScoreBet,
+  resolveNextGoalBet,
+  resolveGoalsTeamBet,
+  parseYesNoOutcome,
+  parseTennisSidePick,
+  type WcSettlementContext,
+} from './wc-verified-settlement.util';

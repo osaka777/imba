@@ -3,6 +3,20 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: [
+      "@tanstack/react-query",
+      "date-fns",
+      "swiper",
+      "react-toastify",
+      "usehooks-ts",
+    ],
+  },
+  swcMinify: true,
   images: {
     remotePatterns: [
       {
@@ -21,6 +35,16 @@ const nextConfig = {
         protocol: 'https',
       },
       {
+        hostname: 'img.sportradar.com',
+        pathname: '/**',
+        protocol: 'https',
+      },
+      {
+        hostname: 'logo.sportteaminfo.net',
+        pathname: '/**',
+        protocol: 'https',
+      },
+      {
         hostname: 'localhost',
         pathname: '/public/banners/**',
         protocol: 'http',
@@ -30,29 +54,39 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'imba.bet',
         pathname: '/public/banners/**',
-      }
+      },
     ],
-    domains: ['upload.wikimedia.org', 'flagcdn.com', 'localhost'],
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  // Оптимизации для ускорения навигации
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['@tanstack/react-query'],
-  },
-  // Оптимизация компиляции
-  swcMinify: true,
-  // Оптимизация изображений
-  images: {
-    ...nextConfig.images,
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 3600,
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   // Оптимизация кэширования
+  async redirects() {
+    return [
+      {
+        source: "/wc",
+        destination: "/line/soccer",
+        permanent: true,
+      },
+      {
+        source: "/wc/game/:slug*",
+        destination: "/game/:slug*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         source: '/api/:path*',
         headers: [

@@ -9,6 +9,7 @@ import ArrowUpIcon from "./arrowUp.svg?component";
 import ArrowTopIcon from "./arrowTop.svg?component";
 import AstropayIcon from "./astropay.svg?component";
 import AtpIcon from "./atp.svg?component";
+import BaseballIcon from "./baseball.svg?component";
 import BasketballIcon from "./basketball.svg?component";
 import BitcoinIcon from "./bitcoin.svg?component";
 import BovaLogoIcon from "./bovaLogo.svg?component";
@@ -33,6 +34,7 @@ import GPayIcon from "./gPay.svg?component";
 import GreengoLogoIcon from "./greengoLogo.png";
 import HistoryIcon from "./history.svg?component";
 import HistorysIcon from "./historys.svg?component";
+import HomeIcon from "./home.svg?component";
 import HockeyIcon from "./hockey.svg?component";
 import IconMobileIcon from "./iconMobile.svg?component";
 import InstagramIcon from "./instagram.svg?component";
@@ -51,6 +53,7 @@ import MastercardIcon from "./mastercard.svg?component";
 import MastercardLogoIcon from "./mastercardLogo.svg?component";
 import MenuIcon from "./menu.svg?component";
 import MirLogoIcon from "./mirLogo.svg?component";
+import MmaIcon from "./mma.svg?component";
 import MuchbetterIcon from "./muchbetter.svg?component";
 import NhlIcon from "./nhl.svg?component";
 import PayerrIcon from "./payerr.svg?component";
@@ -65,6 +68,7 @@ import BovaPaymentLogosIcon from "./sberpayLogo.svg?component";
 import SearchIcon from "./search.svg?component";
 import ShieldIcon from "./shield.svg?component";
 import SettingsIcon from "./settings.svg?component";
+import ShootingIcon from "./shooting.svg?component";
 import SupportIcon from "./support.svg?component";
 import SkrillIcon from "./skrill.svg?component";
 import SoccerIcon from "./soccer.svg?component";
@@ -103,6 +107,7 @@ export {
   ArrowTopIcon,
   AstropayIcon,
   AtpIcon,
+  BaseballIcon,
   BasketballIcon,
   BitcoinIcon,
   BovaLogoIcon,
@@ -128,6 +133,7 @@ export {
   GreengoLogoIcon,
   HistoryIcon,
   HistorysIcon,
+  HomeIcon,
   HockeyIcon,
   IconMobileIcon,
   InstagramIcon,
@@ -145,6 +151,7 @@ export {
   MastercardLogoIcon,
   MenuIcon,
   MirLogoIcon,
+  MmaIcon,
   MuchbetterIcon,
   NhlIcon,
   NirvanaPayIcon,
@@ -159,6 +166,7 @@ export {
   SearchIcon,
   ShieldIcon,
   SettingsIcon,
+  ShootingIcon,
   SupportIcon,
   SkrillIcon,
   SoccerBallIcon,

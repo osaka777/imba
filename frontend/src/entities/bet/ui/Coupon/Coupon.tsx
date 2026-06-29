@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getBets } from "~/entities/bet/api";
+import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { useAdaptivePollInterval } from "~/shared/lib/useAdaptivePollInterval";
 import { OpenTab } from "~/entities/bet/ui/Coupon/OpenTab";
 import { Button } from "~/shared/ui";
 import { CloseIcon } from "~/shared/assets";
@@ -21,22 +23,33 @@ type Tab = "coupon" | "open";
 
 export const Coupon: React.FC<CouponProps> = ({ className, setIsOpen }) => {
   const [tab, setTab] = useState<Tab>("coupon");
+  const pollInterval = useAdaptivePollInterval(5000);
 
   const tabOnClickHandler = (tab: Tab) => () => {
     setTab(tab);
   };
 
   const { data } = useQuery({
-    queryFn: () => getBets(), // Запрашиваем все ставки
+    queryFn: () => getBets(),
     queryKey: ["bets", "open"],
-    refetchInterval: 5000, // Обновляем каждые 5 секунд
-    refetchIntervalInBackground: true,
-    staleTime: 0, // Данные всегда считаются устаревшими
+    refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
   });
-  
-  const counter = data ? 
-    (data.ordinar?.filter(bet => bet.status === 'PENDING').length ?? 0) + 
-    (data.express?.filter(bet => bet.status === 'PENDING').length ?? 0) : 0;
+
+  const { data: wcPending = [] } = useQuery({
+    queryFn: () => getMyWcBets("PENDING"),
+    queryKey: ["wc-bets", "pending"],
+    refetchInterval: pollInterval,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  });
+
+  const counter = data
+    ? (data.ordinar?.filter((bet) => bet.status === "PENDING").length ?? 0)
+      + (data.express?.filter((bet) => bet.status === "PENDING").length ?? 0)
+      + wcPending.length
+    : wcPending.length;
 
   return (
     <>
@@ -65,7 +78,11 @@ export const Coupon: React.FC<CouponProps> = ({ className, setIsOpen }) => {
             <CloseIcon className={styles.closeIcon} />
           </Button>
         </div>
-        {tab === "open" ? <OpenTab /> : <BetTab setIsOpen={setIsOpen} />}
+        {tab === "open" ? (
+          <OpenTab />
+        ) : (
+          <BetTab onBetAccepted={() => setTab("open")} setIsOpen={setIsOpen} />
+        )}
       </div>
     </>
   );

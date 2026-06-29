@@ -6,6 +6,86 @@
   gap: 18px;
 }
 
+@media screen and (max-width: 767px) {
+  .GamesPrematch {
+    gap: 10px;
+    padding-bottom: 88px;
+  }
+}
+
+/* Search + time filter on one row — mobile only */
+.lineToolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .lineToolbar {
+    display: none;
+  }
+}
+
+.lineToolbar_filter {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  width: auto;
+  max-width: 220px;
+}
+
+.lineToolbar_filter .trigger,
+.lineToolbar_filter button {
+  height: 100%;
+  min-height: 42px;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.lineToolbar_search {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+@media screen and (max-width: 768px) {
+  .lineToolbar {
+    gap: 8px;
+  }
+
+  .lineToolbar_filter {
+    min-width: 5.75rem;
+    max-width: min(46%, 9.75rem);
+  }
+
+  .lineToolbar_filter .trigger,
+  .lineToolbar_filter button {
+    min-height: 40px;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .lineToolbar {
+    gap: 6px;
+  }
+
+  .lineToolbar_filter {
+    min-width: 5.5rem;
+    max-width: min(48%, 9.25rem);
+  }
+
+  .lineToolbar_filter .trigger,
+  .lineToolbar_filter button {
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 12px;
+    gap: 4px;
+  }
+}
+
 .loading {
   align-self: center;
 }

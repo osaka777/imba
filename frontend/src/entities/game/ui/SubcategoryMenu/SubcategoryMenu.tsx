@@ -1,9 +1,13 @@
-'use client'
+"use client";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useMemo, useEffect } from "react";
 import React from "react";
+
+import { useSportFilter } from "~/entities/game/lib/useSportFilter";
+import { lineAllHref, lineSportHref, liveAllHref, liveSportHref } from "~/entities/game/lib/sportPagePaths";
 
 import { cn } from "~/shared/lib";
 import { Button } from "~/shared/ui";
@@ -23,14 +27,17 @@ type SubcategoriesWithCountsData = {
   total: number;
 };
 
-const SubcategoryMenuComponent = ({ type }: { type: "live" | "prematch" }) => {
+const SubcategoryMenuComponent = ({
+  type,
+  layout = "horizontal",
+}: {
+  type: "live" | "prematch";
+  layout?: "horizontal" | "sidebar";
+}) => {
   const params = useParams();
-  const sport = params?.sport as string | undefined;
+  const sport = useSportFilter();
   const subcategory = params?.subcategory as string | undefined;
   const queryClient = useQueryClient();
-
-  console.log('🎯 SubcategoryMenu Debug:', { sport, subcategory, type });
-  console.log('🔗 Current URL:', window.location.pathname);
 
   // Prefetch соседних спортов для ускорения навигации
   useEffect(() => {
@@ -182,7 +189,7 @@ const SubcategoryMenuComponent = ({ type }: { type: "live" | "prematch" }) => {
   // Показываем индикатор загрузки
   if (isLoading) {
     return (
-      <div className={styles.menu}>
+      <div className={cn(styles.menu, layout === "sidebar" && styles.menu_sidebar)}>
         <div className={styles.wrapper}>
           <div className={styles.loading}>Загрузка подкатегорий...</div>
         </div>
@@ -194,7 +201,7 @@ const SubcategoryMenuComponent = ({ type }: { type: "live" | "prematch" }) => {
   if (error) {
     console.error('Error loading subcategories:', error);
     return (
-      <div className={styles.menu}>
+      <div className={cn(styles.menu, layout === "sidebar" && styles.menu_sidebar)}>
         <div className={styles.wrapper}>
           <div className={styles.error}>Ошибка загрузки подкатегорий</div>
         </div>
@@ -207,7 +214,8 @@ const SubcategoryMenuComponent = ({ type }: { type: "live" | "prematch" }) => {
   const totalCount = data?.total || 0;
   
   const basePath = type === "live" ? "" : "/line";
-  const backPath = type === "live" ? "/" : "/line";
+  const backPath = type === "live" ? liveAllHref() : lineAllHref();
+  const sportAllHref = type === "live" ? liveSportHref(sport!) : lineSportHref(sport!);
   
 
   // Check if we're on the main sport page (no subcategory selected)
@@ -221,7 +229,7 @@ const SubcategoryMenuComponent = ({ type }: { type: "live" | "prematch" }) => {
   };
   
   return (
-    <div className={styles.menu}>
+    <div className={cn(styles.menu, layout === "sidebar" && styles.menu_sidebar)}>
       <div className={styles.wrapper}>
         <Button
           className={styles.backButton}
@@ -239,7 +247,8 @@ const SubcategoryMenuComponent = ({ type }: { type: "live" | "prematch" }) => {
             isMainSportPage && styles.item_active
           )}
           elementType="link"
-          href={`${basePath}/${sport}`}
+          href={sportAllHref}
+          scroll={layout === "sidebar" ? false : undefined}
         >
           <p className={styles.text}>
             Все

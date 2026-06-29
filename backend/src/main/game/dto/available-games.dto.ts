@@ -181,6 +181,8 @@ export class GameDtoWithGroupedMarkets extends Dto<GameDtoWithGroupedMarkets> {
 
   team1: string;
   team2: string;
+  team1Icon?: string | null;
+  team2Icon?: string | null;
   updatedAt: Date;
 
   @IsOptional()

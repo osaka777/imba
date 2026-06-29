@@ -1,35 +1,27 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export const usePrevious = <T>(value: T, debounceMs: number = 500) => {
-  const ref = useRef<T>();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastUpdateRef = useRef<number>(0);
+/**
+ * Returns the previous value for coef-flash animations.
+ * Keeps `prevState` visible for `holdMs` after each change so CSS animation
+ * isn't cut off by the next re-render.
+ */
+export const usePrevious = <T>(value: T, holdMs = 2100) => {
+  const committedRef = useRef<T | undefined>(undefined);
+  const [prevState, setPrevState] = useState<T | undefined>(undefined);
 
   useEffect(() => {
-    const now = Date.now();
-    
-    // Если прошло меньше времени чем debounceMs, откладываем обновление
-    if (now - lastUpdateRef.current < debounceMs) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      timeoutRef.current = setTimeout(() => {
-        ref.current = value;
-        lastUpdateRef.current = Date.now();
-      }, debounceMs - (now - lastUpdateRef.current));
-    } else {
-      // Немедленное обновление если прошло достаточно времени
-      ref.current = value;
-      lastUpdateRef.current = now;
+    const committed = committedRef.current;
+    if (committed === value) return;
+
+    if (committed !== undefined) {
+      setPrevState(committed);
+      const timer = setTimeout(() => setPrevState(undefined), holdMs);
+      committedRef.current = value;
+      return () => clearTimeout(timer);
     }
 
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [value, debounceMs]);
+    committedRef.current = value;
+  }, [value, holdMs]);
 
-  return { prevState: ref.current };
+  return { prevState };
 };

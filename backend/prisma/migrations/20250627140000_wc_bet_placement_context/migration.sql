@@ -1,0 +1,1 @@
+ALTER TABLE "WcOddsBet" ADD COLUMN IF NOT EXISTS "placementContextJson" JSONB;

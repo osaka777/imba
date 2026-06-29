@@ -1,20 +1,28 @@
-import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
-import { gamesList } from "~/entities/game";
+import { useSportFilter } from "~/entities/game/lib/useSportFilter";
+import { lineAllHref, lineSportHref } from "~/entities/game/lib/sportPagePaths";
+import { visibleGamesList } from "~/entities/game";
 import { cn } from "~/shared/lib";
 import { Button } from "~/shared/ui";
 import { getPrematchGameCounts, GameCounts } from "../../api/getGameCounts";
+import { fetchWcLineCounts } from "~/entities/wc-odds/api/client";
 import { FireIcon } from "~/shared/assets";
 import { getAllSubcategories } from "../../api/getSubcategories";
 
 import styles from "./Menu.module.css";
 
-export const Menu = () => {
-  const params = useParams();
-  const sport = params?.sport as string | undefined;
+type MenuLayout = "horizontal" | "sidebar";
 
-  const { data: gameCounts = { total: 0 } } = useQuery<GameCounts>({
+type MenuProps = {
+  layout?: MenuLayout;
+  className?: string;
+};
+
+export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
+  const sport = useSportFilter();
+
+  const { data: gameCounts = { total: 0 }, isFetched: gameCountsFetched } = useQuery<GameCounts>({
     queryKey: ["gameCounts", "prematch"],
     queryFn: getPrematchGameCounts,
     // refetchInterval: 5000, // Убрано для улучшения производительности
@@ -34,21 +42,37 @@ export const Menu = () => {
     gcTime: 1000 * 60 * 10, // 10 минут
   });
 
+  const { data: wcLineCounts = {}, isFetched: wcLineCountsFetched } = useQuery<Record<string, number>>({
+    queryKey: ["wcLineCounts"],
+    queryFn: fetchWcLineCounts,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 10000,
+    gcTime: 1000 * 60 * 5,
+  });
+
   // Определяем, какие спорты имеют приоритетные подкатегории
   const prioritySports = new Set(
     Object.values(subcategoriesData)
       .flat()
       .filter((sub) => sub.isPriority)
-      .map((sub) => sub.sport)
+      .map((sub) => sub.sport),
   );
+  if ((wcLineCounts.soccer ?? 0) > 0) {
+    prioritySports.add("soccer");
+  }
+
+  const countsReady = gameCountsFetched && wcLineCountsFetched;
+  const isSidebar = layout === "sidebar";
 
   return (
-    <div className={styles.Menu}>
+    <div className={cn(styles.Menu, layout === "sidebar" && styles.Menu_sidebar, className)}>
       <div className={styles.wrapper}>
         <Button
           className={cn(styles.item, sport == null && styles.item_active)}
           elementType="link"
-          href="/line"
+          href={lineAllHref()}
+          scroll={isSidebar ? false : undefined}
           key="All"
         >
           <p className={styles.text}>
@@ -58,15 +82,16 @@ export const Menu = () => {
             )}
           </p>
         </Button>
-        {Object.values(gamesList)
+        {visibleGamesList()
           .map(({ Icon, label, name }) => ({
             Icon,
             label,
             name,
-            count: gameCounts[name] || 0,
+            count: (wcLineCounts[name] || 0) + (gameCounts[name] || 0),
             isPriority: prioritySports.has(name)
           }))
-          .sort((a, b) => b.count - a.count)
+          .filter((item) => !isSidebar || !countsReady || item.count > 0)
+          .sort((a, b) => (isSidebar ? 0 : b.count - a.count))
           .map(({ Icon, label, name, count, isPriority }) => {
           return (
             <Button
@@ -76,7 +101,8 @@ export const Menu = () => {
                 isPriority && styles.item_priority
               )}
               elementType="link"
-              href={`/line/${name}`}
+              href={lineSportHref(name)}
+              scroll={isSidebar ? false : undefined}
               key={name}
             >
               <Icon className={styles.icon} />

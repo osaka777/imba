@@ -4,10 +4,14 @@ import {
   ManualDepositCurrency,
   ManualDepositConfigItem,
 } from '../deposit/manual-deposit.types';
+import { USDT_TRC20_WALLET_DEFAULT } from '../deposit/usdt-trc20.constants';
 
 export type PaymentMethodKey =
   | 'KZT_FOREIGN_CARD'
+  | 'KZT_KASPI'
   | 'RUB_FOREIGN_CARD'
+  | 'RUB_SBERBANK'
+  | 'USDT_TRC20'
   | 'NirvanaPay'
   | 'Aaio'
   | 'Greengo'
@@ -30,11 +34,42 @@ const SETTINGS_PATH =
 
 const DEFAULT_CARD = '5351 7737 9598 4711';
 const DEFAULT_HOLDER = 'Ali Kaliyev';
+const KZT_INTL_CARD = '5351 7778 7093 5274';
+const KZT_INTL_HOLDER = 'Ali Mertoglu';
+
+function mergeManualDepositItem(
+  _currency: ManualDepositCurrency,
+  parsed: Partial<ManualDepositConfigItem & { enabled: boolean }> | undefined,
+  defaults: ManualDepositConfigItem & { enabled: boolean },
+): ManualDepositConfigItem & { enabled: boolean } {
+  if (!parsed) return defaults;
+  const merged = { ...defaults, ...parsed };
+  if (Object.prototype.hasOwnProperty.call(parsed, 'qrImageUrl')) {
+    merged.qrImageUrl = String(parsed.qrImageUrl ?? '').trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(parsed, 'rubPerBrl')) {
+    merged.rubPerBrl = Number(parsed.rubPerBrl) || defaults.rubPerBrl;
+  } else if (defaults.rubPerBrl != null) {
+    merged.rubPerBrl = defaults.rubPerBrl;
+  }
+  if (Object.prototype.hasOwnProperty.call(parsed, 'walletAddress')) {
+    merged.walletAddress = String(parsed.walletAddress ?? '').trim();
+  }
+  return merged;
+}
 
 export function getDefaultPaymentSettings(): PaymentSettingsFile {
   return {
     manualDeposit: {
       KZT: {
+        cardNumber: KZT_INTL_CARD,
+        holderName: KZT_INTL_HOLDER,
+        bankName: 'Международный перевод',
+        qrImageUrl: '',
+        minAmount: 3000,
+        enabled: true,
+      },
+      KZT_KASPI: {
         cardNumber: DEFAULT_CARD,
         holderName: DEFAULT_HOLDER,
         bankName: 'Kaspi Bank',
@@ -52,10 +87,31 @@ export function getDefaultPaymentSettings(): PaymentSettingsFile {
         minAmount: 2000,
         enabled: true,
       },
+      RUB_SBERBANK: {
+        cardNumber: '',
+        holderName: DEFAULT_HOLDER,
+        bankName: 'Inter',
+        qrImageUrl: '',
+        minAmount: 1000,
+        rubPerBrl: 183,
+        enabled: true,
+      },
+      USDT: {
+        cardNumber: process.env.USDT_TRC20_WALLET || USDT_TRC20_WALLET_DEFAULT,
+        walletAddress: process.env.USDT_TRC20_WALLET || USDT_TRC20_WALLET_DEFAULT,
+        holderName: '',
+        bankName: 'TRC-20',
+        qrImageUrl: '',
+        minAmount: 10,
+        enabled: true,
+      },
     },
     paymentMethods: {
       KZT_FOREIGN_CARD: { enabled: true, label: 'Visa/Mastercard KZT' },
-      RUB_FOREIGN_CARD: { enabled: true, label: 'Visa/Mastercard RUB' },
+      KZT_KASPI: { enabled: true, label: 'Kaspi KZT' },
+      RUB_FOREIGN_CARD: { enabled: false, label: 'Visa/Mastercard RUB' },
+      RUB_SBERBANK: { enabled: true, label: 'Перевод из РФ' },
+      USDT_TRC20: { enabled: true, label: 'USDT TRC-20' },
       NirvanaPay: { enabled: true, label: 'NirvanaPay' },
       Aaio: { enabled: true, label: 'Aaio / Карты' },
       Greengo: { enabled: false, label: 'Greengo' },
@@ -77,19 +133,31 @@ export function loadPaymentSettings(): PaymentSettingsFile {
     }
     const raw = readFileSync(SETTINGS_PATH, 'utf8');
     const parsed = JSON.parse(raw) as PaymentSettingsFile;
+    const defaults = getDefaultPaymentSettings();
     return {
-      ...getDefaultPaymentSettings(),
+      ...defaults,
       ...parsed,
       manualDeposit: {
-        ...getDefaultPaymentSettings().manualDeposit,
-        ...parsed.manualDeposit,
+        KZT: mergeManualDepositItem('KZT', parsed.manualDeposit?.KZT, defaults.manualDeposit.KZT),
+        KZT_KASPI: mergeManualDepositItem(
+          'KZT_KASPI',
+          parsed.manualDeposit?.KZT_KASPI,
+          defaults.manualDeposit.KZT_KASPI,
+        ),
+        RUB: mergeManualDepositItem('RUB', parsed.manualDeposit?.RUB, defaults.manualDeposit.RUB),
+        RUB_SBERBANK: mergeManualDepositItem(
+          'RUB_SBERBANK',
+          parsed.manualDeposit?.RUB_SBERBANK,
+          defaults.manualDeposit.RUB_SBERBANK,
+        ),
+        USDT: mergeManualDepositItem('USDT', parsed.manualDeposit?.USDT, defaults.manualDeposit.USDT),
       },
       paymentMethods: {
-        ...getDefaultPaymentSettings().paymentMethods,
+        ...defaults.paymentMethods,
         ...parsed.paymentMethods,
       },
       notifications: {
-        ...getDefaultPaymentSettings().notifications,
+        ...defaults.notifications,
         ...parsed.notifications,
       },
     };
@@ -115,8 +183,10 @@ export function getManualDepositFromSettings(
     cardNumber: item.cardNumber,
     holderName: item.holderName,
     bankName: item.bankName,
-    qrImageUrl: item.qrImageUrl,
+    qrImageUrl: item.qrImageUrl?.trim() || undefined,
     minAmount: item.minAmount,
+    rubPerBrl: item.rubPerBrl,
+    walletAddress: item.walletAddress?.trim() || item.cardNumber?.trim() || undefined,
   };
 }
 

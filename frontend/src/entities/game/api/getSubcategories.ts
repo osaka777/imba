@@ -11,6 +11,43 @@ interface SubcategoryResponse {
   isActive: boolean;
 }
 
+const ALL_SPORTS = [
+  "soccer",
+  "basketball",
+  "hockey",
+  "tennis",
+  "volleyball",
+  "table-tennis",
+  "esports.cs",
+  "esports.dota2",
+] as const;
+
+function mapSubcategoryResponse(data: SubcategoryResponse[] | undefined): Subcategory[] {
+  if (!data || !Array.isArray(data)) return [];
+
+  return data
+    .filter((sub) => sub.isActive !== false)
+    .map((sub) => ({
+      id: Number(sub.id),
+      name: sub.name,
+      code: sub.code,
+      sport: sub.sport,
+      isPriority: Boolean(sub.isPriority),
+    }));
+}
+
+async function fetchSportSubcategories(sport: string): Promise<Subcategory[]> {
+  try {
+    const { data } = await api.GET("/api/subcategories/{sport}", {
+      params: { path: { sport } },
+    });
+    return mapSubcategoryResponse(data as SubcategoryResponse[] | undefined);
+  } catch (error) {
+    console.error(`Error fetching subcategories for ${sport}:`, error);
+    return [];
+  }
+}
+
 export const getSubcategories = async (sport: string) => {
   const { data, error } = await api.GET("/api/subcategories/{sport}", {
     params: { path: { sport } }
@@ -37,44 +74,11 @@ export const getGamesBySubcategory = async (type: "live" | "prematch", sport: st
 };
 
 export const getAllSubcategories = async () => {
-  const sports = [
-    "soccer",
-    "basketball",
-    "hockey",
-    "tennis",
-    "volleyball",
-    "table-tennis",
-    "esports.cs",
-    "esports.dota2"
-  ] as const;
-  const result: Record<string, Subcategory[]> = {};
+  const entries = await Promise.all(
+    ALL_SPORTS.map(async (sport) => [sport, await fetchSportSubcategories(sport)] as const),
+  );
 
-  for (const sport of sports) {
-    try {
-      const { data } = await api.GET("/api/subcategories/{sport}", {
-        params: { path: { sport } }
-      });
-
-      if (data && Array.isArray(data)) {
-        result[sport] = (data as SubcategoryResponse[])
-          .filter(sub => sub.isActive !== false)
-          .map((sub) => ({
-            id: Number(sub.id),
-            name: sub.name,
-            code: sub.code,
-            sport: sub.sport,
-            isPriority: Boolean(sub.isPriority)
-          }));
-      } else {
-        result[sport] = [];
-      }
-    } catch (error) {
-      console.error(`Error fetching subcategories for ${sport}:`, error);
-      result[sport] = [];
-    }
-  }
-
-  return result;
+  return Object.fromEntries(entries) as Record<string, Subcategory[]>;
 };
 
 // Новый общий эндпоинт для получения подкатегорий и счётчиков

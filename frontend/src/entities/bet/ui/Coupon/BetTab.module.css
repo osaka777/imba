@@ -183,6 +183,31 @@
   opacity: 0.7;
 }
 
+.stakeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stakeChip {
+  flex: 1 1 calc(25% - 6px);
+  min-width: 56px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.stakeChipActive {
+  border-color: #60a5fa;
+  background: rgb(37 99 235 / 0.35);
+  color: #dbeafe;
+}
+
 .agree {
   display: flex;
   align-items: center;
@@ -287,7 +312,87 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 7px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.coupon_itemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.coupon_itemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.coupon_sportIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.coupon_phaseLive,
+.coupon_phaseLine {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+.coupon_phaseLive {
+  color: #dc2626;
+  background: rgb(220 38 38 / 0.1);
+}
+
+.coupon_phaseLine {
+  color: #2563eb;
+  background: rgb(37 99 235 / 0.1);
+}
+
+.coupon_timeLine {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+.coupon_league {
+  margin: 0;
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.coupon_winLine {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  line-height: 1.25;
+}
+
+.coupon_expressHint {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
 }
 
 @media screen and (max-width: 480px) {
@@ -313,7 +418,12 @@
 }
 
 .coupon_name {
-  color: #000;
+  margin: 0;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  width: 100%;
 }
 
 .coefficient_wrapper {
@@ -322,10 +432,11 @@
   flex-direction: row;
   justify-content: flex-end;
   align-items: center;
+  width: 100%;
 }
 
 .coefficient {
-  padding: 6px;
+  padding: 6px 8px;
   font-weight: 700;
   font-size: 12px;
   align-items: center;
@@ -336,31 +447,23 @@
   display: flex;
   flex-shrink: 0;
   justify-content: center;
-  align-self: stretch;
-  margin-right: 8px;
-  width: 46px;
-  min-width: 46px;
+  line-height: 1;
 }
 
 @media screen and (max-width: 480px) {
   .coefficient {
-    width: 42px;
-    min-width: 42px;
-    padding: 5px;
+    padding: 5px 7px;
     font-size: 11px;
-    margin-right: 6px;
   }
 }
 
 .coefficient_name {
-  margin-right: 10px;
+  margin: 0;
   color: #096dff;
   font-weight: 700;
   font-size: 11px;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  width: 100%;
 }
 
 @media screen and (max-width: 480px) {

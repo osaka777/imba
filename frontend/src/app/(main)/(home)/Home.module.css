@@ -1,12 +1,28 @@
 .Home {
+  grid-area: content;
+  margin-top: 0;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media screen and (max-width: 768px) {
+  .Home {
+    margin-top: 0;
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .header {
-  grid-area: header;
+  grid-area: content;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
 }
+
 
 .err {
   margin-top: 16px;
@@ -23,7 +39,7 @@
 }
 
 .games {
-  grid-area: table;
+  grid-area: content;
   min-width: 0;
   max-width: 100%;
 }

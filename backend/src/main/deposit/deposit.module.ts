@@ -11,6 +11,9 @@ import { DepositController } from './deposit.controller';
 import { DepositService } from './deposit.service';
 import { DepositCleanupService } from './deposit-cleanup.service';
 import { DepositUserNotifyService } from './deposit-user-notify.service';
+import { DepositCreditService } from './deposit-credit.service';
+import { UsdtTrc20MonitorService } from './usdt-trc20-monitor.service';
+import { PromoModalModule } from '../promo-modal/promo-modal.module';
 
 @Module({
   imports: [
@@ -20,9 +23,16 @@ import { DepositUserNotifyService } from './deposit-user-notify.service';
     PrismaModule,
     OperationModule,
     EventModule,
+    PromoModalModule,
   ],
   controllers: [DepositController],
-  providers: [DepositService, DepositCleanupService, DepositUserNotifyService],
-  exports: [DepositService, DepositUserNotifyService],
+  providers: [
+    DepositService,
+    DepositCleanupService,
+    DepositUserNotifyService,
+    DepositCreditService,
+    UsdtTrc20MonitorService,
+  ],
+  exports: [DepositService, DepositUserNotifyService, DepositCreditService],
 })
 export class DepositModule {}

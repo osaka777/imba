@@ -1,4 +1,4 @@
-@media screen and (max-width: 1080px) {
+@media screen and (max-width: 767px) {
   .CouponWrapper {
     position: fixed;
     top: 0;
@@ -34,7 +34,7 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
-@media screen and (max-width: 1080px) {
+@media screen and (max-width: 767px) {
   .coupon {
     padding: 14px;
     width: 100%;
@@ -94,7 +94,7 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
-@media screen and (max-width: 1080px) {
+@media screen and (max-width: 767px) {
   .trigger {
     display: flex;
     bottom: 80px;

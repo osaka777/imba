@@ -1,16 +1,18 @@
 .Navigation {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: relative;
+  z-index: 2;
 
   border-radius: 10px;
 
-  padding: 0 10px;
+  padding: 0 12px;
 
   background: var(--dark-blue-gradient);
   background-color: var(--blue-20);
 
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 48px;
 
   display: flex;
@@ -18,10 +20,33 @@
   gap: 24px;
 }
 
-@media screen and (max-width: 768px) {
+.logo {
+  display: block;
+  height: 38px;
+  width: auto;
+  max-width: none;
+  flex-shrink: 0;
+}
+
+@media screen and (max-width: 767px) {
   .Navigation {
     padding: 0 10px;
     gap: 10px;
     justify-content: space-between;
+  }
+
+  .logo {
+    height: 34px;
+  }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .Navigation {
+    padding: 0 10px;
+    gap: 16px;
+  }
+
+  .logo {
+    height: 36px;
   }
 }

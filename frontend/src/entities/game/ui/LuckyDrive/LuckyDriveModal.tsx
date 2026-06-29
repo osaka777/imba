@@ -1,329 +1,427 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from './LuckyDriveModal.module.css';
-import { verifyUser, getUser } from '~/entities/user/api';
-import { Dialog, DialogContent } from '~/shared/ui';
+
 import { DepositForm } from '~/entities/finance';
 import { AuthForm } from '~/entities/user';
-import { StepsImageMobile, CheckIcon } from '~/shared/assets';
-import Image from 'next/image';
-import { createBet } from '~/entities/bet/api/createBet';
+import { verifyUser } from '~/entities/user/api';
+import { getSessionClient } from '~/entities/user/lib/getSessionClient';
+import {
+  claimPromoModalBonus,
+  fetchPromoModalSettings,
+  fetchPromoModalStatus,
+  type PublicPromoModalSettings,
+  type PromoModalUserStatus,
+} from '~/entities/promo-modal/api/client';
+import { CheckIcon } from '~/shared/assets';
+import { cn } from '~/shared/lib';
+import { Dialog, DialogContent } from '~/shared/ui';
 
-interface Balance {
-  id: string;
-  amount: string;
-  currencyCode: string;
-}
+import styles from './LuckyDriveModal.module.css';
 
-interface UserData {
-  balances?: Balance[];
-}
+type WizardStep = 'intro' | 'deposit' | 'waiting' | 'claim' | 'success';
 
 interface LuckyDriveModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+function resolveStatusStep(
+  authed: boolean,
+  status: PromoModalUserStatus | null,
+  settings: PublicPromoModalSettings | null,
+): WizardStep | null {
+  if (!authed) return null;
+  if (status?.bonusReceived) return 'success';
+  if (status?.canClaimDirect) return 'claim';
+  if (status?.bonusPending || status?.pendingDeposit) return 'waiting';
+  if (settings?.promoType === 'DEPOSIT_BONUS' && status?.minDepositMet && !status.promoUsed) {
+    return 'waiting';
+  }
+  if (status?.minDepositMet && settings?.promoType === 'DIRECT_BONUS' && !status.promoUsed) {
+    return 'claim';
+  }
+  return null;
+}
+
 export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClose }) => {
-  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
-  const [authModalType, setAuthModalType] = useState<'closed' | 'login' | 'register'>('closed');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  
-  const authCheckCompleted = useRef(false);
-  
-  const checkAuth = async () => {
-    if (isLoading) return;
-    
-    if (authCheckCompleted.current) return;
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const isAuth = await verifyUser();
-      setIsAuthenticated(isAuth);
-      
-      if (isAuth) {
-        try {
-          const user = await getUser();
-          if (user) {
-            setUserData(user as UserData);
-          } else {
-            setUserData(null);
-          }
-        } catch (userError) {
-          console.error('Failed to get user data:', userError);
-          setUserData(null);
-        }
-      } else {
-        setUserData(null);
-      }
-      
-      authCheckCompleted.current = true;
-    } catch (authError) {
-      console.error('Authentication check failed:', authError);
-      setError('Не удалось проверить авторизацию');
-      setIsAuthenticated(false);
-      setUserData(null);
-    } finally {
+  const [settings, setSettings] = useState<PublicPromoModalSettings | null>(null);
+  const [status, setStatus] = useState<PromoModalUserStatus | null>(null);
+  const [step, setStep] = useState<WizardStep>('intro');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [authModalType, setAuthModalType] = useState<'closed' | 'login' | 'register'>('closed');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stepRef = useRef<WizardStep>('intro');
+
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  const refresh = useCallback(async (opts?: { keepPage?: boolean; manualCheck?: boolean }) => {
+    const publicSettings = await fetchPromoModalSettings();
+    setSettings(publicSettings);
+    if (!publicSettings?.enabled) {
       setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    if (isOpen && !authCheckCompleted.current) {
-      checkAuth();
-    }
-    
-    return () => {
-      authCheckCompleted.current = false;
-    };
-  }, [isOpen]);
-  
-  useEffect(() => {
-    if (authModalType === 'closed' && isDepositModalOpen === false) {
-      if (authCheckCompleted.current) {
-        authCheckCompleted.current = false;
-        setTimeout(() => {
-          checkAuth();
-        }, 500);
-      }
-    }
-  }, [authModalType, isDepositModalOpen]);
-  
-  const hasDeposit = !!userData?.balances?.some((balance: Balance) => 
-    parseFloat(balance.amount) > 0
-  );
-  
-  const handleLoginClick = () => {
-    setAuthModalType('login');
-  };
-  
-  const handleRegisterClick = () => {
-    setAuthModalType('register');
-  };
-  
-  const handleDepositClick = () => {
-    setIsDepositModalOpen(true);
-  };
-  
-  const closeDepositModal = () => {
-    setIsDepositModalOpen(false);
-  };
-  
-  const closeAuthModal = () => {
-    setAuthModalType('closed');
-  };
-  
-  const handleRetryClick = () => {
-    authCheckCompleted.current = false;
-    setError(null);
-    checkAuth();
-  };
-  
-  const handleGetTicketClick = async () => {
-    if (!isAuthenticated || !hasDeposit) {
       return;
     }
-    
-    try {
-      const defaultCurrency = userData?.balances?.[0]?.currencyCode || 'USD';
-      const minimumAmount = 10;
-      
-      const userBalance = userData?.balances?.find(
-        (balance) => balance.currencyCode === defaultCurrency
-      )?.amount;
-      
-      if (!userBalance || parseFloat(userBalance) < minimumAmount) {
-        return;
-      }
-      
-      // Новый формат DTO для создания ставки
-      const dto: import('~/shared/api').components["schemas"]["CreateBetDto"] = {
-        eventId: 'lucky-drive-ticket',
-        marketId: 'lucky-drive',
-        outcomeId: 'ticket',
-        odds: 1.01,
-        stake: minimumAmount,
-        currency: defaultCurrency,
-        betType: 'ORDINAR',
-        betVariant: 'ORDINAR',
-        betInfo: 'Lucky Drive ticket'
-      };
-      
-      await createBet(dto);
-      
-      onClose();
-    } catch (e: any) {
-      // Пытаемся достать детальные ошибки валидации
-      const validationErrors = e?.data?.errors as Array<{
-        property: string;
-        value?: unknown;
-        constraints?: Record<string, string>;
-      }> | undefined;
 
-      if (validationErrors && validationErrors.length) {
-        const msgs: string[] = [];
-        for (const ve of validationErrors) {
-          const constraints = ve.constraints ? Object.values(ve.constraints) : [];
-          if (constraints.length) {
-            msgs.push(...constraints);
-          } else if (ve.property) {
-            msgs.push(`Поле ${ve.property} не прошло валидацию`);
-          }
-        }
-        setError(msgs.join('; '));
-      } else {
-        console.error('Failed to get ticket:', e);
-        setError(e?.message || 'Не удалось получить билет. Попробуйте позже.');
+    const authed = await verifyUser();
+    setIsAuthenticated(authed);
+
+    let userStatus: PromoModalUserStatus | null = null;
+    const token = getSessionClient();
+    if (authed && token) {
+      userStatus = await fetchPromoModalStatus(token);
+      setStatus(userStatus);
+    } else {
+      setStatus(null);
+    }
+
+    const statusStep = resolveStatusStep(authed, userStatus, publicSettings);
+    if (statusStep) {
+      setStep(statusStep);
+      setError(null);
+    } else if (!opts?.keepPage) {
+      setStep('intro');
+      setError(null);
+    } else if (stepRef.current === 'deposit') {
+      setStep('deposit');
+      if (opts?.manualCheck) {
+        setError('Активная заявка не найдена. Создайте пополнение и отправьте заявку.');
       }
+    } else if (opts?.manualCheck) {
+      setError(null);
+    }
+
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setIsLoading(true);
+    setError(null);
+    setStep('intro');
+    void refresh();
+  }, [isOpen, refresh]);
+
+  useEffect(() => {
+    if (!isOpen || (step !== 'waiting' && step !== 'deposit')) {
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = null;
+      return;
+    }
+    pollRef.current = setInterval(() => {
+      void refresh({ keepPage: true });
+    }, 12000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isOpen, step, refresh]);
+
+  useEffect(() => {
+    if (authModalType !== 'closed') return;
+    const t = setTimeout(() => void refresh({ keepPage: true }), 400);
+    return () => clearTimeout(t);
+  }, [authModalType, refresh]);
+
+  const gradientStyle = useMemo(
+    () =>
+      settings
+        ? {
+            backgroundImage: `linear-gradient(143deg, ${settings.gradientFrom} 0.74%, ${settings.gradientTo} 141.93%)`,
+          }
+        : undefined,
+    [settings],
+  );
+
+  const handleClaim = async () => {
+    const token = getSessionClient();
+    if (!token) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await claimPromoModalBonus(token);
+      await refresh({ keepPage: true });
+      setStep('success');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Не удалось получить бонус');
+    } finally {
+      setActionLoading(false);
     }
   };
-  
+
+  const goToWc = () => {
+    const path = settings?.wcRedirectPath || status?.wcRedirectPath || '/wc';
+    onClose();
+    router.push(path);
+  };
+
+  const goToDeposit = () => {
+    if (!isAuthenticated) {
+      setError('Войдите или зарегистрируйтесь, чтобы продолжить');
+      return;
+    }
+    setError(null);
+    setStep('deposit');
+  };
+
   if (!isOpen) return null;
+
+  if (!isLoading && settings && !settings.enabled) {
+    return null;
+  }
+
+  const isDepositFlow = step === 'deposit' || step === 'waiting' || step === 'claim';
+  const pageIndex = step === 'intro' ? 0 : isDepositFlow ? 1 : 2;
+
+  const stepSubtitle =
+    step === 'intro'
+      ? settings?.modalSubtitle
+      : step === 'deposit'
+        ? settings
+          ? `Минимум ${settings.minDepositLabel}. Промокод ${settings.promoCode} подставится автоматически.`
+          : null
+        : step === 'waiting'
+          ? 'Заявка принята. Бонус начислится после подтверждения платежа.'
+          : step === 'claim'
+            ? 'Условия выполнены — нажмите кнопку ниже.'
+            : step === 'success'
+              ? settings?.successSubtitle
+              : null;
 
   return (
     <>
       <div className={styles.modalOverlay} onClick={onClose}>
         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
+            ×
+          </button>
           <main className={styles.modalBody}>
-            <div className={styles.base}>
-              <div className={styles.imageWrapper}>
-                <Image 
-                  src={StepsImageMobile} 
-                  alt="Lucky Drive" 
-                  className={styles.image} 
-                  priority
-                />
-              </div>
-              <div className={styles.title}>Выполняйте шаги и выиграйте авто</div>
-              <div className={styles.subtitle}>Розыгрыш состоится: 15.12.2025</div>
-              
-              {error && (
-                <div className={styles.errorMessage}>
-                  {error}
-                  <button 
-                    type="button" 
-                    onClick={handleRetryClick}
-                    style={{ 
-                      marginLeft: '8px', 
-                      background: 'transparent', 
-                      border: 'none',
-                      color: 'white',
-                      textDecoration: 'underline',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Повторить
-                  </button>
-                </div>
-              )}
-              
-              {isLoading ? (
-                <div className={styles.loading}>
-                  <div 
-                    style={{ 
-                      borderRadius: '50%',
-                      border: '2px solid rgba(255,255,255,0.2)',
-                      borderTop: '2px solid white',
-                      width: '16px',
-                      height: '16px',
-                      animation: 'spin 1s linear infinite',
-                      marginRight: '8px'
-                    }}
-                  ></div>
-                  Загрузка...
-                </div>
-              ) : (
-                <>
-                  <div className={styles.steps}>
-                    <div className={styles.step}>
-                      <div className={styles.stepText}>Зарегистрироваться</div>
-                      {isAuthenticated ? (
-                        <div className={styles.stepDoneLabel}>
-                          <div className={styles.stepDoneLabelCheck}>
-                            <CheckIcon className={styles.stepDoneLabelCheckIcon} />
-                          </div>
-                          Выполнено
-                        </div>
-                      ) : (
-                        <div className={styles.stepButtons}>
-                          <button 
-                            className={styles.stepButton} 
-                            type="button"
-                            onClick={handleLoginClick}
-                          >
-                            Войти
-                          </button>
-                          <button 
-                            className={styles.stepButton} 
-                            type="button"
-                            onClick={handleRegisterClick}
-                          >
-                            Регистрация
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className={styles.step}>
-                      <div className={styles.stepText}>Сделать всего один депозит от 10 $</div>
-                      {hasDeposit ? (
-                        <div className={styles.stepDoneLabel}>
-                          <div className={styles.stepDoneLabelCheck}>
-                            <CheckIcon className={styles.stepDoneLabelCheckIcon} />
-                          </div>
-                          Выполнено
-                        </div>
-                      ) : (
-                        <button 
-                          className={styles.stepButton} 
-                          type="button"
-                          onClick={handleDepositClick}
-                          disabled={!isAuthenticated}
-                        >
-                          Пополнить
-                        </button>
-                      )}
-                    </div>
+            <div className={cn(styles.base, step === 'deposit' && styles.baseDeposit)} style={gradientStyle}>
+              {step !== 'success' ? (
+                <nav
+                  className={cn(styles.stepper, step === 'deposit' && styles.stepperCompact)}
+                  aria-label="Шаги"
+                >
+                  <div className={styles.stepperTrack} aria-hidden>
+                    <div
+                      className={styles.stepperTrackFill}
+                      style={{ width: pageIndex >= 1 ? '100%' : '0%' }}
+                    />
                   </div>
-                  
-                  <button 
-                    className={styles.button} 
-                    disabled={!(isAuthenticated && hasDeposit)} 
+                  {['Ознакомление', 'Пополнение'].map((label, index) => (
+                    <div
+                      key={label}
+                      className={cn(
+                        styles.stepperItem,
+                        index <= pageIndex && styles.stepperItemActive,
+                      )}
+                    >
+                      <span className={styles.stepperDot}>
+                        {index < pageIndex ? '✓' : index + 1}
+                      </span>
+                      <span className={styles.stepperLabel}>{label}</span>
+                    </div>
+                  ))}
+                </nav>
+              ) : null}
+
+              <div className={cn(styles.cardScroll, step === 'deposit' && styles.cardScrollDeposit)}>
+                {step !== 'deposit' ? (
+                <header className={styles.head}>
+                  <h2 className={styles.title}>
+                    {step === 'waiting'
+                        ? 'Проверяем оплату'
+                        : step === 'claim'
+                          ? 'Получите бонус'
+                          : step === 'success'
+                            ? settings?.successTitle || 'Готово!'
+                            : settings?.modalTitle || 'World Cup 2026'}
+                  </h2>
+                  {stepSubtitle ? <p className={styles.subtitle}>{stepSubtitle}</p> : null}
+                </header>
+                ) : (
+                <div className={styles.depositHead}>
+                  <button
                     type="button"
-                    onClick={handleGetTicketClick}
+                    className={styles.depositBackBtn}
+                    onClick={() => {
+                      setError(null);
+                      setStep('intro');
+                    }}
                   >
-                    Забрать билет
+                    ← Назад
                   </button>
-                </>
-              )}
+                  <div className={styles.depositHeadMain}>
+                    <h2 className={styles.depositTitle}>Пополнение</h2>
+                    {settings ? (
+                      <div className={styles.depositMeta}>
+                        <span>от {settings.minDepositLabel}</span>
+                        <span className={styles.depositMetaDot} aria-hidden>
+                          ·
+                        </span>
+                        <span className={styles.depositPromo}>{settings.promoCode}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+                )}
+
+                {error ? <div className={styles.errorMessage}>{error}</div> : null}
+
+                {isLoading ? (
+                  <div className={styles.loading}>Загрузка...</div>
+                ) : (
+                  <div className={styles.actions}>
+                    {step === 'intro' && (
+                      <>
+                        <div className={styles.taskList}>
+                          <article className={cn(styles.task, isAuthenticated && styles.taskDone)}>
+                            <span className={styles.taskNumber}>1</span>
+                            <div className={styles.taskBody}>
+                              <p className={styles.taskText}>{settings?.stepRegisterText}</p>
+                              {isAuthenticated ? (
+                                <span className={styles.taskDoneLabel}>
+                                  <CheckIcon className={styles.taskDoneLabelCheckIcon} />
+                                  Выполнено
+                                </span>
+                              ) : (
+                                <div className={styles.taskActions}>
+                                  <button
+                                    type="button"
+                                    className={styles.taskBtn}
+                                    onClick={() => setAuthModalType('login')}
+                                  >
+                                    Войти
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={cn(styles.taskBtn, styles.taskBtnSecondary)}
+                                    onClick={() => setAuthModalType('register')}
+                                  >
+                                    Регистрация
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </article>
+                          <article className={styles.task}>
+                            <span className={styles.taskNumber}>2</span>
+                            <div className={styles.taskBody}>
+                              <p className={styles.taskText}>
+                                {settings?.stepDepositText} — от {settings?.minDepositLabel}
+                              </p>
+                              <p className={styles.taskHint}>
+                                На следующем шаге выберите способ оплаты и отправьте заявку.
+                              </p>
+                            </div>
+                          </article>
+                        </div>
+                        <button type="button" className={styles.button} onClick={goToDeposit}>
+                          Далее
+                        </button>
+                      </>
+                    )}
+
+                    {step === 'deposit' && settings && (
+                      <>
+                        <div className={styles.depositPanel}>
+                          <DepositForm
+                            compact
+                            embedded
+                            modalEmbedded
+                            forceCurrency={settings.minDepositCurrency}
+                            defaultAmount={settings.minDepositAmount}
+                            presetAmounts={settings.presetAmounts}
+                            initialVoucher={settings.promoCode}
+                            depositSource="wc-promo-modal"
+                            onDepositComplete={() => void refresh({ keepPage: true })}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.linkBtn}
+                          onClick={() => void refresh({ keepPage: true, manualCheck: true })}
+                        >
+                          Проверить статус пополнения
+                        </button>
+                      </>
+                    )}
+
+                    {step === 'waiting' && (
+                      <>
+                        <div className={styles.waitingCard}>
+                          {status?.pendingDeposit ? (
+                            <>
+                              <p>Заявка #{status.pendingDeposit.id}</p>
+                              <p className={styles.waitingAmount}>
+                                {status.pendingDeposit.amount.toLocaleString('ru-RU')}{' '}
+                                {status.pendingDeposit.currency}
+                              </p>
+                              <p className={styles.waitingHint}>
+                                Ожидаем подтверждение администратором
+                              </p>
+                            </>
+                          ) : (
+                            <p className={styles.waitingHint}>Проверяем статус пополнения...</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.button}
+                          onClick={() => void refresh({ keepPage: true })}
+                        >
+                          Обновить статус
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.linkBtn}
+                          onClick={() => setStep('deposit')}
+                        >
+                          Вернуться к пополнению
+                        </button>
+                      </>
+                    )}
+
+                    {step === 'claim' && (
+                      <button
+                        type="button"
+                        className={styles.button}
+                        disabled={actionLoading}
+                        onClick={() => void handleClaim()}
+                      >
+                        {actionLoading ? 'Начисляем...' : settings?.ctaClaim || 'Получить бонус'}
+                      </button>
+                    )}
+
+                    {step === 'success' && (
+                      <>
+                        <div className={styles.successIcon}>🎉</div>
+                        <button type="button" className={styles.button} onClick={goToWc}>
+                          {settings?.ctaGoToWc || 'Смотреть матчи ЧМ'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </main>
         </div>
       </div>
 
       {authModalType !== 'closed' && (
-        <Dialog open={true} onOpenChange={closeAuthModal}>
-          <DialogContent className={styles.authDialog} title={authModalType === "login" ? "Вход в систему" : "Регистрация"}>
-            <AuthForm 
-              authVariant={authModalType} 
-              className={styles.authForm} 
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {isDepositModalOpen && (
-        <Dialog open={true} onOpenChange={closeDepositModal}>
-          <DialogContent className={styles.depositDialog} title="Пополнение счета">
-            <DepositForm />
+        <Dialog open onOpenChange={() => setAuthModalType('closed')}>
+          <DialogContent
+            className={styles.authDialog}
+            title={authModalType === 'login' ? 'Вход в систему' : 'Регистрация'}
+          >
+            <AuthForm authVariant={authModalType} className={styles.authForm} />
           </DialogContent>
         </Dialog>
       )}

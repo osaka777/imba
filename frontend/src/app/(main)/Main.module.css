@@ -1,27 +1,71 @@
 .main {
-  padding-top: 12px;
-
+  padding-top: 0;
   width: 100%;
   max-width: 100%;
+  margin-inline: 0;
 
   display: grid;
   grid-template-areas:
-    "header coupon"
-    "table coupon";
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
+    "nav nav"
+    "content coupon";
+  grid-template-columns: minmax(0, 1fr) var(--layout-coupon-w, 320px);
+  gap: var(--layout-gap, 18px);
   align-items: start;
 }
 
-@media screen and (max-width: 1080px) {
-  .main {
-    display: flex;
-    flex-direction: column;
-  }
+.nav {
+  grid-area: nav;
+  min-width: 0;
+  width: 100%;
+}
+
+.content {
+  grid-area: content;
+  min-width: 0;
+  width: 100%;
 }
 
 .coupon {
   grid-area: coupon;
-  width: 320px;
-  min-width: 320px;
+  width: var(--layout-coupon-w, 320px);
+  min-width: var(--layout-coupon-w, 320px);
+  align-self: start;
+}
+
+@media screen and (min-width: 768px) {
+  .coupon {
+    position: sticky;
+    top: var(--layout-sticky-top, 12px);
+    align-self: start;
+    max-height: calc(100vh - var(--layout-sticky-top, 12px) - var(--layout-sticky-bottom, 12px));
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+    min-height: 0;
+  }
+
+  .coupon::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .coupon::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 0;
+    max-width: 100%;
+  }
+
+  .coupon {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }

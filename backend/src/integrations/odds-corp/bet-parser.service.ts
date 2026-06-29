@@ -78,10 +78,12 @@ export class BetParser implements OnModuleInit {
   }
 
   async onModuleInit() {
-    // const enabled = this.configService.get('ODDSCP_ENABLED', false);
-    // if ( enabled === 'true' || enabled === true ) {
-    await this.getBetParsers();
-    // }
+    try {
+      await this.getBetParsers();
+    } catch (err) {
+      this.logger.warn('Oddscp bet_types unavailable; using built-in score parsers', err);
+      this.parsers = Object.entries(parsers);
+    }
   }
 
   parse(bet: string) {

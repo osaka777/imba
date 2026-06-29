@@ -1,16 +1,10 @@
-import { GamesBySport } from "~/entities/game";
+import { redirect } from "next/navigation";
 
-// Убираем force-dynamic для лучшего кэширования
-// export const dynamic = "force-dynamic";
-
-export default async function Sport({ params }: { params: { sport: string } }) {
-  const paramsObj = await params;
-  
-  // Убираем серверный запрос, данные будут загружаться на клиенте
-  return (
-    <GamesBySport
-      className="[grid-area:table]"
-      sport={paramsObj.sport}
-    />
-  );
+export default async function SportRedirect({
+  params,
+}: {
+  params: Promise<{ sport: string }>;
+}) {
+  const { sport } = await params;
+  redirect(`/live?sport=${encodeURIComponent(sport)}`);
 }

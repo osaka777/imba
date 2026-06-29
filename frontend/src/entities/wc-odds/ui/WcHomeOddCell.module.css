@@ -1,0 +1,403 @@
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 2px;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+
+.cell:hover {
+  background: rgb(59 130 246 / 0.08);
+}
+
+.cell_added {
+  background: rgb(59 130 246 / 0.12);
+}
+
+.pick {
+  display: none;
+  font-size: 9px;
+  font-weight: 700;
+  color: #8b93a1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cell_added .pick {
+  color: #2563eb;
+}
+
+.coef {
+  font-size: 10px;
+  font-weight: 700;
+  color: #101828;
+  line-height: 1;
+  letter-spacing: inherit;
+  white-space: nowrap;
+  text-align: center;
+}
+
+  .cell_added .coef {
+    min-width: auto;
+    min-height: 22px;
+    padding: 4px 7px;
+    border-radius: 8px;
+    color: #2563eb;
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    box-sizing: border-box;
+  }
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 28px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #8b93a1;
+}
+
+@keyframes coefTextUp {
+  0%,
+  40% {
+    color: #1a9b47;
+  }
+
+  100% {
+    color: #101828;
+  }
+}
+
+@keyframes coefTextDown {
+  0%,
+  40% {
+    color: #d64545;
+  }
+
+  100% {
+    color: #101828;
+  }
+}
+
+@keyframes coefTextUpAdded {
+  0%,
+  40% {
+    color: #1a9b47;
+  }
+
+  100% {
+    color: #1d4ed8;
+  }
+}
+
+@keyframes coefTextDownAdded {
+  0%,
+  40% {
+    color: #d64545;
+  }
+
+  100% {
+    color: #1d4ed8;
+  }
+}
+
+@keyframes coefPillUp {
+  0%,
+  40% {
+    background-color: #dff5e8;
+    color: #1a9b47;
+  }
+
+  100% {
+    background-color: transparent;
+    color: #101828;
+  }
+}
+
+@keyframes coefPillDown {
+  0%,
+  40% {
+    background-color: #fce8e8;
+    color: #d64545;
+  }
+
+  100% {
+    background-color: transparent;
+    color: #101828;
+  }
+}
+
+@keyframes coefPillUpAdded {
+  0%,
+  40% {
+    background-color: #dff5e8;
+    color: #1a9b47;
+    border-color: transparent;
+  }
+
+  100% {
+    background-color: #dbeafe;
+    color: #2563eb;
+    border-color: #93c5fd;
+  }
+}
+
+@keyframes coefPillDownAdded {
+  0%,
+  40% {
+    background-color: #fce8e8;
+    color: #d64545;
+    border-color: transparent;
+  }
+
+  100% {
+    background-color: #dbeafe;
+    color: #2563eb;
+    border-color: #93c5fd;
+  }
+}
+
+.coef_up {
+  animation: coefTextUp 2s ease-out forwards;
+}
+
+.coef_down {
+  animation: coefTextDown 2s ease-out forwards;
+}
+
+.cell_added .coef_up {
+  animation-name: coefTextUpAdded;
+}
+
+.cell_added .coef_down {
+  animation-name: coefTextDownAdded;
+}
+
+@keyframes oddBgUp {
+  0%,
+  40% {
+    background-color: #dff5e8;
+  }
+
+  100% {
+    background-color: #eef2f7;
+  }
+}
+
+@keyframes oddBgDown {
+  0%,
+  40% {
+    background-color: #fce8e8;
+  }
+
+  100% {
+    background-color: #eef2f7;
+  }
+}
+
+@keyframes oddBgUpAdded {
+  0%,
+  40% {
+    background-color: #dff5e8;
+  }
+
+  100% {
+    background-color: #dbeafe;
+  }
+}
+
+@keyframes oddBgDownAdded {
+  0%,
+  40% {
+    background-color: #fce8e8;
+  }
+
+  100% {
+    background-color: #dbeafe;
+  }
+}
+
+.flash_up {
+  animation: oddBgUp 2s ease-out forwards;
+}
+
+.flash_down {
+  animation: oddBgDown 2s ease-out forwards;
+}
+
+.cell_added.flash_up {
+  animation-name: oddBgUpAdded;
+}
+
+.cell_added.flash_down {
+  animation-name: oddBgDownAdded;
+}
+
+.flash_up::after,
+.flash_down::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  pointer-events: none;
+  animation: flashTriangle 2s ease-out forwards;
+}
+
+.flash_up::after {
+  top: 2px;
+  border-bottom: 4px solid #2db856;
+}
+
+.flash_down::after {
+  bottom: 2px;
+  border-top: 4px solid #e85d5d;
+}
+
+@keyframes flashTriangle {
+  0%,
+  55% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Desktop grid: plain coef + pill flash (like live line) */
+@media screen and (min-width: 1025px) {
+  .cell {
+    width: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .cell:hover {
+    background: transparent;
+  }
+
+  .cell_added {
+    background: transparent;
+  }
+
+  .coef {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 0;
+    border-radius: 0;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .flash_up,
+  .flash_down {
+    animation: none !important;
+    background: transparent !important;
+  }
+
+  .flash_up::after,
+  .flash_down::after {
+    content: none !important;
+  }
+
+  .coef_up,
+  .coef_down {
+    min-width: 2rem;
+    min-height: 22px;
+    padding: 4px 7px;
+    border-radius: 8px;
+    box-sizing: border-box;
+    line-height: 1;
+  }
+
+  .coef_up {
+    animation: coefPillUp 2s ease-out forwards;
+  }
+
+  .coef_down {
+    animation: coefPillDown 2s ease-out forwards;
+  }
+
+  .cell_added .coef_up {
+    animation-name: coefPillUpAdded;
+  }
+
+  .cell_added .coef_down {
+    animation-name: coefPillDownAdded;
+  }
+}
+
+/* Mobile bar: labeled buttons + full-cell flash (like live mobile) */
+@media screen and (max-width: 1024px) {
+  .cell {
+    flex-direction: row;
+    gap: 3px;
+    width: 100%;
+    min-height: 28px;
+    padding: 3px 4px;
+    border-radius: 5px;
+    background: #eef2f7;
+    border: 1px solid #e2e8f0;
+    box-sizing: border-box;
+  }
+
+  .cell:hover {
+    background: #eef2f7;
+  }
+
+  .cell_added {
+    background: #dbeafe;
+    border-color: #93c5fd;
+  }
+
+  .pick {
+    display: block;
+  }
+
+  .coef {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .empty {
+    min-height: 28px;
+    border-radius: 5px;
+    background: #eef2f7;
+    border: 1px solid #e2e8f0;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .pick {
+    font-size: 8px;
+  }
+
+  .coef,
+  .empty {
+    font-size: 11px;
+  }
+}

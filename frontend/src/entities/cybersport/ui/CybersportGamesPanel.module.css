@@ -1,0 +1,53 @@
+.state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+
+.leagues {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 180px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cy-text-primary, #e8e8ea);
+}
+
+.emptyHint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cy-text-secondary, #909090);
+}
+
+.emptyCta {
+  margin-top: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--cy-bg-secondary, #1c1d21);
+  border: 1px solid var(--cy-border-active, rgb(255 255 255 / 0.22));
+  color: var(--cy-text-primary, #e8e8ea);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.emptyCta:hover {
+  background: var(--cy-bg-elevated, #2e3036);
+}

@@ -2,7 +2,7 @@
 }
 
 .header {
-  grid-area: header;
+  grid-area: content;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -23,7 +23,7 @@
 }
 
 .games {
-  grid-area: table;
+  grid-area: content;
   min-width: 0;
   max-width: 100%;
 }

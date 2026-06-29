@@ -1,0 +1,255 @@
+.pageShell {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap, 18px);
+}
+
+.sportsSidebar {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sidebarColumn {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sportsMenuSlot_mobileHidden {
+  display: block;
+}
+
+.sidebarSearchSlot {
+  display: none;
+}
+
+.sidebarTimeFilterSlot {
+  display: none;
+}
+
+.sidebarControls {
+  display: contents;
+}
+
+.sidebarMenuScroll {
+  display: contents;
+}
+
+.pageHeaderSlot {
+  display: block;
+  width: 100%;
+}
+
+.pageMain {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap, 18px);
+}
+
+.pageFlow {
+  width: 100%;
+  min-width: 0;
+}
+
+.pageMainLead,
+.pageMainBody {
+  width: 100%;
+  min-width: 0;
+}
+
+.pageMainBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap, 18px);
+}
+
+/* Mobile: banner first, then horizontal sport menu, then content */
+@media (max-width: 767px) {
+  .sportsMenuSlot_mobileHidden {
+    display: none;
+  }
+
+  .pageFlow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--layout-gap, 18px);
+  }
+
+  .pageMain {
+    display: contents;
+  }
+
+  .pageMainLead {
+    order: 1;
+  }
+
+  .sidebarColumn {
+    order: 2;
+  }
+
+  .pageMainBody {
+    order: 3;
+  }
+}
+
+/* Tablet + desktop: vertical sidebar layout */
+@media (min-width: 768px) {
+  .pageFlow {
+    display: contents;
+  }
+
+  .pageShell {
+    display: grid;
+    grid-template-columns: var(--layout-sidebar-w, 220px) minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar header"
+      "sidebar main";
+    gap: var(--layout-gap, 14px);
+    align-items: stretch;
+  }
+
+  .sidebarColumn {
+    grid-area: sidebar;
+    align-self: stretch;
+    min-height: 100%;
+  }
+
+  .pageHeaderSlot {
+    grid-area: header;
+    display: block;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .pageHeaderSlot > header {
+    margin-top: 0;
+  }
+
+  .pageMain {
+    grid-area: main;
+  }
+
+  /* Game page: no banner row — align main with sidebar top */
+  .pageShell_noHeader {
+    grid-template-areas: "sidebar main";
+    grid-template-rows: auto;
+    align-items: start;
+  }
+
+  .pageShell_noHeader .pageMain {
+    align-self: start;
+  }
+
+  .sportsSidebar {
+    position: sticky;
+    top: var(--layout-sticky-top, 12px);
+    align-self: start;
+    max-height: calc(100vh - var(--layout-sticky-top, 12px) - var(--layout-sticky-bottom, 12px));
+    overflow: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+    background-color: var(--blue-20);
+    border-radius: 8px;
+    padding: 8px;
+    gap: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebarControls {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 0;
+  }
+
+  .sidebarControls > * + * {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .sidebarControls_segmented {
+    gap: 0;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.04);
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .sidebarControls_segmented > * + * {
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .sidebarControls_segmented .sidebarTimeFilterSlot,
+  .sidebarControls_segmented .sidebarSearchSlot {
+    padding-bottom: 0;
+  }
+
+  .sidebarControls_segmented .sidebarSearchSlot :global([class*="bar"]) {
+    min-height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: rgb(0 0 0 / 0.18);
+    border: 1px solid rgb(255 255 255 / 0.06);
+    box-sizing: border-box;
+  }
+
+  .sidebarMenuScroll {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 6px;
+    padding-top: 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+
+  .sidebarMenuScroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebarMenuScroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+  }
+
+  .sidebarMenuScroll > * + * {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin-top: 6px;
+    padding-top: 2px;
+  }
+
+  .sidebarSearchSlot {
+    display: block;
+    padding-bottom: 4px;
+  }
+
+  .sidebarTimeFilterSlot {
+    display: block;
+    padding-bottom: 2px;
+  }
+}
+
+/* Tablet: slightly tighter sidebar padding */
+@media (min-width: 768px) and (max-width: 1080px) {
+  .sportsSidebar {
+    padding: 6px;
+  }
+
+  .pageMain {
+    gap: 14px;
+  }
+}

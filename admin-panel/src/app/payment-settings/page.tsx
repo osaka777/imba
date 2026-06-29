@@ -7,19 +7,21 @@ import { Input } from "@/widgets/Input";
 import { apiCall } from "@/shared/utils/api";
 import { toast } from "react-toastify";
 
-type Currency = "KZT" | "RUB";
+type ManualDepositKey = "KZT" | "KZT_KASPI" | "RUB" | "RUB_SBERBANK" | "USDT";
 
 type ManualDepositItem = {
   cardNumber: string;
   holderName: string;
   bankName: string;
   qrImageUrl?: string;
+  walletAddress?: string;
   minAmount: number;
+  rubPerBrl?: number;
   enabled: boolean;
 };
 
 type PaymentSettings = {
-  manualDeposit: Record<Currency, ManualDepositItem>;
+  manualDeposit: Record<ManualDepositKey, ManualDepositItem>;
   paymentMethods: Record<string, { enabled: boolean; label: string }>;
   notifications: {
     telegramDepositNotify: boolean;
@@ -34,14 +36,38 @@ type PaymentSettings = {
 
 type Tab = "qr" | "payments" | "notifications";
 
+const MANUAL_TO_PAYMENT_METHOD: Record<ManualDepositKey, string> = {
+  KZT: "KZT_FOREIGN_CARD",
+  KZT_KASPI: "KZT_KASPI",
+  RUB: "RUB_FOREIGN_CARD",
+  RUB_SBERBANK: "RUB_SBERBANK",
+  USDT: "USDT_TRC20",
+};
+
 const baseUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+const syncManualToPaymentMethods = (
+  manualDeposit: PaymentSettings["manualDeposit"],
+  paymentMethods: PaymentSettings["paymentMethods"],
+) => {
+  const next = { ...paymentMethods };
+  (Object.keys(MANUAL_TO_PAYMENT_METHOD) as ManualDepositKey[]).forEach((key) => {
+    const methodKey = MANUAL_TO_PAYMENT_METHOD[key];
+    if (!next[methodKey]) return;
+    next[methodKey] = {
+      ...next[methodKey],
+      enabled: manualDeposit[key]?.enabled !== false,
+    };
+  });
+  return next;
+};
 
 export default function PaymentSettingsPage() {
   const [tab, setTab] = useState<Tab>("qr");
   const [settings, setSettings] = useState<PaymentSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState<Currency | null>(null);
+  const [uploading, setUploading] = useState<ManualDepositKey | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,11 +91,15 @@ export default function PaymentSettingsPage() {
     if (!settings) return;
     setSaving(true);
     try {
+      const paymentMethods = syncManualToPaymentMethods(
+        settings.manualDeposit,
+        settings.paymentMethods,
+      );
       const res = await apiCall(`${baseUrl()}/api/admin/payment-settings`, {
         method: "PUT",
         body: JSON.stringify({
           manualDeposit: settings.manualDeposit,
-          paymentMethods: settings.paymentMethods,
+          paymentMethods,
           notifications: settings.notifications,
         }),
       });
@@ -83,13 +113,13 @@ export default function PaymentSettingsPage() {
     }
   };
 
-  const uploadQr = async (currency: Currency, file: File) => {
-    setUploading(currency);
+  const uploadQr = async (key: ManualDepositKey, file: File) => {
+    setUploading(key);
     try {
       const token = localStorage.getItem("authToken");
       const form = new FormData();
       form.append("image", file);
-      form.append("currency", currency.toLowerCase());
+      form.append("currency", key.toLowerCase().replace(/_/g, "-"));
       const res = await fetch(`${baseUrl()}/api/admin/payment-settings/upload-qr`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -98,21 +128,44 @@ export default function PaymentSettingsPage() {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       const url = data.url || `/${data.path}`;
-      setSettings((prev) =>
-        prev
-          ? {
-              ...prev,
-              manualDeposit: {
-                ...prev.manualDeposit,
-                [currency]: {
-                  ...prev.manualDeposit[currency],
-                  qrImageUrl: url.startsWith("/") ? url : `/${url}`,
-                },
+      const qrUrl = url.startsWith("/") ? url : `/${url}`;
+      const nextSettings = settings
+        ? {
+            ...settings,
+            manualDeposit: {
+              ...settings.manualDeposit,
+              [key]: {
+                ...settings.manualDeposit[key],
+                qrImageUrl: qrUrl,
               },
-            }
-          : prev,
-      );
-      toast.success("QR загружен — нажмите «Сохранить»");
+            },
+          }
+        : null;
+
+      if (nextSettings) {
+        const syncedSettings = {
+          ...nextSettings,
+          paymentMethods: syncManualToPaymentMethods(
+            nextSettings.manualDeposit,
+            nextSettings.paymentMethods,
+          ),
+        };
+        setSettings(syncedSettings);
+        const saveRes = await apiCall(`${baseUrl()}/api/admin/payment-settings`, {
+          method: "PUT",
+          body: JSON.stringify({
+            manualDeposit: syncedSettings.manualDeposit,
+            paymentMethods: syncedSettings.paymentMethods,
+            notifications: syncedSettings.notifications,
+          }),
+        });
+        if (!saveRes.ok) {
+          toast.warn("QR загружен, но автосохранение не удалось — нажмите «Сохранить»");
+        } else {
+          toast.success("QR загружен и сохранён");
+          await load();
+        }
+      }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Ошибка загрузки QR");
     } finally {
@@ -120,18 +173,19 @@ export default function PaymentSettingsPage() {
     }
   };
 
-  const updateManual = (currency: Currency, patch: Partial<ManualDepositItem>) => {
-    setSettings((prev) =>
-      prev
-        ? {
-            ...prev,
-            manualDeposit: {
-              ...prev.manualDeposit,
-              [currency]: { ...prev.manualDeposit[currency], ...patch },
-            },
-          }
-        : prev,
-    );
+  const updateManual = (key: ManualDepositKey, patch: Partial<ManualDepositItem>) => {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      const manualDeposit = {
+        ...prev.manualDeposit,
+        [key]: { ...prev.manualDeposit[key], ...patch },
+      };
+      const paymentMethods =
+        Object.prototype.hasOwnProperty.call(patch, "enabled")
+          ? syncManualToPaymentMethods(manualDeposit, prev.paymentMethods)
+          : prev.paymentMethods;
+      return { ...prev, manualDeposit, paymentMethods };
+    });
   };
 
   const toggleMethod = (key: string) => {
@@ -150,9 +204,15 @@ export default function PaymentSettingsPage() {
     });
   };
 
-  const renderManualBlock = (currency: Currency, title: string) => {
+  const removeQr = (key: ManualDepositKey) => {
+    updateManual(key, { qrImageUrl: "" });
+    toast.info("QR удалён — нажмите «Сохранить»");
+  };
+
+  const renderManualBlock = (key: ManualDepositKey, title: string) => {
     if (!settings) return null;
-    const item = settings.manualDeposit[currency];
+    const item = settings.manualDeposit[key];
+    if (!item) return null;
     const qrPreview = item.qrImageUrl
       ? `${baseUrl()}${item.qrImageUrl.startsWith("/") ? "" : "/"}${item.qrImageUrl}`
       : "";
@@ -164,44 +224,75 @@ export default function PaymentSettingsPage() {
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
               checked={item.enabled}
-              onChange={(e) => updateManual(currency, { enabled: e.target.checked })}
+              onChange={(e) => updateManual(key, { enabled: e.target.checked })}
               type="checkbox"
             />
             Приём включён
           </label>
         </div>
 
-        <Input
-          label="Номер карты"
-          value={item.cardNumber}
-          onChange={(e) => updateManual(currency, { cardNumber: e.target.value })}
-        />
-        <Input
-          label="Получатель"
-          value={item.holderName}
-          onChange={(e) => updateManual(currency, { holderName: e.target.value })}
-        />
-        <Input
-          label="Банк"
-          value={item.bankName}
-          onChange={(e) => updateManual(currency, { bankName: e.target.value })}
-        />
+        {key === "USDT" ? (
+          <Input
+            label="Адрес кошелька TRC-20"
+            value={item.walletAddress || item.cardNumber}
+            onChange={(e) =>
+              updateManual(key, {
+                cardNumber: e.target.value,
+                walletAddress: e.target.value,
+              })
+            }
+          />
+        ) : null}
+        {key !== "RUB_SBERBANK" && key !== "USDT" ? (
+          <Input
+            label="Номер карты"
+            value={item.cardNumber}
+            onChange={(e) => updateManual(key, { cardNumber: e.target.value })}
+          />
+        ) : null}
+        {key !== "RUB_SBERBANK" && key !== "USDT" ? (
+          <Input
+            label="Получатель"
+            value={item.holderName}
+            onChange={(e) => updateManual(key, { holderName: e.target.value })}
+          />
+        ) : null}
+        {key !== "RUB_SBERBANK" && key !== "USDT" ? (
+          <Input
+            label="Банк"
+            value={item.bankName}
+            onChange={(e) => updateManual(key, { bankName: e.target.value })}
+          />
+        ) : null}
+        {key === "RUB_SBERBANK" ? (
+          <Input
+            label="Курс: ₽ за 1 R$ (например 183)"
+            type="number"
+            value={String(item.rubPerBrl ?? 183)}
+            onChange={(e) =>
+              updateManual(key, { rubPerBrl: Number(e.target.value) || 183 })
+            }
+          />
+        ) : null}
         <Input
           label="Минимальная сумма"
           type="number"
           value={String(item.minAmount)}
           onChange={(e) =>
-            updateManual(currency, { minAmount: Number(e.target.value) || 0 })
+            updateManual(key, { minAmount: Number(e.target.value) || 0 })
           }
         />
 
         <div>
           <p className="mb-2 text-sm font-medium text-gray-700">QR-код</p>
+          <p className="mb-3 text-xs text-gray-500">
+            Необязательно. Если QR не загружен, в модалке оплаты показываются только реквизиты карты.
+          </p>
           <div className="flex flex-wrap items-start gap-4">
             {qrPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                alt={`QR ${currency}`}
+                alt={`QR ${key}`}
                 className="h-28 w-28 rounded border border-gray-200 object-contain bg-white"
                 src={qrPreview}
               />
@@ -210,19 +301,24 @@ export default function PaymentSettingsPage() {
                 Нет QR
               </div>
             )}
-            <div>
+            <div className="space-y-2">
               <input
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) void uploadQr(currency, file);
+                  if (file) void uploadQr(key, file);
                 }}
                 type="file"
               />
-              {uploading === currency && (
-                <p className="mt-2 text-sm text-blue-600">Загрузка...</p>
+              {item.qrImageUrl ? (
+                <Button onClick={() => removeQr(key)} type="button" variant="danger" size="sm">
+                  Удалить QR
+                </Button>
+              ) : null}
+              {uploading === key && (
+                <p className="text-sm text-blue-600">Загрузка...</p>
               )}
-              <p className="mt-2 break-all text-xs text-gray-500">{item.qrImageUrl || "—"}</p>
+              <p className="break-all text-xs text-gray-500">{item.qrImageUrl || "—"}</p>
             </div>
           </div>
         </div>
@@ -270,8 +366,11 @@ export default function PaymentSettingsPage() {
           <>
             {tab === "qr" && (
               <div className="grid min-w-0 gap-6 xl:grid-cols-2">
-                {renderManualBlock("KZT", "KZT — Kaspi / карта")}
-                {renderManualBlock("RUB", "RUB — карта")}
+                {renderManualBlock("USDT", "USDT — TRC-20")}
+                {renderManualBlock("KZT_KASPI", "KZT — Kaspi")}
+                {renderManualBlock("KZT", "KZT — Visa/Mastercard")}
+                {renderManualBlock("RUB_SBERBANK", "RUB — Перевод из РФ")}
+                {renderManualBlock("RUB", "RUB — Visa/Mastercard (скрыт)")}
               </div>
             )}
 

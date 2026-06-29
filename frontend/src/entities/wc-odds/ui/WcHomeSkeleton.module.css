@@ -1,0 +1,128 @@
+.skeletonRow {
+  display: grid;
+  align-items: center;
+  min-height: 68px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e7ebf1;
+}
+
+.skeletonRow_alt {
+  background: #f5f7fa;
+}
+
+.skeletonMain {
+  display: contents;
+}
+
+.skeletonOdds {
+  display: contents;
+}
+
+.block {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #e8ebf0 0%,
+    #f3f5f8 50%,
+    #e8ebf0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.timeBlock {
+  width: 48px;
+  height: 28px;
+}
+
+.teamBlock {
+  height: 14px;
+  margin-bottom: 6px;
+}
+
+.teamBlock_short {
+  width: 72%;
+}
+
+.teamBlock_long {
+  width: 88%;
+}
+
+.pillBlock {
+  width: 44px;
+  height: 28px;
+  margin: 0 auto;
+}
+
+.oddBlock {
+  width: 100%;
+  max-width: 52px;
+  height: 14px;
+  margin: 0 auto;
+}
+
+.teamsWrap {
+  border-left: 3px solid #dbeafe;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media screen and (max-width: 1024px) {
+  .skeletonRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    min-height: 0;
+  }
+
+  .skeletonMain {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .timeBlock {
+    width: 38px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .teamsWrap {
+    flex: 1;
+    min-width: 0;
+    padding-left: 8px;
+  }
+
+  .pillBlock {
+    display: none;
+  }
+
+  .skeletonOdds {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    width: 100%;
+  }
+
+  .skeletonOdds_twoWay {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .oddBlock {
+    width: 100%;
+    height: 28px;
+    max-width: none;
+    margin: 0;
+    border-radius: 5px;
+  }
+}

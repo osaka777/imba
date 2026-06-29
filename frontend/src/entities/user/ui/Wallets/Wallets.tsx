@@ -28,6 +28,7 @@ const currencySymbols: Record<string, string> = {
   RUB: '₽',
   TRY: '₺',
   UZS: "so'm",
+  USDT: 'USDT',
 };
 
 const getCurrencySymbol = (code: string) => currencySymbols[code] || code;
@@ -88,7 +89,7 @@ export const Wallets = ({
       <section className={styles.section}>
         <ul className={styles.walletList}>
           {wallets
-            .filter(wallet => ['USD', 'KZT', 'UAH', 'RUB', 'TRY', 'UZS'].includes(wallet.currencyCode))
+            .filter(wallet => ['USD', 'KZT', 'UAH', 'RUB', 'TRY', 'UZS', 'USDT'].includes(wallet.currencyCode))
             .map((wallet) => (
               <li key={wallet.currencyCode} className={`${styles.walletItem} ${styles.lightBlackBlueGradient}`}>
                 <div className={styles.walletInfo}>

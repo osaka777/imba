@@ -18,6 +18,7 @@ import { BonusBalanceModule } from './bonus-balance/bonus-balance.module';
 import { BetApiModule } from '../integrations/betapi/betapi.module';
 import { BannerModule } from './banner/banner.module';
 import { SlideModule } from './slide/slide.module';
+import { PromoModalModule } from './promo-modal/promo-modal.module';
 import { PaymentSettingsModule } from './payment-settings/payment-settings.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { PaymentSettingsModule } from './payment-settings/payment-settings.modul
     BannerModule,
     SlideModule,
     PaymentSettingsModule,
+    PromoModalModule,
   ],
 })
 export class MainModule {}

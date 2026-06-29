@@ -1,48 +1,48 @@
 import { ReactNode, Suspense } from "react";
 
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 import "react-toastify/dist/ReactToastify.min.css";
 import "~/shared/ui/styles/index.css"; 
 
-import { Footer } from "~/widgets/Footer";
+import { FooterDeferred } from "~/widgets/Footer/FooterDeferred";
 import { HeaderLineTop } from "~/widgets/HeaderTop";
 import { MobileNavigation } from "~/widgets/MobileNavigation";
-import { Navigation } from "~/widgets/Navigation";
+import { RootNav } from "~/widgets/Navigation/RootNav";
 import { Provider } from "~/widgets/Provider";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import shellStyles from "~/app/SiteShell.module.css";
+import { PreloadData } from "~/app/PreloadData";
+import { FontsExtendedLoader } from "~/app/FontsExtendedLoader";
+import { QueryDevtoolsGate } from "~/app/providers/QueryDevtoolsGate";
 import { CurrencyProvider } from "~/app/providers/CurrencyProvider";
 import { YandexMetrika } from "~/shared/metrics";
 import { init } from "~/shared/lib";
-import { preloadPopularPages } from "~/shared/lib/preload";
-import { GamesBettingProvider } from "~/app/providers/GamesBetting.provider";
 import { AuthProvider } from "~/app/providers/AuthProvider";
 import { RealtimeProviders } from "~/app/providers/RealtimeProviders";
 import { languageService } from "~/shared/services/language.service";
 import { AppToastContainer } from "~/shared/ui/Toast";
+
+const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: false,
+  adjustFontFallback: true,
+});
 
 export const metadata: Metadata = {
   description: "Лучшие ставки на спорт онлайн — высокие коэффициенты и бонусы!",
   title: "Лучшие ставки на спорт онлайн — высокие коэффициенты и бонусы!",
 };
 
-// Компонент для предзагрузки данных
-const PreloadData = () => {
-  if (typeof window !== 'undefined') {
-    // Добавляем глобальный обработчик unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      console.error('Unhandled promise rejection:', event.reason);
-      // Предотвращаем показ ошибки в консоли браузера
-      event.preventDefault();
-    });
-    
-    // Предзагружаем данные после загрузки страницы с увеличенной задержкой
-    setTimeout(() => {
-      preloadPopularPages();
-    }, 3000);
-  }
-  return null;
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
+
+// Компонент предзагрузки вынесен в ~/app/PreloadData.tsx (client)
 
 export default function RootLayout({
   children,
@@ -61,7 +61,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//upload.wikimedia.org" />
         <link rel="dns-prefetch" href="//flagcdn.com" />
       </head>
-      <body>
+      <body className={inter.variable}>
         <Script
           dangerouslySetInnerHTML={{
             __html: `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -87,7 +87,7 @@ export default function RootLayout({
               'var _tmr = window._tmr || (window._tmr = []); _tmr.push({id: "3569387", type: "pageView", start: (new Date()).getTime()}); (function (d, w, id) {if (d.getElementById(id)) return; var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id; ts.src = "https://top-fwz1.mail.ru/js/code.js"; var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }})(document, window, "tmr-code");',
           }}
           id="mail-counter"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         <Suspense fallback={<></>}>
           <YandexMetrika />
@@ -97,12 +97,19 @@ export default function RootLayout({
             <Provider>
               <AuthProvider>
                 <RealtimeProviders>
-                  <HeaderLineTop />
-                  <Navigation />
-                  {children}
-                  <Footer />
-                  <ReactQueryDevtools />
+                  <div className={shellStyles.siteShell}>
+                    <div className={`${shellStyles.fullBleed} ${shellStyles.topBar}`}>
+                      <HeaderLineTop />
+                    </div>
+                    <RootNav />
+                    <div className={shellStyles.siteMain}>{children}</div>
+                    <div className={shellStyles.fullBleed}>
+                      <FooterDeferred />
+                    </div>
+                  </div>
+                  <QueryDevtoolsGate />
                   <PreloadData />
+                  <FontsExtendedLoader />
                 </RealtimeProviders>
               </AuthProvider>
             </Provider>

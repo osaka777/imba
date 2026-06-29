@@ -451,28 +451,68 @@
 
 div.dialog {
   border-radius: 15px;
-
   padding: 0;
+  width: min(560px, calc(100vw - 32px)) !important;
+  max-width: min(560px, calc(100vw - 32px)) !important;
+  gap: 0 !important;
+  overflow: hidden;
+  isolation: isolate;
+}
 
-  max-width: max-content;
+div.dialog:has([data-payment-step="active"]) {
+  background: #13151f !important;
+  background-color: #13151f !important;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.65) !important;
+  border: 2px solid #13151f !important;
+  outline: none !important;
+  animation: none !important;
+  transform: translate(-50%, -50%) !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+div.dialog:has([data-usdt-payment-step="active"]) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.1) !important;
+  border: 1px solid #eef2f6 !important;
+  width: min(560px, calc(100vw - 32px)) !important;
+  max-width: min(560px, calc(100vw - 32px)) !important;
+}
+
+div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] {
+  color: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px;
+}
+
+div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] {
+  color: #64748b !important;
+  background: #f1f5f9 !important;
+}
+
+div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] svg {
+  color: rgba(255, 255, 255, 0.92) !important;
+  stroke: rgba(255, 255, 255, 0.92) !important;
+}
+
+div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] svg {
+  color: #475569 !important;
+  stroke: #475569 !important;
 }
 
 @media screen and (max-width: 768px) {
   div.dialog {
     border-radius: 18px;
-    max-width: min(360px, calc(100vw - 32px));
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
   }
 }
 
 @media screen and (max-width: 480px) {
   div.dialog {
-    max-width: min(340px, calc(100vw - 28px));
-  }
-}
-
-@media screen and (max-width: 390px) {
-  div.dialog {
-    max-width: min(320px, calc(100vw - 24px));
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
   }
 }
 

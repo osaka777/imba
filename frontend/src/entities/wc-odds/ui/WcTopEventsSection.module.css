@@ -1,0 +1,60 @@
+.section {
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 16px;
+}
+
+.track {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 2px 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.track > * {
+  scroll-snap-align: start;
+}
+
+.skeleton {
+  flex: 0 0 248px;
+  width: 248px;
+  min-height: 168px;
+  margin-top: 8px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 50%, #eef2f7 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .section {
+    margin-bottom: 12px;
+  }
+
+  .track {
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .skeleton {
+    flex-basis: 228px;
+    width: 228px;
+  }
+}

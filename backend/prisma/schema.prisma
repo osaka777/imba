@@ -71,12 +71,15 @@ model BonusBalance {
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  email            String            @unique
-  password         String?
-  affiliatedById   Int?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                  Int               @id @default(autoincrement())
+  email               String            @unique
+  password            String?
+  phone               String?
+  birthDate           DateTime?
+  defaultCurrencyCode String?
+  affiliatedById      Int?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   affilator        Affilator?        @relation("affilatorData")
   balances         Balance[]
   bets             Bet[]
@@ -89,6 +92,7 @@ model User {
   promoOnUsers     PromoOnUsers[]
   affiliatedBy     Affilator?        @relation("affilatedBy", fields: [affiliatedById], references: [userId])
   withdrawRequests WithdrawRequest[]
+  wcOddsBets       WcOddsBet[]
 
   @@index([email])
 }
@@ -608,19 +612,29 @@ model Slide {
   textOffsetY     Int      @default(0)
   titlePosXPct    Int?
   titlePosYPct    Int?
+  titleMobilePosXPct Int?
+  titleMobilePosYPct Int?
   descPosXPct     Int?
   descPosYPct     Int?
+  descMobilePosXPct Int?
+  descMobilePosYPct Int?
   showTitle       Boolean  @default(true)
   showDesc        Boolean  @default(true)
   showButton      Boolean  @default(false)
   buttonText      String?
   buttonPosXPct   Int?
   buttonPosYPct   Int?
+  buttonMobilePosXPct Int?
+  buttonMobilePosYPct Int?
   titleColor      String   @default("#ffffff")
   titleSize       Int      @default(28)
+  titleMobileSize Int?
   descColor       String   @default("#ffffff")
   descSize        Int      @default(13)
+  descMobileSize  Int?
   textShadow      Boolean  @default(true)
+  buttonSize      Int      @default(14)
+  buttonMobileSize Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -686,6 +700,83 @@ enum OperationSource {
   PROMO
   AFFILIATE
   AFFILIATE_BONUS
+  WC_BET
+}
+
+model WcOddsEvent {
+  id             String      @id
+  slug           String?     @unique
+  sportKey       String      @default("olimp_100")
+  leagueName     String?
+  tournamentId   Int?
+  homeTeam       String
+  awayTeam       String
+  commenceTime   DateTime
+  oddsHome       Decimal?    @db.Decimal(8, 2)
+  oddsDraw       Decimal?    @db.Decimal(8, 2)
+  oddsAway       Decimal?    @db.Decimal(8, 2)
+  bookmakerKey   String?
+  bookmakerTitle String?
+  oddsUpdatedAt  DateTime?
+  homeScore      Int?
+  awayScore      Int?
+  completed      Boolean     @default(false)
+  homeCompetitorId Int?
+  awayCompetitorId Int?
+  hasBroadcast   Boolean     @default(false)
+  priorityLevel  Int         @default(0)
+  settledAt      DateTime?
+  marketsJson    Json?
+  matchStateJson Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  bets           WcOddsBet[]
+
+  @@index([commenceTime])
+  @@index([completed])
+  @@index([leagueName, commenceTime])
+  @@index([sportKey, commenceTime])
+}
+
+enum WcOddsPick {
+  HOME
+  DRAW
+  AWAY
+}
+
+enum WcOddsBetStatus {
+  PENDING
+  WIN
+  LOSE
+  VOID
+}
+
+model WcOddsBet {
+  id              Int             @id @default(autoincrement())
+  userId          Int
+  eventId         String
+  pick            WcOddsPick?
+  marketKey       String          @default("h2h")
+  outcomeKey      String?
+  line            String?
+  outcomeName     String?
+  odds            Decimal         @db.Decimal(8, 2)
+  stake           Decimal         @db.Decimal(16, 2)
+  currencyCode    String          @default("KZT")
+  status          WcOddsBetStatus @default(PENDING)
+  potentialPayout Decimal         @db.Decimal(16, 2)
+  settledAt       DateTime?
+  placementContextJson Json?
+  isProbe             Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id])
+  event           WcOddsEvent     @relation(fields: [eventId], references: [id])
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@index([isProbe])
 }
 
 enum GameBetApiType {

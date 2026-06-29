@@ -36,6 +36,7 @@
     "currency-symbol-map": "^5.1.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.11",
+    "hls.js": "^1.6.2",
     "next": "^15.4.2",
     "next-nprogress-bar": "^2.3.12",
     "openapi-fetch": "^0.9.7",

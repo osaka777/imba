@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { LoadingScreen, Button } from "~/shared/ui";
 import { ArrowTopIcon } from "~/shared/assets";
@@ -58,42 +58,24 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
   // Состояние для TournamentOdds логики
   const [selectedSubGameData, setSelectedSubGameData] = useState<SubGameData | null>(null);
   const [allExpanded, setAllExpanded] = useState(true);
-  const prevSubEventId = useRef<string | null>(null);
 
   // Определяем активный eventId для WebSocket подписки
   const activeEventId = activeSubGame?.game_id?.toString() || eventId;
-  
-  // Логирование изменений activeEventId
-  useEffect(() => {
-    console.log('🎯 [Match] activeEventId changed:', activeEventId, {
-      isSubGame: !!activeSubGame,
-      subGameId: activeSubGame?.game_id,
-      originalEventId: eventId
-    });
-  }, [activeEventId, activeSubGame, eventId]);
 
   const { data, isLoading, error } = useGamesWebSocket({
     eventId: activeEventId,
     initialData: matchData,
+    turbo: true,
   });
 
   // Для подыгр также получаем данные родительской игры для ScoreBoard
   const { data: parentData } = useGamesWebSocket({
     eventId: eventId,
     initialData: undefined,
+    turbo: true,
   });
 
-  const { isConnected, subscribe, unsubscribe, addMessageHandler, removeMessageHandler } = useWebSocketContext();
-
-  useEffect(() => {
-    console.log('🔌 [Match] WebSocket connection status:', {
-      isConnected,
-      eventId,
-      activeEventId,
-      activeSubGame: activeSubGame?.game_id,
-      data
-    });
-  }, [isConnected, eventId, activeEventId, activeSubGame]);
+  const { addMessageHandler, removeMessageHandler } = useWebSocketContext();
 
   const gameId = data?.eventId || data?.game_id || data?.id;
 
@@ -152,13 +134,6 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
       setErrorSubGames('Ошибка загрузки данных подыгры');
     }
   };
-
-  // Отслеживание изменений активной подыгры для логирования
-  useEffect(() => {
-    const subId = selectedSubGameData?.game_id?.toString();
-    console.log('🔄 [Match] Active subgame changed:', subId ? `subgame ${subId}` : 'main game');
-    prevSubEventId.current = subId || null;
-  }, [selectedSubGameData?.game_id]);
 
   // Обработка входящих WS-сообщений для выбранной подигры
   useEffect(() => {
@@ -224,61 +199,28 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
 
   // WebSocket обработчик для обновления списка subGames
   useEffect(() => {
-    console.log('🔌 [Match] Setting up WebSocket handler for subGames, eventId:', eventId);
-    
     const handleSubGamesUpdate = (message: any) => {
-      console.log('📨 [Match] Received WebSocket message:', {
-        type: message.type,
-        eventId: message.eventId,
-        currentEventId: eventId,
-        message: message
-      });
-      
-      if (message.eventId !== eventId) {
-        console.log('⚠️ [Match] Message eventId mismatch, ignoring:', message.eventId, 'vs', eventId);
-        return;
-      }
+      if (message.eventId !== eventId) return;
 
-      // Обработка удаления подигр
       if (message.type === "subgames_removed") {
-        console.log('🔄 [Match] SubGames removed, refreshing list');
-        
-        // Если активная подигра была удалена, сбрасываем её
         if (activeSubGame && message.removedGameIds?.includes(activeSubGame.game_id)) {
           setActiveSubGame(null);
           setSelectedSubGameData(null);
         }
-        
-        // Перезагружаем список подигр
+
         setSubGames([]);
         getSubGames(eventId).then((response) => {
           setSubGames(response?.sub_games || []);
         }).catch((error) => {
-          console.error('❌ [Match] Error reloading subGames:', error);
+          console.error('[Match] Error reloading subGames:', error);
         });
       }
-      
-      // Обработка добавления новых подигр
-      if (message.type === "subgames_added") {
-        console.log('🔄 [Match] New subGames added, refreshing list');
-        
-        // Перезагружаем список подигр
+
+      if (message.type === "subgames_added" || message.type === "subgames_updated") {
         getSubGames(eventId).then((response) => {
           setSubGames(response?.sub_games || []);
         }).catch((error) => {
-          console.error('❌ [Match] Error reloading subGames:', error);
-        });
-      }
-      
-      // Обработка обновления подигр
-      if (message.type === "subgames_updated") {
-        console.log('🔄 [Match] SubGames updated, refreshing list');
-        
-        // Перезагружаем список подигр
-        getSubGames(eventId).then((response) => {
-          setSubGames(response?.sub_games || []);
-        }).catch((error) => {
-          console.error('❌ [Match] Error reloading subGames:', error);
+          console.error('[Match] Error reloading subGames:', error);
         });
       }
     };

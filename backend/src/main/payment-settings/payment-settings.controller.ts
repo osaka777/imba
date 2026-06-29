@@ -44,10 +44,23 @@ export class AdminPaymentSettingsController {
   @Put()
   updateSettings(@Body() body: Partial<PaymentSettingsFile>) {
     const current = loadPaymentSettings();
+    const mergeItem = (
+      currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK' | 'USDT',
+      patch?: Partial<PaymentSettingsFile['manualDeposit']['KZT']>,
+    ) => {
+      const merged = { ...current.manualDeposit[currency], ...patch };
+      if (patch && Object.prototype.hasOwnProperty.call(patch, 'qrImageUrl')) {
+        merged.qrImageUrl = String(patch.qrImageUrl ?? '').trim();
+      }
+      return merged;
+    };
     const next: PaymentSettingsFile = {
       manualDeposit: {
-        KZT: { ...current.manualDeposit.KZT, ...body.manualDeposit?.KZT },
-        RUB: { ...current.manualDeposit.RUB, ...body.manualDeposit?.RUB },
+        KZT: mergeItem('KZT', body.manualDeposit?.KZT),
+        KZT_KASPI: mergeItem('KZT_KASPI', body.manualDeposit?.KZT_KASPI),
+        RUB: mergeItem('RUB', body.manualDeposit?.RUB),
+        RUB_SBERBANK: mergeItem('RUB_SBERBANK', body.manualDeposit?.RUB_SBERBANK),
+        USDT: mergeItem('USDT', body.manualDeposit?.USDT),
       },
       paymentMethods: {
         ...current.paymentMethods,
@@ -104,9 +117,21 @@ export class PublicPaymentSettingsController {
           enabled: settings.manualDeposit.KZT.enabled !== false,
           minAmount: settings.manualDeposit.KZT.minAmount,
         },
+        KZT_KASPI: {
+          enabled: settings.manualDeposit.KZT_KASPI.enabled !== false,
+          minAmount: settings.manualDeposit.KZT_KASPI.minAmount,
+        },
         RUB: {
           enabled: settings.manualDeposit.RUB.enabled !== false,
           minAmount: settings.manualDeposit.RUB.minAmount,
+        },
+        RUB_SBERBANK: {
+          enabled: settings.manualDeposit.RUB_SBERBANK.enabled !== false,
+          minAmount: settings.manualDeposit.RUB_SBERBANK.minAmount,
+        },
+        USDT: {
+          enabled: settings.manualDeposit.USDT.enabled !== false,
+          minAmount: settings.manualDeposit.USDT.minAmount,
         },
       },
       paymentMethods: settings.paymentMethods,

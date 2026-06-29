@@ -19,6 +19,7 @@ export const AppToastContainer = () => (
     position="top-right"
     progressClassName="custom-progress"
     rtl={false}
+    style={{ zIndex: 99999 }}
     theme="dark"
     toastClassName="custom-toast"
   />

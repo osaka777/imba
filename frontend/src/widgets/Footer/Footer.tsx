@@ -190,7 +190,7 @@ export const Footer = () => {
               <div className={styles.NavigationSection_listCategories}>
                 <div className={styles.NavigationSection_listCategoriesColumn}>
                   <div className={styles.NavigationSection_contactsRow}>
-                    <Link className={styles.NavigationSection_link} href="/">
+                    <Link className={styles.NavigationSection_link} href="/live">
                       Live
                     </Link>
                   </div>
@@ -327,7 +327,7 @@ export const Footer = () => {
       <div className={styles.LicenseSection_container}>
         <div className={styles.LicenseSection_copyright}>
           <span className={styles.LicenseSection_bold}>
-            © 2024-2025 IMBA.BET&nbsp;
+            © 2024-2026 IMBA.BET&nbsp;
           </span>
         </div>
         <div className={styles.LicenseSection_leftSection}>

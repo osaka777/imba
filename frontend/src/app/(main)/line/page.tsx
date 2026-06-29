@@ -1,16 +1,18 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 
-import { AllGamesPrematch } from "~/entities/game";
+import { LineGames } from "~/entities/game";
 import { makeMetadata } from "~/shared/lib";
+import { LoadingSpinner } from "~/shared/ui";
 
 import styles from "./layout.module.css";
 
 export const metadata: Metadata = makeMetadata("Линия");
 
-// Убираем force-dynamic для лучшего кэширования
-// export const dynamic = "force-dynamic";
-
 export default function Line() {
-  // Убираем серверный запрос, данные будут загружаться на клиенте
-  return <AllGamesPrematch className={styles.games} initialData={[]} />;
+  return (
+    <Suspense fallback={<LoadingSpinner className={styles.games} />}>
+      <LineGames className={styles.games} initialData={[]} />
+    </Suspense>
+  );
 }

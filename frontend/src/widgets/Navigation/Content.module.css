@@ -123,6 +123,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .modalOverlay {
+    padding: 1.25rem;
+    align-items: center;
+  }
 }
 
 .telegram {

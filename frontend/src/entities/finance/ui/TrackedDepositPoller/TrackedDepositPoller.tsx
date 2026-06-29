@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import {
   getMyKztForeignCardOrder,
   getMyRubForeignCardOrder,
+  getUsdtTrc20OrderStatus,
 } from "~/entities/finance/api/deposit";
 import {
   getTrackedDepositOrders,
@@ -21,17 +22,32 @@ export const TrackedDepositPoller = () => {
 
       for (const item of tracked) {
         try {
+          const displayId = Number(item.publicOrderId ?? item.id);
+
+          if (item.currency === "USDT") {
+            const data = await getUsdtTrc20OrderStatus(item.id);
+            const status = String(data?.status || "pending");
+            if (status === "approved") {
+              untrackDepositOrder(item.id);
+              toast.success(`Заявка #${displayId} одобрена`);
+            } else if (status === "rejected" || status === "cancelled") {
+              untrackDepositOrder(item.id);
+              toast.error(`Заявка #${displayId} отклонена`);
+            } else if (status === "expired") {
+              untrackDepositOrder(item.id);
+              toast.info(`Заявка #${displayId} истекла`);
+            }
+            continue;
+          }
+
           const fetcher =
             item.currency === "RUB"
               ? getMyRubForeignCardOrder
               : getMyKztForeignCardOrder;
           const { data } = await fetcher();
           const order = data as Record<string, unknown> | null | undefined;
-          const displayId = Number(item.publicOrderId ?? item.id);
 
           if (!order || !("id" in order)) {
-            untrackDepositOrder(item.id);
-            toast.success(`Заявка #${displayId} обработана`);
             continue;
           }
 

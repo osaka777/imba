@@ -1,0 +1,20 @@
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.state,
+.loader {
+  align-self: center;
+  margin: 24px 0;
+}
+
+.empty,
+.error {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--cy-text-secondary, #909090);
+  font-size: 14px;
+}

@@ -1,0 +1,46 @@
+.badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.icon {
+  display: block;
+  width: 13px;
+  height: 17px;
+  object-fit: contain;
+}
+
+.count {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 0 1px rgb(0 0 0 / 0.65);
+  pointer-events: none;
+}
+
+.badges_countOnHover .count {
+  display: none;
+}
+
+@media screen and (min-width: 1025px) {
+  .badges_countOnHover:hover .count {
+    display: flex;
+  }
+}

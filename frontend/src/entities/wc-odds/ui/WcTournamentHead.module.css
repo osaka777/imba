@@ -1,0 +1,67 @@
+.Head {
+  min-height: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  background: var(--light-blue-gradient);
+}
+
+.headRow {
+  display: grid;
+  grid-auto-flow: column;
+  align-content: center;
+  height: 32px;
+}
+
+@media screen and (max-width: 1024px) {
+  .headRow {
+    display: none;
+  }
+}
+
+.nameCell {
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sportIcon {
+  fill: var(--white);
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.name {
+  margin: 0;
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oddCell {
+  width: 45px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Тотал pivot — wider, slightly distinct */
+.oddCell_pivot {
+  width: 56px;
+  color: var(--blue-50);
+  font-size: 10px;
+}
+
+/* ТМ / ТБ same width as regular */

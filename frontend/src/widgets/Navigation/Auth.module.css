@@ -44,9 +44,14 @@
 }
 
 @media screen and (max-width: 768px) {
+  .authButton {
+    min-height: 36px;
+    box-sizing: border-box;
+  }
+
   .authLogin {
     background-color: var(--blue-30);
-    padding: 4px 13px;
+    padding: 8px 14px;
     font-size: 12px;
   }
 }
@@ -87,8 +92,7 @@
 }
 @media screen and (max-width: 768px) {
   .authSignIn {
-    padding: 3px 13px;
-
+    padding: 8px 14px;
     font-size: 12px;
   }
 }
@@ -111,7 +115,8 @@ div .authForm {
   max-width: min(440px, calc(100vw - 32px)) !important;
   width: 100% !important;
   border-radius: 22px !important;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #ffffff !important;
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.32),
@@ -120,9 +125,12 @@ div .authForm {
 
 @media screen and (max-width: 768px) {
   .authDialog {
-    max-width: min(360px, calc(100vw - 36px)) !important;
-    max-height: min(calc(100dvh - 28px), 660px);
-    overflow-y: auto;
+    top: max(12px, env(safe-area-inset-top)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    max-width: min(360px, calc(100vw - 24px)) !important;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-bottom)) !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     border-radius: 20px !important;
   }

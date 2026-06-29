@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { OperationSource, OperationStatus, OperationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -235,8 +236,8 @@ export class BonusBalanceService {
       // Обновляем статистику отыгрыша
       const newTotalWagered = bonusBalance.totalWagered.plus(originalBetAmount);
       
-      // Проверяем, достигнут ли лимит отыгрыша (нужно отыграть бонус 3 раза с кэфом 2.0+)
-      const requiredWager = bonusBalance.totalBonusReceived.mul(3); // Нужно отыграть бонус 3 раза
+      // Проверяем, достигнут ли лимит отыгрыша
+      const requiredWager = bonusBalance.requiredWager;
       const isWageringComplete = newTotalWagered.greaterThanOrEqualTo(requiredWager);
 
       if (isWageringComplete) {
@@ -308,7 +309,7 @@ export class BonusBalanceService {
     });
 
     const newTotalWagered = bonusBalance.totalWagered.plus(originalBetAmount);
-    const requiredWager = bonusBalance.totalBonusReceived.mul(3);
+    const requiredWager = bonusBalance.requiredWager;
     const isWageringComplete = newTotalWagered.greaterThanOrEqualTo(requiredWager);
 
     return { 
@@ -576,6 +577,166 @@ export class BonusBalanceService {
       orderBy: {
         createdAt: 'desc'
       }
+    });
+  }
+
+  /**
+   * Активация промокода / ваучера пользователем (без депозита).
+   */
+  async applyPromoCode(userId: number, code: string) {
+    const trimmed = code.trim();
+    if (!trimmed) {
+      throw new BadRequestException('Введите код промо');
+    }
+
+    const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    const promo = await this.prismaService.promo.findFirst({
+      where: { code: { equals: trimmed, mode: 'insensitive' } as any },
+      include: { _count: { select: { promoOnUsers: true } } } as any,
+    } as any);
+    if (!promo) {
+      throw new BadRequestException('Промокод не найден');
+    }
+
+    if (promo.type === 'DEPOSIT_BONUS') {
+      throw new BadRequestException('Этот промокод активируется при пополнении счёта');
+    }
+
+    const alreadyUsed = await this.prismaService.promoOnUsers.findUnique({
+      where: { promoId_userId: { promoId: promo.id, userId } },
+    });
+    if (alreadyUsed) {
+      throw new BadRequestException('Промокод уже использован');
+    }
+
+    const usedCount = (promo as any)._count?.promoOnUsers || 0;
+    const remaining = (promo.available || 0) - Number(usedCount);
+    if (promo.available > 0 && remaining <= 0) {
+      throw new BadRequestException('Промокод больше недоступен');
+    }
+
+    const value: any = promo.value as any;
+    const totalTokens = Number(value?.totalTokens ?? 0);
+    const tokensPerBetVal = Number(value?.tokensPerBet ?? 1);
+    const tokenMinOddsVal = Number(value?.tokenMinOdds ?? 1.8);
+
+    let bonusAmount = 0;
+    if (promo.type === 'DIRECT_BONUS' || promo.type === 'VOUCHER') {
+      bonusAmount = Number(value?.amount || 0);
+    }
+
+    const bonusCurrency = promo.currencyCode || user.defaultCurrencyCode || 'KZT';
+    if (bonusAmount <= 0 && totalTokens <= 0) {
+      throw new BadRequestException('Промокод не содержит бонуса');
+    }
+
+    return this.prismaService.$transaction(async (tx) => {
+      await tx.promoOnUsers.create({
+        data: { promoId: promo.id, userId, status: 'APPLIED' as any },
+      });
+
+      const requiredWagerAmount = bonusAmount > 0
+        ? new Decimal(bonusAmount).mul(3)
+        : new Decimal(0);
+
+      const existingBB = await tx.bonusBalance.findUnique({
+        where: { userId_currencyCode: { userId, currencyCode: bonusCurrency } },
+      });
+
+      if (existingBB) {
+        await tx.bonusBalance.update({
+          where: { userId_currencyCode: { userId, currencyCode: bonusCurrency } },
+          data: {
+            amount: bonusAmount > 0 ? { increment: new Decimal(bonusAmount) } : existingBB.amount,
+            totalBonusReceived: bonusAmount > 0
+              ? { increment: new Decimal(bonusAmount) }
+              : existingBB.totalBonusReceived,
+            requiredWager: bonusAmount > 0
+              ? { increment: requiredWagerAmount }
+              : existingBB.requiredWager,
+            totalTokens: totalTokens > 0 ? { increment: totalTokens } : existingBB.totalTokens,
+            remainingTokens: totalTokens > 0 ? { increment: totalTokens } : existingBB.remainingTokens,
+            tokensPerBet: totalTokens > 0 ? tokensPerBetVal : existingBB.tokensPerBet,
+            minOdds: new Decimal(tokenMinOddsVal),
+            isTokenBased: totalTokens > 0 || existingBB.isTokenBased,
+            isActive: true,
+            promoId: promo.id,
+          } as any,
+        });
+      } else {
+        await tx.bonusBalance.create({
+          data: {
+            userId,
+            currencyCode: bonusCurrency,
+            amount: new Decimal(bonusAmount),
+            totalBonusReceived: new Decimal(bonusAmount),
+            totalWagered: new Decimal(0),
+            requiredWager: requiredWagerAmount,
+            minOdds: new Decimal(tokenMinOddsVal),
+            consecutiveWins: 0,
+            requiredConsecutiveWins: 0,
+            currentBetAmount: new Decimal(0),
+            isActive: true,
+            totalTokens,
+            remainingTokens: totalTokens,
+            tokensPerBet: tokensPerBetVal,
+            isTokenBased: totalTokens > 0,
+            promoId: promo.id,
+          },
+        });
+      }
+
+      if (bonusAmount > 0) {
+        await tx.operation.create({
+          data: {
+            userId,
+            source: OperationSource.PROMO,
+            status: OperationStatus.SUCCESS,
+            type: OperationType.INCOME,
+            amount: new Decimal(bonusAmount),
+            currencyCode: bonusCurrency,
+            meta: {
+              promoId: promo.id,
+              promoCode: promo.code,
+              type: promo.type,
+              target: 'BonusBalance',
+              grant: 'self-service',
+            },
+          },
+        });
+      }
+
+      await tx.bonusHistory.create({
+        data: {
+          userId,
+          promoId: promo.id,
+          promoCode: promo.code,
+          promoType: promo.type as any,
+          promoValue: promo.value as any,
+          status: 'PENDING' as any,
+          totalBonusReceived: new Decimal(bonusAmount),
+          totalWagered: new Decimal(0),
+          requiredWager: requiredWagerAmount,
+          totalTokens,
+          remainingTokens: totalTokens,
+          tokensPerBet: tokensPerBetVal,
+          isTokenBased: totalTokens > 0,
+          currencyCode: bonusCurrency,
+          notes: 'self-service apply',
+        },
+      });
+
+      return {
+        ok: true,
+        bonusAmount,
+        bonusCurrency,
+        totalTokens,
+        message: totalTokens > 0
+          ? `Начислено ${totalTokens} жетон(ов) на бонусный счёт`
+          : `Начислено ${bonusAmount} ${bonusCurrency} на бонусный счёт`,
+      };
     });
   }
 } 

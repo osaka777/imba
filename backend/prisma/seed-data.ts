@@ -8,4 +8,5 @@ export const currencies = [
   { isoCode: 'KGS', name: 'Сом' },
   { isoCode: 'AZN', name: 'Азербайджанский манат' },
   { isoCode: 'UAH', name: 'Гривна' },
+  { isoCode: 'USDT', name: 'Tether USD' },
 ];

@@ -94,6 +94,41 @@
   }
 }
 
+.slideTextPos {
+  position: absolute;
+  left: var(--slide-text-x, 50%);
+  top: var(--slide-text-y, 50%);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  text-align: center;
+  max-width: min(90%, 520px);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .slideTextPos {
+    left: var(--slide-text-mobile-x, var(--slide-text-x, 50%));
+    top: var(--slide-text-mobile-y, var(--slide-text-y, 50%));
+    max-width: 92%;
+  }
+}
+
+/* slide button positioned by editor (desktop + mobile %) */
+.slideButtonPos {
+  position: absolute;
+  left: var(--slide-btn-x, 50%);
+  top: var(--slide-btn-y, 70%);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+@media (max-width: 768px) {
+  .slideButtonPos {
+    left: var(--slide-btn-mobile-x, var(--slide-btn-x, 50%));
+    top: var(--slide-btn-mobile-y, var(--slide-btn-y, 70%));
+  }
+}
+
 /* slide button fixed bottom-right, hidden until hover */
 .slideButtonWrapper {
   position: absolute;
@@ -113,13 +148,38 @@
 .slideButton {
   background: #ffffff;
   color: #000000;
-  padding: 12px 16px;
+  padding: clamp(8px, 1.8vw, 12px) clamp(12px, 2.5vw, 16px);
   border-radius: 8px;
   border: none;
-  font-size: 14px;
+  font-size: clamp(10px, var(--slide-btn-size, 14px), 3.2vw);
   font-weight: 600;
   line-height: 1.15;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.slideTitleText {
+  font-size: clamp(14px, var(--slide-title-size, 28px), 6vw);
+}
+
+.slideDescText {
+  font-size: clamp(11px, var(--slide-desc-size, 13px), 4.5vw);
+}
+
+@media (max-width: 768px) {
+  .slideTitleText {
+    font-size: clamp(12px, var(--slide-title-mobile-size, var(--slide-title-size, 28px)), 5.5vw);
+  }
+
+  .slideDescText {
+    font-size: clamp(10px, var(--slide-desc-mobile-size, var(--slide-desc-size, 13px)), 4vw);
+  }
+
+  .slideButton {
+    font-size: clamp(10px, var(--slide-btn-mobile-size, var(--slide-btn-size, 14px)), 3.5vw);
+    padding: calc(var(--slide-btn-mobile-size, var(--slide-btn-size, 14px)) * 0.55px)
+      calc(var(--slide-btn-mobile-size, var(--slide-btn-size, 14px)) * 1.05px);
+  }
 }
 
 /* On touch devices (no hover), keep the button visible */

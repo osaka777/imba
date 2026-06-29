@@ -7,7 +7,7 @@ const GENERAL_UI_KEY = 'generalUiNotifications';
 export type TrackedDepositOrder = {
   id: number;
   publicOrderId?: number;
-  currency: 'KZT' | 'RUB';
+  currency: 'KZT' | 'RUB' | 'USDT';
   createdAt: number;
 };
 
@@ -68,7 +68,7 @@ export const getTrackedDepositOrders = (): TrackedDepositOrder[] => {
 export const trackDepositOrder = (input: {
   id: number;
   publicOrderId?: number;
-  currency: 'KZT' | 'RUB';
+  currency: 'KZT' | 'RUB' | 'USDT';
 }) => {
   if (!canUseStorage()) return;
   const existing = getTrackedDepositOrders().filter(

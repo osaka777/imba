@@ -74,4 +74,37 @@
   --tablet-w: 768px;
   --mobile-w: 425px;
   --mobileM-w: 320px;
+
+  /* Layout tokens (mobile defaults) */
+  --layout-sidebar-w: 0px;
+  --layout-coupon-w: 320px;
+  --layout-gap: 12px;
+  --layout-max-w: none;
+  --layout-sticky-top: 12px;
+  --layout-sticky-bottom: 12px;
+}
+
+/* Tablet: sidebar + coupon in grid */
+@media (min-width: 768px) {
+  :root {
+    --layout-sidebar-w: 220px;
+    --layout-coupon-w: 280px;
+    --layout-gap: 14px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1081px) {
+  :root {
+    --layout-sidebar-w: 320px;
+    --layout-coupon-w: 320px;
+    --layout-gap: 18px;
+  }
+}
+
+/* Wide screens */
+@media (min-width: 1440px) {
+  :root {
+    --layout-max-w: 1680px;
+  }
 }

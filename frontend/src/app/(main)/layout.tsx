@@ -1,6 +1,8 @@
 import { GamesBettingProvider } from "~/app/providers/GamesBetting.provider";
-import { Coupon } from "~/entities/bet";
-import "~/shared/ui/styles/index.css";
+import { WcBroadcastProvider } from "~/entities/wc-odds/lib/WcBroadcastContext";
+import { WcBroadcastMobileOverlay } from "~/entities/wc-odds/ui/WcBroadcastMobileOverlay";
+import { WcBroadcastSidebar } from "~/entities/wc-odds/ui/WcBroadcastSidebar";
+import { Navigation } from "~/widgets/Navigation";
 import styles from "./Main.module.css";
 
 export default function MainLayout({
@@ -10,10 +12,14 @@ export default function MainLayout({
 }) {
   return (
     <GamesBettingProvider>
-      <main className={styles.main}>
-        {children}
-        <Coupon className={styles.coupon} />
-      </main>
+      <WcBroadcastProvider>
+        <WcBroadcastMobileOverlay />
+        <main className={styles.main}>
+          <Navigation className={styles.nav} />
+          <div className={styles.content}>{children}</div>
+          <WcBroadcastSidebar className={styles.coupon} />
+        </main>
+      </WcBroadcastProvider>
     </GamesBettingProvider>
   );
 }

@@ -1,0 +1,133 @@
+.row {
+  display: grid;
+  align-items: center;
+  min-height: 48px;
+  padding: 5px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #e7ebf1;
+  transition: background-color 0.12s ease;
+  font-family: inherit;
+  letter-spacing: 0;
+  color: #101828;
+}
+
+.row_alt {
+  background: #f5f7fa;
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background: #eef4ff;
+  }
+
+  .row:hover :global([data-markets-pill]),
+  .row:hover :global([data-markets-pill]:hover) {
+    color: #fff !important;
+    filter: brightness(0.92);
+    opacity: 0.92;
+  }
+}
+
+.row:active {
+  background: #eef4ff;
+}
+
+.rowMain {
+  display: contents;
+}
+
+.timeCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none;
+  line-height: 1.2;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.date {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8b93a1;
+  white-space: nowrap;
+}
+
+.clock {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.mainCell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  cursor: pointer;
+  border-left: 2px solid #0085ff;
+  padding-left: 10px;
+}
+
+.teamsBlock {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+@media screen and (min-width: 1025px) {
+  .oddsBar {
+    display: contents;
+  }
+}
+
+/* ── Mobile card layout (homepage only via WcHomeMatchRow) ── */
+@media screen and (max-width: 1024px) {
+  .row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    min-height: 0;
+    padding: 6px 10px 7px;
+  }
+
+  .rowMain {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .timeCell {
+    width: 38px;
+    padding-top: 1px;
+  }
+
+  .date {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .clock {
+    font-size: 11px;
+    font-weight: 700;
+    color: #101828;
+  }
+
+  .mainCell {
+    flex: 1;
+    min-width: 0;
+    padding-left: 8px;
+    border-left-width: 2px;
+  }
+
+  .oddsBar {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+  }
+}

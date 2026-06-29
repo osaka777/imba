@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import { ReactNode, createContext, useContext } from "react";
 import { useBetNotifications } from "~/entities/bet/lib/useBetNotifications";
 import { useAuth } from "./AuthProvider";
 
@@ -18,21 +18,13 @@ export const GamesBettingProvider = ({
   children: ReactNode;
 }) => {
   const { isAuth } = useAuth();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <GamesBettingContext.Provider
       value={{
         isAuth,
       }}
     >
-      <BetNotificationsWrapper>
-        {mounted ? children : null}
-      </BetNotificationsWrapper>
+      <BetNotificationsWrapper>{children}</BetNotificationsWrapper>
     </GamesBettingContext.Provider>
   );
 };

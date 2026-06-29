@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import {
   getMyKztForeignCardOrder,
   getMyRubForeignCardOrder,
+  getUsdtTrc20OrderStatus,
 } from "~/entities/finance/api/deposit";
 import { slideAPI, Slide } from "~/shared/api/slide";
 import {
@@ -131,26 +132,54 @@ export const NotificationsBell = () => {
 
       for (const order of tracked) {
         try {
+          const displayId = Number(order.publicOrderId ?? order.id);
+
+          if (order.currency === "USDT") {
+            const current = await getUsdtTrc20OrderStatus(order.id);
+            const status = String(current?.status || "pending");
+            const prev = seenStatusRef.current[order.id];
+            seenStatusRef.current[order.id] = status;
+
+            if (status === "approved" && prev !== "approved") {
+              untrackDepositOrder(order.id);
+              emitDepositResult({
+                orderId: order.id,
+                publicOrderId: Number(current.publicOrderId) || order.publicOrderId,
+                status: "approved",
+                currency: "USDT",
+              });
+            } else if (
+              (status === "rejected" || status === "cancelled") &&
+              prev !== status
+            ) {
+              untrackDepositOrder(order.id);
+              emitDepositResult({
+                orderId: order.id,
+                publicOrderId: Number(current.publicOrderId) || order.publicOrderId,
+                status: "rejected",
+              });
+            } else if (status === "expired" && prev !== "expired") {
+              untrackDepositOrder(order.id);
+              emitDepositResult({
+                orderId: order.id,
+                publicOrderId: Number(current.publicOrderId) || order.publicOrderId,
+                status: "expired",
+              });
+            }
+            continue;
+          }
+
           const fetcher =
             order.currency === "RUB"
               ? getMyRubForeignCardOrder
               : getMyKztForeignCardOrder;
           const { data } = await fetcher();
           const current = data as Record<string, unknown> | null | undefined;
-          const displayId = Number(
+          const resolvedDisplayId = Number(
             order.publicOrderId ?? current?.publicOrderId ?? order.id,
           );
 
           if (!current || !("id" in current)) {
-            if (seenStatusRef.current[order.id] !== "done") {
-              seenStatusRef.current[order.id] = "done";
-              untrackDepositOrder(order.id);
-              emitDepositResult({
-                orderId: order.id,
-                publicOrderId: order.publicOrderId,
-                status: "approved",
-              });
-            }
             continue;
           }
 
@@ -165,8 +194,8 @@ export const NotificationsBell = () => {
             seenStatusRef.current[order.id] = status;
             addDepositNotification({
               orderId: order.id,
-              displayId,
-              title: `Заявка #${displayId} отправлена`,
+              displayId: resolvedDisplayId,
+              title: `Заявка #${resolvedDisplayId} отправлена`,
               message: "Платеж принят на проверку.",
             });
             if (active) refresh();

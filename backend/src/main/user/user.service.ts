@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
@@ -6,6 +6,7 @@ import { Logger } from 'winston';
 
 import { PartnersService } from '~/main/partners/partners.service';
 import { PrismaService } from '~/prisma/prisma.service';
+import { CurrencyService } from '~/main/currency/currency.service';
 
 import { UnauthenticatedException } from './authentication/exception/unauthenticated.exception';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +18,7 @@ export class UserService {
     private readonly config: ConfigService,
     private readonly prismaService: PrismaService,
     private readonly partnersService: PartnersService,
+    private readonly currencyService: CurrencyService,
     @Inject('winston')
     private readonly logger: Logger,
   ) {}
@@ -24,6 +26,27 @@ export class UserService {
   async create(dto: CreateUserDto) {
     if (await this.isEmailTaken(dto.email)) {
       throw new EmailIsAlreadyTakenException();
+    }
+
+    const currencyCode = dto.currencyCode.toUpperCase();
+    await this.currencyService.getCurrency(currencyCode);
+
+    const birthDate = new Date(dto.birthDate);
+    if (Number.isNaN(birthDate.getTime())) {
+      throw new BadRequestException('Invalid birth date');
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0
+      || (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age -= 1;
+    }
+    if (age < 18) {
+      throw new BadRequestException('You must be at least 18 years old');
     }
 
     let hashedPassword;
@@ -38,6 +61,15 @@ export class UserService {
       data: {
         email: dto.email,
         password: hashedPassword,
+        phone: dto.phone,
+        birthDate,
+        defaultCurrencyCode: currencyCode,
+        balances: {
+          create: {
+            currencyCode,
+            amount: 0,
+          },
+        },
       },
     });
 

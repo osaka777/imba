@@ -1,0 +1,497 @@
+/* ── USDT payment — clean fintech layout ── */
+
+.inlinePanel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-height: min(80dvh, 700px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  padding: 0 20px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+.backBtn {
+  align-self: flex-start;
+  margin: 0 0 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.backBtn:hover:not(:disabled) {
+  color: #0f172a;
+}
+
+.backBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.paymentCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  color: #0f172a;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+  border: 1px solid #eef2f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 40px rgba(15, 23, 42, 0.06);
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 22px 24px 20px;
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.usdtLogo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #26a17b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.brandTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.brandSub {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.orderBadge {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroBody {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.qrFrame {
+  width: 132px;
+  height: 132px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fafbfc;
+  border: 1px solid #edf0f4;
+  flex-shrink: 0;
+}
+
+.qrImg {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+.amountBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.amountLabel {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.payAmount {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.payAmount span {
+  font-size: 18px;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.creditLine {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.creditLine strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.networkTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f0fdf9;
+  border: 1px solid #ccfbf1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d9488;
+  width: fit-content;
+}
+
+/* ── Alert strip ── */
+.alertStrip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 24px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fef3c7;
+}
+
+.alertIcon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: #d97706;
+}
+
+.alertText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #92400e;
+}
+
+/* ── Details ── */
+.details {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #fff;
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.addressField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e8edf2;
+}
+
+.addressValue {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copyBtn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.copyBtn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.statCard {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+}
+
+.statCardClickable {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.statCardClickable:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.statLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.statValue {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.statValueMono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+/* ── Footer status ── */
+.footer {
+  padding: 18px 24px 20px;
+  background: #fafbfc;
+  border-top: 1px solid #f1f5f9;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.statusLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pulseDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  animation: usdtPulse 1.8s ease-out infinite;
+}
+
+.statusTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.statusHint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.timerChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.timerValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+}
+
+.timerProgress {
+  height: 3px;
+  border-radius: 999px;
+  background: #e8edf2;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.timerProgressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: #26a17b;
+  transition: width 1s linear;
+}
+
+.cancelBtn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px;
+  text-align: center;
+  transition: color 0.15s;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  color: #ef4444;
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes usdtPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+@media (max-width: 640px) {
+  .inlinePanel {
+    padding: 0 12px 16px;
+  }
+
+  .hero {
+    padding: 18px 16px 16px;
+  }
+
+  .heroBody {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .amountBlock {
+    align-items: center;
+  }
+
+  .networkTag {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .alertStrip,
+  .details,
+  .footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statusRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .timerChip {
+    align-self: flex-start;
+  }
+}

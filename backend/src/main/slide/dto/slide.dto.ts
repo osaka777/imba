@@ -65,6 +65,13 @@ export class CreateSlideDto {
   titleSize?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(8)
+  @Max(120)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  titleMobileSize?: number;
+
+  @IsOptional()
   @IsString()
   @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, { message: 'descColor must be a valid hex color' })
   descColor?: string;
@@ -74,6 +81,27 @@ export class CreateSlideDto {
   @Min(1)
   @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
   descSize?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(8)
+  @Max(80)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  descMobileSize?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(10)
+  @Max(32)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  buttonSize?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(10)
+  @Max(32)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  buttonMobileSize?: number;
 
   @IsOptional()
   @IsBoolean()
@@ -104,6 +132,30 @@ export class CreateSlideDto {
   @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
   buttonPosYPct?: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  buttonMobilePosXPct?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  buttonMobilePosYPct?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  showTitle?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  showDesc?: boolean;
+
   // Независимые позиции (в процентах)
   @IsOptional()
   @IsInt()
@@ -124,6 +176,20 @@ export class CreateSlideDto {
   @Min(0)
   @Max(100)
   @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  titleMobilePosXPct?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  titleMobilePosYPct?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
   descPosXPct?: number;
 
   @IsOptional()
@@ -132,6 +198,20 @@ export class CreateSlideDto {
   @Max(100)
   @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
   descPosYPct?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  descMobilePosXPct?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  descMobilePosYPct?: number;
 }
 
 export class UpdateSlideDto extends CreateSlideDto {}

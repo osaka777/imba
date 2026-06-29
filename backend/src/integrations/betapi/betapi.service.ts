@@ -51,6 +51,7 @@ const CIRCUIT_ERROR_DECREMENT = 3; // Медленнее восстанавли�
 const CACHE_TTL = 1200; // Увеличиваем время жизни кэша
 const CACHE_STALE_TTL = 2000; // Увеличиваем время жизни устаревшего кэша
 const MAX_CONSECUTIVE_ERRORS = 300; // Уменьшаем для более быстрой реакции
+const PACKAGE_EXPIRED_POLL_MS = 10 * 60_000; // 10 min when BetAPI package is dead
 const EVENT_MIN_INTERVAL = 800; // Уменьшаем минимальный интервал между обновлениями событий
 
 interface ApiStats {
@@ -143,6 +144,8 @@ export class BetApiService implements OnModuleInit {
   private prevEvents: EventsMap = { line: new Map(), live: new Map() };
   private iterationCount = 0;
   private memoryWarningCount = 0;
+  private packageExpired = false;
+  private packageExpiredLogged = false;
   private sports: SportsMap = { line: [], live: [] };
   private tournaments: TournamentsMap = { line: [], live: [] };
   
@@ -269,6 +272,7 @@ export class BetApiService implements OnModuleInit {
   }
 
   private checkCircuitBreaker(): boolean {
+    if (this.packageExpired) return true;
     if (this.apiStats.isCircuitOpen) {
       const now = Date.now();
       if (
@@ -372,7 +376,8 @@ export class BetApiService implements OnModuleInit {
 
             if (data.status !== 1) {
               if (data.status === 99) {
-                this.logger.error('BetAPI package expired!', BetApiService.name);
+                this.markPackageExpired();
+                throw new HttpException(data.body, data.status);
               }
 
               if (attempt < retryCount) {
@@ -2233,6 +2238,8 @@ export class BetApiService implements OnModuleInit {
     let memoryWarningCount = 0;
 
     const getUpdateInterval = () => {
+      if (this.packageExpired) return PACKAGE_EXPIRED_POLL_MS;
+
       // Увеличиваем базовые интервалы для снижения нагрузки
       const baseInterval = this.dataType === 'live' ? 200 : 1000; // 200мс для live, 1с для line
       let interval = baseInterval;
@@ -2306,7 +2313,7 @@ export class BetApiService implements OnModuleInit {
         const timeSinceLastUpdate = Date.now() - lastSuccessfulUpdateTime;
         this.logger.debug(`[DEBUG] Time since last successful update: ${timeSinceLastUpdate}ms`);
         
-        if (timeSinceLastUpdate > 2000) { // Увеличиваем интервал до 2 секунд
+        if (timeSinceLastUpdate > 2000 && !this.packageExpired) { // Увеличиваем интервал до 2 секунд
           this.logger.info(`[DEBUG] Triggering finaleGames - time since last update: ${timeSinceLastUpdate}ms`);
           setImmediate(async () => {
             try {
@@ -2535,11 +2542,13 @@ export class BetApiService implements OnModuleInit {
 
   async updateEventsCron() {
     const enabled = this.configService.get('BETAPI_ENABLED');
-    if (enabled === 'true' || enabled === true) {
-      const iterationStartTime = Date.now();
-      const results = [];
+    if (enabled !== 'true' && enabled !== true) return [];
+    if (this.packageExpired) return [];
 
-      try {
+    const iterationStartTime = Date.now();
+    const results = [];
+
+    try {
         const sportIds = (this.configService.get<string>('BETAPI_SPORTS_IDS') || '1')
           .split(',')
           .filter((id) => id.trim())
@@ -2647,6 +2656,18 @@ export class BetApiService implements OnModuleInit {
         this.logger.error('Update iteration failed:', error);
         throw error;
       }
+  }
+
+  private markPackageExpired(): void {
+    this.packageExpired = true;
+    this.apiStats.isCircuitOpen = true;
+    this.apiStats.circuitOpenTime = Date.now();
+    if (!this.packageExpiredLogged) {
+      this.packageExpiredLogged = true;
+      this.logger.error(
+        'BetAPI package expired (status 99) — polling paused until package renewal or restart',
+        BetApiService.name,
+      );
     }
   }
 

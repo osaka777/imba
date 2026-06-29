@@ -51,7 +51,7 @@ export const OddsTable = ({
     return (
       <div>
         <Button className={styles.oddFold} onClick={toggleFold}>
-          <p className="text-sm font-medium">{name}</p>
+          <p className="text-sm font-medium text-white">{name}</p>
           <ArrowIcon className="size-3 fill-white" />
         </Button>
       </div>
@@ -61,8 +61,8 @@ export const OddsTable = ({
   return (
     <div>
       <Button className={styles.oddFold} onClick={toggleFold}>
-        <p className="text-sm font-medium">{name}</p>
-        <ArrowIcon className="size-3 fill-white" />
+        <p className="text-sm font-medium text-white">{name}</p>
+        <ArrowIcon className={cn("size-3 fill-white transition-transform", !isFolded && "rotate-180")} />
       </Button>
       <div className={cn(styles.oddsList, isFolded && styles.oddsList_hidden)}>
         <OddsItem

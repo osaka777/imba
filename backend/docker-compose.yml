@@ -45,7 +45,10 @@ services:
       NODE_ENV: production
       DATABASE_URL: 'postgresql://onex_app:${POSTGRES_APP_PASSWORD}@postgres:5432/onex?schema=public&connection_limit=25&pool_timeout=20'
       TELEGRAM_NOTIFY_URL: 'http://imba-bot:8088/notify'
+      TELEGRAM_NOTIFY_SMOKE_URL: 'http://imba-bot:8088/notify-smoke'
+      WC_PROBE_SECRET: '${TELEGRAM_NOTIFY_SECRET}'
       PAYMENT_SETTINGS_PATH: '/data/logs/payment-settings.json'
+      PROMO_MODAL_SETTINGS_PATH: '/data/logs/promo-modal-settings.json'
     volumes:
       - ../data/logs:/data/logs
       - ./uploads:/app/uploads

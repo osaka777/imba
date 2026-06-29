@@ -1,12 +1,10 @@
-import React from 'react';
+import React from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { components } from "~/shared/api";
-import { Button } from "~/shared/ui";
-import { AccessIcon } from "~/shared/assets";
 import { Rate, Rates } from "~/entities/bet/types/types";
 import { usePrevious } from "~/shared/model";
-import { convertToFixed } from "~/entities/game/lib";
-import { cn } from "~/shared/lib";
+import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
+
 import styles from "~/entities/game/ui/Match/Match.module.css";
 
 type MarketDto = components["schemas"]["MarketDto"];
@@ -30,28 +28,25 @@ export const OverUnderPair: React.FC<OverUnderPairProps> = ({
   eventName,
   parentEventId,
   groupName,
-  isLive
+  isLive,
 }) => {
   const [rates, setRates] = useLocalStorage<Rates>("rates", [], {
     initializeWithValue: false,
   });
 
   const handleBetClick = (market: MarketDto) => {
-    const existingBetIndex = rates.findIndex(bet => bet.market === market.market);
-    
+    const existingBetIndex = rates.findIndex((bet) => bet.market === market.market);
+
     if (existingBetIndex !== -1) {
-      // Удаляем ставку
-      setRates(prevRates => prevRates.filter((_, index) => index !== existingBetIndex));
+      setRates((prevRates) => prevRates.filter((_, index) => index !== existingBetIndex));
     } else {
-      // Для subgames удаляем все ставки с тем же parentEventId, для обычных игр - с тем же eventId
       const gameIdToCheck = parentEventId || eventId;
-      const updatedRates = rates.filter(bet => {
+      const updatedRates = rates.filter((bet) => {
         const rateGameId = bet.parentEventId || bet.eventId;
         return rateGameId !== gameIdToCheck;
       });
-      
-      // Добавляем новую ставку
-      const marketAny = market as any;
+
+      const marketAny = market as Record<string, unknown>;
       const newRate: Rate = {
         market: market.market,
         coef: String(market.cf),
@@ -59,80 +54,69 @@ export const OverUnderPair: React.FC<OverUnderPairProps> = ({
         eventName: eventName,
         parentEventId: parentEventId,
         groupedMarket: market,
-        isOpen: marketAny.isOpen ?? true,
-        title: marketAny.oc_name || marketAny.display_name || `${size} ${market.market.includes('М') ? 'М' : 'Б'}`,
+        isOpen: (marketAny.isOpen as boolean | undefined) ?? true,
+        title:
+          (marketAny.oc_name as string | undefined)
+          || (marketAny.display_name as string | undefined)
+          || `${size} ${market.market.includes("М") ? "М" : "Б"}`,
         isAvailable: market.available ?? true,
         oc_block: market.oc_block,
         blocked: market.blocked,
         available: market.available,
-        isLive: isLive
+        isLive: isLive,
       };
       setRates([...updatedRates, newRate]);
     }
   };
 
-  const isUnderSelected = underMarket ? rates.some(bet => bet.market === underMarket.market) : false;
-  const isOverSelected = overMarket ? rates.some(bet => bet.market === overMarket.market) : false;
-
-  const isUnderAvailable = underMarket ? (underMarket.available && !underMarket.oc_block) : false;
-  const isOverAvailable = overMarket ? (overMarket.available && !overMarket.oc_block) : false;
-
-  // Коэффициенты для анимации
   const underValue = underMarket ? `${underMarket.cf}` : "0";
   const overValue = overMarket ? `${overMarket.cf}` : "0";
 
-  // Предыдущие значения для мигания с дебаунсингом
   const { prevState: prevUnder } = usePrevious(underValue, 800);
   const { prevState: prevOver } = usePrevious(overValue, 800);
 
-  // Анимация изменения коэффициентов
   let underCoefClass = "";
+  const isUnderAvailable = underMarket ? underMarket.available && !underMarket.oc_block : false;
   if (typeof prevUnder !== "undefined" && isUnderAvailable) {
     if (+underValue > +prevUnder) underCoefClass = styles.oddCoefficient_up;
     else if (+underValue < +prevUnder) underCoefClass = styles.oddCoefficient_down;
   }
 
   let overCoefClass = "";
+  const isOverAvailable = overMarket ? overMarket.available && !overMarket.oc_block : false;
   if (typeof prevOver !== "undefined" && isOverAvailable) {
     if (+overValue > +prevOver) overCoefClass = styles.oddCoefficient_up;
     else if (+overValue < +prevOver) overCoefClass = styles.oddCoefficient_down;
   }
 
   return (
-    <div className={cn(styles.oddsBlock, styles.oddsBlockPair, styles.oddsBlockPairOU)}>
-      {underMarket && (
-        <div className={cn(styles.oddsItem, !isUnderAvailable && styles.oddsItem_lock)}>
-          <Button
-            className={cn(styles.odd, isUnderSelected && styles.odd_added)}
-            disabled={!isUnderAvailable}
-            onClick={() => isUnderAvailable && handleBetClick(underMarket)}
-          >
-            <p className={cn(styles.oddCoef, underCoefClass)}>
-              {convertToFixed(underValue)}
-              {!isUnderAvailable && <AccessIcon className={styles.lock} />}
-            </p>
-            <p className="text-sm font-medium text-black w-[65px] text-start">Меньше</p>
-          </Button>
-        </div>
-      )}
-      
-      <div className={styles.totalsPivot}>{size}</div>
-      
-      {overMarket && (
-        <div className={cn(styles.oddsItem, !isOverAvailable && styles.oddsItem_lock)}>
-          <Button
-            className={cn(styles.odd, isOverSelected && styles.odd_added)}
-            disabled={!isOverAvailable}
-            onClick={() => isOverAvailable && handleBetClick(overMarket)}
-          >
-            <p className="text-sm font-medium text-black w-[62.5px] text-end">Больше</p>
-            <p className={cn(styles.oddCoef, overCoefClass)}>
-              {convertToFixed(overValue)}
-              {!isOverAvailable && <AccessIcon className={styles.lock} />}
-            </p>
-          </Button>
-        </div>
-      )}
-    </div>
+    <MarketPairRow
+      pivot={size}
+      totalsLayout
+      left={
+        underMarket
+          ? {
+              label: "меньше",
+              value: underValue,
+              selected: rates.some((bet) => bet.market === underMarket.market),
+              bettable: isUnderAvailable,
+              flashCoef: underCoefClass,
+              onClick: () => handleBetClick(underMarket),
+            }
+          : undefined
+      }
+      right={
+        overMarket
+          ? {
+              label: "больше",
+              value: overValue,
+              selected: rates.some((bet) => bet.market === overMarket.market),
+              bettable: isOverAvailable,
+              flashCoef: overCoefClass,
+              onClick: () => handleBetClick(overMarket),
+            }
+          : undefined
+      }
+    />
   );
 };

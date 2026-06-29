@@ -12,8 +12,14 @@ import {
   getManualDepositConfig,
   initManualForeignCardOrder,
   MyKztForeignCardOrder,
+  type ManualForeignCardMethod,
 } from "~/entities/finance/api/deposit";
 import { untrackDepositOrder } from "~/shared/lib/appNotifications";
+import {
+  calculateBrlFromRub,
+  formatBrlAmount,
+} from "~/entities/finance/lib/rubBrlConversion";
+import { ManualForeignCardReceiptUpload } from "~/entities/finance/ui/ManualForeignCardPage/ManualForeignCardReceiptUpload";
 import styles from "./ManualForeignCardPage.module.css";
 
 const PAYMENT_WINDOW_SEC = 15 * 60;
@@ -26,7 +32,7 @@ type UploadReceiptFn = (form: FormData) => Promise<{
 
 export type ManualForeignCardPageProps = {
   currency: "KZT" | "RUB";
-  method: "KZT_FOREIGN_CARD" | "RUB_FOREIGN_CARD";
+  method: ManualForeignCardMethod;
   fallbackMinAmount: number;
   title: string;
   getMyOrder: GetMyOrderFn;
@@ -115,12 +121,28 @@ export const ManualForeignCardPage = ({
   const [secondsLeft, setSecondsLeft] = useState(PAYMENT_WINDOW_SEC);
   const [serverError, setServerError] = useState("");
   const [initLoading, setInitLoading] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const loadedRef = useRef(false);
 
   const minAmount = config?.minAmount ?? fallbackMinAmount;
   const currencySymbol = getSymbolFromCurrency(currency) || currency;
-  const appName = currency === "KZT" ? "Kaspi Bank" : "приложении вашего банка";
+  const isRubRfTransfer = method === "RUB_SBERBANK";
+  const appName = isRubRfTransfer
+    ? "приложении банка"
+    : currency === "KZT"
+      ? "Kaspi Bank"
+      : "приложении вашего банка";
   const displayPublicId = publicOrderId ?? order?.publicOrderId;
+  const rubPerBrl = order?.rubPerBrl ?? config?.rubPerBrl ?? 0;
+  const rubAmountNum = amount ? Number(amount) : 0;
+  const brlAmount = useMemo(() => {
+    if (order?.brlAmount && order.brlAmount > 0) return order.brlAmount;
+    if (isRubRfTransfer && rubPerBrl > 0 && rubAmountNum > 0) {
+      return calculateBrlFromRub(rubAmountNum, rubPerBrl);
+    }
+    return 0;
+  }, [isRubRfTransfer, order?.brlAmount, rubAmountNum, rubPerBrl]);
 
   const makeAbsolute = useCallback((u?: string | null) => {
     if (!u) return null;
@@ -134,6 +156,32 @@ export const ManualForeignCardPage = ({
   }, []);
 
   const qrSrc = useMemo(() => makeAbsolute(config?.qrImageUrl), [config?.qrImageUrl, makeAbsolute]);
+
+  useEffect(() => {
+    if (!receiptFile) {
+      setReceiptPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(receiptFile);
+    setReceiptPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [receiptFile]);
+
+  const handleReceiptChange = (file: File | null) => {
+    if (!file) {
+      setReceiptFile(null);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.warn("Можно прикрепить только изображение (JPG, PNG, WEBP)");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.warn("Файл слишком большой — максимум 10 МБ");
+      return;
+    }
+    setReceiptFile(file);
+  };
 
   const formatTimer = useMemo(() => {
     const mm = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
@@ -182,18 +230,30 @@ export const ManualForeignCardPage = ({
 
   useEffect(() => {
     let cancelled = false;
+    const configKey =
+      method === "KZT_KASPI"
+        ? "KZT_KASPI"
+        : method === "RUB_SBERBANK"
+          ? "RUB_SBERBANK"
+          : currency;
     (async () => {
       setConfigLoading(true);
       try {
-        const { data } = await getManualDepositConfig(currency);
+        const { data } = await getManualDepositConfig(configKey);
         if (!cancelled && data) setConfig(data as ManualDepositConfigItem);
       } catch {
         if (!cancelled) {
           setConfig({
             cardNumber: "5351 7737 9598 4711",
             holderName: "Ali Kaliyev",
-            bankName: currency === "KZT" ? "Kaspi Bank" : "Kaspi",
+            bankName:
+              method === "KZT_KASPI" || currency === "KZT"
+                ? "Kaspi Bank"
+                : method === "RUB_SBERBANK"
+                  ? "Inter"
+                  : "Kaspi",
             minAmount: fallbackMinAmount,
+            rubPerBrl: 183,
           });
         }
       } finally {
@@ -203,7 +263,7 @@ export const ManualForeignCardPage = ({
     return () => {
       cancelled = true;
     };
-  }, [currency, fallbackMinAmount]);
+  }, [currency, fallbackMinAmount, method]);
 
   useEffect(() => {
     if (loadedRef.current && (initialOrderId || asModal)) return;
@@ -226,6 +286,7 @@ export const ManualForeignCardPage = ({
           if (existing.id) setOrderId(existing.id);
           if (existing.publicOrderId) setPublicOrderId(existing.publicOrderId);
           if (existing.amount) setAmount(String(existing.amount));
+          if (existing.brlAmount) setOrder(existing);
           setSecondsLeft(computeSecondsLeft(existing.createdAt));
         }
         loadedRef.current = true;
@@ -299,6 +360,7 @@ export const ManualForeignCardPage = ({
     setOrderId(undefined);
     setPublicOrderId(undefined);
     setSecondsLeft(PAYMENT_WINDOW_SEC);
+    setReceiptFile(null);
   };
 
   const cancelPayment = async () => {
@@ -323,6 +385,10 @@ export const ManualForeignCardPage = ({
   const confirmPayment = async () => {
     if (submitting) return;
     setServerError("");
+    if (!receiptFile) {
+      toast.warn("Прикрепите чек или скрин перевода");
+      return;
+    }
     const amountNum = parseFloat(String(amount).replace(",", "."));
     if (!amountNum || Number.isNaN(amountNum) || amountNum < minAmount) {
       toast.warn(`Минимальная сумма — ${minAmount.toLocaleString()} ${currency}`);
@@ -336,6 +402,7 @@ export const ManualForeignCardPage = ({
       form.append("method", method);
       if (config?.cardNumber) form.append("cardNumber", config.cardNumber);
       if (config?.holderName) form.append("holderName", config.holderName);
+      form.append("receipt", receiptFile);
       const activeOrderId = orderId ?? initialOrderId;
       if (activeOrderId) form.append("orderId", String(activeOrderId));
 
@@ -380,31 +447,87 @@ export const ManualForeignCardPage = ({
   const cardNumberDisplay = (config?.cardNumber || "—").replace(/\s+/g, " ").trim();
   const showPaymentView = submitted || !!initialOrderId;
 
+  const conversionBlock = isRubRfTransfer && brlAmount > 0 ? (
+    <div className={styles.conversionBox}>
+      <div className={styles.conversionRow}>
+        <span className={styles.conversionLabel}>На баланс</span>
+        <span className={styles.conversionValue}>{displayAmount}</span>
+      </div>
+      <div className={`${styles.conversionRow} ${styles.conversionRowHighlight}`}>
+        <span className={styles.conversionLabel}>Отправьте ровно</span>
+        <span className={styles.conversionValueBrl}>{formatBrlAmount(brlAmount)}</span>
+        <button
+          className={styles.copyIconBtn}
+          onClick={() => copy(String(brlAmount), "Сумму в реалах")}
+          type="button"
+          aria-label="Скопировать сумму в реалах"
+        >
+          <IconCopy />
+        </button>
+      </div>
+      {rubPerBrl > 0 ? (
+        <p className={styles.conversionHint}>
+          Курс: 1 R$ = {rubPerBrl.toLocaleString()} ₽ · действует {formatTimer}
+        </p>
+      ) : null}
+      <p className={styles.conversionWarn}>
+        Переводите точную сумму в реалах. Если сумма отличается — заявка не зачислится.
+      </p>
+    </div>
+  ) : null;
+
   const paymentContent = configLoading ? (
     <div className={styles.loadingWrap}>Загрузка...</div>
   ) : showPaymentView ? (
     <>
-      <div className={styles.qrSection}>
-        <div className={styles.qrLeft}>
-          <div className={styles.bankLogo}>{currency === "KZT" ? "🏦" : "₽"}</div>
-          <p className={styles.qrDesc}>
-            Для оплаты отсканируйте QR-код камерой телефона и проведите оплату в{" "}
-            <strong>{appName}</strong>.
-          </p>
-          {displayPublicId ? (
-            <p className={styles.orderIdHint}>ID заявки: #{displayPublicId}</p>
-          ) : null}
-        </div>
-        {qrSrc ? (
+      {qrSrc ? (
+        <div className={styles.qrSection}>
+          <div className={styles.qrLeft}>
+            <div className={styles.bankLogo}>
+              {isRubRfTransfer ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" className={styles.bankLogoImg} src="/sberbank.png" />
+              ) : (
+                currency === "KZT" ? "🏦" : "₽"
+              )}
+            </div>
+            <p className={styles.qrDesc}>
+              {isRubRfTransfer ? (
+                <>
+                  Отсканируйте QR-код и переведите{" "}
+                  <strong>{brlAmount > 0 ? formatBrlAmount(brlAmount) : "указанную сумму"}</strong>{" "}
+                  через перевод из РФ.
+                </>
+              ) : (
+                <>
+                  Для оплаты отсканируйте QR-код камерой телефона и проведите оплату в{" "}
+                  <strong>{appName}</strong>.
+                </>
+              )}
+            </p>
+            {displayPublicId ? (
+              <p className={styles.orderIdHint}>ID заявки: #{displayPublicId}</p>
+            ) : null}
+          </div>
           <img alt={`QR ${currency}`} className={styles.qrImg} src={qrSrc} />
-        ) : (
-          <div className={styles.qrPlaceholder}>QR не задан в&nbsp;настройках</div>
-        )}
-      </div>
+        </div>
+      ) : isRubRfTransfer ? (
+        <div className={styles.errorBox} role="alert">
+          QR-код не настроен. Обратитесь в поддержку.
+        </div>
+      ) : null}
 
+      {conversionBlock}
+
+      {!isRubRfTransfer ? (
       <div className={styles.bottomRow}>
         <div className={styles.requisitesBox}>
-          <p className={styles.requisitesTitle}>Или совершите перевод по реквизитам</p>
+          <p className={styles.requisitesTitle}>
+            {qrSrc ? "Или совершите перевод по реквизитам" : "Совершите перевод по реквизитам"}
+          </p>
+          {!qrSrc && displayPublicId ? (
+            <p className={styles.orderIdHint}>ID заявки: #{displayPublicId}</p>
+          ) : null}
 
           <div className={styles.reqRow}>
             <span className={styles.reqIcon}><IconCard /></span>
@@ -430,7 +553,7 @@ export const ManualForeignCardPage = ({
             </div>
             <button
               className={styles.copyIconBtn}
-              onClick={() => copy(config?.bankName || "", "Банк")}
+              onClick={() => copy(config?.bankName || "", "Bанк")}
               type="button"
               aria-label="Скопировать банк"
             >
@@ -476,6 +599,12 @@ export const ManualForeignCardPage = ({
           <p className={styles.warningText}>Не оставляйте комментарий к переводу</p>
         </div>
       </div>
+      ) : (
+        <div className={styles.warningBox}>
+          <span className={styles.warningIcon}><IconInfo /></span>
+          <p className={styles.warningText}>Не оставляйте комментарий к переводу</p>
+        </div>
+      )}
 
       {order?.status === "processing" ? (
         <section className={styles.statusBox}>
@@ -485,44 +614,53 @@ export const ManualForeignCardPage = ({
           </p>
         </section>
       ) : (
-        <div className={styles.actions}>
-          <button
-            className={styles.paidBtn}
+        <>
+          <ManualForeignCardReceiptUpload
             disabled={submitting || cancelling || secondsLeft <= 0}
-            onClick={confirmPayment}
-            type="button"
-          >
-            {submitting ? "Отправка..." : "Я оплатил"}
-          </button>
-          <button
-            className={styles.cancelBtn}
-            disabled={submitting || cancelling}
-            onClick={cancelPayment}
-            type="button"
-          >
-            {cancelling ? "Отмена..." : "Отменить платёж"}
-          </button>
-          <div className={styles.timerWrap} aria-live="polite">
-            <div className={styles.timerBadge}>
-              <IconClock />
-              <span>Осталось</span>
-              <span className={styles.timerValue}>{formatTimer}</span>
-            </div>
-            <div className={styles.timerProgress}>
-              <div
-                className={styles.timerProgressFill}
-                style={{ width: `${timerProgress}%` }}
-              />
+            file={receiptFile}
+            onChange={handleReceiptChange}
+            previewUrl={receiptPreview}
+          />
+
+          <div className={styles.actions}>
+            <button
+              className={styles.paidBtn}
+              disabled={submitting || cancelling || secondsLeft <= 0 || !receiptFile}
+              onClick={confirmPayment}
+              type="button"
+            >
+              {submitting ? "Отправка..." : "Отправить на проверку"}
+            </button>
+            <button
+              className={styles.cancelBtn}
+              disabled={submitting || cancelling}
+              onClick={cancelPayment}
+              type="button"
+            >
+              {cancelling ? "Отмена..." : "Отменить платёж"}
+            </button>
+            <div className={styles.timerWrap} aria-live="polite">
+              <div className={styles.timerBadge}>
+                <IconClock />
+                <span>Осталось</span>
+                <span className={styles.timerValue}>{formatTimer}</span>
+              </div>
+              <div className={styles.timerProgress}>
+                <div
+                  className={styles.timerProgressFill}
+                  style={{ width: `${timerProgress}%` }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {serverError ? (
-        <div className={styles.errorBox} role="alert">
-          {serverError}
-        </div>
-      ) : null}
+          {serverError ? (
+            <div className={styles.errorBox} role="alert">
+              {serverError}
+            </div>
+          ) : null}
+        </>
+      )}
     </>
   ) : (
     <form
@@ -569,7 +707,7 @@ export const ManualForeignCardPage = ({
         />
       </label>
       <div className={styles.quickRow}>
-        {[minAmount, minAmount * 2, minAmount * 3].map((v) => (
+        {(isRubRfTransfer ? [1000, 2000, 5000] : [minAmount, minAmount * 2, minAmount * 3]).map((v) => (
           <button
             key={v}
             className={styles.pill}

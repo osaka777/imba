@@ -14,6 +14,47 @@
   }
 }
 
+.NirvanaPayForm_embedded {
+  padding: 0;
+  gap: 8px;
+}
+
+.NirvanaPayForm_embedded .input {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  font-size: 14px !important;
+  border-radius: 8px !important;
+}
+
+.NirvanaPayForm_embedded .amountField label {
+  margin-bottom: 4px !important;
+  font-size: 12px !important;
+}
+
+.NirvanaPayForm_embedded .quickSetAmount {
+  gap: 6px;
+  margin: 0;
+}
+
+.NirvanaPayForm_embedded .quickSetAmountButton {
+  padding: 7px 4px;
+  font-size: 11px;
+  border-radius: 8px;
+}
+
+.NirvanaPayForm_embedded .submit {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 10px;
+  margin-top: 0;
+}
+
+.NirvanaPayForm_embedded .error {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .headingGroup {
   display: flex;
   flex-direction: column;

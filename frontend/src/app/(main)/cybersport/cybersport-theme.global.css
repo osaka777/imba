@@ -1,0 +1,189 @@
+html[data-cybersport-theme="true"] {
+  --cy-bg-main: #121214;
+  --cy-bg-secondary: #1c1d21;
+  --cy-bg-card: #25262b;
+  --cy-bg-elevated: #2e3036;
+  --cy-bg-input: #1c1d21;
+  --cy-border: rgb(255 255 255 / 0.1);
+  --cy-border-active: rgb(255 255 255 / 0.22);
+  --cy-text-primary: #e8e8ea;
+  --cy-text-secondary: #909090;
+  --cy-text-muted: #6b6b6f;
+}
+
+html[data-cybersport-theme="true"],
+html[data-cybersport-theme="true"] body,
+html[data-cybersport-theme="true"] #root {
+  background-color: var(--cy-bg-main) !important;
+}
+
+html[data-cybersport-theme="true"] main {
+  background: transparent;
+}
+
+html[data-cybersport-theme="true"] footer {
+  background-color: var(--cy-bg-main) !important;
+  border-top: 1px solid var(--cy-border);
+}
+
+/* Top utility bar */
+html[data-cybersport-theme="true"] .HeaderLineTop_cyber {
+  background-color: var(--cy-bg-main) !important;
+  border-bottom: 1px solid var(--cy-border);
+}
+
+html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="headerLineRight"],
+html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="FreeMoneyLink_root"],
+html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="headerButton"] {
+  background: var(--cy-bg-secondary) !important;
+  background-image: none !important;
+}
+
+html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="button"]:not([class*="headerButton"]) {
+  background: var(--cy-bg-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--cy-border);
+}
+
+/* Main nav */
+html[data-cybersport-theme="true"] .Navigation_cyber {
+  background: var(--cy-bg-secondary) !important;
+  background-image: none !important;
+  border: 1px solid var(--cy-border);
+  box-shadow: none;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber a,
+html[data-cybersport-theme="true"] .Navigation_cyber p {
+  color: var(--cy-text-secondary);
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="underline"] {
+  background: var(--cy-text-primary) !important;
+  background-image: none !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] > a,
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] > p,
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] a {
+  color: var(--cy-text-primary) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="user_wrapper"],
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="telegram"] {
+  background: var(--cy-bg-card) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="button"] {
+  background: var(--cy-bg-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--cy-border);
+}
+
+/* Mobile bottom nav */
+html[data-cybersport-theme="true"] .MobileNav_cyber {
+  background: var(--cy-bg-secondary) !important;
+  border-top-color: var(--cy-border) !important;
+}
+
+html[data-cybersport-theme="true"] .MobileNav_cyber .tab {
+  background: var(--cy-bg-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] .MobileNav_cyber [class*="link"] {
+  color: var(--cy-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] .MobileNav_cyber [class*="item_current"] [class*="link"] {
+  color: var(--cy-text-primary) !important;
+}
+
+html[data-cybersport-theme="true"] .MobileNav_cyber [class*="item_current"] [class*="icon"] {
+  fill: var(--cy-text-primary) !important;
+  color: var(--cy-text-primary) !important;
+}
+
+/* Coupon sidebar */
+html[data-cybersport-theme="true"] .CouponSidebar_cyber {
+  padding: 0;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+}
+
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="coupon"] {
+  background: var(--cy-bg-secondary) !important;
+  background-image: none !important;
+  border: 1px solid var(--cy-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="CouponWrapper"] [class*="coupon"] {
+  background: var(--cy-bg-secondary) !important;
+  background-image: none !important;
+}
+
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="tab"],
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="Tab"] {
+  color: var(--cy-text-secondary);
+}
+
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="active"],
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="Active"] {
+  border-color: var(--cy-border-active) !important;
+  color: var(--cy-text-primary) !important;
+}
+
+/* Match tables inside cybersport content */
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="Tournament"] {
+  background: var(--cy-bg-card) !important;
+  background-image: none !important;
+  border-radius: 10px;
+  border: 1px solid var(--cy-border);
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"] {
+  background-color: var(--cy-bg-card) !important;
+  border-top-color: var(--cy-border) !important;
+  border-bottom-color: var(--cy-border) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"] * {
+  color: var(--cy-text-primary);
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="startAt"],
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="marketsCount"] {
+  color: var(--cy-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="oddCell"] {
+  background: var(--cy-bg-secondary) !important;
+  background-image: none !important;
+  border: 1px solid var(--cy-border);
+  border-radius: 8px;
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="oddCoefficient"] {
+  color: var(--cy-text-primary) !important;
+  font-weight: 700;
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="Head"] [class*="headRow"] * {
+  color: var(--cy-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="nameCell"] {
+  color: var(--cy-text-primary) !important;
+}
+
+@media screen and (min-width: 1024px) {
+  html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"]:hover {
+    background-color: var(--cy-bg-elevated) !important;
+  }
+
+  html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"]:hover [class*="oddCell"] {
+    background: var(--cy-bg-elevated) !important;
+  }
+}

@@ -1,0 +1,1143 @@
+/* ═══════════════════════════════════════════════════
+   Wrapper
+   ═══════════════════════════════════════════════════ */
+.wcScoreBoard {
+  display: grid;
+  gap: 0;
+  margin-bottom: 0.875rem;
+  border-radius: 0.625rem;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 8rem;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+/* ═══════════════════════════════════════════════════
+   Meta bar  (лига | счёт/время | трансляция)
+   ═══════════════════════════════════════════════════ */
+.metaBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: rgb(255 255 255 / 0.07);
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  align-items: center;
+}
+.metaBar_status {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: rgb(255 255 255 / 0.92);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.metaBar_league {
+  font-size: 0.6875rem;
+  color: rgb(255 255 255 / 0.45);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.metaBar_right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.metaBar_broadcast {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+}
+
+.prematchMetaPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.88);
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+
+.prematchBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 1rem 1rem;
+}
+
+.prematchSide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.prematchCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12rem;
+}
+
+.prematchTeamName {
+  width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 0.95);
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 640px) {
+  .prematchBody {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.45rem;
+    padding: 0.25rem 0.65rem 0.85rem;
+  }
+
+  .prematchCenter {
+    min-width: 9.5rem;
+  }
+
+  .prematchTeamName {
+    font-size: 0.6875rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Compact flat-grid table
+   ═══════════════════════════════════════════════════ */
+.compactTable {
+  display: grid;
+  width: 100%;
+  position: relative;
+  z-index: 0;
+}
+
+/* Live clock row between meta bar and score grid */
+.liveClockBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.65rem;
+  padding: 0.4rem 0.875rem 0.5rem;
+  background: rgb(0 0 0 / 0.22);
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.matchClockPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  padding: 0.22rem 0.62rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.38);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.22);
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.96);
+  white-space: nowrap;
+}
+
+.matchClockPeriod {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.62);
+  letter-spacing: 0.01em;
+}
+
+.matchClockSep {
+  width: 1px;
+  height: 0.7rem;
+  background: rgb(255 255 255 / 0.2);
+  flex-shrink: 0;
+}
+
+.matchClockTime {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+.matchClockGameScore {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+.setGameScoreCenter {
+  position: absolute;
+  left: 50%;
+  top: calc(2rem + 2.75rem);
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.liveClockRemain {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.48);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.matchClockExtra {
+  padding: 0.05rem 0.28rem;
+  border-radius: 0.2rem;
+  background: rgb(234 179 8 / 0.18);
+  border: 1px solid rgb(234 179 8 / 0.3);
+  color: #fde047;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* ── Header: team column ─────────────────────────── */
+.cell_teamHeader {
+  grid-column: 1;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.45rem 0.875rem 0.5rem;
+  background: rgb(255 255 255 / 0.04);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  min-height: 2.375rem;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.headerStatusLeft {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.headerStatusRight {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 2.5rem;
+  margin-left: 0;
+}
+
+/* Live status centered over header row (finished pill) */
+.headerStatusSpanned {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 3.75rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+  white-space: nowrap;
+}
+
+.headerStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+/* Timer ● 47:46 */
+.timerPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.22rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.92);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+.timerDot {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 9999px;
+  background: #ef4444;
+  flex-shrink: 0;
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* "+3'" */
+.extraTimePill {
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
+  background: rgb(234 179 8 / 0.18);
+  border: 1px solid rgb(234 179 8 / 0.35);
+  color: #fbbf24;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+/* "1 тайм" */
+.statusPill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.6);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* "Доп. время 1" / "Пенальти" */
+.gamePhaseLabel {
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  background: rgb(239 68 68 / 0.15);
+  border: 1px solid rgb(239 68 68 / 0.3);
+  color: #fca5a5;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.remainingPill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.55);
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.varPill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  background: rgb(234 179 8 / 0.18);
+  border: 1px solid rgb(234 179 8 / 0.35);
+  color: #fde047;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.penaltyRiskPill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  background: rgb(249 115 22 / 0.16);
+  border: 1px solid rgb(249 115 22 / 0.35);
+  color: #fdba74;
+  font-size: 0.625rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.suspendedPill {
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  background: rgb(148 163 184 / 0.14);
+  border: 1px solid rgb(148 163 184 / 0.35);
+  color: #cbd5e1;
+  font-size: 0.625rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Set sports live: per-player rows ─── */
+.setMatchLayout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  z-index: 0;
+  min-height: 5.75rem;
+}
+
+.setScoresHeader {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  background: rgb(255 255 255 / 0.03);
+}
+
+.setScoresHeaderSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.setColHeader {
+  min-height: 2rem;
+  padding: 0.35rem 0.375rem;
+  border-bottom: none;
+  font-size: 0.625rem;
+}
+
+.setPlayerRow {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 2.75rem;
+}
+
+.setPlayerRow_away {
+  border-top: 1px solid rgb(255 255 255 / 0.05);
+}
+
+.setPlayerRow .cell_team {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-top: none;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+.setPlayerScores {
+  display: flex;
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-left: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.setPlayerScores .cell_totalScore,
+.setPlayerScores .cell_periodScore,
+.setPlayerScores .cell_statValue {
+  flex: 0 0 auto;
+  min-width: 2rem;
+  min-height: 2.75rem;
+  border-top: none;
+}
+
+.setPlayerScores .cell_totalScore {
+  border-left: none;
+}
+
+.teamNameWithServe {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.teamNameWithServe .teamNameCompact {
+  flex: 0 1 auto;
+}
+
+.finishedPill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Header: stat/period columns ─────────────────── */
+.cell_header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.375rem;
+  background: rgb(255 255 255 / 0.04);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-height: 3.75rem;
+  white-space: nowrap;
+}
+.cell_header_total   { border-left: 1px solid rgb(255 255 255 / 0.08); }
+.cell_header_active  { color: #60a5fa; background: rgb(59 130 246 / 0.1); }
+.cell_header_done    { color: rgb(255 255 255 / 0.2); }
+.cell_header_stat    { font-size: 1rem; letter-spacing: 0; text-transform: none; }
+.cell_header_yellow  { color: #eab308; }
+.cell_header_red     { color: #ef4444; }
+
+/* ═══════════════════════════════════════════════════
+   Team rows
+   ═══════════════════════════════════════════════════ */
+.cell_team {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.625rem 0.875rem;
+  background: rgb(255 255 255 / 0.02);
+  border-top: 1px solid rgb(255 255 255 / 0.05);
+  min-width: 0;
+}
+.cell_team_serving .teamNameCompact { color: #fff; }
+
+.cell_team_withBroadcast {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.teamRowMain {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.broadcastLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+  padding: 0.35rem 0;
+  border: none;
+  background: transparent;
+  color: rgb(255 255 255 / 0.72);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 2;
+}
+
+.broadcastLink:hover {
+  color: rgb(255 255 255 / 0.92);
+}
+
+.broadcastLink:active {
+  opacity: 0.8;
+}
+
+.broadcastLinkIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 0.375rem;
+  background: rgb(255 255 255 / 0.14);
+  flex-shrink: 0;
+}
+
+.broadcastLinkIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: #ffffff;
+}
+
+.broadcastLink_meta {
+  margin-top: 0;
+  padding: 0;
+  font-size: 0.6875rem;
+  gap: 0.35rem;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.broadcastLink_meta .broadcastLinkIconWrap {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.teamNameCompact {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.82);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+@media (min-width: 480px) { .teamNameCompact { font-size: 0.8125rem; } }
+
+/* Green serve dot ● for tennis/volleyball */
+.serveDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: #4ade80;
+  flex-shrink: 0;
+  box-shadow: 0 0 5px rgb(74 222 128 / 0.7);
+}
+
+/* Substitution badge "↕ 2" */
+.subsBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: rgb(251 191 36 / 0.12);
+  border: 1px solid rgb(251 191 36 / 0.25);
+  color: #fbbf24;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.subsBadgeIcon {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+/* ═══════════════════════════════════════════════════
+   Total score cell
+   ═══════════════════════════════════════════════════ */
+.cell_totalScore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.3rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgb(255 255 255 / 0.04);
+  border-top: 1px solid rgb(255 255 255 / 0.05);
+  border-left: 1px solid rgb(255 255 255 / 0.1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════
+   Period / set score cells
+   ═══════════════════════════════════════════════════ */
+.cell_periodScore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.02);
+  border-top: 1px solid rgb(255 255 255 / 0.05);
+  border-left: 1px solid rgb(255 255 255 / 0.06);
+  font-variant-numeric: tabular-nums;
+}
+.cell_periodScore_current {
+  color: rgb(255 255 255 / 0.95);
+  font-weight: 800;
+  background: rgb(59 130 246 / 0.1);
+}
+/* Winner of a completed period/set */
+.cell_periodScore_won {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════
+   Stat value cells (🟨 ⛳ 🤚)
+   ═══════════════════════════════════════════════════ */
+.cell_statValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.72);
+  background: rgb(255 255 255 / 0.02);
+  border-top: 1px solid rgb(255 255 255 / 0.05);
+  border-left: 1px solid rgb(255 255 255 / 0.06);
+  font-variant-numeric: tabular-nums;
+}
+.cell_stat_yellow { color: #eab308; }
+.cell_stat_red    { color: #ef4444; }
+
+/* ═══════════════════════════════════════════════════
+   Stats block — progress bars (football)
+   ═══════════════════════════════════════════════════ */
+.statsWrap {
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.statsToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: none;
+  background: rgb(255 255 255 / 0.025);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.statsToggle:hover {
+  background: rgb(255 255 255 / 0.05);
+}
+
+.statsToggle_open {
+  background: rgb(255 255 255 / 0.04);
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.statsToggleIcon {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  fill: rgb(255 255 255 / 0.45);
+  flex-shrink: 0;
+  transition: fill 0.15s ease;
+}
+
+.statsToggleLabel {
+  flex: 1;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.72);
+  letter-spacing: 0.01em;
+}
+
+.statsToggle:hover .statsToggleIcon,
+.statsToggle:hover .statsToggleLabel {
+  color: rgb(255 255 255 / 0.88);
+}
+
+.statsToggle:hover .statsToggleIcon {
+  fill: rgb(255 255 255 / 0.65);
+}
+
+.statsToggle_open .statsToggleIcon {
+  fill: #60a5fa;
+}
+
+.statsToggle_open .statsToggleLabel {
+  color: rgb(255 255 255 / 0.92);
+}
+
+.statsToggleChevron {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid rgb(255 255 255 / 0.35);
+  border-bottom: 1.5px solid rgb(255 255 255 / 0.35);
+  transform: rotate(45deg);
+  margin-top: -0.12rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.statsToggle_open .statsToggleChevron {
+  border-color: rgb(255 255 255 / 0.55);
+}
+
+.statsToggleChevron_open {
+  transform: rotate(-135deg);
+  margin-top: 0.08rem;
+}
+
+.statsBlock {
+  background: rgb(255 255 255 / 0.03);
+  padding: 0.75rem 0.875rem 0.875rem;
+}
+
+.statsBlock_header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+.statsBlock_homeTeam {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.statsBlock_title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-align: center;
+}
+.statsBlock_awayTeam {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.6);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Each stat row: label on top, then value | bar | value */
+.statsRow {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr 2.25rem;
+  grid-template-rows: auto auto;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+  padding: 0.35rem 0;
+}
+.statsRow + .statsRow {
+  border-top: 1px solid rgb(255 255 255 / 0.04);
+}
+
+.statsVal {
+  grid-row: 2;
+  align-self: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.7);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.statsVal:first-of-type {
+  grid-column: 1;
+}
+.statsVal_right {
+  grid-column: 3;
+  text-align: left;
+}
+.statsVal_lead { color: #60a5fa; }
+
+.statsLabel {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.statIcon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.5);
+  flex-shrink: 0;
+}
+.statLabelText {
+  font-size: 0.6375rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.barTrack {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  display: flex;
+  height: 0.25rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.06);
+}
+.barHome {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 9999px 0 0 9999px;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+.barAway {
+  height: 100%;
+  background: #f97316;
+  border-radius: 0 9999px 9999px 0;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+/* ── Mobile ─────────────────────────────────────────── */
+@media (max-width: 1080px) {
+  .wcScoreBoard {
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    min-height: auto;
+  }
+
+  .metaBar {
+    padding: 8px 10px;
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .metaBar_right {
+    gap: 6px;
+  }
+
+  .metaBar_status {
+    font-size: 12px;
+  }
+
+  .metaBar_league {
+    font-size: 10px;
+  }
+
+  .broadcastLink_meta {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .setMatchLayout {
+    min-height: 6.25rem;
+  }
+
+  .setGameScoreCenter {
+    top: calc(1.75rem + 2.85rem);
+  }
+
+  .matchClockGameScore {
+    font-size: 1.125rem;
+  }
+
+  .setColHeader {
+    min-height: 1.75rem;
+    font-size: 0.5625rem;
+  }
+
+  .cell_team {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .teamNameCompact {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .cell_totalScore {
+    font-size: 17px;
+    padding: 10px 6px;
+  }
+
+  .cell_periodScore,
+  .cell_statValue {
+    font-size: 13px;
+    padding: 10px 4px;
+    min-width: 2rem;
+  }
+
+  .liveClockBar {
+    padding: 0.35rem 0.625rem 0.45rem;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .matchClockTime {
+    font-size: 0.875rem;
+  }
+
+  .matchClockPeriod {
+    font-size: 0.625rem;
+  }
+
+  .matchClockExtra {
+    font-size: 0.75rem;
+  }
+
+  .headerStatusSpanned {
+    height: 3rem;
+  }
+
+  .cell_teamHeader {
+    padding: 8px 10px;
+    min-height: 2.5rem;
+  }
+
+  .timerPill {
+    font-size: 0.6875rem;
+  }
+
+  .statusPill {
+    font-size: 10px;
+  }
+
+  .compactTable {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Stats progress block ── */
+  .statsToggle {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .statsToggleLabel {
+    font-size: 13px;
+  }
+
+  .statsToggleIcon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .statsBlock {
+    padding: 10px 12px 12px;
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  .statsBlock_header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
+  .statsBlock_homeTeam,
+  .statsBlock_awayTeam {
+    display: none;
+  }
+
+  .statsBlock_title {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: rgb(255 255 255 / 0.42);
+  }
+
+  .statsRow {
+    grid-template-columns: 28px 1fr 28px;
+    column-gap: 8px;
+    row-gap: 4px;
+    padding: 7px 0;
+  }
+
+  .statsRow + .statsRow {
+    border-top-color: rgb(255 255 255 / 0.06);
+  }
+
+  .statsVal {
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .statsLabel {
+    gap: 5px;
+  }
+
+  .statIcon {
+    font-size: 14px;
+  }
+
+  .statLabelText {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .barTrack {
+    height: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wcScoreBoard {
+    min-height: auto;
+    margin-bottom: 0.5rem;
+  }
+
+  .metaBar {
+    padding: 0.45rem 0.625rem;
+    gap: 0.35rem;
+  }
+
+  .metaBar_league {
+    font-size: 0.625rem;
+  }
+
+  .cell_team {
+    padding: 0.65rem 0.625rem;
+    gap: 0.4rem;
+  }
+
+  .teamNameCompact {
+    font-size: 0.75rem;
+  }
+
+  .cell_totalScore {
+    font-size: 1.0625rem;
+    padding: 0.65rem 0.2rem;
+  }
+
+  .cell_periodScore,
+  .cell_statValue {
+    font-size: 0.8125rem;
+    padding: 0.65rem 0.15rem;
+  }
+
+  .setMatchLayout {
+    min-height: 5.75rem;
+  }
+
+  .setGameScoreCenter {
+    top: calc(1.65rem + 2.65rem);
+  }
+
+  .matchClockGameScore {
+    font-size: 1rem;
+  }
+
+  .liveClockBar {
+    padding: 0.3rem 0.5rem 0.4rem;
+  }
+
+  .matchClockTime {
+    font-size: 0.8125rem;
+  }
+
+  .matchClockPill {
+    padding: 0.18rem 0.5rem;
+    gap: 0.28rem;
+  }
+
+  .headerStatusSpanned {
+    height: 3.25rem;
+  }
+
+  .statsBlock {
+    padding: 0.625rem 0.625rem 0.75rem;
+  }
+
+  .statsRow {
+    grid-template-columns: 24px 1fr 24px;
+    gap: 6px;
+  }
+
+  .statsVal {
+    font-size: 10px;
+  }
+}

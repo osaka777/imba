@@ -1,0 +1,335 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 248px;
+  width: 248px;
+  min-height: 168px;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-top-color: transparent;
+  overflow: visible;
+  box-shadow: 0 4px 16px rgb(16 24 40 / 0.06);
+}
+
+.topCap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  max-width: calc(100% - 20px);
+  pointer-events: none;
+}
+
+.topCapLine {
+  display: block;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 3px;
+  background: linear-gradient(180deg, #0090ff 0%, #0085ff 100%);
+}
+
+.topCapLine_left {
+  margin-right: -3px;
+  border-radius: 999px 8px 8px 999px;
+}
+
+.topCapLine_right {
+  margin-left: -3px;
+  border-radius: 8px 999px 999px 8px;
+}
+
+.topBadge {
+  position: relative;
+  z-index: 1;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #0090ff 0%, #0085ff 100%);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 2px solid #ffffff;
+  box-shadow:
+    0 0 0 1px #0085ff,
+    0 2px 8px rgb(0 133 255 / 0.28);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 10px 6px;
+}
+
+.leagueRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sportIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: #667085;
+}
+
+.league {
+  margin: 0;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #667085;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.headIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f2f4f7;
+}
+
+.headIconSvg {
+  width: 11px;
+  height: 11px;
+  fill: #667085;
+}
+
+.matchLink {
+  display: block;
+  padding: 0 10px 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.teamsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.avatarWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgb(16 24 40 / 0.08);
+}
+
+.teamName {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #101828;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding-top: 6px;
+  min-width: 58px;
+}
+
+.prematchDate {
+  font-size: 10px;
+  font-weight: 600;
+  color: #667085;
+  white-space: nowrap;
+}
+
+.score {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  color: #101828;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.score_prematch {
+  font-size: 16px;
+  color: #101828;
+}
+
+.liveTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #d92d20;
+}
+
+.liveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f04438;
+  animation: liveDotPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes liveDotPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+}
+
+.oddsRow {
+  display: grid;
+  gap: 5px;
+  padding: 0 10px 10px;
+}
+
+.oddsRow_threeWay {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.oddsRow_twoWay {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.oddsRow :global(button) {
+  width: 100%;
+  min-height: 32px;
+  border-radius: 8px !important;
+  background: #eef2f7 !important;
+  border: 1px solid #e2e8f0 !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  padding: 3px 4px !important;
+}
+
+.oddsRow :global(button span:first-child) {
+  display: block !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: #667085 !important;
+  text-transform: uppercase;
+}
+
+.oddsRow :global(button span:last-child) {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #101828 !important;
+}
+
+.oddsRow :global(span[class*="empty"]) {
+  min-height: 32px !important;
+  border-radius: 8px !important;
+  background: #eef2f7 !important;
+  border: 1px solid #e2e8f0 !important;
+  font-size: 12px !important;
+}
+
+.oddPill,
+.oddEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 32px;
+  border-radius: 8px;
+  background: #eef2f7;
+  border: 1px solid #e2e8f0;
+}
+
+.oddLabel {
+  font-size: 9px;
+  font-weight: 700;
+  color: #667085;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.oddValue {
+  font-size: 12px;
+  font-weight: 800;
+  color: #101828;
+  line-height: 1;
+}
+
+.oddEmpty {
+  font-size: 12px;
+  font-weight: 700;
+  color: #98a2b3;
+}
+
+@media screen and (max-width: 640px) {
+  .card {
+    flex-basis: 228px;
+    width: 228px;
+    min-height: 162px;
+    margin-top: 10px;
+  }
+
+  .topCapLine {
+    width: 20px;
+  }
+
+  .topBadge {
+    font-size: 8px;
+    padding: 2px 9px;
+  }
+
+  .avatarWrap {
+    width: 48px;
+    height: 48px;
+  }
+
+  .score {
+    font-size: 16px;
+  }
+}

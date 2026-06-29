@@ -5,6 +5,7 @@ import { Rates } from "~/entities/bet";
 import { createTitleForBet } from "~/entities/bet/lib";
 import { components } from "~/shared/api";
 import { AccessIcon } from "~/shared/assets";
+import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { usePrevious } from "~/shared/model";
 import { Button } from "~/shared/ui";
 
@@ -31,7 +32,7 @@ export const MatchFieldsCell: React.FC<MatchFieldsCellProps> = ({
   value,
   isLive,
 }) => {
-  const { prevState } = usePrevious(value, 800); // Дебаунсинг 800мс для предотвращения мерцания
+  const { prevState } = usePrevious(value);
   const [rates, setRates] = useLocalStorage<Rates>("rates", [], {
     initializeWithValue: false,
   });
@@ -141,25 +142,16 @@ export const MatchFieldsCell: React.FC<MatchFieldsCellProps> = ({
   }, [value, market, eventId, eventName, isOpen, groupedMarket, isRateAdded, isLive]); // Убрали rates из зависимостей
 
   // Мемоизированные классы статуса
-  const statusClassNames = useMemo((): { cell?: string; coef?: string } => {
-    if (value === "--") {
-      return { cell: ``, coef: `` };
-    }
-    
-    if (typeof prevState === "undefined") {
-      return { cell: ``, coef: `` };
-    }
-    
-    if (Number(prevState) === Number(value)) {
-      return { cell: ``, coef: `` };
-    }
-    
-    if (Number(prevState) > Number(value)) {
-      return { cell: styles.oddCell_up, coef: styles.oddCoefficient_up };
-    }
-    
-    return { cell: styles.oddCell_down, coef: styles.oddCoefficient_down };
-  }, [value, prevState]);
+  const statusClassNames = useMemo(
+    () =>
+      wcOddsFlashClasses(value, prevState, {
+        oddFlash_up: styles.oddCell_up,
+        oddFlash_down: styles.oddCell_down,
+        oddCoefficient_up: styles.oddCoefficient_up,
+        oddCoefficient_down: styles.oddCoefficient_down,
+      }),
+    [value, prevState],
+  );
 
   // Мемоизированный текст для отображения
   const displayText = useMemo(() => {

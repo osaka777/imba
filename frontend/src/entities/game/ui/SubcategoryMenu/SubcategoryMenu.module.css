@@ -1,12 +1,9 @@
+/* ── Horizontal (mobile) ── */
 .menu {
   overflow-x: auto;
-
   border-radius: 8px;
-
   padding: 12px;
-
   max-width: 100%;
-
   background-color: var(--blue-20);
 }
 
@@ -60,7 +57,7 @@
   height: 15px;
   object-fit: contain;
   border-radius: 2px;
-  margin-right: 8px;
+  margin-right: 4px;
   display: inline-block;
   vertical-align: middle;
   flex-shrink: 0;
@@ -102,6 +99,9 @@
   font-weight: 500;
   font-size: 14px;
   color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .count {
@@ -163,4 +163,115 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* ── Sidebar (tablet + desktop ≥768px) ── */
+@media (min-width: 768px) {
+  .menu_sidebar {
+    overflow-x: visible;
+    overflow-y: visible;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .menu_sidebar .wrapper {
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+
+  /* Hide back/sport header — sports list already shown above */
+  .menu_sidebar .backButton,
+  .menu_sidebar .currentSport {
+    display: none;
+  }
+
+  /* Section header label (e.g. "Турниры") */
+  .menu_sidebar .sectionLabel {
+    padding: 10px 12px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.35);
+    user-select: none;
+  }
+
+  .menu_sidebar .item {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: transparent;
+    transition: background 0.15s ease;
+    gap: 8px;
+  }
+
+  .menu_sidebar .item:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .menu_sidebar .item_active {
+    background: var(--light-blue-gradient);
+  }
+
+  .menu_sidebar .item_active:hover {
+    background: var(--light-blue-gradient);
+  }
+
+  .menu_sidebar .flag {
+    width: 18px;
+    height: 13px;
+    margin-right: 0;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .menu_sidebar .text {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu_sidebar .count {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    opacity: 0.7;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .menu_sidebar .item_active .count {
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1080px) {
+  .menu_sidebar .item {
+    padding: 7px 10px;
+  }
+
+  .menu_sidebar .text {
+    font-size: 12px;
+  }
+
+  .menu_sidebar .sectionLabel {
+    padding: 8px 10px 3px;
+    font-size: 10px;
+  }
 }

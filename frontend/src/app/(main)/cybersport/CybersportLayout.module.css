@@ -1,0 +1,59 @@
+.header {
+  grid-area: content;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.header :global([class*="slider"]) {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+  filter: saturate(0.7) brightness(0.72);
+}
+
+.shell {
+  grid-area: content;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  background: var(--cy-bg-main, #121214);
+}
+
+.page {
+  width: 100%;
+  min-width: 0;
+  margin-top: 16px;
+  padding: 0 0 16px;
+}
+
+@media screen and (max-width: 768px) {
+  .page {
+    margin-top: 0;
+    padding-bottom: 88px;
+  }
+
+  .header :global([class*="slider"]) {
+    border-radius: 0;
+    filter: saturate(0.65) brightness(0.68);
+  }
+}
+
+@media screen and (max-width: 1080px) {
+  .page {
+    padding-bottom: 88px;
+  }
+}
+
+.subPage {
+  width: 100%;
+  min-width: 0;
+}
+
+.subTitle {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cy-text-primary, #e8e8ea);
+  letter-spacing: -0.02em;
+}

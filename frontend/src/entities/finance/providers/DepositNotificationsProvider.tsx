@@ -3,6 +3,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useDepositNotifications } from '../lib/useDepositNotifications';
 import { useDepositStatusNotifications } from '../lib/useDepositStatusNotifications';
+import { useAuth } from '~/app/providers/AuthProvider';
 
 interface DepositStatus {
   id: string;
@@ -36,6 +37,12 @@ const DepositRealtimeListener = () => {
   return null;
 };
 
+const DepositAuthListener = () => {
+  const { isAuth } = useAuth();
+  if (!isAuth) return null;
+  return <DepositRealtimeListener />;
+};
+
 export const DepositNotificationsProvider: React.FC<DepositNotificationsProviderProps> = ({ children }) => {
   const { addDepositNotification, checkForNewDeposits } = useDepositNotifications();
 
@@ -46,7 +53,7 @@ export const DepositNotificationsProvider: React.FC<DepositNotificationsProvider
 
   return (
     <DepositNotificationsContext.Provider value={value}>
-      <DepositRealtimeListener />
+      <DepositAuthListener />
       {children}
     </DepositNotificationsContext.Provider>
   );

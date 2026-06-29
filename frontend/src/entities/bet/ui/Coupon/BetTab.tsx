@@ -6,6 +6,7 @@ import { useLocalStorage} from "usehooks-ts";
 
 import { useCurrency, useGamesBettingContext } from "~/app/providers";
 import { getUser } from "~/entities/user/api";
+import { getSessionClient } from "~/entities/user/lib/getSessionClient";
 import { TrashIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
 import { Button, Checkbox, Input } from "~/shared/ui";
@@ -13,6 +14,24 @@ import { useAccountType } from "~/shared/model/useAccountType";
 import type { User } from "~/shared/types";
 
 import { createBet } from "../../api/createBet";
+import { placeWcBet } from "~/entities/wc-odds/api/client";
+import {
+  isWcBetOutcomeClosedError,
+} from "~/entities/wc-odds/lib/wcBetErrorMessage";
+import {
+  buildWcRate,
+  findWcOutcomeOdd,
+  getWcGroupKeyFromRate,
+  getWcMarketKeyFromRate,
+  getWcOddForPick,
+  getWcOutcomeKeyFromRate,
+  getWcPickFromRate,
+  isWcEventBettingOpen,
+  isWcOddsRate,
+  mergeWcEventIntoRate,
+  normalizeWcMarketKey,
+} from "~/entities/wc-odds/lib/wcRate";
+import { fetchWcEvents, fetchWcEventDetail } from "~/entities/wc-odds/api/client";
 import { Rate, Rates } from "../../types";
 import { BetList } from "./BetList";
 import styles from "./BetTab.module.css";
@@ -20,12 +39,16 @@ import styles from "./BetTab.module.css";
 type BetTabProps = {
   classNameContainer?: string;
   setIsOpen: (value: React.SetStateAction<boolean | undefined>) => void;
+  onBetAccepted?: () => void;
 };
 type Variant = "express" | "ordinar" | "series";
+
+const STAKE_CHIPS = [500, 1000, 5000, 10000];
 
 export const BetTab: React.FC<BetTabProps> = ({
   classNameContainer,
   setIsOpen,
+  onBetAccepted,
 }) => {
   const { currency } = useCurrency();
   const { isAuth } = useGamesBettingContext();
@@ -48,18 +71,23 @@ export const BetTab: React.FC<BetTabProps> = ({
 
   const userData = data as User | null;
 
+  const totalCoefficient = useMemo(
+    () =>
+      rates.reduce((acc, rate) => {
+        const coef = Number(rate.coef);
+        return Number.isFinite(coef) && coef > 0 ? acc * coef : acc;
+      }, 1),
+    [rates],
+  );
+
   useEffect(() => {
     if (rates.length < 2) {
       setVariant("ordinar");
     } else if (rates.length > 1) {
       setVariant("express");
     }
-    setKf(
-      rates
-        .map((rate) => +(rate.coef || 0))
-        .reduce((partialProduct, a) => partialProduct * a, 1),
-    );
-  }, [rates]);
+    setKf(totalCoefficient);
+  }, [rates, totalCoefficient]);
 
   // Автоматически корректируем сумму при переключении на бонусный счет
   useEffect(() => {
@@ -80,13 +108,166 @@ export const BetTab: React.FC<BetTabProps> = ({
     }
   }, [selectedAccountType, userData, currency, sum]);
 
+  useEffect(() => {
+    const wcRates = rates.filter(
+      (rate) => isWcOddsRate(rate) && rate.wcCommenceTime && !rate.wcCompleted,
+    );
+    if (wcRates.length === 0) return;
+
+    const closeAtKickoff = () => {
+      setRates((prev) => {
+        let changed = false;
+        const next = prev.map((rate) => {
+          if (!isWcOddsRate(rate) || !rate.wcCommenceTime) return rate;
+          const open = isWcEventBettingOpen({
+            completed: rate.wcCompleted ?? false,
+            commenceTime: rate.wcCommenceTime,
+          });
+          if (rate.isOpen === open && rate.isAvailable === open) return rate;
+          changed = true;
+          return { ...rate, isOpen: open, isAvailable: open };
+        });
+        return changed ? next : prev;
+      });
+    };
+
+    const timerIds: number[] = [];
+    for (const rate of wcRates) {
+      const kickoffMs = Date.parse(rate.wcCommenceTime!);
+      if (!Number.isFinite(kickoffMs)) continue;
+      const msUntilClose = kickoffMs - Date.now();
+      if (msUntilClose > 0) {
+        timerIds.push(window.setTimeout(closeAtKickoff, msUntilClose));
+      }
+    }
+
+    return () => {
+      timerIds.forEach((id) => window.clearTimeout(id));
+    };
+  }, [rates, setRates]);
+
   // Проверка наличия игр в базе данных и удаление ставок с несуществующими eventId
   useEffect(() => {
     const validateRates = async () => {
       if (rates.length === 0) return;
 
+      const wcRates = rates.filter(isWcOddsRate);
+      const betApiRates = rates.filter((r) => !isWcOddsRate(r));
+
+      if (wcRates.length > 0) {
+        try {
+          const detailCache = new Map<string, Awaited<ReturnType<typeof fetchWcEventDetail>>>();
+
+          const getDetail = async (eventId: string) => {
+            if (detailCache.has(eventId)) return detailCache.get(eventId)!;
+            const detail = await fetchWcEventDetail(eventId);
+            if (detail) detailCache.set(eventId, detail);
+            return detail;
+          };
+
+          const eventMap = new Map<string, Awaited<ReturnType<typeof fetchWcEventDetail>>>();
+          await Promise.all(
+            [...new Set(wcRates.map((rate) => rate.eventId).filter(Boolean))].map(
+              async (eventId) => {
+                const detail = await getDetail(eventId!);
+                if (detail) eventMap.set(eventId!, detail);
+              },
+            ),
+          );
+
+          if (eventMap.size > 0) {
+            setRates((prev) => {
+              const filtered = prev.filter((r) => {
+                if (!isWcOddsRate(r)) return true;
+                const event = eventMap.get(r.eventId || "");
+                if (!event) return false;
+                return isWcEventBettingOpen(event);
+              });
+
+              if (filtered.length !== prev.length) {
+                toast.info("Приём ставок на матч закрыт");
+                return filtered;
+              }
+
+              return prev;
+            });
+          }
+
+          let updated = false;
+          let removedUnavailable = false;
+          const mappedRates = await Promise.all(
+            rates.map(async (rate) => {
+              if (!isWcOddsRate(rate)) return rate;
+
+              const eventId = rate.eventId || "";
+              const marketKey = getWcMarketKeyFromRate(rate);
+              const outcomeKey = getWcOutcomeKeyFromRate(rate);
+
+              if (marketKey === "h2h") {
+                const pick = getWcPickFromRate(rate);
+                if (!pick) return rate;
+                const event = eventMap.get(eventId);
+                if (!event) return rate;
+                const open = isWcEventBettingOpen(event);
+                const odd = getWcOddForPick(event, pick);
+                if (odd == null) {
+                  removedUnavailable = true;
+                  return null;
+                }
+                const nextCoef = odd.toFixed(2);
+                if (
+                  rate.coef !== nextCoef
+                  || rate.isOpen !== open
+                  || rate.source !== "wc-odds"
+                ) {
+                  updated = true;
+                  return { ...buildWcRate(event, pick, odd), sum: rate.sum };
+                }
+                return rate;
+              }
+
+              const detail = await getDetail(eventId);
+              if (!detail || !outcomeKey) return rate;
+              const open = isWcEventBettingOpen(detail);
+              const odd = findWcOutcomeOdd(detail, marketKey, outcomeKey, rate.wcLine);
+              if (odd == null) {
+                removedUnavailable = true;
+                return null;
+              }
+              const nextCoef = odd.toFixed(2);
+              if (rate.coef !== nextCoef || rate.isOpen !== open) {
+                updated = true;
+                return mergeWcEventIntoRate(
+                  {
+                    ...rate,
+                    coef: nextCoef,
+                    isOpen: open,
+                    isAvailable: open,
+                  },
+                  detail,
+                );
+              }
+              return mergeWcEventIntoRate(rate, detail);
+            }),
+          );
+          const nextRates = mappedRates.filter((rate): rate is Rates[number] => rate != null);
+
+          if (removedUnavailable) {
+            toast.info("Недоступные исходы удалены из купона");
+          }
+
+          if (updated || removedUnavailable) {
+            setRates(nextRates);
+          }
+        } catch (error) {
+          console.error("Error validating WC rates:", error);
+        }
+      }
+
+      if (betApiRates.length === 0) return;
+
       try {
-        const eventIds = rates.map(rate => rate.eventId);
+        const eventIds = betApiRates.map((rate) => rate.eventId);
 
         const params = new URLSearchParams();
         eventIds.forEach(id => params.append('ids[]', id || ''));
@@ -123,13 +304,14 @@ export const BetTab: React.FC<BetTabProps> = ({
         const games = await response.json();
 
         const validEventIds = games.map((game: { eventId: string }) => game.eventId);
-        const invalidRates = rates.filter(rate => !validEventIds.includes(rate.eventId));
+        const invalidRates = betApiRates.filter((rate) => !validEventIds.includes(rate.eventId));
 
         const outdatedRates = [];
         const updatedRates = [...rates];
 
         for (let i = 0; i < updatedRates.length; i++) {
           const rate = updatedRates[i];
+          if (isWcOddsRate(rate)) continue;
           const game = games.find((g: any) => g.eventId === rate.eventId);
 
           if (game && game.groupedMarkets) {
@@ -158,13 +340,16 @@ export const BetTab: React.FC<BetTabProps> = ({
         }
 
         if (invalidRates.length > 0) {
-          setRates(prevRates => prevRates.filter(rate => validEventIds.includes(rate.eventId)));
+          setRates((prevRates) =>
+            prevRates.filter(
+              (rate) => isWcOddsRate(rate) || validEventIds.includes(rate.eventId),
+            ),
+          );
           toast.info("Некоторые ставки были удалены, так как игры больше не существуют");
         }
 
         if (outdatedRates.length > 0) {
           setRates(updatedRates);
-          toast.info(`Коэффициенты в ${outdatedRates.length} ставках были обновлены`);
         }
       } catch (error: any) {
         console.error("Error validating rates:", error);
@@ -237,6 +422,141 @@ export const BetTab: React.FC<BetTabProps> = ({
       });
     }
     if (!currency) return;
+
+    const wcRates = rates.filter(isWcOddsRate);
+    const betApiRates = rates.filter((r) => !isWcOddsRate(r));
+
+    if (wcRates.length > 0 && betApiRates.length > 0) {
+      return toast("⚠️ Нельзя смешивать разные типы ставок в одном купоне", {
+        position: "top-right",
+      });
+    }
+
+    if (wcRates.length > 0) {
+      if (wcRates.length > 1) {
+        return toast("⚠️ Для этого события доступен только ординар", {
+          position: "top-right",
+        });
+      }
+      if (selectedAccountType !== "main") {
+        return toast("⚠️ Эта ставка доступна только с основного счёта", {
+          position: "top-right",
+        });
+      }
+
+      const wcRate = wcRates[0];
+      const marketKey = getWcMarketKeyFromRate(wcRate);
+      const normalizedMarketKey = normalizeWcMarketKey(marketKey);
+      const outcomeKey = getWcOutcomeKeyFromRate(wcRate);
+      const wcPick = getWcPickFromRate(wcRate);
+
+      if (!wcRate.eventId) {
+        return toast("⚠️ Некорректная ставка", { position: "top-right" });
+      }
+
+      if (normalizedMarketKey === "h2h" && !wcPick) {
+        return toast("⚠️ Некорректная ставка", { position: "top-right" });
+      }
+      if (normalizedMarketKey !== "h2h" && !outcomeKey) {
+        return toast("⚠️ Некорректная ставка", { position: "top-right" });
+      }
+
+      setIsCreatingBet(true);
+      const toastId = toast.loading("Создание ставки...");
+
+      const token = getSessionClient();
+      if (!token) {
+        toast.dismiss(toastId);
+        toast.error("Войдите в аккаунт");
+        setIsCreatingBet(false);
+        return;
+      }
+
+      const wcBetBody = {
+        eventId: wcRate.eventId,
+        pick: wcPick ?? undefined,
+        marketKey,
+        groupKey: getWcGroupKeyFromRate(wcRate) ?? undefined,
+        outcomeKey,
+        line: wcRate.wcLine,
+        outcomeName: wcRate.title,
+        stake: Number(sum),
+        currencyCode: currency,
+        acceptOddsChange: agree,
+        clientOdds: agree ? undefined : Number(wcRate.coef),
+      };
+
+      const finishWcBetSuccess = async () => {
+        await finishAcceptedBet(toastId);
+      };
+
+      try {
+        await placeWcBet(token, wcBetBody);
+        await finishWcBetSuccess();
+      } catch (e: unknown) {
+        const err = e as Error & {
+          coefficientChanged?: boolean;
+          actualCoefficient?: number;
+          statusCode?: number;
+          rawMessage?: string;
+        };
+        const oddsChanged =
+          err?.coefficientChanged
+          || /odds have changed|коэффициент/i.test(err?.message ?? "");
+
+        if (oddsChanged) {
+          if (err.actualCoefficient != null) {
+            setRates((prev) =>
+              prev.map((rate) =>
+                isWcOddsRate(rate) && rate.eventId === wcRate.eventId && rate.market === wcRate.market
+                  ? { ...rate, coef: String(err.actualCoefficient) }
+                  : rate,
+              ),
+            );
+          }
+
+          toast.dismiss(toastId);
+          toast.info("Коэффициенты обновлены", { toastId: "wc-bet-odds-updated" });
+
+          if (agree) {
+            try {
+              await placeWcBet(token, { ...wcBetBody, acceptOddsChange: true, clientOdds: undefined });
+              await finishWcBetSuccess();
+              setIsCreatingBet(false);
+              return;
+            } catch (retryErr: unknown) {
+              const retry = retryErr as Error & { rawMessage?: string; statusCode?: number };
+              const retryRaw = retry.rawMessage ?? (retry instanceof Error ? retry.message : "");
+              if (isWcBetOutcomeClosedError(retryRaw)) {
+                setRates((prev) => prev.filter((rate) => rate !== wcRate));
+              }
+              toast.error(retry instanceof Error ? retry.message : "Ошибка ставки");
+              setIsCreatingBet(false);
+              return;
+            }
+          }
+
+          setIsCreatingBet(false);
+          return;
+        }
+
+        const rawMessage = err.rawMessage ?? (err instanceof Error ? err.message : "");
+        if (isWcBetOutcomeClosedError(rawMessage)) {
+          setRates((prev) => prev.filter((rate) => rate !== wcRate));
+        }
+
+        const displayMessage = err instanceof Error ? err.message : "Ошибка ставки";
+        toast.update(toastId, {
+          render: displayMessage,
+          type: "error",
+          isLoading: false,
+          autoClose: 5000,
+        });
+      } finally {
+        setIsCreatingBet(false);
+      }
+      return;
+    }
 
     if (selectedAccountType === 'main') {
       const userBalance = userData?.balances?.find(
@@ -492,18 +812,7 @@ export const BetTab: React.FC<BetTabProps> = ({
         await createBet(createBetDto);
       }
 
-      toast.dismiss(toastId);
-
-      setTimeout(() => {
-        setIsOpen(false);
-        setRates([]);
-      }, 500);
-
-      await Promise.all([
-        refetch(),
-        queryClient.invalidateQueries({ queryKey: ["bets", "pending"] }),
-        queryClient.invalidateQueries({ queryKey: ["user"] })
-      ]);
+      await finishAcceptedBet(toastId);
 
     } catch (e: any) {
       let errorMessage = "Произошла ошибка при создании ставки";
@@ -624,6 +933,31 @@ export const BetTab: React.FC<BetTabProps> = ({
     [rates]
   );
 
+  const potentialWin = useMemo(() => {
+    const stake = Number(sum) || 0;
+    if (stake <= 0 || rates.length === 0) return 0;
+    const coef = totalCoefficient > 0 ? totalCoefficient : kf;
+    return stake * coef;
+  }, [sum, kf, totalCoefficient, rates.length]);
+
+  const finishAcceptedBet = async (toastId?: string | number) => {
+    if (toastId != null) toast.dismiss(toastId);
+    toast.success("Ставка принята");
+    setRates([]);
+    setSum("");
+    onBetAccepted?.();
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ["bets", "pending"] }),
+      queryClient.invalidateQueries({ queryKey: ["bets", "open"] }),
+      queryClient.invalidateQueries({ queryKey: ["wc-bets"] }),
+      queryClient.invalidateQueries({ queryKey: ["wc-bets", "pending"] }),
+      queryClient.invalidateQueries({ queryKey: ["bets"] }),
+      queryClient.invalidateQueries({ queryKey: ["bets-history"] }),
+      queryClient.invalidateQueries({ queryKey: ["user"] }),
+    ]);
+  };
+
   const isAllOpen = rates.every((rate) => rate.isOpen);
 
   return (
@@ -657,8 +991,10 @@ export const BetTab: React.FC<BetTabProps> = ({
         </div>
 
         <BetList
+          currencyCode={currency}
           deleteButtonOnClickHandler={deleteButtonOnClickHandler}
           rates={rates}
+          stakeAmount={Number(sum) || 0}
           variant={variant}
         />
 
@@ -712,7 +1048,7 @@ export const BetTab: React.FC<BetTabProps> = ({
                       return `${totalSum.toFixed(0)} жетонов`;
                     }
                   }
-                  return `${totalSum.toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
+                  return `${potentialWin.toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
                 })()}
               </p>
             </div>
@@ -728,7 +1064,7 @@ export const BetTab: React.FC<BetTabProps> = ({
                       return `${totalSum.toFixed(0)} жетонов`;
                     }
                   }
-                  return `${totalSum.toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
+                  return `${(Number(sum) || 0).toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
                 })()}
               </p>
             </div>
@@ -787,6 +1123,23 @@ export const BetTab: React.FC<BetTabProps> = ({
                 })() || 'Поставить все'}
               </Button>
             </div>
+            {selectedAccountType === "main" ? (
+              <div className={styles.stakeChips}>
+                {STAKE_CHIPS.map((chip) => (
+                  <Button
+                    key={chip}
+                    className={cn(
+                      styles.stakeChip,
+                      Number(sum) === chip && styles.stakeChipActive,
+                    )}
+                    onClick={() => setSum(String(chip))}
+                    type="button"
+                  >
+                    {chip.toLocaleString("ru-RU")}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
             {selectedAccountType === 'bonus' && (() => {
               const bonusBalance = userData?.bonusBalances?.find(
                 ({ currencyCode }) => currencyCode === currency,

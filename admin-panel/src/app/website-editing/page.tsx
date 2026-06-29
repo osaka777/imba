@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthGuard } from '@/shared/components/AuthGuard'
 import { Button } from '@/widgets/Button'
-import { Input } from '@/widgets/Input'
 import { Table } from '@/widgets/Table'
 import { slidesAPI, type Slide } from '@/shared/api/slides'
 
 import { PromoBannersEditor } from './PromoBannersEditor'
+import { SlideEditorForm } from './SlideEditorForm'
+import { DEFAULT_SLIDE_FORM, slideToFormData, type SlideFormData } from './slideEditorDefaults'
 
 export default function WebsiteEditingPage() {
   const [slides, setSlides] = useState<Slide[]>([])
@@ -17,42 +18,10 @@ export default function WebsiteEditingPage() {
   const [editingSlide, setEditingSlide] = useState<Slide | null>(null)
   const [section, setSection] = useState<'promo' | 'slider'>('promo')
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    imageUrl: '',
-    imagePath: '',
-    linkUrl: '',
-    isActive: true,
-    order: 1,
-    textPosition: 'center',
-    textVerticalPos: 'center',
-    textOffsetX: 0,
-    textOffsetY: 0,
-    titleColor: '#ffffff',
-    titleSize: 28,
-    descColor: '#ffffff',
-    descSize: 13,
-    textShadow: true,
-    // Новые независимые позиции (проценты) и переключатели
-    titlePosXPct: undefined as number | undefined,
-    titlePosYPct: undefined as number | undefined,
-    descPosXPct: undefined as number | undefined,
-    descPosYPct: undefined as number | undefined,
-    showTitle: true,
-    showDesc: true,
-    // Кнопка
-    showButton: false,
-    buttonText: '',
-    buttonPosXPct: undefined as number | undefined,
-    buttonPosYPct: undefined as number | undefined,
-  })
+  const [formData, setFormData] = useState<SlideFormData>(DEFAULT_SLIDE_FORM)
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  // Drag state for preview
-  const previewRef = useRef<HTMLDivElement | null>(null)
-  const [dragging, setDragging] = useState<null | 'title' | 'desc' | 'button'>(null)
 
   useEffect(() => {
     loadSlides()
@@ -102,34 +71,7 @@ export default function WebsiteEditingPage() {
       }
       
       // Сброс формы
-      setFormData({
-        title: '',
-        description: '',
-        imageUrl: '',
-        imagePath: '',
-        linkUrl: '',
-        isActive: true,
-        order: 1,
-        textPosition: 'center',
-        textVerticalPos: 'center',
-        textOffsetX: 0,
-        textOffsetY: 0,
-        titleColor: '#ffffff',
-        titleSize: 28,
-        descColor: '#ffffff',
-        descSize: 13,
-        textShadow: true,
-        titlePosXPct: undefined,
-        titlePosYPct: undefined,
-        descPosXPct: undefined,
-        descPosYPct: undefined,
-        showTitle: true,
-        showDesc: true,
-        showButton: false,
-        buttonText: '',
-        buttonPosXPct: undefined,
-        buttonPosYPct: undefined,
-      })
+      setFormData(DEFAULT_SLIDE_FORM)
       setShowCreateForm(false)
       setEditingSlide(null)
       
@@ -143,34 +85,7 @@ export default function WebsiteEditingPage() {
 
   const handleEdit = (slide: Slide) => {
     setEditingSlide(slide)
-    setFormData({
-      title: slide.title,
-      description: slide.description || '',
-      imageUrl: slide.imageUrl || '',
-      imagePath: slide.imagePath || '',
-      linkUrl: slide.linkUrl || '',
-      isActive: slide.isActive,
-      order: slide.order,
-      textPosition: slide.textPosition || 'center',
-      textVerticalPos: slide.textVerticalPos || 'center',
-      textOffsetX: slide.textOffsetX || 0,
-      textOffsetY: slide.textOffsetY || 0,
-      titleColor: slide.titleColor || '#ffffff',
-      titleSize: slide.titleSize || 28,
-      descColor: slide.descColor || '#ffffff',
-      descSize: slide.descSize || 13,
-      textShadow: slide.textShadow !== undefined ? slide.textShadow : true,
-      titlePosXPct: slide.titlePosXPct,
-      titlePosYPct: slide.titlePosYPct,
-      descPosXPct: slide.descPosXPct,
-      descPosYPct: slide.descPosYPct,
-      showTitle: slide.showTitle !== undefined ? slide.showTitle : true,
-      showDesc: slide.showDesc !== undefined ? slide.showDesc : true,
-      showButton: slide.showButton ?? false,
-      buttonText: slide.buttonText ?? '',
-      buttonPosXPct: slide.buttonPosXPct,
-      buttonPosYPct: slide.buttonPosYPct,
-    })
+    setFormData(slideToFormData(slide))
     setShowCreateForm(true)
   }
 
@@ -200,34 +115,7 @@ export default function WebsiteEditingPage() {
     setShowCreateForm(false)
     setEditingSlide(null)
     setSelectedFile(null)
-    setFormData({
-      title: '',
-      description: '',
-      imageUrl: '',
-      imagePath: '',
-      linkUrl: '',
-      isActive: true,
-      order: 1,
-      textPosition: 'center',
-      textVerticalPos: 'center',
-      textOffsetX: 0,
-      textOffsetY: 0,
-      titleColor: '#ffffff',
-      titleSize: 28,
-      descColor: '#ffffff',
-      descSize: 13,
-      textShadow: true,
-      titlePosXPct: undefined,
-      titlePosYPct: undefined,
-      descPosXPct: undefined,
-      descPosYPct: undefined,
-      showTitle: true,
-      showDesc: true,
-      showButton: false,
-      buttonText: '',
-      buttonPosXPct: undefined,
-      buttonPosYPct: undefined,
-    })
+    setFormData(DEFAULT_SLIDE_FORM)
   }
 
   return (
@@ -279,410 +167,21 @@ export default function WebsiteEditingPage() {
               )}
 
               {/* Форма создания/редактирования */}
-              {showCreateForm && ( 
-                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
-                  <h3 className="text-lg font-medium mb-4">
-                    {editingSlide ? 'Редактировать слайдер' : 'Создать новый слайдер'}
+              {showCreateForm && (
+                <div className="mb-6 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-5">
+                    {editingSlide ? 'Редактировать слайд' : 'Новый слайд'}
                   </h3>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="Заголовок"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        required
-                      />
-                      <Input
-                        label="Описание"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      />
-                      
-                      {/* Загрузка изображения */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Изображение слайдера
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleFileUpload(file)
-                            }}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                          />
-                          {uploading && <span className="text-blue-600">Загрузка...</span>}
-                          {selectedFile && <span className="text-green-600">✓ {selectedFile.name}</span>}
-                        </div>
-
-                        {/* Кнопка на слайдере */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Показывать Кнопку</label>
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={!!formData.showButton}
-                                onChange={(e) => setFormData({ ...formData, showButton: e.target.checked })}
-                                className="mr-2"
-                              />
-                              Кнопка
-                            </label>
-                          </div>
-                          <div className="md:col-span-2">
-                            <Input
-                              label="Текст кнопки"
-                              value={formData.buttonText}
-                              onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
-                              placeholder="Например: Подробнее"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Кнопка X (%)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={formData.buttonPosXPct ?? ''}
-                              onChange={(e) => setFormData({ ...formData, buttonPosXPct: e.target.value === '' ? undefined : Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="—"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Кнопка Y (%)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={formData.buttonPosYPct ?? ''}
-                              onChange={(e) => setFormData({ ...formData, buttonPosYPct: e.target.value === '' ? undefined : Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="—"
-                            />
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              type="button"
-                              onClick={() => setFormData({ ...formData, buttonPosXPct: undefined, buttonPosYPct: undefined })}
-                              className="bg-gray-500 hover:bg-gray-600 text-white"
-                            >
-                              Сбросить кнопку
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Поддерживаемые форматы: JPG, PNG, GIF, WebP. Максимальный размер: 5MB
-                        </p>
-                      </div>
-
-                      {/* Удалено поле URL изображения по требованию */}
-                      <Input
-                        label="Ссылка"
-                        value={formData.linkUrl}
-                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                      />
-
-                      {/* Позиционирование текста */}
-                      <div className="md:col-span-2">
-                        <h4 className="text-lg font-medium text-gray-900 mb-3">Настройки текста</h4>
-                        {/* Удалены селекты Горизонтальное/Вертикальное положение по требованию. Оставлена настройка тени ниже. */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="flex items-center">
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={formData.textShadow}
-                                onChange={(e) => setFormData({ ...formData, textShadow: e.target.checked })}
-                                className="mr-2"
-                              />
-                              Тень текста
-                            </label>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                          <Input
-                            label="Смещение X (px)"
-                            type="number"
-                            value={formData.textOffsetX}
-                            onChange={(e) => setFormData({ ...formData, textOffsetX: parseInt(e.target.value) || 0 })}
-                          />
-                          <Input
-                            label="Смещение Y (px)"
-                            type="number"
-                            value={formData.textOffsetY}
-                            onChange={(e) => setFormData({ ...formData, textOffsetY: parseInt(e.target.value) || 0 })}
-                          />
-                          <Input
-                            label="Размер заголовка (px)"
-                            type="number"
-                            value={formData.titleSize}
-                            onChange={(e) => setFormData({ ...formData, titleSize: parseInt(e.target.value) || 28 })}
-                            min="10"
-                            max="100"
-                          />
-                          <Input
-                            label="Размер описания (px)"
-                            type="number"
-                            value={formData.descSize}
-                            onChange={(e) => setFormData({ ...formData, descSize: parseInt(e.target.value) || 13 })}
-                            min="8"
-                            max="50"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Цвет заголовка
-                            </label>
-                            <input
-                              type="color"
-                              value={formData.titleColor}
-                              onChange={(e) => setFormData({ ...formData, titleColor: e.target.value })}
-                              className="block w-full h-10 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Цвет описания
-                            </label>
-                            <input
-                              type="color"
-                              value={formData.descColor}
-                              onChange={(e) => setFormData({ ...formData, descColor: e.target.value })}
-                              className="block w-full h-10 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Независимое позиционирование заголовка и описания (проценты) */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Показывать Заголовок</label>
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={!!formData.showTitle}
-                                onChange={(e) => setFormData({ ...formData, showTitle: e.target.checked })}
-                                className="mr-2"
-                              />
-                              Заголовок
-                            </label>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Показывать Описание</label>
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={!!formData.showDesc}
-                                onChange={(e) => setFormData({ ...formData, showDesc: e.target.checked })}
-                                className="mr-2"
-                              />
-                              Описание
-                            </label>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Заголовок X (%)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={formData.titlePosXPct ?? ''}
-                              onChange={(e) => setFormData({ ...formData, titlePosXPct: e.target.value === '' ? undefined : Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="—"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Заголовок Y (%)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={formData.titlePosYPct ?? ''}
-                              onChange={(e) => setFormData({ ...formData, titlePosYPct: e.target.value === '' ? undefined : Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="—"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Описание X (%)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={formData.descPosXPct ?? ''}
-                              onChange={(e) => setFormData({ ...formData, descPosXPct: e.target.value === '' ? undefined : Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="—"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Описание Y (%)</label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={formData.descPosYPct ?? ''}
-                              onChange={(e) => setFormData({ ...formData, descPosYPct: e.target.value === '' ? undefined : Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="—"
-                            />
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              type="button"
-                              onClick={() => setFormData({ ...formData, titlePosXPct: undefined, titlePosYPct: undefined, descPosXPct: undefined, descPosYPct: undefined })}
-                              className="bg-gray-500 hover:bg-gray-600 text-white"
-                            >
-                              Сбросить проценты
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Превью и перетаскивание */}
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Превью слайдера (перетащите Заголовок/Описание/Кнопку)</label>
-                          <div
-                            ref={previewRef}
-                            className="relative w-full"
-                            style={{
-                              paddingTop: '35%',
-                              backgroundColor: '#111',
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                              backgroundImage: (formData.imagePath || formData.imageUrl) ? `url(${formData.imagePath ? `${process.env.NEXT_PUBLIC_API_URL}/${formData.imagePath}` : formData.imageUrl})` : 'none',
-                              borderRadius: 8,
-                              overflow: 'hidden',
-                            }}
-                            onMouseMove={(e) => {
-                              if (!dragging || !previewRef.current) return
-                              const rect = previewRef.current.getBoundingClientRect()
-                              const xPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
-                              const yPct = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
-                              if (dragging === 'title') {
-                                setFormData({ ...formData, titlePosXPct: Math.round(xPct), titlePosYPct: Math.round(yPct) })
-                              } else if (dragging === 'desc') {
-                                setFormData({ ...formData, descPosXPct: Math.round(xPct), descPosYPct: Math.round(yPct) })
-                              } else if (dragging === 'button') {
-                                setFormData({ ...formData, buttonPosXPct: Math.round(xPct), buttonPosYPct: Math.round(yPct) })
-                              }
-                            }}
-                            onMouseUp={() => setDragging(null)}
-                            onMouseLeave={() => setDragging(null)}
-                          >
-                            {/* Draggable title */}
-                            {formData.showTitle && formData.title && (
-                              <div
-                                onMouseDown={() => setDragging('title')}
-                                style={{
-                                  position: 'absolute',
-                                  left: `${(formData.titlePosXPct ?? 50)}%`,
-                                  top: `${(formData.titlePosYPct ?? 40)}%`,
-                                  transform: 'translate(-50%, -50%)',
-                                  color: formData.titleColor,
-                                  fontSize: `${formData.titleSize}px`,
-                                  fontWeight: 'bold',
-                                  textShadow: formData.textShadow ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none',
-                                  cursor: 'move',
-                                  userSelect: 'none',
-                                }}
-                              >
-                                {formData.title}
-                              </div>
-                            )}
-                          {/* Draggable button */}
-                          {formData.showButton && formData.buttonText && (
-                            <button
-                              type="button"
-                              onMouseDown={() => setDragging('button')}
-                              style={{
-                                position: 'absolute',
-                                left: `${(formData.buttonPosXPct ?? 50)}%`,
-                                top: `${(formData.buttonPosYPct ?? 70)}%`,
-                                transform: 'translate(-50%, -50%)',
-                                background: 'white',
-                                color: 'black',
-                                padding: '12px 16px',
-                                borderRadius: 8,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                                cursor: 'move',
-                                userSelect: 'none',
-                                border: 'none',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {formData.buttonText}
-                            </button>
-                          )}
-                            {/* Draggable description */}
-                          {formData.showDesc && formData.description && (
-                              <div
-                                onMouseDown={() => setDragging('desc')}
-                                style={{
-                                  position: 'absolute',
-                                  left: `${(formData.descPosXPct ?? 50)}%`,
-                                  top: `${formData.descPosYPct !== undefined ? formData.descPosYPct : 55}%`,
-                                  transform: 'translate(-50%, -50%)',
-                                  color: formData.descColor,
-                                  fontSize: `${formData.descSize}px`,
-                                  textShadow: formData.textShadow ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none',
-                                  cursor: 'move',
-                                  userSelect: 'none',
-                                }}
-                              >
-                                {formData.description}
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Подсказка: удерживайте мышь на тексте и перетаскивайте его для выставления точной позиции. Позиции сохраняются в процентах.</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.isActive}
-                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                            className="mr-2"
-                          />
-                          Активен
-                        </label>
-                        <Input
-                          label="Порядок"
-                          type="number"
-                          value={formData.order}
-                          onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                          min="1"
-                          className="w-24"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
-                        {editingSlide ? 'Обновить' : 'Создать'}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        onClick={cancelForm}
-                        className="bg-gray-500 hover:bg-gray-600 text-white"
-                      >
-                        Отмена
-                      </Button>
-                    </div>
-                  </form>
+                  <SlideEditorForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onSubmit={handleSubmit}
+                    onCancel={cancelForm}
+                    editing={!!editingSlide}
+                    uploading={uploading}
+                    selectedFile={selectedFile}
+                    onFileSelect={handleFileUpload}
+                  />
                 </div>
               )}
               {loading ? (

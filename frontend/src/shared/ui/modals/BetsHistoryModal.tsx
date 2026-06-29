@@ -10,6 +10,8 @@ import styles from "./BetsHistoryStyles.module.css";
 import { api } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { createTitleForBet } from "~/entities/bet/lib";
+import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { mapWcBetsForHistory } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
 
 type BetStatus = "PENDING" | "WIN" | "LOSE" | "RETURN";
 type TabType = "all" | "express" | "ordinar";
@@ -35,6 +37,16 @@ export const BetsHistoryModal = ({
     const router = useRouter();
 
     const handleBetClick = (bet: any) => {
+        if (bet?.isWcBet && bet?.wcGameHref) {
+            router.push(bet.wcGameHref);
+            onClose();
+            return;
+        }
+        if (bet?.isWcBet) {
+            router.push("/line/soccer");
+            onClose();
+            return;
+        }
         // Для обычной ставки
         if (bet.game?.parentEventId) {
             router.push(`/game/${bet.game.parentEventId}`);
@@ -72,15 +84,33 @@ export const BetsHistoryModal = ({
         refetchInterval: 30000, // Обновляем каждые 30 секунд
         refetchIntervalInBackground: true,
     });
-    
-    const filteredBets = bets ?
-        tab === "all" ? [...(bets.express || []), ...(bets.ordinar || [])] :
-            tab === "express" ? bets.express || [] :
-                bets.ordinar || []
-        : [];
+
+    const { data: wcBets = [], isLoading: wcLoading } = useQuery({
+        queryKey: ["wc-bets", "all"],
+        queryFn: () => getMyWcBets(),
+        refetchInterval: 30000,
+        refetchIntervalInBackground: true,
+    });
+
+    const mergedBets: BetsResponse = {
+        express: bets?.express || [],
+        ordinar: [...(bets?.ordinar || []), ...mapWcBetsForHistory(wcBets)],
+    };
+
+    const filteredBets = (mergedBets
+        ? tab === "all" ? [...(mergedBets.express || []), ...(mergedBets.ordinar || [])] :
+            tab === "express" ? mergedBets.express || [] :
+                mergedBets.ordinar || []
+        : []
+    ).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 
     // Helper functions to get event name and choice
     const getEventName = (bet: any): string => {
+        if (bet.isWcBet) {
+            return bet.eventName;
+        }
         if (bet.bets?.length > 0) {
             // Express bet - show first bet's event or generic name
             const firstBet = bet.bets[0];
@@ -113,6 +143,13 @@ export const BetsHistoryModal = ({
     };
 
     const getChoice = (bet: any): string => {
+        if (bet.isWcBet) {
+            const info = bet.betInfo || "Ставка";
+            if (bet.score && !/сч[ёе]т\s*:/i.test(info)) {
+                return `${info} · Счёт: ${bet.score}`;
+            }
+            return info;
+        }
         if (bet.bets?.length > 0) {
             // Express bet - show number of events with score info if available
             let choiceText = `Экспресс из ${bet.bets.length} событий`;
@@ -180,7 +217,7 @@ export const BetsHistoryModal = ({
             </div>
 
             <div className={styles.content}>
-                {isLoading ? (
+                {isLoading || wcLoading ? (
                     <div className={styles.loadingText}>Загрузка ставок...</div>
                 ) : !filteredBets.length ? (
                     <div className={styles.emptyBlock}>
@@ -210,7 +247,9 @@ export const BetsHistoryModal = ({
                                             </span>
                                             {tab === "all" && (
                                                 <span className={styles.betType}>
-                                                    {(bet as any).betVariant === 'EXPRESS' ? "Экспресс" : "Ординар"}
+                                                    {(bet as any).isWcBet
+                                                        ? "Ординар"
+                                                        : (bet as any).betVariant === 'EXPRESS' ? "Экспресс" : "Ординар"}
                                                 </span>
                                             )}
                                         </div>
@@ -237,8 +276,12 @@ export const BetsHistoryModal = ({
                                             <span className={styles.betCoefficientValue}>{bet.cf || 'N/A'}</span>
                                         </div>
                                         <div className={styles.betAmount}>
-                                            <span className={styles.betAmountLabel}>Сумма:</span>
-                                            <span className={styles.betAmountValue}>{bet.amount} {getSymbolFromCurrency(bet.currencyCode) || bet.currencyCode}</span>
+                                            <span className={styles.betAmountLabel}>
+                                                {bet.status === "WIN" ? "Выигрыш:" : bet.status === "RETURN" ? "Возврат:" : "Ставка:"}
+                                            </span>
+                                            <span className={styles.betAmountValue}>
+                                                {getPayoutDisplay(bet)} {getSymbolFromCurrency(bet.currencyCode) || bet.currencyCode}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -250,6 +293,21 @@ export const BetsHistoryModal = ({
         </div>
     );
 };
+
+function getPayoutDisplay(bet: any): string {
+    const stake = Number(bet.amount) || 0;
+
+    if (bet.status === "WIN") {
+        // WC bets carry an exact payout; legacy bets fall back to stake × coef.
+        const payout = bet.payout != null
+            ? Number(bet.payout)
+            : stake * (Number(bet.cf) || 1);
+        return Number.isFinite(payout) ? String(Math.round(payout)) : String(stake);
+    }
+
+    // LOSE / PENDING / RETURN — show the stake itself.
+    return String(Math.round(stake));
+}
 
 function isGameFinished(game: any): boolean {
     if (!game) return false;
@@ -279,6 +337,9 @@ function isGameFinished(game: any): boolean {
 }
 
 function getGameStatus(bet: any): { isFinished: boolean; game: any } {
+    if (bet.isWcBet) {
+        return { isFinished: Boolean(bet.eventCompleted), game: null };
+    }
     // Для экспресс-ставок проверяем все игры
     if (bet.bets && bet.bets.length > 0) {
         // Экспресс считается завершенным, если все игры завершены

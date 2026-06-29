@@ -97,6 +97,8 @@ export interface components {
       eventName: string;
       team1: string;
       team2: string;
+      team1Icon?: string | null;
+      team2Icon?: string | null;
       sport: string;
       leagueName: string;
       status?: string;

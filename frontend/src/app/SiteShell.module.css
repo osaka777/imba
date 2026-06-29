@@ -1,0 +1,37 @@
+/* Shared page shell — nav and content use the same grid width */
+.siteShell {
+  width: 100%;
+  max-width: var(--layout-max-w, none);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.navSlot {
+  width: 100%;
+  min-width: 0;
+}
+
+.siteMain {
+  width: 100%;
+  min-width: 0;
+}
+
+.fullBleed {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1081px) {
+  .siteShell {
+    gap: var(--layout-gap, 18px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .siteShell {
+    padding-inline: 0;
+  }
+}

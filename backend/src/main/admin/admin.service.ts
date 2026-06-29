@@ -1154,13 +1154,15 @@ export class AdminService {
               }
               console.log(`[approveDeposit] computed bonusAmount=${bonusAmount} currency=${bonusCurrency} tokens=${totalTokens}`);
 
-              if (allowApply && bonusAmount > 0) {
+              if (allowApply && (bonusAmount > 0 || totalTokens > 0)) {
                 // Create or update BonusBalance with bonus amount
                 const existingBB = await tx.bonusBalance.findUnique({
                   where: { userId_currencyCode: { userId: depo.userId, currencyCode: bonusCurrency } },
                 });
 
-                const requiredWagerAmount = new Decimal(bonusAmount).mul(3); // Нужно отыграть бонус × 3
+                const requiredWagerAmount = bonusAmount > 0
+                  ? new Decimal(bonusAmount).mul(3)
+                  : new Decimal(0);
 
                 if (existingBB) {
                   await tx.bonusBalance.update({
@@ -1202,18 +1204,20 @@ export class AdminService {
                 }
                 console.log(`[approveDeposit] BonusBalance created/updated for userId=${depo.userId} amount=${bonusAmount} requiredWager=${requiredWagerAmount.toString()}`);
 
-                await tx.operation.create({
-                  data: {
-                    userId: depo.userId,
-                    source: OperationSource.PROMO,
-                    status: OperationStatus.SUCCESS,
-                    type: OperationType.INCOME,
-                    amount: new Decimal(bonusAmount),
-                    currencyCode: bonusCurrency,
-                    meta: { promoId: promo.id, promoCode: promo.code, type: promo.type, depositId: depo.id, target: 'BonusBalance' },
-                  },
-                });
-                console.log(`[approveDeposit] bonus operation created for userId=${depo.userId} amount=${bonusAmount}`);
+                if (bonusAmount > 0) {
+                  await tx.operation.create({
+                    data: {
+                      userId: depo.userId,
+                      source: OperationSource.PROMO,
+                      status: OperationStatus.SUCCESS,
+                      type: OperationType.INCOME,
+                      amount: new Decimal(bonusAmount),
+                      currencyCode: bonusCurrency,
+                      meta: { promoId: promo.id, promoCode: promo.code, type: promo.type, depositId: depo.id, target: 'BonusBalance' },
+                    },
+                  });
+                  console.log(`[approveDeposit] bonus operation created for userId=${depo.userId} amount=${bonusAmount}`);
+                }
 
                 // Record bonus history entry for visibility
                 await tx.bonusHistory.create({
@@ -1244,7 +1248,7 @@ export class AdminService {
                 tokensPerBet = tokensPerBetVal;
                 tokenMinOdds = tokenMinOddsVal;
               } else {
-                console.log(`[approveDeposit] Computed bonusAmount <= 0 for promo ${promo.code}`);
+                console.log(`[approveDeposit] Computed bonusAmount <= 0 and no tokens for promo ${promo.code}`);
               }
             }
           }

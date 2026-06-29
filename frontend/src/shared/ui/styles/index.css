@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("./fonts.css");
+@import url("./fonts-core.css");
 @import url("./variables.css");
 @import url("./scrollbar.css");
 
@@ -74,6 +74,24 @@ body,
 
 #root {
   padding: 12px;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 767px) {
+  #root {
+    padding: 4px;
+    padding-bottom: 76px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
 }
 #root,
 #__next {

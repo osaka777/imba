@@ -15,8 +15,12 @@ export interface Slide {
   // Независимые позиции (в процентах)
   titlePosXPct?: number
   titlePosYPct?: number
+  titleMobilePosXPct?: number
+  titleMobilePosYPct?: number
   descPosXPct?: number
   descPosYPct?: number
+  descMobilePosXPct?: number
+  descMobilePosYPct?: number
   // Переключатели отображения
   showTitle?: boolean
   showDesc?: boolean
@@ -25,12 +29,18 @@ export interface Slide {
   buttonText?: string
   buttonPosXPct?: number
   buttonPosYPct?: number
+  buttonMobilePosXPct?: number
+  buttonMobilePosYPct?: number
   // Стилизация текста
   titleColor: string
   titleSize: number
+  titleMobileSize?: number
   descColor: string
   descSize: number
+  descMobileSize?: number
   textShadow: boolean
+  buttonSize?: number
+  buttonMobileSize?: number
   createdAt: string
   updatedAt: string
 }
@@ -50,19 +60,29 @@ export interface CreateSlideData {
   textOffsetY?: number
   titlePosXPct?: number
   titlePosYPct?: number
+  titleMobilePosXPct?: number
+  titleMobilePosYPct?: number
   descPosXPct?: number
   descPosYPct?: number
+  descMobilePosXPct?: number
+  descMobilePosYPct?: number
   showTitle?: boolean
   showDesc?: boolean
   showButton?: boolean
   buttonText?: string
   buttonPosXPct?: number
   buttonPosYPct?: number
+  buttonMobilePosXPct?: number
+  buttonMobilePosYPct?: number
   titleColor?: string
   titleSize?: number
+  titleMobileSize?: number
   descColor?: string
   descSize?: number
+  descMobileSize?: number
   textShadow?: boolean
+  buttonSize?: number
+  buttonMobileSize?: number
 }
 
 export interface UpdateSlideData extends Partial<CreateSlideData> {}

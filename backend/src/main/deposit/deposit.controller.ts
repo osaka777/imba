@@ -43,7 +43,15 @@ import { NirvanaPayPayinService } from '~/integrations/payment-system/nirvanapay
 
 import { CreateDepositDto } from './dto/create-deposit.dto';
 import { DepositService } from './deposit.service';
+import { PromoModalService } from '../promo-modal/promo-modal.service';
+import { loadPromoModalSettings } from '../promo-modal/promo-modal.store';
 import { getManualDepositConfig, ManualDepositCurrency } from './manual-deposit-config.store';
+import { calculateBrlFromRub } from './rub-brl.util';
+import {
+  MANUAL_FOREIGN_CARD_METHODS,
+  ManualForeignCardPaymentSystem,
+  getManualDepositKeyForMethod,
+} from './manual-deposit.types';
 import {
   isManualDepositEnabled,
   isPaymentMethodEnabled,
@@ -53,6 +61,7 @@ import {
   createUniquePublicOrderId,
   ensurePublicOrderId,
 } from './deposit-public-order-id.util';
+import { createUniquePayAmount } from './usdt-trc20.util';
 
 @ApiTags('Deposits')
 @Controller('deposit')
@@ -63,6 +72,7 @@ export class DepositController {
     private readonly nirvanaPayPayinService: NirvanaPayPayinService,
     private readonly depositService: DepositService,
     private readonly prisma: PrismaService,
+    private readonly promoModalService: PromoModalService,
     @Inject('winston') private readonly winstonLogger: WinstonLogger,
   ) {}
 
@@ -187,7 +197,7 @@ export class DepositController {
   @UseGuards(AuthenticationGuard)
   async getManualDepositConfigEndpoint(@Query('currency') currency: string) {
     const code = String(currency || 'KZT').toUpperCase();
-    if (code !== 'KZT' && code !== 'RUB') {
+    if (code !== 'KZT' && code !== 'KZT_KASPI' && code !== 'RUB' && code !== 'RUB_SBERBANK') {
       throw new BadRequestException('Unsupported currency');
     }
     return getManualDepositConfig(code as ManualDepositCurrency);
@@ -202,25 +212,34 @@ export class DepositController {
     body: {
       amount?: number | string;
       currency?: string;
-      method?: 'KZT_FOREIGN_CARD' | 'RUB_FOREIGN_CARD';
+      method?: ManualForeignCardPaymentSystem;
       source?: string;
+      voucher?: string;
     },
   ) {
     const userId = Number(req.user.id);
     const method = String(body?.method || 'KZT_FOREIGN_CARD').toUpperCase();
-    if (!['KZT_FOREIGN_CARD', 'RUB_FOREIGN_CARD'].includes(method)) {
+    if (!MANUAL_FOREIGN_CARD_METHODS.includes(method as ManualForeignCardPaymentSystem)) {
       throw new BadRequestException('Unsupported manual method');
     }
-    const currency = String(body?.currency || (method === 'RUB_FOREIGN_CARD' ? 'RUB' : 'KZT')).toUpperCase();
-    if (!isManualDepositEnabled(currency as ManualDepositCurrency)) {
+    const currency = String(
+      body?.currency ||
+        (method === 'RUB_FOREIGN_CARD' || method === 'RUB_SBERBANK' ? 'RUB' : 'KZT'),
+    ).toUpperCase();
+    const voucherInput = String(body?.voucher ?? '').trim() || undefined;
+    if (voucherInput) {
+      this.promoModalService.validateVoucherForModal(voucherInput, currency);
+      await this.promoModalService.assertPromoAvailable(userId, voucherInput);
+    }
+    const configKey = getManualDepositKeyForMethod(method as ManualForeignCardPaymentSystem);
+    if (!isManualDepositEnabled(configKey)) {
       throw new BadRequestException('Этот способ пополнения временно недоступен');
     }
-    const methodKey =
-      method === 'RUB_FOREIGN_CARD' ? 'RUB_FOREIGN_CARD' : 'KZT_FOREIGN_CARD';
+    const methodKey = method as ManualForeignCardPaymentSystem;
     if (!isPaymentMethodEnabled(methodKey as any)) {
       throw new BadRequestException('Этот способ пополнения временно недоступен');
     }
-    const config = getManualDepositConfig(currency as ManualDepositCurrency);
+    const config = getManualDepositConfig(configKey);
     const amountNum = parseFloat(String(body?.amount ?? '').replace(',', '.'));
     if (!amountNum || Number.isNaN(amountNum)) {
       throw new BadRequestException('Укажите сумму пополнения');
@@ -228,6 +247,18 @@ export class DepositController {
     if (amountNum < config.minAmount) {
       throw new BadRequestException(
         `Минимальная сумма пополнения — ${config.minAmount} ${currency}`,
+      );
+    }
+
+    const settings = loadPromoModalSettings();
+    if (
+      voucherInput &&
+      voucherInput.toUpperCase() === settings.promoCode.trim().toUpperCase() &&
+      amountNum < settings.minDepositAmount &&
+      currency.toUpperCase() === settings.minDepositCurrency.toUpperCase()
+    ) {
+      throw new BadRequestException(
+        `Для акции минимальное пополнение — ${settings.minDepositAmount} ${currency}`,
       );
     }
 
@@ -242,6 +273,7 @@ export class DepositController {
 
     if (existing) {
       const publicOrderId = await ensurePublicOrderId(this.prisma, existing);
+      const existingMeta = (existing.meta as any) || {};
       return {
         ok: true,
         order: {
@@ -253,11 +285,27 @@ export class DepositController {
           status: existing.status === 'PENDING' ? 'pending' : 'processing',
           createdAt: existing.createdAt,
           meta: existing.meta,
+          brlAmount: existingMeta.brlAmount,
+          rubPerBrl: existingMeta.rubPerBrl,
         },
       };
     }
 
     const publicOrderId = await createUniquePublicOrderId(this.prisma);
+    const orderMeta: Record<string, unknown> = {
+      lifecycle: 'INITIATED',
+      initiatedSource: body?.source || 'manual-modal',
+      initiatedAt: new Date().toISOString(),
+      expiresInMinutes: 15,
+      publicOrderId,
+    };
+    if (methodKey === 'RUB_SBERBANK' && config.rubPerBrl) {
+      orderMeta.rubPerBrl = config.rubPerBrl;
+      orderMeta.brlAmount = calculateBrlFromRub(amountNum, config.rubPerBrl);
+    }
+    if (voucherInput) {
+      orderMeta.voucher = voucherInput;
+    }
     const created = await this.prisma.deposit.create({
       data: {
         userId,
@@ -266,13 +314,7 @@ export class DepositController {
         amount: new Decimal(amountNum),
         currencyCode: currency,
         status: 'PENDING' as any,
-        meta: {
-          lifecycle: 'INITIATED',
-          initiatedSource: body?.source || 'manual-modal',
-          initiatedAt: new Date().toISOString(),
-          expiresInMinutes: 15,
-          publicOrderId,
-        } as any,
+        meta: orderMeta as any,
       },
     });
 
@@ -298,7 +340,7 @@ export class DepositController {
     @Body()
     body: {
       orderId?: number | string;
-      method?: 'KZT_FOREIGN_CARD' | 'RUB_FOREIGN_CARD';
+      method?: ManualForeignCardPaymentSystem;
     },
   ) {
     const userId = Number(req.user.id);
@@ -308,13 +350,13 @@ export class DepositController {
     if (orderId && Number.isNaN(orderId)) {
       throw new BadRequestException('Некорректный ID заявки');
     }
-    if (method && !['KZT_FOREIGN_CARD', 'RUB_FOREIGN_CARD'].includes(method)) {
+    if (method && !MANUAL_FOREIGN_CARD_METHODS.includes(method as ManualForeignCardPaymentSystem)) {
       throw new BadRequestException('Unsupported manual method');
     }
 
     const where: any = {
       userId,
-      paymentSystem: { in: ['KZT_FOREIGN_CARD', 'RUB_FOREIGN_CARD'] as any },
+      paymentSystem: { in: MANUAL_FOREIGN_CARD_METHODS as any },
       status: { in: ['PENDING', 'PROCESSING'] as any },
     };
     if (orderId) where.id = orderId;
@@ -354,7 +396,7 @@ export class DepositController {
     const rows = await this.prisma.deposit.findMany({
       where: {
         userId,
-        paymentSystem: { in: ['KZT_FOREIGN_CARD', 'RUB_FOREIGN_CARD'] as any },
+        paymentSystem: { in: MANUAL_FOREIGN_CARD_METHODS as any },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -444,7 +486,7 @@ export class DepositController {
     return this.handleManualForeignCardUpload(req, res, files, {
       paymentSystem: 'KZT_FOREIGN_CARD',
       defaultCurrency: 'KZT',
-      minAmount: 3000,
+      minAmount: getManualDepositConfig('KZT').minAmount,
       externalPrefix: 'kzt_rcpt',
     });
   }
@@ -453,6 +495,63 @@ export class DepositController {
   @UseGuards(AuthenticationGuard)
   async getMyKztForeignCard(@Req() req: any) {
     return this.getMyManualForeignCard(req, 'KZT_FOREIGN_CARD');
+  }
+
+  @Post('kzt-kaspi')
+  @UseGuards(AuthenticationGuard)
+  @HttpCode(200)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'receipt', maxCount: 1 },
+        { name: 'file', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: (req, file, cb) => {
+            const dir = join(process.cwd(), 'uploads', 'receipts');
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+          },
+          filename: (req, file, cb) => {
+            const unique = `${Date.now()}_${Math.round(Math.random() * 1e9)}`;
+            const safeExt = extname(file.originalname || '')
+              .replace(/[^a-zA-Z0-9.]/g, '')
+              .slice(0, 10);
+            cb(null, `${unique}${safeExt || '.jpg'}`);
+          },
+        }),
+        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+          const ok = (file.mimetype || '').startsWith('image/');
+          cb(null, ok);
+        },
+      },
+    ),
+  )
+  async uploadKztKaspi(
+    @Req() req: any,
+    @UploadedFiles()
+    files: {
+      receipt?: Express.Multer.File[];
+      file?: Express.Multer.File[];
+      image?: Express.Multer.File[];
+    },
+    @Res({ passthrough: true }) res: any,
+  ) {
+    return this.handleManualForeignCardUpload(req, res, files, {
+      paymentSystem: 'KZT_KASPI',
+      defaultCurrency: 'KZT',
+      minAmount: getManualDepositConfig('KZT_KASPI').minAmount,
+      externalPrefix: 'kzt_kaspi_rcpt',
+    });
+  }
+
+  @Get('kzt-kaspi/me')
+  @UseGuards(AuthenticationGuard)
+  async getMyKztKaspi(@Req() req: any) {
+    return this.getMyManualForeignCard(req, 'KZT_KASPI');
   }
 
   @Post('rub-foreign-card')
@@ -512,9 +611,292 @@ export class DepositController {
     return this.getMyManualForeignCard(req, 'RUB_FOREIGN_CARD');
   }
 
+  @Post('rub-sberbank')
+  @UseGuards(AuthenticationGuard)
+  @HttpCode(200)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'receipt', maxCount: 1 },
+        { name: 'file', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: (req, file, cb) => {
+            const dir = join(process.cwd(), 'uploads', 'receipts');
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+          },
+          filename: (req, file, cb) => {
+            const unique = `${Date.now()}_${Math.round(Math.random() * 1e9)}`;
+            const safeExt = extname(file.originalname || '')
+              .replace(/[^a-zA-Z0-9.]/g, '')
+              .slice(0, 10);
+            cb(null, `${unique}${safeExt || '.jpg'}`);
+          },
+        }),
+        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+          const ok = (file.mimetype || '').startsWith('image/');
+          cb(null, ok);
+        },
+      },
+    ),
+  )
+  async uploadRubSberbank(
+    @Req() req: any,
+    @UploadedFiles()
+    files: {
+      receipt?: Express.Multer.File[];
+      file?: Express.Multer.File[];
+      image?: Express.Multer.File[];
+    },
+    @Res({ passthrough: true }) res: any,
+  ) {
+    return this.handleManualForeignCardUpload(req, res, files, {
+      paymentSystem: 'RUB_SBERBANK',
+      defaultCurrency: 'RUB',
+      minAmount: getManualDepositConfig('RUB_SBERBANK').minAmount,
+      externalPrefix: 'rub_sberbank_rcpt',
+    });
+  }
+
+  @Get('rub-sberbank/me')
+  @UseGuards(AuthenticationGuard)
+  async getMyRubSberbank(@Req() req: any) {
+    return this.getMyManualForeignCard(req, 'RUB_SBERBANK');
+  }
+
+  @Get('usdt-trc20/config')
+  @UseGuards(AuthenticationGuard)
+  async getUsdtTrc20Config() {
+    if (!isManualDepositEnabled('USDT')) {
+      throw new BadRequestException('USDT пополнение временно недоступно');
+    }
+    if (!isPaymentMethodEnabled('USDT_TRC20')) {
+      throw new BadRequestException('USDT пополнение временно недоступно');
+    }
+    const config = getManualDepositConfig('USDT');
+    return {
+      walletAddress: config.walletAddress || config.cardNumber,
+      network: 'TRC-20',
+      token: 'USDT',
+      minAmount: config.minAmount,
+      qrImageUrl: config.qrImageUrl,
+    };
+  }
+
+  @Post('usdt-trc20/init')
+  @UseGuards(AuthenticationGuard)
+  @HttpCode(200)
+  async initUsdtTrc20Order(
+    @Req() req: any,
+    @Body() body: { amount?: number | string; source?: string },
+  ) {
+    const userId = Number(req.user.id);
+    if (!isManualDepositEnabled('USDT')) {
+      throw new BadRequestException('USDT пополнение временно недоступно');
+    }
+    if (!isPaymentMethodEnabled('USDT_TRC20')) {
+      throw new BadRequestException('USDT пополнение временно недоступно');
+    }
+    const config = getManualDepositConfig('USDT');
+    const walletAddress = config.walletAddress || config.cardNumber;
+    if (!walletAddress) {
+      throw new BadRequestException('USDT кошелёк не настроен');
+    }
+
+    const amountNum = parseFloat(String(body?.amount ?? '').replace(',', '.'));
+    if (!amountNum || Number.isNaN(amountNum)) {
+      throw new BadRequestException('Укажите сумму пополнения');
+    }
+    if (amountNum < config.minAmount) {
+      throw new BadRequestException(
+        `Минимальная сумма пополнения — ${config.minAmount} USDT`,
+      );
+    }
+
+    const existing = await this.prisma.deposit.findFirst({
+      where: {
+        userId,
+        paymentSystem: 'USDT_TRC20',
+        status: { in: ['PENDING', 'PROCESSING'] as any },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existing) {
+      const publicOrderId = await ensurePublicOrderId(this.prisma, existing);
+      const existingMeta = (existing.meta as any) || {};
+      return {
+        ok: true,
+        order: {
+          id: existing.id,
+          publicOrderId,
+          amount: Number(existing.amount),
+          payAmount: existingMeta.payAmount,
+          walletAddress: existingMeta.walletAddress,
+          network: 'TRC-20',
+          currency: 'USDT',
+          method: 'USDT_TRC20',
+          status: existing.status === 'PENDING' ? 'pending' : 'processing',
+          createdAt: existing.createdAt,
+        },
+      };
+    }
+
+    const payAmount = await createUniquePayAmount(this.prisma, amountNum);
+    const publicOrderId = await createUniquePublicOrderId(this.prisma);
+    const orderMeta = {
+      lifecycle: 'INITIATED',
+      initiatedSource: body?.source || 'deposit-modal',
+      initiatedAt: new Date().toISOString(),
+      expiresInMinutes: 45,
+      publicOrderId,
+      payAmount,
+      walletAddress,
+      network: 'TRC-20',
+      token: 'USDT',
+    };
+
+    const created = await this.prisma.deposit.create({
+      data: {
+        userId,
+        externalId: `usdt_trc20_init_${Date.now()}_${userId}`,
+        paymentSystem: 'USDT_TRC20',
+        amount: new Decimal(amountNum),
+        currencyCode: 'USDT',
+        status: 'PENDING' as any,
+        meta: orderMeta as any,
+      },
+    });
+
+    return {
+      ok: true,
+      order: {
+        id: created.id,
+        publicOrderId,
+        amount: amountNum,
+        payAmount,
+        walletAddress,
+        network: 'TRC-20',
+        currency: 'USDT',
+        method: 'USDT_TRC20',
+        status: 'pending',
+        createdAt: created.createdAt,
+      },
+    };
+  }
+
+  @Get('usdt-trc20/me')
+  @UseGuards(AuthenticationGuard)
+  async getMyUsdtTrc20(@Req() req: any) {
+    const depo = await this.prisma.deposit.findFirst({
+      where: {
+        userId: Number(req.user.id),
+        paymentSystem: 'USDT_TRC20',
+        status: { in: ['PENDING', 'PROCESSING'] as any },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!depo) return {};
+    const meta = (depo.meta as any) || {};
+    const publicOrderId = await ensurePublicOrderId(this.prisma, depo);
+    const isExpired =
+      depo.status === ('CANCELLED' as any) &&
+      (meta.autoCancelled || meta.lifecycle === 'EXPIRED');
+    return {
+      id: depo.id,
+      publicOrderId,
+      amount: Number(depo.amount),
+      payAmount: meta.payAmount,
+      walletAddress: meta.walletAddress,
+      network: meta.network || 'TRC-20',
+      currency: 'USDT',
+      method: 'USDT_TRC20',
+      status: isExpired
+        ? 'expired'
+        : depo.status === 'PENDING'
+          ? 'pending'
+          : 'processing',
+      createdAt: depo.createdAt,
+    };
+  }
+
+  @Get('usdt-trc20/order/:id')
+  @UseGuards(AuthenticationGuard)
+  async getUsdtTrc20OrderStatus(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const depo = await this.prisma.deposit.findFirst({
+      where: {
+        id,
+        userId: Number(req.user.id),
+        paymentSystem: 'USDT_TRC20',
+      },
+    });
+    if (!depo) throw new NotFoundException('Заявка не найдена');
+    const meta = (depo.meta as any) || {};
+    const publicOrderId = await ensurePublicOrderId(this.prisma, depo);
+    return {
+      id: depo.id,
+      publicOrderId,
+      amount: Number(depo.amount),
+      payAmount: meta.payAmount,
+      walletAddress: meta.walletAddress,
+      network: meta.network || 'TRC-20',
+      currency: 'USDT',
+      status:
+        depo.status === 'SUCCESS'
+          ? 'approved'
+          : depo.status === 'CANCELLED'
+            ? meta.lifecycle === 'EXPIRED'
+              ? 'expired'
+              : 'cancelled'
+            : depo.status === 'PENDING'
+              ? 'pending'
+              : 'processing',
+      txHash: meta.txHash,
+      createdAt: depo.createdAt,
+    };
+  }
+
+  @Post('usdt-trc20/cancel')
+  @UseGuards(AuthenticationGuard)
+  @HttpCode(200)
+  async cancelUsdtTrc20(@Req() req: any, @Body() body: { orderId?: number }) {
+    const userId = Number(req.user.id);
+    const where: any = {
+      userId,
+      paymentSystem: 'USDT_TRC20',
+      status: { in: ['PENDING', 'PROCESSING'] as any },
+    };
+    if (body?.orderId) where.id = Number(body.orderId);
+
+    const depo = await this.prisma.deposit.findFirst({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!depo) return { ok: true, cancelled: false };
+
+    const oldMeta = (depo.meta as any) || {};
+    await this.prisma.deposit.update({
+      where: { id: depo.id },
+      data: {
+        status: 'CANCELLED' as any,
+        meta: {
+          ...oldMeta,
+          userCancelled: true,
+          lifecycle: 'CANCELLED_BY_USER',
+          cancelledAt: new Date().toISOString(),
+        } as any,
+      },
+    });
+    return { ok: true, cancelled: true };
+  }
+
   private async getMyManualForeignCard(
     req: any,
-    paymentSystem: 'KZT_FOREIGN_CARD' | 'RUB_FOREIGN_CARD',
+    paymentSystem: ManualForeignCardPaymentSystem,
   ) {
     const depo = await this.prisma.deposit.findFirst({
       where: {
@@ -544,6 +926,8 @@ export class DepositController {
       currency: depo.currencyCode,
       method: depo.paymentSystem,
       imageUrl,
+      brlAmount: meta.brlAmount as number | undefined,
+      rubPerBrl: meta.rubPerBrl as number | undefined,
       status: isExpired
         ? 'expired'
         : depo.status === 'PENDING'
@@ -569,7 +953,7 @@ export class DepositController {
       image?: Express.Multer.File[];
     },
     opts: {
-      paymentSystem: 'KZT_FOREIGN_CARD' | 'RUB_FOREIGN_CARD';
+      paymentSystem: ManualForeignCardPaymentSystem;
       defaultCurrency: string;
       minAmount: number;
       externalPrefix: string;

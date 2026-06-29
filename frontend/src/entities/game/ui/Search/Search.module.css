@@ -1,5 +1,39 @@
 .Search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
+
+.Search_toolbar {
+  display: contents;
+}
+
+.Search_toolbar .bar {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 42px;
+}
+
+.Search_toolbar .result,
+.Search_toolbar .err {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+@media screen and (max-width: 768px) {
+  .Search_toolbar .bar {
+    min-height: 40px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .Search_toolbar .bar {
+    min-height: 38px;
+  }
+}
+
 .result {
   border-radius: 8px;
 
@@ -81,10 +115,10 @@
 }
 .bar {
   position: relative;
-
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
 }
 .submit {
   border-radius: 100%;
@@ -108,6 +142,20 @@
   color: var(--black);
   stroke: var(--black);
 }
+/* Hide this search instance on desktop (moved to sidebar) */
+@media (min-width: 768px) {
+  /* default layout — hide whole element */
+  .Search_hiddenOnDesktop {
+    display: none;
+  }
+  /* toolbar layout has display:contents — hide children instead */
+  .Search_hiddenOnDesktop .bar,
+  .Search_hiddenOnDesktop .result,
+  .Search_hiddenOnDesktop .err {
+    display: none;
+  }
+}
+
 .loader {
   position: absolute;
   right: 78px;

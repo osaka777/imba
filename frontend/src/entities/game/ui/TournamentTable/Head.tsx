@@ -20,8 +20,11 @@ const createHeadFieldsRow = (fields: string[]) => (
 // Заголовки таблицы с английскими сокращениями для единообразия интерфейса
 const headSportRows: { [key: string]: React.ReactElement } = {
   basketball: createHeadFieldsRow([`1`, `X`, `2`]),
+  "cyber-basketball": createHeadFieldsRow([`1`, `X`, `2`]),
+  "cyber-football": createHeadFieldsRow([`1`, `X`, `2`, `1X`, `12`, `X2`]),
   "esports.cs": createHeadFieldsRow([`1`, `2`]),
   "esports.dota2": createHeadFieldsRow([`1`, `2`]),
+  "esports.valorant": createHeadFieldsRow([`1`, `2`]),
   hockey: createHeadFieldsRow([`1`, `X`, `2`]),
   soccer: createHeadFieldsRow([
     `1`,

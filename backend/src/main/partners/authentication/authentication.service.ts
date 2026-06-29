@@ -39,7 +39,7 @@ export class AuthenticationService {
 
   async login(
     dto: PartnersLoginDto,
-  ): Promise<{ accessToken: string; user: User }> {
+  ): Promise<{ accessToken: string; user: UserDto }> {
     const user = await this.prismaService.user.findFirst({
       include: {
         affilator: true,

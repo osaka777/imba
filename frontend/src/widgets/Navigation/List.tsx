@@ -7,8 +7,9 @@ import { cn } from "~/shared/lib";
 
 import styles from "./List.module.css";
 
-export const tabList: { href: string; label: string }[] = [
+export const tabList: { href: string; label: string; showNewBadge?: boolean }[] = [
   { href: "/", label: "Главная" },
+  { href: "/live", label: "Лайв" },
   { href: "/line", label: "Линия" },
 ];
 
@@ -25,8 +26,16 @@ export const List = () => {
             className={cn(styles.item, isCurrent && styles.item_current)}
             key={tab.label}
           >
-            <Link href={tab.href}>
+            <Link
+              className={cn(styles.tabLink, tab.showNewBadge && styles.tabLink_withBadge)}
+              href={tab.href}
+            >
               <p className={styles.link}>{tab.label}</p>
+              {tab.showNewBadge && (
+                <span aria-hidden className={styles.newBadge}>
+                  NEW
+                </span>
+              )}
             </Link>
             {isCurrent && <div className={styles.underline} />}
           </li>

@@ -16,6 +16,38 @@
   animation: paymentModalPopIn 0.24s cubic-bezier(0.34, 1.15, 0.64, 1);
 }
 
+.inlinePanel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-height: min(78dvh, 680px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: #13151f;
+  border-radius: 0;
+  padding: 0 0 12px;
+  scrollbar-color: rgba(75, 158, 255, 0.35) transparent;
+}
+
+.backBtn {
+  align-self: flex-start;
+  margin: 0 0 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.backBtn:hover {
+  color: #ffffff;
+}
+
 .header {
   display: flex;
   align-items: center;

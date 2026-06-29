@@ -2,10 +2,17 @@
 }
 
 .header {
-  grid-area: header;
+  grid-area: content;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+}
+
+/* Wrapper hidden on desktop — sidebar aligns with coupon top */
+@media (min-width: 768px) {
+  .headerWrap {
+    display: none;
+  }
 }
 
 .err {
@@ -23,7 +30,44 @@
 }
 
 .games {
-  grid-area: table;
+  grid-area: content;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .games {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
+.container {
+  grid-area: content;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .container {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
+.gameContainer {
+  grid-area: content;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-self: start;
+}
+
+@media (min-width: 768px) {
+  .gameContainer {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
 }

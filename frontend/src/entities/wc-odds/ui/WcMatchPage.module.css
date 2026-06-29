@@ -1,0 +1,182 @@
+.wcMatchPage {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 1080px) {
+  .wcMatchPage {
+    padding: 0 4px 80px;
+  }
+
+  .wcMatchPage :global(.TournamentOdds) {
+    padding: 8px;
+    gap: 12px;
+    border-radius: 8px;
+  }
+
+  .wcMatchPage :global(.TournamentOddsHeader) {
+    gap: 8px;
+    align-items: center;
+  }
+
+  .wcMatchPage :global(.oddMenuList) {
+    padding: 4px 0;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+
+  .wcMatchPage :global(.oddMenuList::-webkit-scrollbar) {
+    display: none;
+  }
+
+  .wcMatchPage :global(.oddMenuList button) {
+    height: 34px;
+    padding: 0 14px;
+    font-size: 13px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .wcMatchPage :global(.TournamentOddsHeaderButton) {
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  .wcMatchPage :global(.oddsTables) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .wcMatchPage :global(.oddsTable) {
+    border-radius: 8px;
+    gap: 2px;
+  }
+
+  .wcMatchPage :global(.oddFold) {
+    padding: 10px 12px;
+    min-height: 40px;
+  }
+
+  .wcMatchPage :global(.oddsBlockPair) {
+    flex-wrap: nowrap;
+  }
+
+  .wcMatchPage :global(.oddsItem) {
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .wcMatchPage :global(.odd) {
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 8px;
+  }
+
+  .wcMatchPage :global(.oddCoef) {
+    font-size: 14px;
+    font-weight: 800;
+    padding: 0;
+    min-width: 44px;
+    color: #111827;
+  }
+
+  .wcMatchPage :global(.odd) p.text-sm {
+    font-size: 13px;
+  }
+
+  .wcMatchPage :global(.oddsHandicap3Row) {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow .totalsPivot) {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    font-size: 9px;
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow .oddTotals) {
+    justify-content: center;
+    gap: 4px;
+    width: auto;
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow > .oddsItem:first-child) {
+    justify-content: flex-end;
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow > .oddsItem:last-child) {
+    justify-content: flex-start;
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow .pairSideLabel_start),
+  .wcMatchPage :global(.oddsTotalsRow .pairSideLabel_end) {
+    width: auto;
+    font-size: 10px;
+    color: #374151 !important;
+  }
+
+  .wcMatchPage :global(.totalsScopeCaption),
+  .wcMatchPage :global(.oddsGroupSubLabel) {
+    color: #4b5563 !important;
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow .oddCoef) {
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .wcMatchPage :global(.oddsBlockPairOU .pairSideLabel_start),
+  .wcMatchPage :global(.oddsBlockPairOU .pairSideLabel_end) {
+    width: auto;
+    font-size: 13px;
+    color: #374151;
+  }
+
+  .wcMatchPage :global(.totalsPivot) {
+    min-width: 2.25rem;
+    max-width: 3.25rem;
+    height: 1.625rem;
+    padding: 0 6px;
+    font-size: 10px;
+    align-self: center;
+    justify-self: center;
+  }
+
+  .wcMatchPage :global(.oddsBlockPairOU) {
+    column-gap: 4px;
+  }
+
+  .wcMatchPage :global(.oddsBlockPairOU .oddCoef) {
+    min-width: 32px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .wcMatchPage :global(.oddsHandicapRow .pairSideLabel_start),
+  .wcMatchPage :global(.oddsHandicapRow .pairSideLabel_end) {
+    font-size: 11px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .wcMatchPage {
+    padding: 0 4px 72px;
+  }
+
+  .wcMatchPage :global(.TournamentOddsHeader) {
+    flex-wrap: nowrap;
+  }
+
+  .wcMatchPage :global(.oddMenuList button) {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}

@@ -168,12 +168,6 @@
   opacity: 0.5;
 }
 
-.FreeMoneyLink_image {
-  width: 57px;
-  height: 22px;
-  background-size: 100%;
-}
-
 .icon {
   display: inherit;
   flex: none;

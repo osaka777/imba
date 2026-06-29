@@ -25,7 +25,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # Try to generate schema, but don't fail if it doesn't work
-RUN corepack enable pnpm && (pnpm run generate-schema || true) && pnpm run build
+RUN (npm run generate-schema || true) && npm run build
 
 
 # Production image, copy all the files and run next

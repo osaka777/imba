@@ -190,7 +190,7 @@ export const Profile = React.memo(() => {
   const mergedCurrencies = useMemo(() => {
     if (!currencies?.length || !user?.balances?.length) return [];
     
-    const supportedCurrencies = ['USD', 'KZT', 'UAH', 'RUB', 'TRY', 'UZS'];
+    const supportedCurrencies = ['USD', 'KZT', 'UAH', 'RUB', 'TRY', 'UZS', 'USDT'];
     const balanceMap = new Map(user.balances.map(b => [b.currencyCode, b]));
     
     return currencies

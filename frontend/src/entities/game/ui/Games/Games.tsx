@@ -2,27 +2,52 @@
 
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import InfiniteScroll from "react-infinite-scroller";
-import { useParams } from "next/navigation";
 import { cn } from "~/shared/lib";
 import { LoadingSpinner } from "~/shared/ui";
 import { transformApiGames } from "../../lib/transformApiGames";
+import { useSportFilter } from "../../lib/useSportFilter";
 import { useWebSocketContext } from "../../lib/WebSocketContext";
 import type { Game} from "../../types/types";
 import { Search } from "../Search";
 import { SubcategoryMenu } from "../SubcategoryMenu/SubcategoryMenu";
 import { TournamentTable } from "../TournamentTable";
 import styles from "./Games.module.css";
+import shellStyles from "../SportPageShell.module.css";
 import { Menu } from "./Menu";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { LuckyDriveBanner } from "../LuckyDrive/LuckyDriveBanner";
 import React from "react";
+import { OlimpbetLineBlocks } from "~/entities/wc-odds/line/OlimpbetLineBlocks";
+import { useOlimpbetLive } from "~/entities/wc-odds/live/useOlimpbetLive";
+import {
+  WC_LIVE_INITIAL_LIMIT,
+  WC_LIVE_INITIAL_LIMIT_MOBILE,
+  WC_LIVE_PAGE_SIZE,
+} from "~/entities/wc-odds/live/wcLivePagination";
+import { useWcListPaginationLimits } from "~/entities/wc-odds/lib/useWcListPaginationLimits";
+import { WcLeagueMenu } from "~/entities/wc-odds/ui/WcLeagueMenu";
+import { Header } from "~/widgets/Header";
 
 const GamesComponent = ({
   className,
   queryOptions: { queryFn, queryKey },
 }: any) => {
-  const params = useParams();
-  const sport = params?.sport as string | undefined;
+  const sport = useSportFilter();
+  const { initialLimit, pageSize } = useWcListPaginationLimits(
+    WC_LIVE_INITIAL_LIMIT,
+    WC_LIVE_INITIAL_LIMIT_MOBILE,
+    WC_LIVE_PAGE_SIZE,
+  );
+
+  const {
+    enabled: olimpbetEnabled,
+    initialLoading: olimpbetLoading,
+    loadingMore: olimpbetLoadingMore,
+    hasMore: olimpbetHasMore,
+    loadMore: loadMoreOlimpbet,
+    leagues: olimpbetLeagues,
+  } = useOlimpbetLive(sport);
+  const hasOlimpbetLive = olimpbetEnabled !== false && olimpbetLeagues.length > 0;
 
   const queryClient = useQueryClient();
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -32,14 +57,14 @@ const GamesComponent = ({
   useEffect(() => {
     setAllGames([]);
     uniqueEventIds.current.clear();
-    queryClient.invalidateQueries({ queryKey: [...queryKey, sport] });
+    queryClient.invalidateQueries({ queryKey: [...queryKey, sport, initialLimit] });
     
     // Очистка при размонтировании компонента
     return () => {
       setAllGames([]);
       uniqueEventIds.current.clear();
     };
-  }, [sport, queryClient, queryKey]);
+  }, [sport, initialLimit, queryClient, queryKey]);
 
   const {
     data,
@@ -50,16 +75,13 @@ const GamesComponent = ({
     error,
     refetch
   } = useInfiniteQuery({
-    queryKey: [...queryKey, sport],
+    queryKey: [...queryKey, sport, initialLimit],
     queryFn,
-    initialPageParam: { limit: 10, offset: 0 }, // Уменьшили начальный лимит
+    initialPageParam: { limit: initialLimit, offset: 0 },
     getNextPageParam: (lastPage: Game[], _allPages, lastPageParam) => {
       if (!lastPage || lastPage.length === 0) return undefined;
-      // Увеличиваем лимит для последующих запросов
-      const nextLimit = lastPageParam.offset === 0 ? 20 : lastPageParam.limit;
       return {
-        ...lastPageParam,
-        limit: nextLimit,
+        limit: pageSize,
         offset: lastPageParam.offset + lastPageParam.limit,
       };
     },
@@ -73,15 +95,32 @@ const GamesComponent = ({
     placeholderData: (previousData) => previousData,
     // Отключаем автоматическую загрузку в фоне
     refetchOnReconnect: false,
-    // Добавляем задержку для первого запроса на главной странице
-    enabled: typeof window !== 'undefined',
+    // BetAPI live отключён, когда активна линия Olimpbet
+    enabled: typeof window !== "undefined" && olimpbetEnabled === false,
   });
 
   const loadMore = useCallback(() => {
+    if (olimpbetEnabled !== false) {
+      if (olimpbetHasMore && !olimpbetLoadingMore) {
+        void loadMoreOlimpbet();
+      }
+      return;
+    }
     if (!isFetchingNextPage && hasNextPage) {
       fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    loadMoreOlimpbet,
+    olimpbetEnabled,
+    olimpbetHasMore,
+    olimpbetLoadingMore,
+  ]);
+
+  const hasMoreToLoad =
+    olimpbetEnabled !== false ? olimpbetHasMore : Boolean(hasNextPage);
 
   const games = useMemo(() => {
     if (!data?.pages) return [];
@@ -97,8 +136,9 @@ const GamesComponent = ({
     return transformedGames;
   }, [data?.pages]);
 
-  // Подписка на WebSocket с увеличенной задержкой для лучшей производительности
+  // Подписка на WebSocket BetAPI только когда Olimpbet выключен
   useEffect(() => {
+    if (olimpbetEnabled !== false) return undefined;
     if (!games.length || !isConnected || isLoading) return;
 
     // Добавляем увеличенную задержку для оптимизации производительности
@@ -139,16 +179,17 @@ const GamesComponent = ({
         }
       }
     };
-  }, [isConnected, games, sendJsonMessage, isLoading]);
+  }, [isConnected, games, sendJsonMessage, isLoading, olimpbetEnabled]);
 
   useEffect(() => {
     if (error) {
       console.error('Error fetching games:', error);
-      }
+    }
   }, [error]);
 
-  // WebSocket обновления для реал-тайм данных (только если уже подключен)
+  // WebSocket обновления BetAPI (только если Olimpbet выключен)
   useEffect(() => {
+    if (olimpbetEnabled !== false) return;
     // Обрабатываем сообщения только если WebSocket уже подключен и есть игры
     if (!isConnected || !games.length) return;
 
@@ -189,7 +230,7 @@ const GamesComponent = ({
 
       if (!eventId || !updatedGame) return;
       
-      queryClient.setQueryData([...queryKey, sport], (oldData: any) => {
+      queryClient.setQueryData([...queryKey, sport, initialLimit], (oldData: any) => {
         if (!oldData?.pages) return oldData;
 
         const newPages = oldData.pages.map((page: Game[]) => {
@@ -222,21 +263,54 @@ const GamesComponent = ({
       removeMessageHandler(handleWebSocketUpdate);
     };
     
-  }, [isConnected, games, queryClient, queryKey, sport, addMessageHandler, removeMessageHandler]);
+  }, [isConnected, games, initialLimit, queryClient, queryKey, sport, addMessageHandler, removeMessageHandler, olimpbetEnabled]);
   
+  const showGamesLoader =
+    isFetchingNextPage
+    || olimpbetLoadingMore
+    || (olimpbetEnabled !== false && olimpbetLoading && olimpbetLeagues.length === 0)
+    || (olimpbetEnabled === false && isLoading && games.length === 0);
+
   return (
     <div className={cn(styles.Games, className)}>
-      {sport ? <SubcategoryMenu type="live" /> : <Menu />}
-      <LuckyDriveBanner />
-      <Search />
-      {/* @ts-ignore */}
+      <div className={shellStyles.pageShell}>
+        <div className={shellStyles.pageHeaderSlot}>
+          <Header />
+        </div>
+        <div className={shellStyles.pageFlow}>
+        <div className={shellStyles.sidebarColumn}>
+        <aside className={shellStyles.sportsSidebar}>
+          <div className={shellStyles.sidebarControls}>
+            <div className={shellStyles.sidebarSearchSlot}>
+              <Search sport={sport} />
+            </div>
+          </div>
+          <div className={shellStyles.sidebarMenuScroll}>
+          <Menu
+            layout="sidebar"
+            className={sport ? shellStyles.sportsMenuSlot_mobileHidden : undefined}
+          />
+          {sport ? (
+            olimpbetEnabled !== false ? (
+              <WcLeagueMenu type="live" layout="sidebar" />
+            ) : (
+              <SubcategoryMenu type="live" layout="sidebar" />
+            )
+          ) : null}
+          </div>
+        </aside>
+        </div>
+
+        <div className={shellStyles.pageMain}>
+      <div className={shellStyles.pageMainLead}>
+      <LuckyDriveBanner compact placement="live" />
+      </div>
+      <div className={shellStyles.pageMainBody}>
+      <Search sport={sport} hideOnDesktop />
       <InfiniteScroll
         className={styles.Games}
-        hasMore={hasNextPage && !isFetchingNextPage}
+        hasMore={hasMoreToLoad && !isFetchingNextPage && !olimpbetLoadingMore}
         loadMore={loadMore}
-        loader={
-          <LoadingSpinner key="loading-spinner" className={styles.loading} />
-        }
         pageStart={0}
         threshold={250}
         element="div"
@@ -247,7 +321,8 @@ const GamesComponent = ({
             Ошибка загрузки игр. Пожалуйста, попробуйте позже.
           </div>
         )}
-        {games.length === 0 && !isLoading && !error && (
+        <OlimpbetLineBlocks leagues={olimpbetLeagues} showInlineStats={false} />
+        {games.length === 0 && !isLoading && !error && !hasOlimpbetLive && !olimpbetLoading && (
           <p className="p-4 text-center bg-white/5">Игры не найдены</p>
         )}
         {games.map((league, index) => (
@@ -259,7 +334,14 @@ const GamesComponent = ({
             sport={league.games[0].sport}
           />
         ))}
+        {showGamesLoader ? (
+          <LoadingSpinner key="games-loading" className={styles.loading} />
+        ) : null}
       </InfiniteScroll>
+      </div>
+        </div>
+        </div>
+      </div>
     </div>
   );
 };

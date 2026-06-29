@@ -2,20 +2,43 @@
 
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import InfiniteScroll from "react-infinite-scroller";
-import { useParams } from "next/navigation";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 import { cn } from "~/shared/lib";
 import { LoadingSpinner } from "~/shared/ui";
+import { Header } from "~/widgets/Header";
 
 import { transformApiGames } from "../../lib/transformApiGames";
+import { useSportFilter } from "../../lib/useSportFilter";
 import { Games as GamesType } from "../../types";
+import { OlimpbetLineBlocks } from "~/entities/wc-odds/line/OlimpbetLineBlocks";
+import { OlimpbetLineFilter } from "~/entities/wc-odds/line/OlimpbetLineFilter";
+import { OlimpbetTimeFilter } from "~/entities/wc-odds/line/OlimpbetTimeFilter";
+import { useOlimpbetLine } from "~/entities/wc-odds/line/useOlimpbetLine";
+import {
+  WC_LINE_INITIAL_LIMIT,
+  WC_LINE_INITIAL_LIMIT_MOBILE,
+  WC_LINE_PAGE_SIZE,
+} from "~/entities/wc-odds/line/wcLinePagination";
+import { useWcListPaginationLimits } from "~/entities/wc-odds/lib/useWcListPaginationLimits";
+import type { WcLineHoursFilter } from "~/entities/wc-odds/line/wcLineTimeFilter";
+import {
+  readStoredLineHoursFilter,
+  writeStoredLineHoursFilter,
+} from "~/entities/wc-odds/line/wcLineTimeFilter";
+import {
+  readStoredLineDateFilter,
+  writeStoredLineDateFilter,
+} from "~/entities/wc-odds/line/wcLineDateFilter";
+import { WcLeagueMenu } from "~/entities/wc-odds/ui/WcLeagueMenu";
 import { Search } from "../Search";
 import { SubcategoryMenu } from "../SubcategoryMenu/SubcategoryMenu";
 import { TournamentTable } from "../TournamentTable";
 import styles from "./GamesPrematch.module.css";
+import shellStyles from "../SportPageShell.module.css";
 import { Menu } from "./Menu";
 import { LuckyDriveBanner } from "../LuckyDrive/LuckyDriveBanner";
+import { isSegmentedLineFilterDesign } from "~/entities/wc-odds/line/lineFilterDesign";
 import { operations } from "~/shared/api/api";
 
 type Game = GamesType[number];
@@ -34,18 +57,79 @@ export const GamesPrematch = ({
   className,
   queryOptions: { queryFn, queryKey },
 }: GamesPrematchProps) => {
-  const params = useParams();
-  const sport = params?.sport as string | undefined;
+  const sport = useSportFilter();
+  const { initialLimit, pageSize } = useWcListPaginationLimits(
+    WC_LINE_INITIAL_LIMIT,
+    WC_LINE_INITIAL_LIMIT_MOBILE,
+    WC_LINE_PAGE_SIZE,
+  );
+  const prevSportRef = useRef(sport);
+  const [hoursFilter, setHoursFilter] = useState<WcLineHoursFilter>("all");
+  const [dateFilter, setDateFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedDate = readStoredLineDateFilter();
+    const storedHours = readStoredLineHoursFilter();
+    if (storedDate) {
+      setDateFilter(storedDate);
+      setHoursFilter("all");
+      return;
+    }
+    setHoursFilter(storedHours);
+    setDateFilter(null);
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setHoursFilter("all");
+    setDateFilter(null);
+    writeStoredLineHoursFilter("all");
+    writeStoredLineDateFilter(null);
+  }, []);
+
+  const handleHoursFilterChange = useCallback((next: WcLineHoursFilter) => {
+    setHoursFilter(next);
+    setDateFilter(null);
+    writeStoredLineHoursFilter(next);
+    writeStoredLineDateFilter(null);
+  }, []);
+
+  const handleDateFilterChange = useCallback((next: string) => {
+    setDateFilter(next);
+    setHoursFilter("all");
+    writeStoredLineDateFilter(next);
+    writeStoredLineHoursFilter("all");
+  }, []);
+
+  const {
+    enabled: olimpbetEnabled,
+    initialLoading: olimpbetLoading,
+    loadingMore: olimpbetLoadingMore,
+    hasMore: olimpbetHasMore,
+    loadMore: loadMoreOlimpbet,
+    leagues: olimpbetLeagues,
+    timeCounts,
+    dates,
+  } = useOlimpbetLine(sport, hoursFilter, dateFilter);
+  const hasOlimpbetLine = olimpbetEnabled !== false && olimpbetLeagues.length > 0;
 
   const queryClient = useQueryClient();
   const [allGames, setAllGames] = useState<Game[]>([]);
   const uniqueEventIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    if (prevSportRef.current === sport) return;
+    prevSportRef.current = sport;
+    setHoursFilter("all");
+    setDateFilter(null);
+    writeStoredLineHoursFilter("all");
+    writeStoredLineDateFilter(null);
+  }, [sport]);
+
+  useEffect(() => {
     setAllGames([]);
     uniqueEventIds.current.clear();
-    queryClient.invalidateQueries({ queryKey: [...queryKey, sport] });
-  }, [sport, queryClient, queryKey]);
+    queryClient.invalidateQueries({ queryKey: [...queryKey, sport, initialLimit] });
+  }, [sport, initialLimit, queryClient, queryKey]);
 
   const {
     data,
@@ -56,13 +140,13 @@ export const GamesPrematch = ({
     error,
     refetch
   } = useInfiniteQuery({
-    queryKey: [...queryKey, sport],
+    queryKey: [...queryKey, sport, initialLimit],
     queryFn,
-    initialPageParam: { limit: 20, offset: 0 },
+    initialPageParam: { limit: initialLimit, offset: 0 },
     getNextPageParam: (lastPage: Game[], _allPages, lastPageParam) => {
       if (!lastPage || lastPage.length === 0) return undefined;
       return {
-        ...lastPageParam,
+        limit: pageSize,
         offset: lastPageParam.offset + lastPageParam.limit,
       };
     },
@@ -77,10 +161,25 @@ export const GamesPrematch = ({
   });
 
   const loadMore = useCallback(() => {
+    if (olimpbetEnabled !== false && olimpbetHasMore && !olimpbetLoadingMore) {
+      void loadMoreOlimpbet();
+      return;
+    }
     if (!isFetchingNextPage && hasNextPage) {
       fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    loadMoreOlimpbet,
+    olimpbetEnabled,
+    olimpbetHasMore,
+    olimpbetLoadingMore,
+  ]);
+
+  const hasMoreToLoad =
+    (olimpbetEnabled !== false && olimpbetHasMore) || Boolean(hasNextPage);
 
   const games = useMemo(() => {
     if (!data?.pages) return [];
@@ -102,18 +201,83 @@ export const GamesPrematch = ({
     }
   }, [error]);
 
+  const showGamesLoader =
+    isFetchingNextPage
+    || olimpbetLoadingMore
+    || (olimpbetEnabled !== false && olimpbetLoading && olimpbetLeagues.length === 0)
+    || (olimpbetEnabled === false && isLoading && games.length === 0);
+
   return (
     <div className={cn(styles.GamesPrematch, className)}>
-      {sport ? <SubcategoryMenu type="prematch" /> : <Menu />}
-      <LuckyDriveBanner />
-      <Search />
+      <div className={shellStyles.pageShell}>
+        <div className={shellStyles.pageHeaderSlot}>
+          <Header />
+        </div>
+        <div className={shellStyles.pageFlow}>
+        <div className={shellStyles.sidebarColumn}>
+        <aside className={shellStyles.sportsSidebar}>
+          <div
+            className={cn(
+              shellStyles.sidebarControls,
+              isSegmentedLineFilterDesign() && shellStyles.sidebarControls_segmented,
+            )}
+          >
+            {olimpbetEnabled !== false ? (
+              <div className={shellStyles.sidebarTimeFilterSlot}>
+                <OlimpbetLineFilter
+                  dateFilter={dateFilter}
+                  dates={dates}
+                  hoursFilter={hoursFilter}
+                  onDateChange={handleDateFilterChange}
+                  onHoursChange={handleHoursFilterChange}
+                  onSelectAll={handleSelectAll}
+                  timeCounts={timeCounts}
+                />
+              </div>
+            ) : null}
+            <div className={shellStyles.sidebarSearchSlot}>
+              <Search sport={sport} />
+            </div>
+          </div>
+          <div className={shellStyles.sidebarMenuScroll}>
+          <Menu
+            layout="sidebar"
+            className={sport ? shellStyles.sportsMenuSlot_mobileHidden : undefined}
+          />
+          {sport ? (
+            olimpbetEnabled !== false ? (
+              <WcLeagueMenu type="prematch" layout="sidebar" />
+            ) : (
+              <SubcategoryMenu type="prematch" layout="sidebar" />
+            )
+          ) : null}
+          </div>
+        </aside>
+        </div>
+
+        <div className={shellStyles.pageMain}>
+      <div className={shellStyles.pageMainLead}>
+      <LuckyDriveBanner compact placement="line" />
+      </div>
+      <div className={shellStyles.pageMainBody}>
+      {olimpbetEnabled !== false ? (
+        <div className={styles.lineToolbar}>
+          <OlimpbetTimeFilter
+            className={styles.lineToolbar_filter}
+            counts={timeCounts}
+            onChange={handleHoursFilterChange}
+            onSelectAll={handleSelectAll}
+            value={hoursFilter}
+          />
+          <Search sport={sport} layout="toolbar" className={styles.lineToolbar_search} hideOnDesktop />
+        </div>
+      ) : (
+        <Search sport={sport} hideOnDesktop />
+      )}
       <InfiniteScroll
         className={styles.GamesPrematch}
-        hasMore={hasNextPage && !isFetchingNextPage}
+        hasMore={hasMoreToLoad && !isFetchingNextPage && !olimpbetLoadingMore}
         loadMore={loadMore}
-        loader={
-          <LoadingSpinner key="loading-spinner" className={styles.loading} />
-        }
         pageStart={0}
         threshold={250}
         useWindow={true}
@@ -123,7 +287,8 @@ export const GamesPrematch = ({
             Ошибка загрузки игр. Пожалуйста, попробуйте позже.
           </div>
         )}
-        {games.length === 0 && !isLoading && !error && (
+        <OlimpbetLineBlocks leagues={olimpbetLeagues} />
+        {games.length === 0 && !isLoading && !error && !hasOlimpbetLine && !olimpbetLoading && (
           <p className="p-4 text-center bg-white/5">Игры не найдены</p>
         )}
         {games.map((league, index) => (
@@ -135,7 +300,14 @@ export const GamesPrematch = ({
             sport={league.games[0].sport}
           />
         ))}
+        {showGamesLoader ? (
+          <LoadingSpinner key="games-loading" className={styles.loading} />
+        ) : null}
       </InfiniteScroll>
+      </div>
+        </div>
+        </div>
+      </div>
     </div>
   );
 };

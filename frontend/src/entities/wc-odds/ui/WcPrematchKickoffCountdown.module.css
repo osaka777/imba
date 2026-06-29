@@ -1,0 +1,96 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 1.1rem 1rem 1rem;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(177 209 255 / 0.92);
+  letter-spacing: 0.01em;
+}
+
+.timerRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.75rem;
+}
+
+.value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.label {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(148 166 205 / 0.88);
+}
+
+.separator {
+  padding-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.startAt {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.soonHint {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0085ff;
+}
+
+.startHint {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.55);
+}
+
+@media screen and (max-width: 640px) {
+  .wrap {
+    padding: 0.9rem 0.75rem 0.85rem;
+  }
+
+  .value {
+    font-size: 1.65rem;
+  }
+
+  .separator {
+    font-size: 1.25rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .unit {
+    min-width: 2.35rem;
+  }
+}

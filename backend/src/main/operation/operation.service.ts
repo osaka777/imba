@@ -143,7 +143,8 @@ export class OperationService {
       'UAH': 'Ukrainian Hryvnia',
       'KZT': 'Kazakhstani Tenge',
       'TRY': 'Turkish Lira',
-      'UZS': 'Uzbekistan Som'
+      'UZS': 'Uzbekistan Som',
+      'USDT': 'Tether USD',
     };
     return currencyNames[isoCode] || isoCode;
   }

@@ -1,14 +1,15 @@
 .MatchRow {
-  border-top: 1px solid rgb(128, 128, 128, 0.2);
-  border-bottom: 1px solid rgb(128, 128, 128, 0.2);
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
 
   background-color: var(--white-20);
 
-  height: 40px;
+  height: 44px;
 
   display: grid;
   align-content: center;
   grid-template-columns: 1fr auto;
+
+  transition: background-color 0.12s ease;
 }
 .statsc{
   fill: var(--blue-60);
@@ -68,6 +69,7 @@
 }
 .matchInfo {
   padding: 0 8px;
+  cursor: pointer;
 }
 @media screen and (max-width: 768px) {
   .matchInfo {
@@ -82,6 +84,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .matchStart {
@@ -94,22 +98,23 @@
 }
 .matchStartDate {
   width: 100%;
-
   text-align: center;
-  font-size: 12px;
+  font-size: 10px;
+  opacity: 0.7;
 }
 .matchStartTime {
   width: 100%;
-
   text-align: center;
   font-size: 12px;
+  font-weight: 600;
 }
 .matchSeparator {
   background: var(--light-blue-gradient);
-  opacity: 0.8;
-
-  width: 3px;
-  height: 24px;
+  width: 2px;
+  height: 22px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 .matchTeamsBlock {
   width: 100%;
@@ -122,9 +127,11 @@
 .team {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 .teamName {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
   max-width: 120px;
   overflow: hidden;
   white-space: nowrap;
@@ -188,8 +195,8 @@
   align-items: flex-end;
 }
 .matchScoreTotal {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 700;
 }
 .matchAdditionalDetails {
   color: #0dc35d;
@@ -211,14 +218,10 @@
   font-size: 10px;
 }
 .matchAdditional {
-  border-radius: 8px;
-
+  border-radius: 20px;
   padding: 0 8px;
-
-  height: 29px;
-
+  height: 22px;
   background-color: #b3c9f6;
-
   display: flex;
   justify-content: center;
   align-items: center;
@@ -234,16 +237,14 @@
   align-items: center;
 }
 .marketsCount {
-  margin: 0 12px;
-
-  border-radius: 8px;
-
-  padding: 8px;
-
-  background: var(--light-blue-gradient);
-
-  font-weight: 500;
-  color: var(--white);
+  margin: 0 8px;
+  border-radius: 20px;
+  padding: 3px 8px;
+  background: rgb(37 99 235 / 0.12);
+  font-weight: 600;
+  font-size: 11px;
+  color: #2563eb;
+  border: 1px solid rgb(37 99 235 / 0.2);
 }
 .cells {
   height: 100%;
@@ -307,6 +308,13 @@
   .oddCell[data-market="WIN_OT__PX"] {
     display: flex;
   }
+  .oddCell[data-market^="WC__h2h__"],
+  .oddCell[data-market^="WC__totals__"] {
+    display: flex;
+  }
+  .oddCell[data-market="WC__totals__PIVOT"] {
+    display: none;
+  }
 }
 
 .oddCell_special {
@@ -332,13 +340,24 @@
 }
 
 .oddCoefficient {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  min-height: 24px;
+  padding: 4px 8px;
   border-radius: 8px;
-
-  padding: 6px;
-
+  box-sizing: border-box;
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   text-align: center;
+  line-height: 1;
+  background: rgb(0 0 0 / 0.04);
+  transition: background 0.12s ease;
+}
+
+.oddCell:hover .oddCoefficient {
+  background: rgb(37 99 235 / 0.1);
 }
 @media screen and (max-width: 768px) {
   .MatchRow:hover .oddCell_special > .oddCoefficient:hover {
@@ -346,50 +365,143 @@
   }
 }
 .oddCoefficient_up {
-  animation: coefup 0.8s ease-out;
+  animation: coefPillUp 2s ease-out forwards;
 }
+
 .oddCoefficient_down {
-  animation: coefdown 0.8s ease-out;
+  animation: coefPillDown 2s ease-out forwards;
 }
 
-@keyframes coefup {
-  0% {
-    color: var(--red);
-    background-color: rgba(255, 0, 0, 0.1);
-  }
-  50% {
-    color: var(--red);
-    background-color: rgba(255, 0, 0, 0.05);
+.oddFlash_up,
+.oddCell_up {
+  animation: none;
+}
+
+.oddFlash_up::after,
+.oddCell_up::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-bottom: 4px solid #2db856;
+  pointer-events: none;
+  animation: flashTriangle 2s ease-out forwards;
+}
+
+.oddFlash_down,
+.oddCell_down {
+  animation: none;
+}
+
+.oddFlash_down::after,
+.oddCell_down::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid #e85d5d;
+  pointer-events: none;
+  animation: flashTriangle 2s ease-out forwards;
+}
+
+@keyframes oddBgUp {
+  0%,
+  40% {
+    background-color: #dff5e8;
   }
   100% {
-    color: unset;
     background-color: transparent;
   }
 }
 
-@keyframes coefdown {
-  0% {
-    color: var(--green-10);
-    background-color: rgba(0, 255, 0, 0.1);
-  }
-  50% {
-    color: var(--green-10);
-    background-color: rgba(0, 255, 0, 0.05);
+@keyframes oddBgDown {
+  0%,
+  40% {
+    background-color: #fce8e8;
   }
   100% {
-    color: unset;
     background-color: transparent;
+  }
+}
+
+@keyframes coefPillUp {
+  0%,
+  40% {
+    background-color: #dff5e8;
+    color: #1a9b47;
+  }
+
+  100% {
+    background-color: transparent;
+    color: #0f172a;
+  }
+}
+
+@keyframes coefPillDown {
+  0%,
+  40% {
+    background-color: #fce8e8;
+    color: #d64545;
+  }
+
+  100% {
+    background-color: transparent;
+    color: #0f172a;
+  }
+}
+
+@keyframes coefTextUp {
+  0%,
+  40% {
+    color: #1a9b47;
+  }
+  100% {
+    color: #0f172a;
+  }
+}
+
+@keyframes coefTextDown {
+  0%,
+  40% {
+    color: #d64545;
+  }
+  100% {
+    color: #0f172a;
+  }
+}
+
+@keyframes flashTriangle {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 @media screen and (max-width: 768px) {
   .oddCell_added {
-    background: var(--light-blue-gradient);
+    background: #dbeafe;
   }
 }
 
 .oddCoefficient_added {
-  background: var(--light-blue-gradient);
-  color: var(--white);
+  background: #dbeafe;
+  color: #2563eb !important;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+}
+
+.oddCell_added .oddCoefficient {
+  color: #2563eb !important;
 }
 
 @media screen and (max-width: 768px) {
@@ -402,7 +514,7 @@
   display: none;
 }
 .oddCell_added > .addedGameName {
-  color: var(--white);
+  color: #2563eb;
 }
 @media screen and (max-width: 768px) {
   .addedGameName {

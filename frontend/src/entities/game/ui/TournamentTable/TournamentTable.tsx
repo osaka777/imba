@@ -14,6 +14,7 @@ type TournamentTableProps = {
   isLive: boolean;
   league: string;
   sport: string;
+  gameLinkPrefix?: string;
 };
 
 export const TournamentTable: React.FC<TournamentTableProps> = ({
@@ -22,6 +23,7 @@ export const TournamentTable: React.FC<TournamentTableProps> = ({
   isLive,
   league,
   sport,
+  gameLinkPrefix = "/game/",
 }) => {
   const Icon = gamesList[sport]?.Icon;
 
@@ -32,6 +34,7 @@ export const TournamentTable: React.FC<TournamentTableProps> = ({
         {games.map((gameData) => {
           return (
             <MatchRow
+              gameLinkPrefix={gameLinkPrefix}
               isLive={isLive}
               key={gameData.eventId}
               matchData={gameData}

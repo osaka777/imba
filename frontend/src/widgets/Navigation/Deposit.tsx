@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { getUser } from "~/entities/user/api";
 import { useAccountType } from "~/shared/model/useAccountType";
 import { useCurrency } from "~/shared/model/useCurrency";
+import { AnimatedBalance } from "~/shared/ui/AnimatedBalance";
 
 import { CurrencySelector } from "./CurrencySelector";
 
@@ -47,20 +48,19 @@ export const Deposit = ({ onOpenDeposit }: DepositProps) => {
   const balance =
     data?.balances?.find(({ currencyCode }: { currencyCode: string }) => currencyCode === currency)
       ?.amount ?? "0";
-  const formattedBalance = Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: 2,
-  }).format(Number(balance));
 
   const bonusBalanceData = (data as any)?.bonusBalances?.find(({ currencyCode }: { currencyCode: string }) => currencyCode === currency);
   const bonusBalance = bonusBalanceData?.amount ?? "0";
-  const formattedBonusBalance = Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: 2,
-  }).format(Number(bonusBalance));
 
-  const displayBalance = selectedAccountType === 'main' ? formattedBalance : formattedBonusBalance;
-  const accountIcon = selectedAccountType === 'main' ? '' : '🎁';
+  const displayBalanceValue =
+    selectedAccountType === "main" ? Number(balance) : Number(bonusBalance);
+
+  const accountIcon = selectedAccountType === "main" ? "" : "🎁";
   
-  const hasTokens = selectedAccountType === 'bonus' && bonusBalanceData?.isTokenBased && bonusBalanceData.remainingTokens > 0;
+  const hasTokens =
+    selectedAccountType === "bonus" &&
+    bonusBalanceData?.isTokenBased &&
+    bonusBalanceData.remainingTokens > 0;
   const tokenCount = bonusBalanceData?.remainingTokens || 0;
   const currencySymbols: Record<string, string> = {
     USD: '$',
@@ -84,7 +84,12 @@ export const Deposit = ({ onOpenDeposit }: DepositProps) => {
           ) : (
             <span className={styles.balance} suppressHydrationWarning>
               <span className={styles.balanceTitle}>
-                {accountIcon} {displayBalance}
+                {accountIcon}{" "}
+                <AnimatedBalance
+                  key={`${currency}-${selectedAccountType}`}
+                  className={styles.balanceAnimated}
+                  value={displayBalanceValue}
+                />
                 {hasTokens && (
                   <span className={styles.tokenInfo}>
                     {tokenCount}

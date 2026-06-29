@@ -10,6 +10,7 @@ import {
   Gamepad2,
   Gift,
   CreditCard,
+  Sparkles,
   ArrowUpCircle,
   ArrowDownCircle,
   Trophy,
@@ -46,10 +47,12 @@ const navigation = [
     icon: CreditCard,
     children: [
       { name: 'Настройки платежей', href: '/payment-settings', icon: QrCode },
+      { name: 'WC Promo модалка', href: '/promo-modal', icon: Sparkles },
       { name: 'Управление бонусами', href: '/bonuses', icon: Gift },
       { name: 'Заявки пополнений', href: '/deposits', icon: ArrowUpCircle },
       { name: 'Пополнения', href: '/topup', icon: ArrowUpCircle },
       { name: 'Выводы', href: '/withdrawals', icon: ArrowDownCircle },
+      { name: 'Ставки ЧМ', href: '/wc-bets', icon: Trophy },
     ]
   },
   {

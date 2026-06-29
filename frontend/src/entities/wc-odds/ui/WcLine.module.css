@@ -1,0 +1,436 @@
+.wcPage {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.wcTournament {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.18);
+}
+
+.wcTournament :global(.body) {
+  background: #fff;
+}
+
+.upcomingSection {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.upcomingTitle {
+  margin: 0;
+  padding: 0 4px;
+  color: rgb(255 255 255 / 0.85);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.upcomingSection .wcTournament + .wcTournament {
+  margin-top: 4px;
+}
+
+.wcMatchRow {
+  min-width: 0;
+  background-color: transparent;
+}
+
+.wcMatchRow :global(.MatchRow) *:not([data-markets-pill]) {
+  color: #0f172a;
+}
+
+.wcMatchRow :global(.startAt) {
+  color: #64748b;
+}
+
+/* Flash: pill around coef + corner triangle (live line + homepage odds rows) */
+.wcMatchRow :global(.oddCell),
+.wcOddsRow :global(.oddCell) {
+  position: relative;
+}
+
+.wcMatchRow :global(.oddCell_up),
+.wcMatchRow :global(.oddCell_down),
+.wcMatchRow :global(.oddFlash_up),
+.wcMatchRow :global(.oddFlash_down),
+.wcOddsRow :global(.oddCell_up),
+.wcOddsRow :global(.oddCell_down),
+.wcOddsRow :global(.oddFlash_up),
+.wcOddsRow :global(.oddFlash_down) {
+  animation: none !important;
+}
+
+.wcMatchRow :global(.oddCell_up::after),
+.wcMatchRow :global(.oddCell_down::after),
+.wcOddsRow :global(.oddCell_up::after),
+.wcOddsRow :global(.oddCell_down::after) {
+  content: "";
+  position: absolute;
+  right: 2px;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  pointer-events: none;
+  animation: wcFlashTriangle 2s ease-out forwards;
+}
+
+.wcMatchRow :global(.oddCell_up::after),
+.wcOddsRow :global(.oddCell_up::after) {
+  top: 2px;
+  border-bottom: 4px solid #2db856;
+}
+
+.wcMatchRow :global(.oddCell_down::after),
+.wcOddsRow :global(.oddCell_down::after) {
+  bottom: 2px;
+  border-top: 4px solid #e85d5d;
+}
+
+.wcMatchRow :global(.oddCoefficient) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  min-width: 2rem;
+  min-height: 22px;
+  padding: 4px 7px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  line-height: 1;
+  background-color: transparent;
+}
+
+.wcOddsRow :global(.oddCoefficient) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  background-color: transparent;
+}
+
+.wcMatchRow :global(.oddCoefficient_up),
+.wcOddsRow :global(.oddCoefficient_up) {
+  animation: wcCoefPillUp 2s ease-out forwards !important;
+}
+
+.wcMatchRow :global(.oddCoefficient_down),
+.wcOddsRow :global(.oddCoefficient_down) {
+  animation: wcCoefPillDown 2s ease-out forwards !important;
+}
+
+.wcMatchRow :global(.oddCell_added .oddCoefficient_up),
+.wcOddsRow :global(.oddCell_added .oddCoefficient_up) {
+  animation: wcCoefPillUpAdded 2s ease-out forwards !important;
+}
+
+.wcMatchRow :global(.oddCell_added .oddCoefficient_down),
+.wcOddsRow :global(.oddCell_added .oddCoefficient_down) {
+  animation: wcCoefPillDownAdded 2s ease-out forwards !important;
+}
+
+/* Selected market: blue pill on coef only, not full cell */
+.wcMatchRow :global(.oddCell_added),
+.wcOddsRow :global(.oddCell_added) {
+  background: transparent;
+}
+
+.wcMatchRow :global(.oddCell_added .oddCoefficient),
+.wcMatchRow :global(.oddCoefficient_added),
+.wcOddsRow :global(.oddCell_added .oddCoefficient),
+.wcOddsRow :global(.oddCoefficient_added) {
+  color: #2563eb !important;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+@keyframes wcFlashTriangle {
+  0%,
+  55% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media screen and (min-width: 1025px) {
+  .wcMatchRow:hover {
+    background-color: #eef4ff !important;
+  }
+
+  .wcMatchRow:hover :global(*:not(.oddCoefficient):not(.oddCoefficient_added):not([data-markets-pill])) {
+    background-color: transparent !important;
+    color: #0f172a !important;
+  }
+
+  .wcMatchRow:hover :global([data-markets-pill]),
+  .wcMatchRow:hover :global([data-markets-pill]:hover) {
+    color: #fff !important;
+    background: var(--light-blue-gradient) !important;
+    filter: brightness(0.92);
+    opacity: 0.92;
+  }
+
+  .wcMatchRow:hover :global(.oddCoefficient),
+  .wcMatchRow:hover :global(.startAt) {
+    color: #0f172a !important;
+  }
+
+  .wcMatchRow:hover :global(.startAt) {
+    color: #64748b !important;
+  }
+
+  .wcMatchRow:hover :global(.oddCoefficient_added) {
+    color: #2563eb !important;
+  }
+}
+
+@keyframes wcCoefPillUp {
+  0%,
+  40% {
+    background-color: #dff5e8;
+    color: #1a9b47;
+  }
+
+  100% {
+    background-color: transparent;
+    color: #0f172a;
+  }
+}
+
+@keyframes wcCoefPillDown {
+  0%,
+  40% {
+    background-color: #fce8e8;
+    color: #d64545;
+  }
+
+  100% {
+    background-color: transparent;
+    color: #0f172a;
+  }
+}
+
+@keyframes wcCoefPillUpAdded {
+  0%,
+  40% {
+    background-color: #dff5e8;
+    color: #1a9b47;
+    border-color: transparent;
+  }
+
+  100% {
+    background-color: #dbeafe;
+    color: #2563eb;
+    border-color: #93c5fd;
+  }
+}
+
+@keyframes wcCoefPillDownAdded {
+  0%,
+  40% {
+    background-color: #fce8e8;
+    color: #d64545;
+    border-color: transparent;
+  }
+
+  100% {
+    background-color: #dbeafe;
+    color: #2563eb;
+    border-color: #93c5fd;
+  }
+}
+
+.cellsBlock {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Homepage rows use wcOddsRow without .MatchRow — override global * { color: white } */
+.wcOddsRow :global([class*="oddCoefficient"]) {
+  color: #101828;
+}
+
+.wcOddsRow :global([class*="oddCell_added"] [class*="oddCoefficient"]) {
+  color: #2563eb !important;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+@media screen and (min-width: 1025px) {
+  .wcOddsRow {
+    display: contents;
+  }
+
+  .cellsBlock {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(45px, 1fr);
+    align-content: center;
+    align-items: stretch;
+    height: 100%;
+  }
+}
+
+/* Mobile / tablet: stacked odds rows */
+@media screen and (max-width: 1024px) {
+  .wcPage {
+    padding-bottom: 88px;
+  }
+
+  .wcTournament {
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.22);
+  }
+
+  .wcMatchRow {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    border-bottom: 1px solid #e7ebf1;
+    gap: 5px;
+    padding-bottom: 2px;
+  }
+
+  .wcMatchRow .matchInfo {
+    padding: 0;
+    width: 100%;
+  }
+
+  .cellsBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 10px 7px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .wcOddsRow {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .wcOddsMain_threeWay {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wcOddsMain_twoWay {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Extra markets hidden on mobile — use +N pill on the row */
+  .wcOddsDc,
+  .wcOddsTotals {
+    display: none !important;
+  }
+
+  .wcOddsRow :global([class*="oddCell"]) {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    min-width: 0;
+    min-height: 28px;
+    box-sizing: border-box;
+    padding: 3px 4px;
+    border-radius: 5px;
+    background: #eef2f7;
+    border: 1px solid #e2e8f0;
+  }
+
+  .wcOddsRow :global([class*="oddCell_special"]) {
+    display: none !important;
+  }
+
+  .wcOddsRow :global([class*="addedGameName"]) {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    color: #8b93a1;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .wcOddsRow :global([class*="oddCoefficient"]) {
+    font-size: 12px;
+    font-weight: 700;
+    color: #101828;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    line-height: 1.1;
+    border-radius: 0;
+    box-sizing: border-box;
+    width: auto;
+    flex: 0 0 auto;
+    background: transparent;
+  }
+
+  .wcOddsRow :global([class*="oddCell_added"]) {
+    background: #eef2f7 !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  .wcOddsRow :global([class*="oddCell_added"] [class*="addedGameName"]) {
+    color: #2563eb;
+  }
+
+  .wcOddsRow :global([class*="oddCell_added"] [class*="oddCoefficient"]),
+  .wcOddsRow :global([class*="oddCoefficient_added"]) {
+    min-width: auto;
+    min-height: 18px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    color: #2563eb !important;
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+  }
+
+  .wcOddsRow :global([class*="oddCoefficient_up"]),
+  .wcOddsRow :global([class*="oddCoefficient_down"]) {
+    min-width: auto;
+    min-height: 18px;
+    padding: 2px 6px;
+    border-radius: 8px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .cellsBlock {
+    padding: 0 8px 7px;
+  }
+
+  .wcOddsRow {
+    gap: 3px;
+  }
+
+  .wcOddsRow :global([class*="oddCell"]) {
+    min-height: 26px;
+    padding: 2px 4px;
+    gap: 2px;
+  }
+
+  .wcOddsRow :global([class*="addedGameName"]) {
+    font-size: 8px;
+  }
+
+  .wcOddsRow :global([class*="oddCoefficient"]) {
+    font-size: 11px;
+  }
+}

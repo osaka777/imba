@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useReadLocalStorage } from "usehooks-ts";
 
 import { getBets } from "~/entities/bet/api";
+import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
 import { CouponIcon } from "~/shared/assets";
 import { Button } from "~/shared/ui";
 
@@ -45,7 +46,7 @@ export const CouponWrapper: React.FC<CouponWrapper> = ({ className }) => {
     const handleResize = () => setWidth(global.innerWidth);
     window.addEventListener("resize", handleResize);
 
-    if (isOpen && width <= 1080) {
+    if (isOpen && width <= 767) {
       document.body.style.overflow = "hidden";
     } else if (!isOpen) {
       document.body.style.overflow = "unset";
@@ -61,7 +62,14 @@ export const CouponWrapper: React.FC<CouponWrapper> = ({ className }) => {
     queryFn: () => getBets("PENDING"),
     queryKey: ["bets", "pending"],
   });
-  const counter = (data?.ordinar?.length ?? 0) + (data?.express?.length ?? 0);
+
+  const { data: wcPending = [] } = useQuery({
+    queryFn: () => getMyWcBets("PENDING"),
+    queryKey: ["wc-bets", "pending"],
+  });
+
+  const counter =
+    (data?.ordinar?.length ?? 0) + (data?.express?.length ?? 0) + wcPending.length;
 
   const triggerOnClickHandler = () => setIsOpen((prev) => !prev);
 

@@ -279,20 +279,9 @@ export const useMatchRow = (
       };
     }
 
+    case "esports.cs":
+    case "esports.valorant":
     case "esports.dota2": {
-      const WIN__P1 = findMarket("WIN", "WIN__P1");
-      const WIN__P2 = findMarket("WIN", "WIN__P2");
-
-      return {
-        data,
-        info: defaultReturn.info,
-        markets: { WIN__P1, WIN__P2 },
-        marketsCount,
-        score: scoreGroups,
-      };
-    }
-
-    case "esports.cs": {
       const WIN__P1 = findMarket("WIN", "WIN__P1");
       const WIN__P2 = findMarket("WIN", "WIN__P2");
 

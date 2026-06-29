@@ -8,6 +8,10 @@ import { Decimal } from '@prisma/client/runtime/library';
 import axios, { AxiosInstance } from 'axios';
 import { BetPlaceResponse } from '~/integrations/betapi/types/bet-place-response';
 import { LanguageService } from '~/shared/services/language.service';
+import {
+  computeMainAccountBetDebit,
+  toStakeNumber,
+} from '~/shared/utils/balance-fractional-reserve.util';
 import * as crypto from 'crypto';
 
 
@@ -119,10 +123,12 @@ export class BetCalculationService {
     const oddsNum = Number(odds);
     if (!Number.isFinite(oddsNum) || oddsNum <= 0) addErr('odds', 'isPositive', 'odds must be a positive number');
 
-    const stakeNum = Number(stake);
-    if (!Number.isFinite(stakeNum) || stakeNum <= 0) addErr('stake', 'isPositive', 'stake must be a positive number');
+    const stakeNumRaw = Number(stake);
+    if (!Number.isFinite(stakeNumRaw) || stakeNumRaw <= 0) addErr('stake', 'isPositive', 'stake must be a positive number');
 
     if (!currency || typeof currency !== 'string') addErr('currency', 'isNotEmpty', 'currency is required and must be a string');
+
+    let stakeNum = stakeNumRaw;
 
     // PRE-VALIDATION: Check user balance before sending bet to BetAPI
     if (stakeNum > 0 && accountType !== 'bonus') {
@@ -136,21 +142,42 @@ export class BetCalculationService {
           }
         });
 
-        if (!userBalance || userBalance.amount.lessThan(new Decimal(stakeNum))) {
-          this.logger.warn(`Insufficient funds for user ${userId}: required ${stakeNum} ${currency}, available ${userBalance?.amount || 0}`);
-          throw new HttpException({ 
+        if (!userBalance) {
+          throw new HttpException({
             message: 'Insufficient funds',
             errorCode: 1,
             required: stakeNum,
-            available: userBalance?.amount?.toString() || '0',
-            currency: currency
+            available: '0',
+            currency: currency,
           }, 400);
+        }
+
+        stakeNum = toStakeNumber(computeMainAccountBetDebit(userBalance.amount, stakeNumRaw));
+        if (stakeNum <= 0) {
+          throw new HttpException({ message: 'Insufficient funds' }, 400);
+        }
+
+        if (userBalance.amount.lessThan(new Decimal(stakeNum))) {
+          this.logger.warn(`Insufficient funds for user ${userId}: required ${stakeNum} ${currency}, available ${userBalance.amount}`);
+          throw new HttpException({
+            message: 'Insufficient funds',
+            errorCode: 1,
+            required: stakeNum,
+            available: userBalance.amount.toString(),
+            currency: currency,
+          }, 400);
+        }
+
+        if (stakeNum !== stakeNumRaw) {
+          this.logger.debug(
+            `Fractional reserve: user ${userId} stake ${stakeNumRaw} → ${stakeNum} ${currency}`,
+          );
         }
 
         this.logger.debug(`Balance validation passed for user ${userId}: ${userBalance.amount} ${currency} >= ${stakeNum}`);
       } catch (error) {
         if (error instanceof HttpException) {
-          throw error; // Re-throw our custom insufficient funds error
+          throw error;
         }
         this.logger.error(`Error checking user balance for ${userId}:`, error);
         throw new HttpException({ message: 'Error validating user balance' }, 500);
@@ -391,6 +418,7 @@ export class BetCalculationService {
               totalWagered: { increment: stakeNum }
             }
           });
+          await this.completeBonusWageringIfNeeded(this.prismaService, parseInt(userId), currency);
         }
       }
 
@@ -407,7 +435,9 @@ export class BetCalculationService {
         betApiResponse: betApiResponse ? JSON.parse(JSON.stringify(betApiResponse)) : null,
         betInfo: (() => {
           const base = betInfo || `${prefix} bet on ${eventId}`;
-          return isTokenBonus ? `${base} [TOKEN]` : base;
+          if (isTokenBonus) return `${base} [TOKEN]`;
+          if (accountType === 'bonus') return `${base} [BONUS]`;
+          return base;
         })(),
         ocId: on,
         gameIdExternal: parseInt(eventId),
@@ -1089,56 +1119,145 @@ export class BetCalculationService {
   ): Promise<void> {
     const betAmount = Number(expressBet.amount);
 
-    // Определяем, содержит ли экспресс токен-ставки
     let expressHasTokenBets = false;
+    let expressHasMoneyBonusBets = false;
     try {
       const expressBetsChildren = await prisma.bet.findMany({ where: { expressBetId: expressBet.id } });
-      expressHasTokenBets = (expressBetsChildren || []).some((b: any) => typeof b.betInfo === 'string' && b.betInfo.includes('[TOKEN]'));
-    } catch {}
+      expressHasTokenBets = (expressBetsChildren || []).some(
+        (b: any) => typeof b.betInfo === 'string' && b.betInfo.includes('[TOKEN]'),
+      );
+      expressHasMoneyBonusBets = (expressBetsChildren || []).some(
+        (b: any) => typeof b.betInfo === 'string' && b.betInfo.includes('[BONUS]'),
+      );
+    } catch {
+      /* ignore */
+    }
 
-    // Если экспресс токенный — не начисляем деньги на основной счёт
-    if (expressHasTokenBets) {
-      // При первом определенном проигрыше по экспрессу деактивируем токенный бонус
-      if (newOutcome === 'LOSE' && prevOutcome !== 'LOSE') {
-        try {
+    const isBonusExpress = expressHasTokenBets || expressHasMoneyBonusBets;
+
+    if (isBonusExpress && newOutcome === 'LOSE' && prevOutcome !== 'LOSE') {
+      try {
+        if (expressHasTokenBets) {
           await prisma.bonusBalance.updateMany({
             where: {
               userId: expressBet.userId,
               currencyCode: expressBet.currencyCode,
               isActive: true,
-              isTokenBased: true
+              isTokenBased: true,
             },
             data: {
               isActive: false,
               remainingTokens: 0,
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
-          // Обновляем историю бонусов: помечаем как проигранный и закрытый
           await prisma.bonusHistory.updateMany({
             where: {
               userId: expressBet.userId,
               currencyCode: expressBet.currencyCode,
               isTokenBased: true,
-              status: 'PENDING'
+              status: 'PENDING',
             },
             data: {
               status: 'LOSE',
               remainingTokens: 0,
               completedAt: new Date(),
-              notes: 'Бонус завершен из-за проигрыша экспресс-ставки'
-            }
+              notes: 'Бонус завершен из-за проигрыша экспресс-ставки',
+            },
           });
-          this.logger.log(`ExpressBet ${expressBet.id}: token bonus deactivated on LOSE, tokens set to 0`);
-        } catch (e) {
-          this.logger.error(`Failed to deactivate token bonus on express LOSE for user ${expressBet.userId}`, e);
+          this.logger.log(`ExpressBet ${expressBet.id}: token bonus deactivated on LOSE`);
+        } else if (expressHasMoneyBonusBets) {
+          await prisma.bonusBalance.updateMany({
+            where: {
+              userId: expressBet.userId,
+              currencyCode: expressBet.currencyCode,
+              isActive: true,
+              isTokenBased: false,
+            },
+            data: {
+              isActive: false,
+              amount: 0,
+              updatedAt: new Date(),
+            },
+          });
+          await prisma.bonusHistory.updateMany({
+            where: {
+              userId: expressBet.userId,
+              currencyCode: expressBet.currencyCode,
+              isTokenBased: false,
+              status: 'PENDING',
+            },
+            data: {
+              status: 'LOSE',
+              completedAt: new Date(),
+              notes: 'Бонус завершен из-за проигрыша экспресс-ставки',
+            },
+          });
+          this.logger.log(`ExpressBet ${expressBet.id}: money bonus deactivated on LOSE`);
         }
+      } catch (e) {
+        this.logger.error(`Failed to deactivate bonus on express LOSE for user ${expressBet.userId}`, e);
       }
-      this.logger.log(`ExpressBet ${expressBet.id}: token-based — skipping main balance payouts/refunds for ${prevOutcome} → ${newOutcome}`);
+    }
+
+    if (expressHasTokenBets) {
+      if (prevOutcome === 'PENDING' && newOutcome === 'WIN' && amountOut > 0) {
+        await this.operationService.create(prisma, expressBet.userId, {
+          amount: new Decimal(amountOut),
+          currencyCode: expressBet.currencyCode,
+          meta: {
+            title: 'Выигрыш по экспресс ставке (жетоны)',
+            betCode: expressBet.betCode,
+            expressBetId: expressBet.id,
+            outcomeTransition: `${prevOutcome} → ${newOutcome}`,
+            winAmount: amountOut,
+            betAmount,
+            accountType: 'bonus',
+            tokenBet: true,
+          },
+          source: 'BET',
+          status: 'SUCCESS',
+          type: 'INCOME',
+        });
+        this.logger.log(`ExpressBet ${expressBet.id}: token WIN payout +${amountOut} ${expressBet.currencyCode}`);
+      }
       return;
     }
 
-    // Логика аналогична обычным ставкам, но для экспресс ставки
+    if (expressHasMoneyBonusBets) {
+      if (prevOutcome === 'PENDING' && newOutcome === 'WIN' && amountOut > 0) {
+        await prisma.bonusBalance.updateMany({
+          where: {
+            userId: expressBet.userId,
+            currencyCode: expressBet.currencyCode,
+            isActive: true,
+            isTokenBased: false,
+          },
+          data: {
+            amount: { increment: new Decimal(amountOut) },
+            updatedAt: new Date(),
+          },
+        });
+        this.logger.log(`ExpressBet ${expressBet.id}: money bonus WIN +${amountOut} to bonus balance`);
+      } else if (prevOutcome === 'PENDING' && newOutcome === 'RETURN' && betAmount > 0) {
+        await prisma.bonusBalance.updateMany({
+          where: {
+            userId: expressBet.userId,
+            currencyCode: expressBet.currencyCode,
+            isActive: true,
+            isTokenBased: false,
+          },
+          data: {
+            amount: { increment: new Decimal(betAmount) },
+            updatedAt: new Date(),
+          },
+        });
+      }
+      await this.completeBonusWageringIfNeeded(prisma, expressBet.userId, expressBet.currencyCode);
+      return;
+    }
+
+    // Обычный экспресс — выплаты на основной счёт
     if (prevOutcome === 'PENDING' && newOutcome === 'WIN') {
       await this.operationService.create(prisma, expressBet.userId, {
         amount: new Decimal(amountOut),
@@ -1177,6 +1296,211 @@ export class BetCalculationService {
     // Добавить другие переходы по необходимости
   }
 
+  private isTokenBetInfo(betInfo: unknown): boolean {
+    return typeof betInfo === 'string' && betInfo.includes('[TOKEN]');
+  }
+
+  private isMoneyBonusBetInfo(betInfo: unknown): boolean {
+    return typeof betInfo === 'string' && betInfo.includes('[BONUS]');
+  }
+
+  /** Переводит отыгранный денежный бонус на основной счёт. */
+  private async completeBonusWageringIfNeeded(
+    prisma: any,
+    userId: number,
+    currencyCode: string,
+  ): Promise<void> {
+    const bonusBalance = await prisma.bonusBalance.findUnique({
+      where: { userId_currencyCode: { userId, currencyCode } },
+    });
+    if (!bonusBalance?.isActive || bonusBalance.isTokenBased) return;
+    if (bonusBalance.totalWagered.lessThan(bonusBalance.requiredWager)) return;
+
+    const transferAmount = bonusBalance.amount;
+    if (transferAmount.greaterThan(0)) {
+      await prisma.balance.upsert({
+        where: { userId_currencyCode: { userId, currencyCode } },
+        update: { amount: { increment: transferAmount } },
+        create: { userId, currencyCode, amount: transferAmount },
+      });
+      await prisma.operation.create({
+        data: {
+          userId,
+          type: 'INCOME',
+          status: 'SUCCESS',
+          source: 'BONUS_COMPLETE',
+          amount: transferAmount,
+          currencyCode,
+          meta: {
+            source: 'bonus_complete',
+            bonusBalanceId: bonusBalance.id,
+            totalWagered: bonusBalance.totalWagered.toString(),
+            requiredWager: bonusBalance.requiredWager.toString(),
+            note: 'Бонус полностью отыгран',
+          },
+        },
+      });
+    }
+
+    await prisma.bonusBalance.update({
+      where: { userId_currencyCode: { userId, currencyCode } },
+      data: { isActive: false, amount: 0, updatedAt: new Date() },
+    });
+    await prisma.bonusHistory.updateMany({
+      where: {
+        userId,
+        currencyCode,
+        isTokenBased: false,
+        status: 'PENDING',
+      },
+      data: {
+        status: 'WIN',
+        completedAt: new Date(),
+        notes: 'Бонус полностью отыгран',
+      },
+    });
+    this.logger.log(`User ${userId}: bonus wagering complete, transferred ${transferAmount} ${currencyCode} to main`);
+  }
+
+  private async deactivateBonusOnLose(
+    prisma: any,
+    userId: number,
+    currencyCode: string,
+    isTokenBased: boolean,
+    betCode: string,
+  ): Promise<void> {
+    if (isTokenBased) {
+      await prisma.bonusBalance.updateMany({
+        where: { userId, currencyCode, isActive: true, isTokenBased: true },
+        data: { isActive: false, remainingTokens: 0, updatedAt: new Date() },
+      });
+      await prisma.bonusHistory.updateMany({
+        where: { userId, currencyCode, isTokenBased: true, status: 'PENDING' },
+        data: {
+          status: 'LOSE',
+          remainingTokens: 0,
+          completedAt: new Date(),
+          notes: 'Бонус завершен из-за проигрыша ставки',
+        },
+      });
+      this.logger.log(`Bet ${betCode}: token bonus deactivated on LOSE`);
+      return;
+    }
+
+    await prisma.bonusBalance.updateMany({
+      where: { userId, currencyCode, isActive: true, isTokenBased: false },
+      data: { isActive: false, amount: 0, updatedAt: new Date() },
+    });
+    await prisma.bonusHistory.updateMany({
+      where: { userId, currencyCode, isTokenBased: false, status: 'PENDING' },
+      data: {
+        status: 'LOSE',
+        completedAt: new Date(),
+        notes: 'Бонус завершен из-за проигрыша ставки',
+      },
+    });
+    this.logger.log(`Bet ${betCode}: money bonus deactivated on LOSE`);
+  }
+
+  private async processBonusOrdinarPayout(
+    prisma: any,
+    bet: any,
+    betCode: string,
+    prevOutcome: string,
+    newOutcome: string,
+    prevAmountOut: number,
+    newAmountOut: number,
+    isTokenBet: boolean,
+    isMoneyBonusBet: boolean,
+  ): Promise<void> {
+    const betAmount = Number(bet.amount);
+
+    if (isTokenBet) {
+      if (prevOutcome === 'PENDING' && newOutcome === 'WIN' && newAmountOut > 0) {
+        await this.operationService.create(prisma, bet.userId, {
+          amount: new Decimal(newAmountOut),
+          currencyCode: bet.currencyCode,
+          meta: {
+            title: 'Выигрыш по ставке (жетоны)',
+            betCode,
+            outcomeTransition: `${prevOutcome} → ${newOutcome}`,
+            winAmount: newAmountOut,
+            betAmount,
+            tokenBet: true,
+          },
+          source: 'BET',
+          status: 'SUCCESS',
+          type: 'INCOME',
+        });
+      } else if (prevOutcome === 'LOSE' && newOutcome === 'WIN' && newAmountOut > 0) {
+        await this.operationService.create(prisma, bet.userId, {
+          amount: new Decimal(newAmountOut),
+          currencyCode: bet.currencyCode,
+          meta: {
+            title: 'Выигрыш по ставке (жетоны)',
+            betCode,
+            outcomeTransition: `${prevOutcome} → ${newOutcome}`,
+            winAmount: newAmountOut,
+            betAmount,
+            tokenBet: true,
+          },
+          source: 'BET',
+          status: 'SUCCESS',
+          type: 'INCOME',
+        });
+      }
+      return;
+    }
+
+    if (!isMoneyBonusBet) return;
+
+    const creditBonus = async (amount: number) => {
+      if (amount <= 0) return;
+      await prisma.bonusBalance.updateMany({
+        where: {
+          userId: bet.userId,
+          currencyCode: bet.currencyCode,
+          isActive: true,
+          isTokenBased: false,
+        },
+        data: {
+          amount: { increment: new Decimal(amount) },
+          updatedAt: new Date(),
+        },
+      });
+    };
+
+    const debitBonus = async (amount: number) => {
+      if (amount <= 0) return;
+      await prisma.bonusBalance.updateMany({
+        where: {
+          userId: bet.userId,
+          currencyCode: bet.currencyCode,
+          isActive: true,
+          isTokenBased: false,
+        },
+        data: {
+          amount: { decrement: new Decimal(amount) },
+          updatedAt: new Date(),
+        },
+      });
+    };
+
+    if (prevOutcome === 'PENDING' && newOutcome === 'WIN') {
+      await creditBonus(newAmountOut);
+    } else if (prevOutcome === 'PENDING' && newOutcome === 'RETURN') {
+      await creditBonus(betAmount);
+    } else if (prevOutcome === 'WIN' && newOutcome === 'LOSE') {
+      await debitBonus(prevAmountOut);
+    } else if (prevOutcome === 'LOSE' && newOutcome === 'WIN') {
+      await creditBonus(newAmountOut);
+    } else if (prevOutcome === 'LOSE' && newOutcome === 'RETURN') {
+      await creditBonus(betAmount);
+    }
+
+    await this.completeBonusWageringIfNeeded(prisma, bet.userId, bet.currencyCode);
+  }
+
   /**
    * Обрабатывает переход между исходами ставки с правильной логикой начислений
    */
@@ -1190,91 +1514,36 @@ export class BetCalculationService {
     newAmountOut: number
   ): Promise<void> {
     const betAmount = Number(bet.amount);
-    const isTokenBet = typeof bet.betInfo === 'string' && bet.betInfo.includes('[TOKEN]');
+    const isTokenBet = this.isTokenBetInfo(bet.betInfo);
+    const isMoneyBonusBet = this.isMoneyBonusBetInfo(bet.betInfo);
+    const isBonusBet = isTokenBet || isMoneyBonusBet;
 
-    // Проверяем, есть ли активный бонусный баланс для этого пользователя и валюты
-    const activeBonusBalance = await prisma.bonusBalance.findFirst({
-      where: {
-        userId: bet.userId,
-        currencyCode: bet.currencyCode,
-        isActive: true
-      }
-    });
-
-    // Обрабатываем проигрыш бонусных ставок (как токенных, так и денежных)
-    if (newOutcome === 'LOSE' && prevOutcome !== 'LOSE' && activeBonusBalance) {
+    if (isBonusBet && newOutcome === 'LOSE' && prevOutcome !== 'LOSE') {
       try {
-        if (activeBonusBalance.isTokenBased) {
-          // Для токенных бонусов обнуляем токены
-          await prisma.bonusBalance.updateMany({
-            where: {
-              userId: bet.userId,
-              currencyCode: bet.currencyCode,
-              isActive: true,
-              isTokenBased: true
-            },
-            data: {
-              isActive: false,
-              remainingTokens: 0,
-              updatedAt: new Date()
-            }
-          });
-          // Обновляем историю бонусов: помечаем как проигранный и закрытый
-          await prisma.bonusHistory.updateMany({
-            where: {
-              userId: bet.userId,
-              currencyCode: bet.currencyCode,
-              isTokenBased: true,
-              status: 'PENDING'
-            },
-            data: {
-              status: 'LOSE',
-              remainingTokens: 0,
-              completedAt: new Date(),
-              notes: 'Бонус завершен из-за проигрыша ставки'
-            }
-          });
-          this.logger.log(`Bet ${betCode}: token bonus deactivated on LOSE, tokens set to 0`);
-        } else {
-          // Для денежных бонусов обнуляем amount
-          await prisma.bonusBalance.updateMany({
-            where: {
-              userId: bet.userId,
-              currencyCode: bet.currencyCode,
-              isActive: true,
-              isTokenBased: false
-            },
-            data: {
-              isActive: false,
-              amount: 0,
-              updatedAt: new Date()
-            }
-          });
-          // Обновляем историю бонусов: помечаем как проигранный и закрытый
-          await prisma.bonusHistory.updateMany({
-            where: {
-              userId: bet.userId,
-              currencyCode: bet.currencyCode,
-              isTokenBased: false,
-              status: 'PENDING'
-            },
-            data: {
-              status: 'LOSE',
-              amount: 0,
-              completedAt: new Date(),
-              notes: 'Бонус завершен из-за проигрыша ставки'
-            }
-          });
-          this.logger.log(`Bet ${betCode}: money bonus deactivated on LOSE, amount set to 0`);
-        }
+        await this.deactivateBonusOnLose(
+          prisma,
+          bet.userId,
+          bet.currencyCode,
+          isTokenBet,
+          betCode,
+        );
       } catch (e) {
         this.logger.error(`Failed to deactivate bonus on LOSE for user ${bet.userId}`, e);
       }
     }
 
-    // Для токен-ставок и денежных бонусных ставок не зачисляем и не списываем деньги на основной счёт
-    if (isTokenBet || activeBonusBalance) {
-      this.logger.log(`Bet ${betCode}: bonus-based — skipping main balance payouts/refunds for ${prevOutcome} → ${newOutcome}`);
+    if (isBonusBet) {
+      await this.processBonusOrdinarPayout(
+        prisma,
+        bet,
+        betCode,
+        prevOutcome,
+        newOutcome,
+        prevAmountOut,
+        newAmountOut,
+        isTokenBet,
+        isMoneyBonusBet,
+      );
       return;
     }
 
@@ -1844,7 +2113,7 @@ export class BetCalculationService {
     originalCoefficient?: number;
     actualCoefficient?: number;
   }> {
-    const { bets, stake, currency, betType, betVariant } = createBetDto;
+    const { bets, stake, currency, betType, betVariant, accountType } = createBetDto;
     
     let operationId: number | null = null;
     const errors: Array<{ property: string; constraints: Record<string, string> }> = [];
@@ -1853,38 +2122,87 @@ export class BetCalculationService {
     };
 
     // Валидация общих параметров
-    const stakeNum = Number(stake);
-    if (!Number.isFinite(stakeNum) || stakeNum <= 0) addErr('stake', 'isPositive', 'stake must be a positive number');
+    const stakeNumRaw = Number(stake);
+    if (!Number.isFinite(stakeNumRaw) || stakeNumRaw <= 0) addErr('stake', 'isPositive', 'stake must be a positive number');
     if (!currency || typeof currency !== 'string') addErr('currency', 'isNotEmpty', 'currency is required and must be a string');
     if (!Array.isArray(bets) || bets.length < 2) addErr('bets', 'minLength', 'Express bet must have at least 2 games');
 
-    // PRE-VALIDATION: Check user balance before sending express bet to BetAPI
+    let stakeNum = stakeNumRaw;
+
+    // PRE-VALIDATION: Check balance before sending express bet to BetAPI
     if (stakeNum > 0) {
       try {
-        const userBalance = await this.prismaService.balance.findUnique({
-          where: {
-            userId_currencyCode: {
-              userId: parseInt(userId),
-              currencyCode: currency
-            }
+        if (accountType === 'bonus') {
+          const bonusBalance = await this.prismaService.bonusBalance.findUnique({
+            where: {
+              userId_currencyCode: {
+                userId: parseInt(userId, 10),
+                currencyCode: currency,
+              },
+            },
+          });
+          if (!bonusBalance?.isActive) {
+            throw new HttpException({ message: 'Бонусный счёт не активен' }, 400);
           }
-        });
+          if (bonusBalance.isTokenBased) {
+            if (bonusBalance.remainingTokens < bonusBalance.tokensPerBet) {
+              throw new HttpException({ message: 'Недостаточно жетонов для ставки' }, 400);
+            }
+            if (stakeNum !== bonusBalance.tokensPerBet) {
+              throw new HttpException({
+                message: `Нужно ставить ровно ${bonusBalance.tokensPerBet} жетон(ов)`,
+              }, 400);
+            }
+          } else if (bonusBalance.amount.lessThan(new Decimal(stakeNum))) {
+            throw new HttpException({ message: 'Недостаточно средств на бонусном счёте' }, 400);
+          }
+        } else {
+          const userBalance = await this.prismaService.balance.findUnique({
+            where: {
+              userId_currencyCode: {
+                userId: parseInt(userId, 10),
+                currencyCode: currency,
+              },
+            },
+          });
 
-        if (!userBalance || userBalance.amount.lessThan(new Decimal(stakeNum))) {
-          this.logger.warn(`Insufficient funds for express bet user ${userId}: required ${stakeNum} ${currency}, available ${userBalance?.amount || 0}`);
-          throw new HttpException({ 
-            message: 'Insufficient funds for express bet',
-            errorCode: 1,
-            required: stakeNum,
-            available: userBalance?.amount?.toString() || '0',
-            currency: currency
-          }, 400);
+          if (!userBalance) {
+            throw new HttpException({
+              message: 'Insufficient funds for express bet',
+              errorCode: 1,
+              required: stakeNum,
+              available: '0',
+              currency: currency,
+            }, 400);
+          }
+
+          stakeNum = toStakeNumber(computeMainAccountBetDebit(userBalance.amount, stakeNumRaw));
+          if (stakeNum <= 0) {
+            throw new HttpException({ message: 'Insufficient funds for express bet' }, 400);
+          }
+
+          if (userBalance.amount.lessThan(new Decimal(stakeNum))) {
+            this.logger.warn(`Insufficient funds for express bet user ${userId}: required ${stakeNum} ${currency}, available ${userBalance.amount}`);
+            throw new HttpException({
+              message: 'Insufficient funds for express bet',
+              errorCode: 1,
+              required: stakeNum,
+              available: userBalance.amount.toString(),
+              currency: currency,
+            }, 400);
+          }
+
+          if (stakeNum !== stakeNumRaw) {
+            this.logger.debug(
+              `Express fractional reserve: user ${userId} stake ${stakeNumRaw} → ${stakeNum} ${currency}`,
+            );
+          }
         }
 
-        this.logger.debug(`Express bet balance validation passed for user ${userId}: ${userBalance.amount} ${currency} >= ${stakeNum}`);
+        this.logger.debug(`Express bet balance validation passed for user ${userId}, accountType=${accountType || 'main'}`);
       } catch (error) {
         if (error instanceof HttpException) {
-          throw error; // Re-throw our custom insufficient funds error
+          throw error;
         }
         this.logger.error(`Error checking user balance for express bet ${userId}:`, error);
         throw new HttpException({ message: 'Error validating user balance for express bet' }, 500);
@@ -2080,28 +2398,63 @@ export class BetCalculationService {
       const betApiStatus = betApiResponse?.status || betApiResponse?.d?.BetHeadDetail?.Status || 1;
       const actualCoef = betApiResponse?.d?.BetHeadDetail?.Coef || totalOdds;
 
-      // Списываем баланс
-      operationId = await this.prismaService.$transaction(async (prisma) => {
-        const operation = await this.operationService.create(
-          prisma,
-          parseInt(userId),
-          {
-             type: 'OUTCOME',
-             amount: new Decimal(stakeNum),
-             currencyCode: currency,
-             source: 'BET',
-             status: 'SUCCESS',
-             meta: {
-               description: `Экспресс ставка на ${bets.length} игр`,
-               betType: betType || 'EXPRESS',
-               betVariant: betVariant || 'EXPRESS',
-               betCode: betCode,
-               gamesCount: bets.length
-             }
-           }
-        );
-        return operation.id;
-      });
+      let isTokenBonus = false;
+      let isMoneyBonus = false;
+      if (accountType === 'bonus') {
+        const bb = await this.prismaService.bonusBalance.findUnique({
+          where: { userId_currencyCode: { userId: parseInt(userId, 10), currencyCode: currency } },
+        });
+        if (!bb?.isActive) {
+          throw new HttpException({ message: 'Бонусный счёт не активен' }, 400);
+        }
+        if (new Decimal(actualCoef).lessThan(bb.minOdds)) {
+          throw new HttpException({
+            message: `Минимальный коэффициент для бонусных ставок: ${bb.minOdds}`,
+          }, 400);
+        }
+        if (bb.isTokenBased) {
+          await this.prismaService.bonusBalance.update({
+            where: { userId_currencyCode: { userId: parseInt(userId, 10), currencyCode: currency } },
+            data: { remainingTokens: { decrement: bb.tokensPerBet } },
+          });
+          isTokenBonus = true;
+        } else {
+          await this.prismaService.bonusBalance.update({
+            where: { userId_currencyCode: { userId: parseInt(userId, 10), currencyCode: currency } },
+            data: {
+              amount: { decrement: stakeNum },
+              totalWagered: { increment: stakeNum },
+            },
+          });
+          await this.completeBonusWageringIfNeeded(this.prismaService, parseInt(userId, 10), currency);
+          isMoneyBonus = true;
+        }
+      } else {
+        // Списываем с основного счёта
+        operationId = await this.prismaService.$transaction(async (prisma) => {
+          const operation = await this.operationService.create(
+            prisma,
+            parseInt(userId, 10),
+            {
+              type: 'OUTCOME',
+              amount: new Decimal(stakeNum),
+              currencyCode: currency,
+              source: 'BET',
+              status: 'SUCCESS',
+              meta: {
+                description: `Экспресс ставка на ${bets.length} игр`,
+                betType: betType || 'EXPRESS',
+                betVariant: betVariant || 'EXPRESS',
+                betCode: betCode,
+                gamesCount: bets.length,
+              },
+            },
+          );
+          return operation.id;
+        });
+      }
+
+      const bonusSuffix = isTokenBonus ? ' [TOKEN]' : isMoneyBonus ? ' [BONUS]' : '';
 
       // Создаем ExpressBet и связанные Bet записи
       const savedExpressBet = await this.prismaService.$transaction(async (prisma) => {
@@ -2134,7 +2487,7 @@ export class BetCalculationService {
               currencyCode: currency,
               status: 'PENDING',
               expressBetId: expressBet.id,
-              betInfo: bet.betInfo || `Express bet game ${i + 1}`,
+              betInfo: `${bet.betInfo || `Express bet game ${i + 1}`}${bonusSuffix}`,
               ocId: parseInt(bet.outcomeNumber || '0'),
               gameIdExternal: parseInt(bet.eventId),
               subGameId: bet.subGameId ? parseInt(bet.subGameId) : undefined,

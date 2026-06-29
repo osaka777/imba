@@ -1,6 +1,7 @@
 "use client";
 
 import { components } from "~/shared/api";
+import { formatTennisGameScore } from "~/entities/wc-odds/lib/wcLiveScore";
 import { FireIcon, TimeIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
 import { Button } from "~/shared/ui";
@@ -16,6 +17,7 @@ const matchFields: Record<string, string[]> = {
   basketball: ["WIN_OT__P1", "WIN_RT__PX", "WIN_OT__P2"],
   "esports.cs": ["WIN__P1", "WIN__P2"],
   "esports.dota2": ["WIN__P1", "WIN__P2"],
+  "esports.valorant": ["WIN__P1", "WIN__P2"],
   hockey: ["WIN_RT__P1", "WIN_RT__PX", "WIN_RT__P2"],
   soccer: ["WIN__P1", "WIN__PX", "WIN__P2", "WIN__1X", "WIN__12", "WIN__X2"],
   "table-tennis": ["WIN__P1", "WIN__P2"],
@@ -26,6 +28,7 @@ const matchFields: Record<string, string[]> = {
 
 type MatchRowProps = {
   isLive: boolean;
+  gameLinkPrefix?: string;
   matchData: (components["schemas"]["GameDtoWithGroupedMarkets"] | Game) & {
     meta?: {
       raw_start_at?: string;
@@ -39,7 +42,11 @@ type MatchRowProps = {
   };
 };
 
-export const MatchRow: React.FC<MatchRowProps> = ({ isLive, matchData }) => {
+export const MatchRow: React.FC<MatchRowProps> = ({
+  isLive,
+  gameLinkPrefix = "/game/",
+  matchData,
+}) => {
   const { markets, marketsCount, score } = useMatchRow(matchData) as {
     markets: any;
     marketsCount: number;
@@ -53,7 +60,7 @@ export const MatchRow: React.FC<MatchRowProps> = ({ isLive, matchData }) => {
         <Button
           className={styles.matchInfoLink}
           elementType="link"
-          href={`/game/${matchData.eventId}`}
+          href={`${gameLinkPrefix}${matchData.eventId}`}
         >
           {matchData.meta?.raw_start_at ? (
             <div className={styles.startAt}>{matchData.meta.raw_start_at}</div>
@@ -104,7 +111,7 @@ export const MatchRow: React.FC<MatchRowProps> = ({ isLive, matchData }) => {
                         )}
                       >
                         {score?.text.liveScore
-                          ? `(${score?.text.liveScore})`
+                          ? `(${formatTennisGameScore(score.text.liveScore) ?? score.text.liveScore})`
                           : "-"}
                       </span>
                     )}

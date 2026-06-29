@@ -24,7 +24,7 @@ export class DepositCleanupService {
       const stale = await this.prisma.deposit.findMany({
         where: {
           paymentSystem: {
-            in: ['KZT_FOREIGN_CARD', 'RUB_FOREIGN_CARD'] as any,
+            in: ['KZT_FOREIGN_CARD', 'KZT_KASPI', 'RUB_FOREIGN_CARD', 'RUB_SBERBANK', 'USDT_TRC20'] as any,
           },
           status: { in: ['PENDING', 'PROCESSING'] as any },
           createdAt: { lt: cutoff },
@@ -35,6 +35,8 @@ export class DepositCleanupService {
           userId: true,
           amount: true,
           currencyCode: true,
+          paymentSystem: true,
+          createdAt: true,
         },
       });
 
@@ -42,6 +44,13 @@ export class DepositCleanupService {
 
       let updatedCount = 0;
       for (const d of stale) {
+        const expiresMinutes =
+          d.paymentSystem === 'USDT_TRC20'
+            ? Number((d.meta as any)?.expiresInMinutes) || 45
+            : 15;
+        const expiresAt = new Date(d.createdAt).getTime() + expiresMinutes * 60 * 1000;
+        if (expiresAt > now) continue;
+
         const oldMeta = (d.meta as any) || {};
         const newMeta = {
           ...oldMeta,

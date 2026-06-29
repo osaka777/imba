@@ -18,7 +18,8 @@ export const CurrencySelector = ({ currency, setCurrency }: { currency: string, 
     { label: 'UAH', value: 'UAH' },
     { label: 'RUB', value: 'RUB' },
     { label: 'TRY', value: 'TRY' },
-    { label: 'UZS', value: 'UZS' }
+    { label: 'UZS', value: 'UZS' },
+    { label: 'USDT', value: 'USDT' }
   ];
 
   return (

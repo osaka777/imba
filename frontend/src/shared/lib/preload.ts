@@ -54,8 +54,8 @@ export const preloadPopularPages = async () => {
       });
     }
 
-    // Дополнительная задержка для обеспечения плавной работы основного контента
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Дополнительная пауза — preload уже отложен в layout через requestIdleCallback
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Предзагружаем данные для популярных страниц с ограниченным количеством
     const popularPages = [

@@ -20,6 +20,13 @@
   display: block;      /* flex not needed here; the inner slider manages layout */
   overflow: hidden;    /* prevent internal overflow */
   aspect-ratio: 55/22;
+  width: 100%;
+}
+
+/* Placeholder while slides are loading */
+.Header .slider:empty {
+  background: rgb(255 255 255 / 0.04);
+  border-radius: 8px;
 }
 
 /* Make promos have fixed or bounded width on desktop */
@@ -34,18 +41,22 @@
 }
 
 /* Mobile: stack vertically and restore full width */
-@media screen and (max-width: 1080px) {
+@media screen and (max-width: 767px) {
   .Header {
     width: 100%;
+    max-width: 100%;
+    margin-top: 8px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    align-items: stretch;
+    gap: 10px;
   }
 
   .Header .slider {
     width: 100%;
+    max-width: 100%;
     flex: 0 0 auto;
+    border-radius: 8px;
   }
 
   .mobilePromos {

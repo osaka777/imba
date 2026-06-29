@@ -1,0 +1,239 @@
+.broadcastWrap {
+  position: relative;
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto 0.75rem;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.broadcastCard {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #233358, #141b2e);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+}
+
+.broadcastHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.broadcastHeaderMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.broadcastHeaderIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  flex-shrink: 0;
+}
+
+.broadcastHeaderIcon {
+  width: 15px;
+  height: 15px;
+  fill: #60a5fa;
+}
+
+.broadcastHeaderText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.broadcastLeague {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.48);
+}
+
+.broadcastMatch {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.headerCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(255 255 255 / 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.headerCloseBtn:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.headerCloseIcon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.broadcastBody {
+  padding: 8px;
+  background: rgb(0 0 0 / 0.18);
+}
+
+.broadcastVideo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.videoShell {
+  position: relative;
+  width: 100%;
+}
+
+.tapPlayBtn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 16px;
+  border: none;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.broadcastPlaceholder {
+  display: grid;
+  place-items: center;
+  gap: 0.5rem;
+  min-height: 160px;
+  padding: 1rem;
+  text-align: center;
+  color: rgb(255 255 255 / 0.75);
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.75));
+  border-radius: 8px;
+}
+
+.broadcastBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.closeBtn:hover {
+  background: rgb(0 0 0 / 0.75);
+}
+
+.closeIcon {
+  width: 14px;
+  height: 14px;
+  fill: #fff;
+}
+
+@media screen and (max-width: 1080px) {
+  .broadcastCard {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: calc(100dvh - 24px);
+    border-radius: 14px;
+  }
+
+  .broadcastHeader {
+    flex-shrink: 0;
+    padding: 14px 14px 12px;
+  }
+
+  .broadcastBody {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .broadcastVideo {
+    aspect-ratio: auto;
+    flex: 1;
+    min-height: 180px;
+    max-height: calc(100dvh - 120px);
+    border-radius: 0;
+  }
+
+  .videoShell {
+    flex: 1;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .broadcastPlaceholder {
+    flex: 1;
+    min-height: 180px;
+    border-radius: 0;
+  }
+}

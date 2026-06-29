@@ -34,7 +34,16 @@ export const Auth = () => {
       event.stopPropagation();
       setAuthModalType(authType);
     };
-  const closeModal = () => setAuthModalType("closed");
+  const closeModal = (open: boolean) => {
+    if (!open) setAuthModalType("closed");
+  };
+
+  const preventCloseOnRegistrationPicker = (event: Event) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("[data-registration-submodal]")) {
+      event.preventDefault();
+    }
+  };
 
   return (
     <div className={styles.Auth}>
@@ -57,6 +66,8 @@ export const Auth = () => {
         <DialogContent
           className={styles.authDialog}
           title={authModalType === "login" ? "Вход в систему" : "Регистрация"}
+          onInteractOutside={preventCloseOnRegistrationPicker}
+          onPointerDownOutside={preventCloseOnRegistrationPicker}
         >
           <AuthForm
             authVariant={authModalType as "login" | "register"}

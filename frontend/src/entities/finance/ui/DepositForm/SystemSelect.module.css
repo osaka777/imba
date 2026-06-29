@@ -34,6 +34,14 @@
   color: #1d4ed8 !important;
 }
 
+.SystemSelect_kaspi {
+  min-height: 78px;
+}
+
+.SystemSelect_sberbank {
+  min-height: 78px;
+}
+
 @media screen and (min-width: 769px) {
   .SystemSelect {
     min-height: 68px;
@@ -48,6 +56,24 @@
   .icons {
     height: 26px;
   }
+
+  .icons_kaspi {
+    height: 38px;
+    min-height: 38px;
+  }
+
+  .icons_sberbank {
+    height: 38px;
+    min-height: 38px;
+  }
+
+  .kaspiLogo {
+    height: 32px !important;
+  }
+
+  .sberbankLogo {
+    height: 32px !important;
+  }
 }
 
 @media screen and (max-width: 768px) {
@@ -56,11 +82,19 @@
     min-width: 0;
     max-width: none;
     min-height: 56px;
-    height: 56px;
+    height: auto;
     margin: 0;
     border-radius: 10px;
     gap: 3px;
     padding: 6px 4px;
+  }
+
+  .SystemSelect_kaspi {
+    min-height: 62px;
+  }
+
+  .SystemSelect_sberbank {
+    min-height: 62px;
   }
 
   .SystemSelect:hover {
@@ -70,6 +104,26 @@
   .icons {
     height: 22px;
     padding: 0 4px;
+  }
+
+  .icons_kaspi {
+    height: 34px;
+    min-height: 34px;
+    padding: 2px 4px;
+  }
+
+  .icons_sberbank {
+    height: 34px;
+    min-height: 34px;
+    padding: 2px 4px;
+  }
+
+  .kaspiLogo {
+    height: 28px !important;
+  }
+
+  .sberbankLogo {
+    height: 28px !important;
   }
 
   .systemSelectTextMini {
@@ -100,9 +154,36 @@
   gap: 4px;
 }
 
+.icons_kaspi {
+  height: 42px;
+  min-height: 42px;
+  padding: 4px 6px;
+}
+
+.icons_sberbank {
+  height: 42px;
+  min-height: 42px;
+  padding: 4px 6px;
+}
+
 .icons img {
   height: 20px;
   width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.kaspiLogo {
+  height: 36px !important;
+  width: auto !important;
+  max-width: 96% !important;
+  object-fit: contain;
+}
+
+.sberbankLogo {
+  height: 36px !important;
+  width: auto !important;
+  max-width: 96% !important;
   object-fit: contain;
 }
 .systemSelectIcon {

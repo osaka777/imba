@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { Rates } from "~/entities/bet";
 import { components } from "~/shared/api";
 import { cn } from "~/shared/lib";
-import { OverUnderPair } from "./OverUnderPair";
+import { isTotalsGroupName } from "~/entities/game/lib/marketCategories";
 import { SingleBetRow } from "./SingleBetRow";
 import styles from "./Match.module.css";
 import { PXPair } from "./PXPair";
@@ -44,9 +44,6 @@ export const OddsItem: React.FC<OddsItemProps> = ({
     const isAlreadyAdded = currentRate?.market === item.market;
 
     if (!isAlreadyAdded) {
-      // Логирование для отладки передачи subGameId
-      console.log('[OddsItem] Creating rate with subGameId:', subGameId, 'subGameName:', subGameName, 'eventId:', eventId);
-      
       const newRate = {
         coef: `${(item as any).odds || (item as any).cf || (item as any).oc_rate}`,
         eventId,
@@ -91,78 +88,33 @@ export const OddsItem: React.FC<OddsItemProps> = ({
   };
 
   // Логика для обработки тоталов (меньше/больше)
-  const isTotalGroup = groupName && (
-    groupName === "тотал" || 
-    groupName === "Тотал" ||
-    groupName === "TOTAL"
-  );
+  const isTotalGroup = isTotalsGroupName(groupName);
 
   if (isTotalGroup) {
-    // Группируем ставки по размеру
-    const totalPairs: { [key: string]: { under?: MarketDto, over?: MarketDto, size: string } } = {};
-    
-    marketData.forEach(market => {
-      // Извлекаем размер из различных полей
-      let size = "0";
-      const marketAny = market as any;
-      
-      // Приоритет: pivot -> oc_size -> извлечение из oc_name -> извлечение из market
-      if (market.pivot && market.pivot !== null && market.pivot !== undefined) {
-        size = market.pivot.toString();
-      } else if (marketAny.oc_size) {
-        size = marketAny.oc_size.toString();
-      } else if (marketAny.oc_name) {
-        // Извлекаем число из строки типа "73.5 М" или "73.5 Б"
-        const match = marketAny.oc_name.match(/(\d+(?:\.\d+)?)/);
-        if (match) {
-          size = match[1];
-        }
-      } else {
-        // Извлекаем из названия рынка
-        const match = market.market.match(/(\d+(?:\.\d+)?)/);
-        if (match) {
-          size = match[1];
-        }
-      }
-      
-      const isUnder = market.market.includes('М') || (marketAny.oc_name && marketAny.oc_name.includes('М'));
-      const isOver = market.market.includes('Б') || (marketAny.oc_name && marketAny.oc_name.includes('Б'));
-      
-      if (!totalPairs[size]) {
-        totalPairs[size] = { size };
-      }
-      
-      if (isUnder) {
-        totalPairs[size].under = market;
-      } else if (isOver) {
-        totalPairs[size].over = market;
-      }
+    const sortedMarkets = [...marketData].sort((a, b) => {
+      const pivotA = Number((a as any).pivot ?? (a as any).oc_size ?? 0);
+      const pivotB = Number((b as any).pivot ?? (b as any).oc_size ?? 0);
+      if (pivotA !== pivotB) return pivotA - pivotB;
+      const nameA = String((a as any).oc_name || a.market);
+      const nameB = String((b as any).oc_name || b.market);
+      return nameA.localeCompare(nameB, "ru");
     });
 
-    // Отображаем все пары тоталов (даже неполные), отсортированные по размеру от меньшего к большему
-    const allPairs = Object.values(totalPairs)
-      .filter(pair => pair.under || pair.over)
-      .sort((a, b) => parseFloat(a.size) - parseFloat(b.size));
-    
-    if (allPairs.length > 0) {
-       return (
-         <>
-           {allPairs.map((pair) => (
-              <OverUnderPair
-                key={pair.size}
-                underMarket={pair.under}
-                overMarket={pair.over}
-                size={parseFloat(pair.size)}
-                eventId={eventId}
-                eventName={eventName}
-                parentEventId={parentEventId}
-                groupName={groupName || ""}
-                isLive={isLive}
-              />
-            ))}
-        </>
-      );
-    }
+    return (
+      <div className={cn(styles.oddsBlock)}>
+        {sortedMarkets.map((item) => {
+          const isRateAdded = currentRate?.market === (item as any).market;
+          return (
+            <SingleBetRow
+              isRateAdded={isRateAdded}
+              item={item}
+              key={(item as any).market}
+              toggleRate={toggleRate}
+            />
+          );
+        })}
+      </div>
+    );
   }
 
   // Check for 1X2 group using passed groupName prop

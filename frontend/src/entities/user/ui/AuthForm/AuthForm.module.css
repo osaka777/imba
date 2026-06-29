@@ -105,6 +105,7 @@
   padding: 14px 16px;
   min-height: 48px;
   background: var(--green-gradient);
+  color: #ffffff !important;
   transition: 0.2s;
   font-size: 15px;
   font-weight: 600;
@@ -123,7 +124,7 @@
   }
 
   .form {
-    gap: 12px;
+    gap: 10px;
   }
 
   .checkboxes {
@@ -151,6 +152,10 @@
     padding: 12px 15px;
     font-size: 14px;
     border-radius: 11px;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 4px;
   }
 
   .changeAuthMethod {

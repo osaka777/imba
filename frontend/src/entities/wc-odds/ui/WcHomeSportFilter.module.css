@@ -1,0 +1,168 @@
+.filter {
+  display: flex;
+  align-items: flex-end;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 1px;
+}
+
+@media screen and (max-width: 1080px) {
+  .filter {
+    align-items: flex-end;
+    padding-bottom: 1px;
+  }
+
+  .track {
+    padding: 0;
+    gap: 5px;
+  }
+
+  .item_circle,
+  .item_pill {
+    height: 34px;
+  }
+
+  .item_circle {
+    width: 34px;
+  }
+
+  .item_pill {
+    padding: 0 12px 0 10px;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .filter {
+    width: 100%;
+    padding-bottom: 0;
+  }
+
+  .track {
+    width: 100%;
+    padding: 2px 0 4px;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .item_circle,
+  .item_pill {
+    scroll-snap-align: start;
+  }
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0 2px 1px;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.item_circle {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: #3a4558;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.item_circle:hover {
+  background: #465468;
+  border-color: rgb(255 255 255 / 0.22);
+}
+
+.item_circle:active {
+  transform: scale(0.94);
+}
+
+.item_pill {
+  height: 36px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  background: #0085ff;
+}
+
+.item_pill:hover {
+  background: #0074e0;
+}
+
+.item_pill:active {
+  transform: scale(0.98);
+}
+
+.item_disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.item_disabled:hover {
+  background: #2c3444;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  fill: #ffffff;
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: inherit;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 640px) {
+  .item_circle,
+  .item_pill {
+    height: 32px;
+  }
+
+  .item_circle {
+    width: 32px;
+  }
+
+  .item_pill {
+    padding: 0 12px 0 10px;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+}

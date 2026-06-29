@@ -27,6 +27,7 @@
 .cardModal {
   padding: 4px 16px 20px;
   gap: 10px;
+  background: transparent;
 }
 
 @media (max-width: 640px) {
@@ -39,7 +40,7 @@
 /* ── QR section ── */
 .qrSection {
   background: #181b28;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 14px;
   padding: 20px 22px;
   display: flex;
@@ -127,7 +128,7 @@
 /* ── Requisites ── */
 .requisitesBox {
   background: #181b28;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 14px;
   padding: 16px 18px;
 }
@@ -206,7 +207,7 @@
 /* ── Warning ── */
 .warningBox {
   background: #181b28;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 14px;
   padding: 16px 14px;
   display: flex;
@@ -416,6 +417,206 @@
   color: #8e98bc;
 }
 
+/* ── Receipt upload ── */
+.receiptSection {
+  margin-top: 10px;
+  background: #181b28;
+  border: 1px solid rgba(75, 158, 255, 0.14);
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.receiptHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.receiptHeaderIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(75, 158, 255, 0.14);
+  color: #4b9eff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.receiptTitle {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #eef1ff;
+}
+
+.receiptSubtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #8e98bc;
+}
+
+.receiptDropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 148px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  border: 1.5px dashed rgba(75, 158, 255, 0.35);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.receiptDropzone:hover:not(.receiptDropzone_disabled) {
+  border-color: rgba(75, 158, 255, 0.65);
+  background: rgba(75, 158, 255, 0.06);
+}
+
+.receiptDropzone_active {
+  border-color: #4b9eff;
+  background: rgba(75, 158, 255, 0.1);
+  transform: scale(1.01);
+}
+
+.receiptDropzone_disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.receiptDropIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(75, 158, 255, 0.12);
+  color: #4b9eff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.receiptDropTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #dde2f5;
+}
+
+.receiptDropHint {
+  font-size: 12px;
+  color: #8e98bc;
+}
+
+.receiptDropFormats {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #6f7ba0;
+}
+
+.receiptInputHidden {
+  display: none;
+}
+
+.receiptPreviewCard {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.receiptPreviewMedia {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f111a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.receiptPreviewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.receiptPreviewMeta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receiptFileName {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #eef1ff;
+  word-break: break-word;
+}
+
+.receiptFileSize {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #6f7ba0;
+}
+
+.receiptPreviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.receiptGhostBtn,
+.receiptDangerBtn {
+  appearance: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.receiptGhostBtn {
+  border: 1px solid rgba(75, 158, 255, 0.35);
+  background: rgba(75, 158, 255, 0.1);
+  color: #93c5fd;
+}
+
+.receiptGhostBtn:hover:not(:disabled) {
+  background: rgba(75, 158, 255, 0.16);
+}
+
+.receiptDangerBtn {
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fca5a5;
+}
+
+.receiptDangerBtn:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.14);
+}
+
+.receiptGhostBtn:disabled,
+.receiptDangerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 640px) {
   .card {
     padding: 14px;
@@ -588,6 +789,27 @@
     margin-top: 2px;
   }
 
+  .cardModal .receiptSection {
+    margin-top: 8px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .cardModal .receiptPreviewCard {
+    grid-template-columns: 84px 1fr;
+    gap: 12px;
+  }
+
+  .cardModal .receiptPreviewMedia {
+    width: 84px;
+    height: 84px;
+  }
+
+  .cardModal .receiptDropzone {
+    min-height: 132px;
+    padding: 16px 14px;
+  }
+
   /* Standalone page (non-modal) keeps compact horizontal QR */
   .qrSection {
     flex-direction: row;
@@ -646,4 +868,66 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+.bankLogoImg {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.conversionBox {
+  background: #181b28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.conversionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.conversionRowHighlight {
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.conversionLabel {
+  font-size: 13px;
+  color: #8e98bc;
+}
+
+.conversionValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #eef1ff;
+}
+
+.conversionValueBrl {
+  font-size: 22px;
+  font-weight: 700;
+  color: #60a5fa;
+  flex: 1;
+  text-align: right;
+}
+
+.conversionHint {
+  margin: 0;
+  font-size: 12px;
+  color: #8e98bc;
+}
+
+.conversionWarn {
+  margin: 0;
+  font-size: 12px;
+  color: #fbbf24;
+  line-height: 1.45;
 }

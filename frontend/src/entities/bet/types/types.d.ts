@@ -14,9 +14,26 @@ export type Rate = {
   blocked?: any;
   available?: any;
   sum?: string;
-  subGameId?: number; // ID подигры для ставок на sub_games
-  subGameName?: string; // Название подигры для отображения
-  parentEventId?: string; // ID родительского события для subGame ставок
+  subGameId?: number;
+  subGameName?: string;
+  parentEventId?: string;
+  /** Isolated WC module — not BetAPI */
+  source?: "wc-odds";
+  wcPick?: "HOME" | "DRAW" | "AWAY";
+  wcMarketKey?: string;
+  wcGroupKey?: string;
+  wcOutcomeKey?: string;
+  wcLine?: string;
+  wcCommenceTime?: string;
+  wcCompleted?: boolean;
+  sport?: string;
+  leagueName?: string;
+  wcPhase?: "prematch" | "live" | "finished";
+  homeTeam?: string;
+  awayTeam?: string;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  wcLiveTimeLabel?: string;
 };
 
 export type Rates = Rate[];

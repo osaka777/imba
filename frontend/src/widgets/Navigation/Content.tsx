@@ -3,25 +3,21 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-import { DepositForm } from "~/entities/finance";
 import { ToggleIcon, UserIcon } from "~/shared/assets";
 import { Button } from "~/shared/ui";
 import { Dialog, DialogContent } from "~/shared/ui/Dialog";
 import { deleteSessionClient } from "~/entities/user";
 import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
-import { TelegramSvgrepoIcon } from "~/shared/assets/icons";
+import {
+  LazyDepositForm,
+  MODAL_BY_ID,
+} from "~/shared/lib/lazyModals";
 import { Auth } from "./Auth";
 import styles from "./Content.module.css";
 import depositStyles from "./Deposit.module.css";
 import { Deposit } from "./Deposit";
 import { NotificationsBell } from "./NotificationsBell";
 import { List } from "./List";
-import { VoucherModal } from "~/shared/ui/modals/VoucherModal";
-import { WithdrawModal } from "~/shared/ui/modals/WithdrawModal";
-import { SettingsModal } from "~/shared/ui/modals/SettingsModal";
-import { BetsHistoryModal } from "~/shared/ui/modals/BetsHistoryModal";
-import { DetailsModal } from "~/shared/ui/modals/DetailsModal";
-import { BonusHistoryModal } from "~/shared/ui/modals/BonusHistoryModal";
 
 export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -120,22 +116,10 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   };
 
   const renderModalContent = () => {
-    switch (modalContent) {
-      case "voucher":
-        return <VoucherModal onClose={closeModal} />;
-      case "withdraw":
-        return <WithdrawModal onClose={closeModal} />;
-      case "settings":
-        return <SettingsModal onClose={closeModal} />;
-      case "history":
-        return <BetsHistoryModal onClose={closeModal} />;
-      case "bonus-history":
-        return <BonusHistoryModal onClose={closeModal} />;
-      case "details":
-        return <DetailsModal onClose={closeModal} />;
-      default:
-        return <div>Неизвестный тип модального окна</div>;
-    }
+    if (!modalContent) return null;
+    const Modal = MODAL_BY_ID[modalContent];
+    if (!Modal) return <div>Неизвестный тип модального окна</div>;
+    return <Modal onClose={closeModal} />;
   };
 
   return (
@@ -229,7 +213,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
           onInteractOutside={blockIfArmed}
           onPointerDownOutside={blockIfArmed}
         >
-          {headerDepositOpen ? <DepositForm /> : null}
+          {headerDepositOpen ? <LazyDepositForm /> : null}
         </DialogContent>
       </Dialog>
     </>

@@ -1,0 +1,143 @@
+/* ── Base row (aligned with homepage compact rows) ─────────────────── */
+.wcRow {
+  border-top: 1px solid #e7ebf1;
+  border-bottom: none;
+  min-height: 48px;
+  height: auto;
+  transition: background-color 0.12s ease;
+}
+
+.wcRow_even {
+  background-color: #ffffff;
+}
+
+.wcRow_odd {
+  background-color: #f5f7fa;
+}
+
+.wcRow_live {
+  min-height: 50px;
+}
+
+.cellsBlock {
+  width: 100%;
+  min-width: 0;
+}
+
+@media screen and (min-width: 1025px) {
+  .wcRow:hover {
+    background-color: #eef4ff !important;
+  }
+}
+
+.matchInfo {
+  padding: 0;
+}
+
+.matchInfoLink {
+  min-height: 48px;
+  height: auto;
+  align-items: stretch;
+  gap: 0;
+  padding: 5px 12px;
+}
+
+.timeCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  min-width: 64px;
+  padding-right: 6px;
+  flex-shrink: 0;
+}
+
+.date {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8b93a1;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+
+.clock {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+
+.matchBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-left: 2px solid #0085ff;
+  padding-left: 10px;
+}
+
+/* ── Mobile card header (aligned with WcHomeMatchRow) ── */
+@media screen and (max-width: 1024px) {
+  .matchInfo {
+    padding: 0 !important;
+  }
+
+  .matchInfoLink {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 10px 5px;
+    min-height: 0;
+    height: auto !important;
+    width: 100%;
+  }
+
+  .timeCell {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2px;
+    width: 38px;
+    min-width: 38px;
+    padding: 1px 0 0;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .date {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .clock {
+    font-size: 11px;
+    font-weight: 700;
+    color: #101828;
+  }
+
+  .matchBody {
+    flex: 1;
+    min-width: 0;
+    border-left: 2px solid #0085ff;
+    padding-left: 8px;
+    padding-top: 0;
+  }
+
+  .cellsBlock {
+    padding-top: 0;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .matchInfoLink {
+    padding: 7px 8px 5px;
+    gap: 6px;
+  }
+
+  .timeCell {
+    width: 34px;
+    min-width: 34px;
+  }
+}

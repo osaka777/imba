@@ -28,14 +28,19 @@ const fastCleanupCache = () => {
 export const useGamesWebSocket = ({
   eventId,
   initialData,
+  turbo = false,
 }: {
   eventId: string;
   initialData?: components["schemas"]["GameDtoWithGroupedMarkets"];
+  /** Match detail page — minimal debounce + BetAPI priority ingest. */
+  turbo?: boolean;
 }) => {
   
   const queryClient = useQueryClient();
   const { addMessageHandler, removeMessageHandler, isConnected, subscribe, unsubscribe } = useWebSocketContext();
   const [hasSubscribed, setHasSubscribed] = useState(false);
+  const debounceMs = turbo ? 0 : UPDATE_DEBOUNCE_TIME;
+  const pollMs = turbo ? 2000 : 5000;
   
   // Сброс состояния подписки при изменении eventId
   useEffect(() => {
@@ -67,7 +72,7 @@ export const useGamesWebSocket = ({
     const now = Date.now();
     const lastUpdate = SIMPLE_UPDATE_CACHE.get(updateKey);
     
-    if (lastUpdate && now - lastUpdate < UPDATE_DEBOUNCE_TIME) {
+    if (lastUpdate && now - lastUpdate < debounceMs) {
       return true;
     }
     
@@ -79,7 +84,7 @@ export const useGamesWebSocket = ({
     }
     
     return false;
-  }, [createUpdateKey]);
+  }, [createUpdateKey, debounceMs]);
 
   // Оптимизированная функция обновления данных игры
   const updateGameData = useCallback((updater: (prev: GameDto) => GameDto) => {
@@ -92,7 +97,7 @@ export const useGamesWebSocket = ({
   }, [queryClient, eventId]);
 
   // Агрессивный дебаунсинг для предотвращения частых обновлений
-  const debouncedUpdate = useCallback((updater: (prev: GameDto) => GameDto, delay: number = UPDATE_DEBOUNCE_TIME) => {
+  const debouncedUpdate = useCallback((updater: (prev: GameDto) => GameDto, delay: number = debounceMs) => {
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
@@ -100,7 +105,7 @@ export const useGamesWebSocket = ({
     updateTimeoutRef.current = setTimeout(() => {
       updateGameData(updater);
     }, delay);
-  }, [updateGameData]);
+  }, [updateGameData, debounceMs]);
 
   const queryState = useQuery({
     initialData,
@@ -136,7 +141,7 @@ export const useGamesWebSocket = ({
         lastUpdateTime.current = Date.now();
         return 0;
       }
-      return data ? 5000 : false; // Периодическая подстраховка
+      return data ? pollMs : false; // Периодическая подстраховка
     },
     refetchOnWindowFocus: false,
     // Включаем обновление при монтировании, чтобы не ждать WebSocket для первичного заполнения
@@ -420,6 +425,21 @@ export const useGamesWebSocket = ({
 
     prevEventIdRef.current = eventId;
   }, [connectToUpdate, eventId, subscribe, unsubscribe, isConnected, hasSubscribed]);
+
+  useEffect(() => {
+    if (!turbo || !eventId) return undefined;
+
+    const setPriority = (priority: boolean) => {
+      void fetch(`/api/betapi/ws/priority/${eventId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority, dataType: "live" }),
+      }).catch(() => undefined);
+    };
+
+    setPriority(true);
+    return () => setPriority(false);
+  }, [turbo, eventId]);
 
   useEffect(() => {
     return () => {

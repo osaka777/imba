@@ -1,0 +1,506 @@
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Decimal } from '@prisma/client/runtime/library';
+import { WcOddsBetStatus } from '@prisma/client';
+
+import { PrismaService } from '~/prisma/prisma.service';
+
+import { buildOlimpbetSportKey, olimpbetSportKeyToSlug } from '../olimpbet-wc/olimpbet-sport.util';
+import { OlimpbetWcService, type OlimpbetLineEventRow } from '../olimpbet-wc/olimpbet-wc.service';
+
+import { wcLineEventWhere, wcLiveEventWhere } from './wc-betting.util';
+import { WC_LINE_WINDOW_MS, WC_LINE_WINDOW_MS_MMA, WC_MMA_SPORT_KEY } from './wc-line-time.util';
+import { advanceMatchState } from './wc-match-state-tracker.util';
+import { WcOddsSettlementService } from './wc-odds-settlement.service';
+import { buildUniqueWcSlug, isBrokenWcSlug, olimpbetIdFromWcEventId, wcEventIdFromOlimpbet } from './wc-slug.util';
+
+const LIVE_REFRESH_MIN_MS = 1_000;
+const LIVE_ENRICH_STALE_MS = 5_000;
+const ENRICH_BATCH_SIZE = 60;
+const ENRICH_CONCURRENCY = 6;
+const ENRICH_STALE_MS = 60_000;
+const LIVE_ENRICH_BATCH_SIZE = 60;
+
+@Injectable()
+export class WcOddsSyncService implements OnModuleInit {
+  private readonly logger = new Logger(WcOddsSyncService.name);
+  private syncing = false;
+  private liveSyncing = false;
+  private readonly lastLiveRefreshMs = new Map<string, number>();
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly olimpbet: OlimpbetWcService,
+    private readonly settlement: WcOddsSettlementService,
+    private readonly config: ConfigService,
+  ) {}
+
+  onModuleInit() {
+    if (this.olimpbet.isEnabled()) {
+      void this.syncOdds();
+      void this.syncLiveOdds();
+    }
+  }
+
+  @Cron('*/10 * * * * *')
+  async scheduledEnrich() {
+    if (!this.olimpbet.isEnabled()) return;
+    await this.enrichStaleBatch(ENRICH_BATCH_SIZE);
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async scheduledOddsSync() {
+    if (!this.olimpbet.isEnabled()) return;
+    await this.syncOdds();
+  }
+
+  @Cron('*/10 * * * * *')
+  async scheduledLiveSync() {
+    if (!this.olimpbet.isEnabled()) return;
+    await this.syncLiveOdds();
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async scheduledStalePendingAlert() {
+    if (!this.olimpbet.isEnabled()) return;
+
+    const hours = Number(this.config.get<string>('WC_STALE_BET_HOURS', '12'));
+    const notifyUrl = this.config.get<string>('TELEGRAM_NOTIFY_SMOKE_URL', '');
+    if (!notifyUrl) return;
+
+    const cutoff = new Date(Date.now() - hours * 3_600_000);
+    const stale = await this.prisma.wcOddsBet.findMany({
+      where: { status: WcOddsBetStatus.PENDING, createdAt: { lt: cutoff } },
+      select: { id: true, eventId: true, marketKey: true, outcomeKey: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+      take: 25,
+    });
+
+    if (!stale.length) return;
+
+    const lines = stale.map(
+      (b) => `#${b.id} ${b.marketKey}/${b.outcomeKey ?? '—'} event=${b.eventId}`,
+    );
+    const payload = {
+      message: `${stale.length} WC bet(s) pending longer than ${hours}h`,
+      details: lines.join('\n'),
+    };
+    const secret = this.config.get<string>('NOTIFY_SECRET', '');
+
+    try {
+      await fetch(notifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(secret ? { 'X-Notify-Secret': secret } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      this.logger.warn(`Stale WC pending alert sent (${stale.length} bets)`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Stale WC pending alert failed: ${message}`);
+    }
+  }
+
+  @Cron('*/30 * * * * *')
+  async scheduledSettlement() {
+    if (!this.olimpbet.isEnabled()) return;
+    await this.settlement.settleFinishedEvents();
+  }
+
+  async syncOdds(): Promise<{ indexed: number; enriched: number }> {
+    if (!this.olimpbet.isEnabled()) return { indexed: 0, enriched: 0 };
+    if (this.syncing) return { indexed: 0, enriched: 0 };
+
+    this.syncing = true;
+    try {
+      const rows = await this.olimpbet.listAllLineEvents();
+      let indexed = 0;
+
+      for (const row of rows) {
+        try {
+          if (await this.upsertListRow(row)) indexed += 1;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `WC list upsert failed ol-${row.olimpbetEventId}: ${message.slice(0, 200)}`,
+          );
+        }
+      }
+
+      await this.pruneOutsideLineWindow();
+
+      this.logger.log(`WC Olimpbet sync: indexed=${indexed}`);
+      return { indexed, enriched: 0 };
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  private async pruneOutsideLineWindow(): Promise<void> {
+    const now = new Date();
+    const weekEnd = new Date(now.getTime() + WC_LINE_WINDOW_MS);
+    const mmaEnd = new Date(now.getTime() + WC_LINE_WINDOW_MS_MMA);
+    await this.prisma.wcOddsEvent.deleteMany({
+      where: {
+        completed: false,
+        OR: [
+          { sportKey: WC_MMA_SPORT_KEY, commenceTime: { gt: mmaEnd } },
+          { sportKey: { not: WC_MMA_SPORT_KEY }, commenceTime: { gt: weekEnd } },
+        ],
+      },
+    });
+  }
+
+  private async upsertListRow(row: OlimpbetLineEventRow): Promise<boolean> {
+    const eventId = wcEventIdFromOlimpbet(row.olimpbetEventId);
+    const commenceTime = new Date(row.commenceTimeIso);
+    const homeTeam = this.olimpbet.displayTeamName(row.homeTeamRu);
+    const awayTeam = this.olimpbet.displayTeamName(row.awayTeamRu);
+    const sportKey = buildOlimpbetSportKey(row.olimpbetSportId);
+    const leagueName = row.tournamentName;
+
+    const existing = await this.prisma.wcOddsEvent.findUnique({
+      where: { id: eventId },
+      select: { slug: true },
+    });
+
+    const needsSlugRepair = !existing?.slug || isBrokenWcSlug(existing.slug);
+    const slug = needsSlugRepair
+      ? await buildUniqueWcSlug(
+        this.prisma,
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        eventId,
+      )
+      : existing!.slug!;
+
+    await this.prisma.wcOddsEvent.upsert({
+      where: { id: eventId },
+      create: {
+        id: eventId,
+        slug,
+        sportKey,
+        leagueName,
+        tournamentId: row.tournamentId,
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        bookmakerKey: 'olimpbet',
+        bookmakerTitle: 'Olimpbet',
+        completed: false,
+        marketsJson: {},
+        priorityLevel: row.priorityLevel,
+      },
+      update: {
+        slug,
+        sportKey,
+        leagueName,
+        tournamentId: row.tournamentId ?? undefined,
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        bookmakerKey: 'olimpbet',
+        bookmakerTitle: 'Olimpbet',
+        priorityLevel: row.priorityLevel,
+      },
+    });
+
+    return true;
+  }
+
+  needsEnrich(row: {
+    oddsUpdatedAt?: Date | null;
+    oddsHome?: Decimal | null;
+    oddsAway?: Decimal | null;
+    marketsJson?: unknown;
+  }): boolean {
+    if (!row.oddsHome && !row.oddsAway) return true;
+    if (!row.oddsUpdatedAt) return true;
+    if (Date.now() - row.oddsUpdatedAt.getTime() > ENRICH_STALE_MS) return true;
+    const markets = row.marketsJson;
+    if (!markets || typeof markets !== 'object') return true;
+    return Object.keys(markets as object).length === 0;
+  }
+
+  async enrichEvents(eventIds: string[], fast = true): Promise<number> {
+    if (!this.olimpbet.isEnabled() || eventIds.length === 0) return 0;
+
+    let enriched = 0;
+    let cursor = 0;
+
+    const worker = async () => {
+      while (cursor < eventIds.length) {
+        const index = cursor;
+        cursor += 1;
+        const eventId = eventIds[index];
+        const olimpbetId = olimpbetIdFromWcEventId(eventId);
+        if (!olimpbetId) continue;
+        if (await this.upsertFromOlimpbet(olimpbetId, fast)) enriched += 1;
+      }
+    };
+
+    const workers = Array.from(
+      { length: Math.min(ENRICH_CONCURRENCY, eventIds.length) },
+      () => worker(),
+    );
+    await Promise.all(workers);
+    return enriched;
+  }
+
+  async enrichStaleBatch(take: number): Promise<number> {
+    const staleBefore = new Date(Date.now() - ENRICH_STALE_MS);
+    const rows = await this.prisma.wcOddsEvent.findMany({
+      where: {
+        ...wcLineEventWhere(),
+        OR: [
+          { oddsUpdatedAt: null },
+          { oddsUpdatedAt: { lt: staleBefore } },
+          { marketsJson: { equals: {} } },
+        ],
+      },
+      orderBy: [{ commenceTime: 'asc' }, { id: 'asc' }],
+      take,
+      select: { id: true },
+    });
+
+    return this.enrichEvents(rows.map((row) => row.id), true);
+  }
+
+  async syncLiveOdds(): Promise<{ indexed: number; refreshed: number; enriched: number }> {
+    if (!this.olimpbet.isEnabled() || this.liveSyncing) {
+      return { indexed: 0, refreshed: 0, enriched: 0 };
+    }
+
+    this.liveSyncing = true;
+    try {
+      const rows = await this.olimpbet.listAllLiveEvents();
+      const liveOlimpbetIds = new Set(rows.map((row) => row.olimpbetEventId));
+      let indexed = 0;
+
+      for (const row of rows) {
+        try {
+          if (await this.upsertListRow(row)) indexed += 1;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `WC live list upsert failed ol-${row.olimpbetEventId}: ${message.slice(0, 200)}`,
+          );
+        }
+      }
+
+      await this.reconcileDroppedLiveEvents(liveOlimpbetIds);
+
+      const enriched = await this.enrichLiveStaleBatch(LIVE_ENRICH_BATCH_SIZE);
+      const { refreshed } = await this.syncLiveEvents();
+
+      if (indexed > 0 || refreshed > 0) {
+        this.logger.log(`WC Olimpbet live sync: indexed=${indexed} refreshed=${refreshed} enriched=${enriched}`);
+      }
+
+      return { indexed, refreshed, enriched };
+    } finally {
+      this.liveSyncing = false;
+    }
+  }
+
+  /** Force-refresh DB live rows that Olimpbet no longer lists as live (match ended). */
+  private async reconcileDroppedLiveEvents(liveOlimpbetIds: Set<number>): Promise<void> {
+    const dbLive = await this.prisma.wcOddsEvent.findMany({
+      where: wcLiveEventWhere(),
+      select: { id: true },
+      orderBy: [{ priorityLevel: 'desc' }, { commenceTime: 'desc' }, { id: 'asc' }],
+      take: 80,
+    });
+
+    for (const row of dbLive) {
+      const olimpbetId = olimpbetIdFromWcEventId(row.id);
+      if (!olimpbetId || liveOlimpbetIds.has(olimpbetId)) continue;
+      await this.refreshEvent(row.id, true);
+    }
+  }
+
+  async syncLiveEvents(): Promise<{ refreshed: number }> {
+    if (!this.olimpbet.isEnabled()) return { refreshed: 0 };
+
+    const live = await this.prisma.wcOddsEvent.findMany({
+      where: wcLiveEventWhere(),
+      select: { id: true },
+      take: 200,
+      orderBy: [{ priorityLevel: 'desc' }, { commenceTime: 'desc' }, { id: 'asc' }],
+    });
+
+    let refreshed = 0;
+    for (const row of live) {
+      if (await this.refreshEvent(row.id)) refreshed += 1;
+    }
+
+    return { refreshed };
+  }
+
+  async enrichLiveStaleBatch(take: number): Promise<number> {
+    const staleBefore = new Date(Date.now() - LIVE_ENRICH_STALE_MS);
+    const rows = await this.prisma.wcOddsEvent.findMany({
+      where: {
+        ...wcLiveEventWhere(),
+        OR: [
+          { oddsUpdatedAt: null },
+          { oddsUpdatedAt: { lt: staleBefore } },
+          { marketsJson: { equals: {} } },
+        ],
+      },
+      orderBy: [{ commenceTime: 'desc' }, { id: 'asc' }],
+      take,
+      select: { id: true },
+    });
+
+    return this.enrichEvents(rows.map((row) => row.id), true);
+  }
+
+  async refreshEvent(eventId: string, force = false): Promise<boolean> {
+    if (!this.olimpbet.isEnabled()) return false;
+
+    const now = Date.now();
+    const last = this.lastLiveRefreshMs.get(eventId) ?? 0;
+    if (!force && now - last < LIVE_REFRESH_MIN_MS) return false;
+
+    const olimpbetId = olimpbetIdFromWcEventId(eventId);
+    if (!olimpbetId) return false;
+
+    const ok = await this.upsertFromOlimpbet(olimpbetId, false);
+    if (ok) this.lastLiveRefreshMs.set(eventId, now);
+    return ok;
+  }
+
+  private async upsertFromOlimpbet(olimpbetEventId: number, fast = false): Promise<boolean> {
+    let snapshot = await this.olimpbet.fetchMatchSnapshot(olimpbetEventId, { includeLinked: true });
+    if (!snapshot) return false;
+
+    const eventId = wcEventIdFromOlimpbet(olimpbetEventId);
+    let homeScore: number | null = null;
+    let awayScore: number | null = null;
+    let completed = false;
+    let main: Awaited<ReturnType<OlimpbetWcService['fetchEventDetail']>> = null;
+    let matchState: ReturnType<typeof advanceMatchState> | undefined;
+
+    const existing = await this.prisma.wcOddsEvent.findUnique({
+      where: { id: eventId },
+      select: {
+        sportKey: true,
+        leagueName: true,
+        tournamentId: true,
+        slug: true,
+        matchStateJson: true,
+      },
+    });
+
+    if (!fast) {
+      main = await this.olimpbet.fetchEventDetail(olimpbetEventId);
+      if (!main) return false;
+      const score = this.olimpbet.extractScore(main);
+      homeScore = score.homeScore;
+      awayScore = score.awayScore;
+      completed = this.olimpbet.isEventCompleted(main);
+
+      const sportSlug = olimpbetSportKeyToSlug(existing?.sportKey ?? buildOlimpbetSportKey(100));
+      const pendingDisplayBets = await this.prisma.wcOddsBet.count({
+        where: {
+          eventId,
+          status: WcOddsBetStatus.PENDING,
+          OR: [
+            { marketKey: { startsWith: 'display_' } },
+            { outcomeKey: { startsWith: 'DISPLAY_' } },
+          ],
+        },
+      });
+      const detailForState = pendingDisplayBets > 0
+        ? await this.olimpbet.fetchSettlementDetail(main)
+        : main;
+      matchState = advanceMatchState(existing?.matchStateJson, detailForState, sportSlug);
+    }
+
+    const commenceTime = new Date(snapshot.commenceTimeIso);
+    const homeTeam = this.olimpbet.displayTeamName(snapshot.homeTeamRu);
+    const awayTeam = this.olimpbet.displayTeamName(snapshot.awayTeamRu);
+
+    const slug = existing?.slug
+      ?? await buildUniqueWcSlug(
+        this.prisma,
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        eventId,
+      );
+
+    await this.prisma.wcOddsEvent.upsert({
+      where: { id: eventId },
+      create: {
+        id: eventId,
+        slug,
+        sportKey: existing?.sportKey ?? buildOlimpbetSportKey(100),
+        leagueName: existing?.leagueName ?? 'Olimpbet',
+        tournamentId: existing?.tournamentId ?? null,
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        oddsHome: snapshot.oddsHome ? new Decimal(snapshot.oddsHome) : null,
+        oddsDraw: snapshot.oddsDraw ? new Decimal(snapshot.oddsDraw) : null,
+        oddsAway: snapshot.oddsAway ? new Decimal(snapshot.oddsAway) : null,
+        bookmakerKey: 'olimpbet',
+        bookmakerTitle: 'Olimpbet',
+        oddsUpdatedAt: new Date(),
+        homeScore,
+        awayScore,
+        completed,
+        homeCompetitorId: snapshot.homeCompetitorId ?? undefined,
+        awayCompetitorId: snapshot.awayCompetitorId ?? undefined,
+        hasBroadcast: snapshot.hasBroadcast ?? false,
+        marketsJson: snapshot.groupedMarkets as object,
+        matchStateJson: matchState as object | undefined,
+      },
+      update: {
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        oddsHome: snapshot.oddsHome ? new Decimal(snapshot.oddsHome) : undefined,
+        oddsDraw: snapshot.oddsDraw != null ? new Decimal(snapshot.oddsDraw) : null,
+        oddsAway: snapshot.oddsAway ? new Decimal(snapshot.oddsAway) : undefined,
+        bookmakerKey: 'olimpbet',
+        bookmakerTitle: 'Olimpbet',
+        oddsUpdatedAt: new Date(),
+        homeScore: homeScore ?? undefined,
+        awayScore: awayScore ?? undefined,
+        completed,
+        homeCompetitorId: snapshot.homeCompetitorId ?? undefined,
+        awayCompetitorId: snapshot.awayCompetitorId ?? undefined,
+        hasBroadcast: snapshot.hasBroadcast ?? false,
+        marketsJson: snapshot.groupedMarkets as object,
+        matchStateJson: matchState as object | undefined,
+      },
+    });
+
+    if (!fast && main && homeScore != null && awayScore != null) {
+      const pendingCount = await this.prisma.wcOddsBet.count({
+        where: { eventId, status: WcOddsBetStatus.PENDING },
+      });
+      if (pendingCount > 0) {
+        await this.settlement.trySettleDeterminateBets(
+          eventId,
+          homeScore,
+          awayScore,
+          main,
+          matchState,
+        );
+      }
+
+      if (completed) {
+        await this.settlement.trySettleEvent(eventId, main);
+      }
+    }
+
+    return true;
+  }
+}

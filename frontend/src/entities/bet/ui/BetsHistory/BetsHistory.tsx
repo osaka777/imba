@@ -9,6 +9,8 @@ import getSymbolFromCurrency from "currency-symbol-map";
 import { api, components } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { createTitleForBet } from "~/entities/bet/lib";
+import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { mapWcBetsForHistory } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
 
 import styles from "./BetsHistoryPage.module.css";
 
@@ -28,6 +30,14 @@ export const BetsHistory: React.FC = () => {
   const router = useRouter();
 
   const handleBetClick = (bet: any) => {
+    if (bet?.isWcBet && bet?.wcGameHref) {
+      router.push(bet.wcGameHref);
+      return;
+    }
+    if (bet?.isWcBet) {
+      router.push("/line/soccer");
+      return;
+    }
     if (bet?.parentEventId) {
       router.push(`/game/${bet.parentEventId}`);
     } else if (bet.bets?.length > 0 && bet.bets[0]?.parentEventId) {
@@ -61,16 +71,36 @@ export const BetsHistory: React.FC = () => {
     refetchIntervalInBackground: true,
   });
 
-  const filteredBets = bets
+  const { data: wcBets = [], isLoading: wcLoading } = useQuery({
+    queryKey: ["wc-bets", "all"],
+    queryFn: () => getMyWcBets(),
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
+  });
+
+  const wcAsOrdinar = mapWcBetsForHistory(wcBets);
+
+  const mergedBets: BetsResponse = {
+    express: bets?.express || [],
+    ordinar: [...(bets?.ordinar || []), ...wcAsOrdinar],
+  };
+
+  const filteredBets = (mergedBets
     ? tab === "all"
-      ? [...(bets.express || []), ...(bets.ordinar || [])]
+      ? [...(mergedBets.express || []), ...(mergedBets.ordinar || [])]
       : tab === "express"
-        ? bets.express || []
-        : bets.ordinar || []
-    : [];
+        ? mergedBets.express || []
+        : mergedBets.ordinar || []
+    : []
+  ).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   // -------- Helpers --------
   const getEventName = (bet: any): string => {
+    if (bet.isWcBet) {
+      return bet.eventName;
+    }
     if (bet.bets?.length > 0) {
       const firstBet = bet.bets[0];
       const eventName =
@@ -94,6 +124,9 @@ export const BetsHistory: React.FC = () => {
   };
 
   const getChoice = (bet: any): string => {
+    if (bet.isWcBet) {
+      return bet.betInfo || "Ставка";
+    }
     if (bet.bets?.length > 0) {
       let choiceText = `Экспресс из ${bet.bets.length} событий`;
       const score = bet.bets[0]?.score || bet.bets[0]?.game?.score;
@@ -146,7 +179,7 @@ export const BetsHistory: React.FC = () => {
       </div>
 
       <div className={styles.content}>
-        {isLoading ? (
+        {isLoading || wcLoading ? (
           <div className={styles.loadingText}>Загрузка ставок...</div>
         ) : !filteredBets.length ? (
           <div className={styles.emptyBlock}>
@@ -178,9 +211,11 @@ export const BetsHistory: React.FC = () => {
                       </span>
                       {tab === "all" && (
                         <span className={styles.betType}>
-                          {(bet as any).betVariant === "EXPRESS"
-                            ? "Экспресс"
-                            : "Ординар"}
+                          {(bet as any).isWcBet
+                            ? "Ординар"
+                            : (bet as any).betVariant === "EXPRESS"
+                              ? "Экспресс"
+                              : "Ординар"}
                         </span>
                       )}
                     </div>
@@ -253,6 +288,9 @@ function isGameFinished(game: any): boolean {
 }
 
 function getGameStatus(bet: any): { isFinished: boolean; game: any } {
+  if (bet.isWcBet) {
+    return { isFinished: Boolean(bet.eventCompleted), game: null };
+  }
   if (bet.bets && bet.bets.length > 0) {
     const allGamesFinished = bet.bets.every((subBet: any) =>
       isGameFinished(subBet.game)

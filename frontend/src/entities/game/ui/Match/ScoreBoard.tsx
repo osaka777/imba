@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { components } from "~/shared/api";
+import { formatTennisGameScore } from "~/entities/wc-odds/lib/wcLiveScore";
 import { cn } from "~/shared/lib";
 import { TeamImage } from "~/components/ui/TeamImage";
 import styles from "./ScoreBoard.module.css";
 import { gamesList } from "../../lib";
+import { getSportBackgroundCss } from "../../lib/sportBackground";
 
 type GameStatus = "PREMATCH" | "IN_PROGRESS" | "FINISHED" | "CANCELED" | "STARTING";
 type Sport = keyof typeof PERIOD_NAMES;
@@ -91,7 +93,7 @@ const PrematchView = ({ game }: ScoreProps) => (
   <div
     className="grid gap-6 px-1 py-3 mb-4 rounded-lg"
     style={{
-      background: `radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%), url(/${game.sport}.jpg) center / cover`,
+      background: getSportBackgroundCss(game.sport),
       height: "320px",
     }}
   >
@@ -288,8 +290,9 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
   const currentScoreForEachPlayer = score?.currentScore ?? [];
   
   const mainScore = useMemo(() => {
-    if (game.sport === "tennis") {
-      return score?.text?.liveScore || "-:-";
+    if (game.sport === "tennis" || game.sport === "table-tennis") {
+      const raw = score?.text?.liveScore;
+      return raw ? formatTennisGameScore(raw) ?? raw : "-:-";
     }
     return score?.text?.currentScore || "-:-";
   }, [game.sport, score?.text?.liveScore, score?.text?.currentScore]);
@@ -316,7 +319,7 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
     <div
       className="grid gap-6 px-1 py-3 mb-4 rounded-lg"
       style={{
-        background: `radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%), url(/${game.sport}.jpg) center / cover`,
+        background: getSportBackgroundCss(game.sport),
       }}
     >
       <div className="grid items-center grid-cols-3 text-center rounded-sm justify-items-center bg-white/5">

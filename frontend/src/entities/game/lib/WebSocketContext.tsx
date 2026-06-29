@@ -14,6 +14,13 @@ type WebSocketContextType = {
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
+const wsLog = (...args: unknown[]) => {
+  if (process.env.NODE_ENV === "development") wsLog(...args);
+};
+const wsWarn = (...args: unknown[]) => {
+  if (process.env.NODE_ENV === "development") wsWarn(...args);
+};
+
 // Get WebSocket URL from environment or fallback to default
 const WS_URL = (() => {
     try {
@@ -76,7 +83,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                     
                     // Set timeout for pong response
                     heartbeatTimeout.current = setTimeout(() => {
-                        console.warn('❌ [WebSocket] Heartbeat timeout - no pong received');
+                        wsWarn('❌ [WebSocket] Heartbeat timeout - no pong received');
                         if (ws.current) {
                             ws.current.close(1000, 'Heartbeat timeout');
                         }
@@ -135,13 +142,13 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       subscriptionType === 'detail' ? 'detailed' : subscriptionType;
 
     const subscribe = (eventId: string, subscriptionType: 'group' | 'detail' | 'detailed' = 'group') => {
-        console.log(`📡 [WebSocket] Subscribe called for eventId: ${eventId}, subscriptionType: ${subscriptionType}`);
+        wsLog(`📡 [WebSocket] Subscribe called for eventId: ${eventId}, subscriptionType: ${subscriptionType}`);
         const typeToStore = normalizeType(subscriptionType);
         subscriptions.current.set(eventId, typeToStore);
         
         // Lazy initialization - connect only when first subscription is made
         if (!isInitialized) {
-            console.log('🚀 [WebSocket] Lazy initialization - connecting WebSocket for first time');
+            wsLog('🚀 [WebSocket] Lazy initialization - connecting WebSocket for first time');
             setIsInitialized(true);
             connect();
         }
@@ -187,14 +194,14 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     };
 
     const connect = () => {
-        console.log('🔌 [WebSocket] Connect function called');
+        wsLog('🔌 [WebSocket] Connect function called');
         if (!WS_URL) {
             console.error('WebSocket URL is not available');
             return;
         }
 
         if (connectionState.current === 'connecting' || connectionState.current === 'connected') {
-            console.log(`🔌 [WebSocket] Already ${connectionState.current}, skipping connect`);
+            wsLog(`🔌 [WebSocket] Already ${connectionState.current}, skipping connect`);
             return;
         }
 
@@ -215,11 +222,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                 ws.current.close();
             }
             
-            console.log(`🔌 [WebSocket] Creating new WebSocket connection to: ${WS_URL}`);
+            wsLog(`🔌 [WebSocket] Creating new WebSocket connection to: ${WS_URL}`);
             const socket = new WebSocket(WS_URL);
 
             socket.onopen = () => {
-                console.log('✅ [WebSocket] Connected successfully');
+                wsLog('✅ [WebSocket] Connected successfully');
                 setIsConnected(true);
                 connectionState.current = 'connected';
                 reconnectAttempts.current = 0;
@@ -232,7 +239,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                 setTimeout(() => {
                     processMessageQueue();
                     resubscribe();
-                    console.log('🔄 [WebSocket] Subscriptions restored after reconnection');
+                    wsLog('🔄 [WebSocket] Subscriptions restored after reconnection');
                 }, 100);
             };
 
@@ -246,7 +253,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                         return;
                     }
                     
-                    console.log('📨 [WebSocket] Received message:', message.type, message);
+                    wsLog('📨 [WebSocket] Received message:', message.type, message);
                     messageHandlers.current.forEach((handler) => handler(message));
                 } catch (error) {
                     console.error("❌ [WebSocket] Error parsing message:", error);
@@ -255,7 +262,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
             socket.onclose = (event) => {
                 const reason = event.reason || 'Unknown reason';
-                console.log(`🔌 [WebSocket] Connection closed (code: ${event.code}, reason: ${reason}), setting isConnected to false`);
+                wsLog(`🔌 [WebSocket] Connection closed (code: ${event.code}, reason: ${reason}), setting isConnected to false`);
                 setIsConnected(false);
                 connectionState.current = 'disconnected';
                 stopHeartbeat();
@@ -298,7 +305,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
             if (reconnectAttempts.current < maxReconnectAttempts) {
                 reconnectAttempts.current += 1;
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-                console.log(`Reconnecting after error... Attempt ${reconnectAttempts.current} of ${maxReconnectAttempts} (delay: ${delay}ms)`);
+                wsLog(`Reconnecting after error... Attempt ${reconnectAttempts.current} of ${maxReconnectAttempts} (delay: ${delay}ms)`);
                 setTimeout(connect, delay);
             }
         }
@@ -313,7 +320,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
             ws.current = null;
         }
         
-        console.log('🔌 [WebSocket] Manual disconnect, setting isConnected to false');
+        wsLog('🔌 [WebSocket] Manual disconnect, setting isConnected to false');
         setIsConnected(false);
         connectionState.current = 'disconnected';
         messageQueue.current = [];
