@@ -1,0 +1,333 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(125deg, #181940 0%, #4a2d7a 48%, #6f48a7 100%);
+  box-shadow:
+    0 1px 2px rgba(15, 14, 39, 0.06),
+    0 20px 48px rgba(24, 25, 64, 0.28);
+}
+
+.heroGlow {
+  position: absolute;
+  inset: -40% auto auto -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(49, 188, 105, 0.35), transparent 70%);
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 28px 26px;
+}
+
+.heroLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heroEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #31bc69;
+  box-shadow: 0 0 12px #31bc69;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.92); }
+}
+
+.heroLabel {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.heroValue {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  line-height: 1.05;
+}
+
+.heroBadge {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kpiCard {
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  padding: 16px 16px 18px;
+  box-shadow: 0 8px 24px rgba(15, 14, 39, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 96px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 14, 39, 0.08);
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpiIconWrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi_green .kpiIconWrap { background: rgba(8, 158, 78, 0.12); color: #089e4e; }
+.kpi_blue .kpiIconWrap { background: rgba(8, 85, 196, 0.12); color: #0855c4; }
+.kpi_purple .kpiIconWrap { background: rgba(111, 72, 167, 0.12); color: #6f48a7; }
+.kpi_gold .kpiIconWrap { background: rgba(255, 148, 0, 0.12); color: #d97706; }
+.kpi_cyan .kpiIconWrap { background: rgba(16, 141, 231, 0.12); color: #108de7; }
+.kpi_pink .kpiIconWrap { background: rgba(211, 72, 72, 0.1); color: #c24141; }
+
+.kpiLabel {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.kpiValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f0e27;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.chartCard {
+  background: #fff;
+  border-radius: 22px;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(15, 14, 39, 0.06);
+}
+
+.chartTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f0e27;
+  letter-spacing: -0.02em;
+}
+
+.chartSubtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.currencySelector {
+  width: 132px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.segment {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  background: #f1f4fa;
+  border-radius: 12px;
+  border: 1px solid #e8edf5;
+}
+
+.segmentBtn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 9px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.segmentBtn:hover {
+  color: #0f0e27;
+}
+
+.segmentBtnActive {
+  background: linear-gradient(125deg, #181940, #6f48a7);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(111, 72, 167, 0.28);
+}
+
+.segmentBtnGhostActive {
+  background: #fff;
+  color: #0855c4;
+  box-shadow: 0 2px 8px rgba(15, 14, 39, 0.06);
+}
+
+.chartTotal {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eef1f8;
+}
+
+.chartTotalLabel {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.chartTotalValue {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.chartContainer {
+  min-height: 340px;
+}
+
+.loading {
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #64748b;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #e8edf5;
+  border-top-color: #6f48a7;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.tooltip {
+  background: #fff;
+  border: 1px solid #e8edf5;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 12px 32px rgba(15, 14, 39, 0.12);
+}
+
+.tooltipLabel {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.tooltipValue {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+@media (max-width: 1200px) {
+  .kpiGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heroContent {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroValue {
+    font-size: 30px;
+  }
+
+  .chartTop,
+  .controls {
+    flex-direction: column;
+  }
+
+  .currencySelector {
+    width: 100%;
+  }
+
+  .segment {
+    width: 100%;
+    overflow-x: auto;
+  }
+}

@@ -198,7 +198,8 @@ export class PaymentSystemService {
           currencyCode: data.currency,
           status: OperationStatus.WAITING,
           type: data.method,
-          wallet: data.wallet || null
+          wallet: data.wallet || null,
+          meta: data.meta ? (data.meta as object) : undefined,
         }
       });
 
@@ -210,7 +211,8 @@ export class PaymentSystemService {
           title: 'Withdraw',
           withdrawRequestId: withdrawRequest.id,
           method: data.method,
-          wallet: data.wallet || null
+          wallet: data.wallet || null,
+          ...(data.meta ?? {}),
         },
         source: OperationSource.PAYMENT_SYSTEM,
         status: OperationStatus.WAITING,

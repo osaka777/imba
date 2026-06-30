@@ -62,6 +62,10 @@ export function isTimeWindowYesNoCategory(
   categoryName: string,
   groups: WcMarketGroup[],
 ): boolean {
+  if (groups.length === 1 && categoryMatchesTimeWindowLabel(categoryName, groups[0]!)) {
+    return false;
+  }
+
   if (/GOAL15MIN/i.test(categoryName)) return hasTimeWindowGroups(groups);
   if (!/да\/нет/i.test(categoryName)) {
     return groups.some((group) => /GOAL15MIN/i.test(group.marketKey) && hasTimeWindowGroups([group]));
@@ -93,6 +97,52 @@ export function sortTimeWindowYesNoGroups(groups: WcMarketGroup[]): WcMarketGrou
   );
 }
 
+export function formatTimeWindowYesNoCategoryName(
+  baseCategory: string,
+  group: WcMarketGroup,
+): string | null {
+  const range = extractTimeWindowRange(group);
+  const interval = range
+    ? `${range.from}–${range.to} мин`
+    : group.label.replace(/^GOAL15MIN:\s*да\/нет\s*/i, "").trim();
+
+  if (!interval) return null;
+
+  if (/GOAL15MIN|15-минут|интервал/i.test(baseCategory)) {
+    return interval;
+  }
+
+  return `${interval} · ${baseCategory.trim()}`;
+}
+
+function categoryMatchesTimeWindowLabel(categoryName: string, group: WcMarketGroup): boolean {
+  const range = extractTimeWindowRange(group);
+  if (!range) return false;
+  const interval = `${range.from}–${range.to} мин`;
+  const category = categoryName.trim().toLowerCase();
+  return category === interval.toLowerCase();
+}
+
+export function expandTimeWindowYesNoCategories(
+  entries: Array<[string, WcMarketGroup[]]>,
+): Array<[string, WcMarketGroup[]]> {
+  const result: Array<[string, WcMarketGroup[]]> = [];
+
+  for (const [categoryName, groups] of entries) {
+    if (!isTimeWindowYesNoCategory(categoryName, groups) || groups.length <= 1) {
+      result.push([categoryName, groups]);
+      continue;
+    }
+
+    for (const group of sortTimeWindowYesNoGroups(groups)) {
+      const title = formatTimeWindowYesNoCategoryName(categoryName, group);
+      result.push([title ?? categoryName, [group]]);
+    }
+  }
+
+  return result;
+}
+
 export function buildTimeWindowYesNoTitle(
   group: WcMarketGroup,
   outcome: WcMarketOutcome,
@@ -101,10 +151,20 @@ export function buildTimeWindowYesNoTitle(
   const isGoal15 =
     /GOAL15MIN/i.test(categoryName)
     || /GOAL15MIN/i.test(group.marketKey);
-  if (!isGoal15 && !/да\/нет/i.test(categoryName)) return null;
+  const isWhenNextGoal =
+    /когда\s+будет\s+забит/i.test(categoryName)
+    && /GOAL15MIN/i.test(group.marketKey);
+  if (!isGoal15 && !isWhenNextGoal && !/да\/нет/i.test(categoryName)) return null;
 
   const yn = yesNoLabel(outcome);
-  if (!yn) return null;
+  if (!yn) {
+    if (/^след\.?\s*гол$/i.test(outcome.name.trim())) {
+      const timeMatch = group.label.match(/(\d+\s*[–-]\s*\d+\s*мин)/i);
+      if (timeMatch) return `${timeMatch[1]!.replace(/\s+/g, " ").trim()}·Да`;
+      return "Да";
+    }
+    return null;
+  }
 
   const timeMatch = group.label.match(/(\d+\s*[–-]\s*\d+\s*мин)/i);
   if (timeMatch) {

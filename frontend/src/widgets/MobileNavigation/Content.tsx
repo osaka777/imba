@@ -16,18 +16,18 @@ import { Button } from "~/shared/ui";
 
 import styles from "./Content.module.css";
 
-const tabList: { Icon: ComponentType<{ className?: string }>; href: string; label: string }[] = [
+const tabList: { Icon: ComponentType<{ className?: string }>; href: string; label: string; live?: boolean }[] = [
   { Icon: HomeIcon, href: "/", label: "Главная" },
   { Icon: SoccerBallIcon, href: "/line", label: "Линия" },
-  { Icon: LiveIcon, href: "/live", label: "LIVE" },
+  { Icon: LiveIcon, href: "/live", label: "LIVE", live: true },
   { Icon: PresentIcon, href: "#", label: "Free money" },
   { Icon: HistoryIcon, href: "/profile/betHistory", label: "История" },
 ];
 
-const tabListNoAuth: { Icon: ComponentType<{ className?: string }>; href: string; label: string }[] = [
+const tabListNoAuth: { Icon: ComponentType<{ className?: string }>; href: string; label: string; live?: boolean }[] = [
   { Icon: HomeIcon, href: "/", label: "Главная" },
   { Icon: SoccerBallIcon, href: "/line", label: "Линия" },
-  { Icon: LiveIcon, href: "/live", label: "LIVE" },
+  { Icon: LiveIcon, href: "/live", label: "LIVE", live: true },
   { Icon: PresentIcon, href: "#", label: "Free money" },
 ];
 
@@ -40,17 +40,26 @@ export const Content = ({ isAuth }: { isAuth: boolean }) => {
 
   return (
     <nav className={cn(styles.Content, isCybersport && "MobileNav_cyber")}>
-      {tabs.map((tab, index) => {
+      {tabs.map((tab) => {
         const isCurrent = tab.href === pathName || tab.href === path;
         return (
           <Button
-            className={`${styles.tab} ${isCurrent ? styles.item_current : ""} ${tabs.length === index + 1 ? styles.item_last : ""}`}
+            className={cn(
+              styles.tab,
+              isCurrent && styles.item_current,
+              tab.live && styles.tab_live,
+            )}
             elementType="link"
             href={tab.href}
             key={tab.label}
           >
-            <tab.Icon className={styles.icon} />
-            <p className={styles.link}>{tab.label}</p>
+            <span className={styles.iconWrap}>
+              <tab.Icon className={styles.icon} />
+              {tab.live && !isCurrent ? (
+                <span className={styles.liveDot} aria-hidden />
+              ) : null}
+            </span>
+            <span className={styles.link}>{tab.label}</span>
           </Button>
         );
       })}

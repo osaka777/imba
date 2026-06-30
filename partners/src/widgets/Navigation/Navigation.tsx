@@ -10,10 +10,12 @@ export const Navigation = async () => {
 
     return (
         <nav className={styles.Navigation}>
-            <div className={styles.logo}>
-                <Image src={LogoWhiteIcon} alt="" width={100} height={15} />
+            <div className={styles.inner}>
+                <div className={styles.logo}>
+                    <Image src={LogoWhiteIcon} alt="" width={120} height={18} />
+                </div>
+                <Content isAuth={isAuth} />
             </div>
-            <Content isAuth={isAuth} />
         </nav>
     );
 };

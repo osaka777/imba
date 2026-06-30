@@ -27,7 +27,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ authVariant = "register", cl
                     {isRegister ? `Уже есть аккаунт?` : `Нет аккаунта?`}
                 </span>
                 <Button onClick={changeAuthMethod} className={styles.changeAuthMethodButton}>
-                    {isRegister ? `Войти` : `Зарегистрироваться`}
+                    {isRegister ? `Вход` : `Зарегистрироваться`}
                 </Button>
             </div>
         </div>

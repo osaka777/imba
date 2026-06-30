@@ -173,16 +173,16 @@ export const Footer = () => {
                     Мобильная версия
                   </a>
                 </div>
-                {/* <div className={styles.NavigationSection_linksRow}>
-                  <Link
+                <div className={styles.NavigationSection_linksRow}>
+                  <a
                     className={styles.NavigationSection_link}
-                    href="/imba.partners"
+                    href="https://partners.imba.bet"
                     rel="noopener noreferrer"
                     target="_blank"
                   >
                     Партнерская программа
-                  </Link>
-                </div> */}
+                  </a>
+                </div>
               </div>
             </div>
             <div className={styles.NavigationSection_block}>

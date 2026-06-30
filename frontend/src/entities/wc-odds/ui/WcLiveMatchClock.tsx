@@ -5,70 +5,82 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { WcEventDetail } from "~/entities/wc-odds/api/client";
 import {
   isWcLiveClockRunning,
+  resolveLiveClockSource,
   WC_CLOCK_EXTRAPOLATE_MAX_SEC,
 } from "~/entities/wc-odds/lib/wcLiveClock";
 import {
   wcAddedMinutesIsAnnounced,
   wcDisplayAddedMinutes,
 } from "~/entities/wc-odds/lib/wcLiveScore";
-import { isCountdownClockSport } from "~/entities/wc-odds/lib/wcSportKinds";
 
 import styles from "~/entities/wc-odds/ui/WcScoreBoard.module.css";
 
-function timeToSeconds(raw: string | undefined): number {
-  if (!raw) return 0;
-  const [m, sec] = raw.split(":").map(Number);
-  return (m || 0) * 60 + (sec || 0);
-}
-
-function secondsToTime(totalSec: number): string {
+function secondsToTime(totalSec: number, sport?: string): string {
   const clamped = Math.max(0, totalSec);
   const m = Math.floor(clamped / 60);
   const s = clamped % 60;
+  if (sport === "soccer" || sport === "cyber-football") {
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-type ClockSource = {
-  baseSeconds: number;
-  countdown: boolean;
-};
-
-function resolveClockSource(event: WcEventDetail): ClockSource {
-  const score = event.parsedScore;
-  const remaining = score?.remainingTimeInPeriodSec;
-
-  if (
-    isCountdownClockSport(event.sport)
-    && remaining != null
-    && remaining > 0
-  ) {
-    return { baseSeconds: remaining, countdown: true };
-  }
-
-  const fromFeed = score?.currentTimeInPeriodSec;
-  if (fromFeed != null && fromFeed > 0 && isCountdownClockSport(event.sport)) {
-    // Some feeds only ship elapsed in-period seconds for NA sports.
-    return { baseSeconds: fromFeed, countdown: false };
-  }
-
+function pickClockParsedScore(event: WcEventDetail) {
+  const ps = event.parsedScore;
+  if (!ps) return undefined;
   return {
-    baseSeconds: timeToSeconds(score?.text?.time),
-    countdown: false,
+    seconds: ps.seconds,
+    period: ps.period,
+    remainingTimeInPeriodSec: ps.remainingTimeInPeriodSec,
+    currentTimeInPeriodSec: ps.currentTimeInPeriodSec,
+    text: ps.text?.time ? { time: ps.text.time } : undefined,
+    gamePhase: ps.gamePhase,
   };
 }
 
 export function useLiveMatchClock(event: WcEventDetail): string {
-  const source = useMemo(() => resolveClockSource(event), [event]);
-  const shouldRun = useMemo(() => isWcLiveClockRunning(event), [event]);
-  const [time, setTime] = useState(() => secondsToTime(source.baseSeconds));
+  const clockParsedScore = useMemo(
+    () => pickClockParsedScore(event),
+    [
+      event.parsedScore?.seconds,
+      event.parsedScore?.period,
+      event.parsedScore?.remainingTimeInPeriodSec,
+      event.parsedScore?.currentTimeInPeriodSec,
+      event.parsedScore?.text?.time,
+      event.parsedScore?.gamePhase,
+    ],
+  );
+
+  const source = useMemo(
+    () => resolveLiveClockSource({ sport: event.sport, parsedScore: clockParsedScore }),
+    [event.sport, clockParsedScore],
+  );
+
+  const shouldRun = useMemo(
+    () => isWcLiveClockRunning({
+      sport: event.sport,
+      phase: event.phase,
+      completed: event.completed,
+      feedStatus: event.feedStatus,
+      parsedScore: clockParsedScore,
+    }),
+    [
+      event.sport,
+      event.phase,
+      event.completed,
+      event.feedStatus,
+      clockParsedScore,
+    ],
+  );
+  const [time, setTime] = useState(() => secondsToTime(source.baseSeconds, event.sport));
   const lastUpdateRef = useRef(Date.now());
   const lastSecsRef = useRef(source.baseSeconds);
 
   useEffect(() => {
     lastSecsRef.current = source.baseSeconds;
     lastUpdateRef.current = Date.now();
-    setTime(secondsToTime(source.baseSeconds));
-  }, [source.baseSeconds, source.countdown]);
+    setTime(secondsToTime(source.baseSeconds, event.sport));
+  }, [source.baseSeconds, source.countdown, event.sport]);
 
   useEffect(() => {
     if (!shouldRun) return;
@@ -78,10 +90,10 @@ export function useLiveMatchClock(event: WcEventDetail): string {
       const next = source.countdown
         ? lastSecsRef.current - elapsed
         : lastSecsRef.current + elapsed;
-      setTime(secondsToTime(next));
+      setTime(secondsToTime(next, event.sport));
     }, 500);
     return () => window.clearInterval(id);
-  }, [shouldRun, source.countdown]);
+  }, [shouldRun, source.countdown, event.sport]);
 
   return time;
 }

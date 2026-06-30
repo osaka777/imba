@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthenticationModule } from '~/main/user/authentication/authentication.module';
 import { NirvanaPayPayinModule } from '~/integrations/payment-system/nirvanapay-payin/nirvanapay-payin.module';
+import { PartnersModule } from '~/main/partners/partners.module';
 import { PrismaModule } from '~/prisma/prisma.module';
 import { OperationModule } from '~/main/operation/operation.module';
 import { EventModule } from '~/main/event/event.module';
@@ -14,6 +15,7 @@ import { DepositUserNotifyService } from './deposit-user-notify.service';
 import { DepositCreditService } from './deposit-credit.service';
 import { UsdtTrc20MonitorService } from './usdt-trc20-monitor.service';
 import { PromoModalModule } from '../promo-modal/promo-modal.module';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { PromoModalModule } from '../promo-modal/promo-modal.module';
     OperationModule,
     EventModule,
     PromoModalModule,
+    PartnersModule,
+    TelegramModule,
   ],
   controllers: [DepositController],
   providers: [

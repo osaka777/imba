@@ -2,13 +2,13 @@
 
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
-import { useRouter } from "next-nprogress-bar";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button, Input } from "~/shared/ui";
 import { safeToast } from "~/shared/lib/safeToast";
 
-import { verifyUser, login } from "../../api";
+import { verifyUser, login, verifyTelegram2fa } from "../../api";
 import styles from "./AuthForm.module.css";
 import { EmailIcon, LockIcon } from "~/shared/assets";
 
@@ -17,19 +17,38 @@ type AuthFormState = {
   password: string;
 };
 
-export const LoginForm = () => {
-  const onError = (error: any) => {
-    console.error('Login error:', error);
-    switch (error?.message) {
-      case "wrong email or password": {
-        safeToast.error("Неверная почта или пароль");
-        break;
+export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void }) => {
+  const [twoFaToken, setTwoFaToken] = useState<string | null>(null);
+  const [twoFaCode, setTwoFaCode] = useState("");
+
+  const onError = (error: unknown) => {
+    console.error("Login error:", error);
+    const message = error instanceof Error ? error.message : "";
+    if (message.toLowerCase().includes("password") || message.toLowerCase().includes("unauthorized")) {
+      safeToast.error("Неверная почта или пароль");
+      return;
+    }
+    if (message.toLowerCase().includes("2fa") || message.toLowerCase().includes("code")) {
+      safeToast.error("Неверный код из Telegram");
+      return;
+    }
+    safeToast.error("Ошибка при запросе входа, попробуйте повторить позже");
+  };
+
+  const finishLogin = async () => {
+    safeToast.success("Вход выполнен успешно!");
+    try {
+      const isVerified = await verifyUser();
+      if (isVerified) {
+        window.location.reload();
+      } else {
+        safeToast.warning("Вход выполнен, но проверка не прошла. Обновите страницу.");
       }
-      default: {
-        safeToast.error("Ошибка при запросе входа, попробуйте повторить позже");
-      }
+    } catch {
+      safeToast.warning("Вход выполнен, но возникла ошибка проверки. Обновите страницу.");
     }
   };
+
   const { handleSubmit, register } = useForm({
     defaultValues: {
       email: "",
@@ -40,34 +59,56 @@ export const LoginForm = () => {
   const { isPending, isSuccess, mutateAsync } = useMutation({
     mutationFn: login,
     onError,
-    onSuccess: async () => {
-      // Если onSuccess вызван, значит вход успешен
-      console.debug('LoginForm: Login successful, checking verification...');
-      safeToast.success("Вход выполнен успешно!");
-      
-      // Проверяем, что пользователь действительно аутентифицирован
-      try {
-        const isVerified = await verifyUser();
-        console.debug('LoginForm: User verification result:', isVerified);
-        if (isVerified) {
-          console.debug('LoginForm: User verified, reloading page...');
-          window.location.reload();
-        } else {
-          console.error('LoginForm: User verification failed');
-          safeToast.warning("Вход выполнен, но проверка не прошла. Попробуйте обновить страницу.");
-        }
-      } catch (verifyError) {
-        console.error('LoginForm: Error during verification:', verifyError);
-        safeToast.warning("Вход выполнен, но возникла ошибка проверки. Попробуйте обновить страницу.");
+    onSuccess: async (result) => {
+      if (result.kind === "2fa") {
+        setTwoFaToken(result.twoFaToken);
+        safeToast.info("Введите код из Telegram");
+        return;
       }
+      await finishLogin();
     },
   });
 
-  const router = useRouter();
+  const { isPending: verifying2fa, mutateAsync: submit2fa } = useMutation({
+    mutationFn: verifyTelegram2fa,
+    onError,
+    onSuccess: finishLogin,
+  });
+
   const onSubmit = async (data: AuthFormState) => {
-    console.debug('LoginForm: Submitting login form...');
     await mutateAsync(data);
   };
+
+  if (twoFaToken) {
+    return (
+      <form
+        className={styles.form}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit2fa({ twoFaToken, code: twoFaCode.trim() });
+        }}
+      >
+        <p style={{ margin: 0, fontSize: 14, opacity: 0.85 }}>
+          Код отправлен в Telegram. Действует 5 минут.
+        </p>
+        <Input
+          className={styles.input}
+          placeholder="Код из Telegram"
+          type="text"
+          inputMode="numeric"
+          variant="pill"
+          value={twoFaCode}
+          onChange={(e) => setTwoFaCode(e.target.value)}
+        />
+        <Button className={styles.authButton} disabled={verifying2fa || twoFaCode.trim().length < 4} type="submit">
+          {verifying2fa ? "Проверка..." : "Подтвердить"}
+        </Button>
+        <button className={styles.forgotBackLink} type="button" onClick={() => { setTwoFaToken(null); setTwoFaCode(""); }}>
+          Назад
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
@@ -87,15 +128,17 @@ export const LoginForm = () => {
         variant="pill"
         {...register("password", { required: true })}
       />
+      {onForgotPassword ? (
+        <button className={styles.forgotBackLink} type="button" onClick={onForgotPassword}>
+          Забыли пароль?
+        </button>
+      ) : null}
       <Button
-        className={clsx(
-          styles.authButton,
-          isSuccess && styles.authButton_success,
-        )}
+        className={clsx(styles.authButton, isSuccess && styles.authButton_success)}
         disabled={isPending || isSuccess}
         type="submit"
       >
-        {isPending || isSuccess ? `Авторизация...` : `Войти`}
+        {isPending || isSuccess ? "Авторизация..." : "Войти"}
       </Button>
     </form>
   );

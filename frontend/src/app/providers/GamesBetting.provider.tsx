@@ -2,6 +2,7 @@
 
 import { ReactNode, createContext, useContext } from "react";
 import { useBetNotifications } from "~/entities/bet/lib/useBetNotifications";
+import { useWcBetSettlementSync } from "~/entities/bet/lib/useWcBetSettlementSync";
 import { useAuth } from "./AuthProvider";
 
 type GamesBettingContextType = {
@@ -32,6 +33,7 @@ export const GamesBettingProvider = ({
 // Компонент-обёртка для уведомлений о ставках
 const BetNotificationsWrapper = ({ children }: { children: ReactNode }) => {
   useBetNotifications();
+  useWcBetSettlementSync();
   return <>{children}</>;
 };
 

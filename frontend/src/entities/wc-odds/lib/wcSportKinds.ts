@@ -14,7 +14,12 @@ export function isPeriodClockSport(sport?: string): boolean {
   );
 }
 
-/** Hockey/basketball feeds often expose remaining period time instead of elapsed. */
+/** Hockey and classic basketball use countdown when the feed sends remaining period time. */
 export function isCountdownClockSport(sport?: string): boolean {
-  return sport === "hockey" || isBasketballLikeSport(sport);
+  return sport === "hockey" || sport === "basketball";
+}
+
+/** Esports ball sports use elapsed quarter/half clocks like soccer, not NA countdown fields. */
+export function isEsportsPeriodClockSport(sport?: string): boolean {
+  return sport === "cyber-football" || sport === "cyber-basketball";
 }

@@ -44,7 +44,7 @@ export const useBetNotifications = () => {
       console.log('✅ Received bet notification:', message.type, message.payload);
 
       if (message.type === 'bet_created') {
-        toast.success('✅ Ставка успешно создана!', {
+        toast.success('Ставка принята', {
           position: 'top-right',
           autoClose: 3000,
         });
@@ -56,23 +56,23 @@ export const useBetNotifications = () => {
         
         switch (status) {
           case 'WIN':
-            statusText = `🎉 Выигрыш! +${amount} ${currencyCode}`;
+            statusText = `Выигрыш: +${amount} ${currencyCode}`;
             toastType = 'success';
             break;
           case 'LOSE':
-            statusText = `❌ Проигрыш`;
+            statusText = 'Ставка проиграла';
             toastType = 'error';
             break;
           case 'RETURN':
-            statusText = `🔄 Возврат ставки ${amount} ${currencyCode}`;
+            statusText = `Возврат: ${amount} ${currencyCode}`;
             toastType = 'info';
             break;
           case 'PENDING':
-            statusText = `⏳ Ставка обрабатывается`;
+            statusText = 'Ставка обрабатывается';
             toastType = 'info';
             break;
           default:
-            statusText = `Статус ставки: ${status}`;
+            statusText = `Статус: ${status}`;
             toastType = 'info';
         }
         
@@ -81,8 +81,11 @@ export const useBetNotifications = () => {
           autoClose: 5000,
         });
 
-        // Инвалидируем кэш пользователя для обновления бонусного баланса
         queryClient.invalidateQueries({ queryKey: ['user'] });
+        queryClient.invalidateQueries({ queryKey: ['wc-bets'] });
+        queryClient.invalidateQueries({ queryKey: ['bets', 'open'] });
+        queryClient.invalidateQueries({ queryKey: ['bets'] });
+        queryClient.invalidateQueries({ queryKey: ['bets-history'] });
         queryClient.invalidateQueries({ queryKey: ['bonus-history'] });
         queryClient.invalidateQueries({ queryKey: ['bonus-stats'] });
       }

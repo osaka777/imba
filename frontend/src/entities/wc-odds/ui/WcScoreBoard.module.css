@@ -316,7 +316,7 @@
   font-weight: 600;
   white-space: nowrap;
 }
-/* "Доп. время 1" / "Пенальти" */
+/* "Доп. время 1" / "Перерыв" */
 .gamePhaseLabel {
   padding: 0.1rem 0.45rem;
   border-radius: 0.2rem;
@@ -327,6 +327,25 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+/* "Серия пенальти" — gold/amber accent */
+.penaltiesLabel {
+  padding: 0.1rem 0.55rem;
+  border-radius: 0.2rem;
+  background: rgb(234 179 8 / 0.2);
+  border: 1px solid rgb(234 179 8 / 0.4);
+  color: #fde047;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Penalty period column header */
+.cell_header_penalties {
+  color: #fde047 !important;
+  font-weight: 800;
 }
 
 .remainingPill {

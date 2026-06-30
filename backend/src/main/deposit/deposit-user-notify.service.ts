@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
 import { EventGateway } from '~/main/event/event.gateway';
+import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
 
 export type DepositNotifyStatus = 'approved' | 'rejected' | 'expired';
 
 @Injectable()
 export class DepositUserNotifyService {
-  constructor(private readonly eventGateway: EventGateway) {}
+  constructor(
+    private readonly eventGateway: EventGateway,
+    private readonly telegramUserNotify: TelegramUserNotifyService,
+  ) {}
 
   notifyDepositStatus(input: {
     userId: number;
@@ -28,6 +32,8 @@ export class DepositUserNotifyService {
         timestamp: new Date().toISOString(),
       },
     };
+
+    void this.telegramUserNotify.notifyDeposit(input).catch(() => undefined);
 
     return this.eventGateway.sendUserNotification(
       String(input.userId),

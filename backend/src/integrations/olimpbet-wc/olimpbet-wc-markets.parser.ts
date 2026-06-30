@@ -8,7 +8,19 @@ import { finalizeGroupedMarkets } from '../wc-odds/wc-odds-markets.util';
 import {
   catalogMarketLabel,
   formatOutcomeLabel,
+  formatWinningMethodOutcome,
+  formatBttsAndOutcomeCode,
+  formatFirstGoalAndWinnerCode,
+  formatNextGoalOutcome,
   humanizeCatalogMarketName,
+  isTechnicalEnglishCatalogLabel,
+  resolveBttsOutcomeGroupLabel,
+  resolveNextGoalGroupLabel,
+  resolveCleanWinTeamSideGroupLabel,
+  resolveNumberFinalScoreCategoryName,
+  resolveNumberFinalScoreGroupLabel,
+  resolveScoringEventsGroupLabel,
+  resolveSpecialBetsGroupLabel,
   loadOlimpbetMarketCatalog,
   resolveVirtualCategoryName,
   type OlimpbetMarketCatalog,
@@ -136,6 +148,7 @@ const MARKET_CODE_TO_CATEGORY: Record<string, string> = {
   GOALS_TEAM1: 'Забьёт команда 1',
   GOALS_TEAM2: 'Забьёт команда 2',
   WINNER_YES_NO: 'Победа: да/нет',
+  NUMBER_OF_SETS: 'Количество сетов',
 };
 
 function categorySortIndex(name: string): number {
@@ -183,6 +196,9 @@ function scoreSetGroupSig(prob: OlimpbetProbability): string {
 function marketGroupSig(marketKey: string, prob: OlimpbetProbability): string {
   const baseKey = marketKey.replace(/_ot$/i, '');
   const catalogStem = baseKey.replace(/^display_/i, '');
+  if (/^NUMBER_OF_SETS/i.test(catalogStem)) {
+    return 'number_of_sets';
+  }
   if (/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_WINNER/i.test(catalogStem)) {
     return scoreSetGroupSig(prob);
   }
@@ -281,10 +297,34 @@ function canonicalizeCategory(
     return MARKET_CODE_TO_CATEGORY[catalogName] ?? 'Следующее очко в гейме';
   }
   if (/^DEUSE_POINT/i.test(catalogName) || /ровно.*40:40/i.test(category)) return '40:40';
-  if (/^NEXT_GOAL/i.test(catalogName)) return 'Следующий гол';
-  if (/следующ.*очк|очко.*гейм/i.test(category)) return category;
-  if (/^NEXT_GOAL/i.test(catalogName) || (/следующ/i.test(category) && /гол/i.test(category))) {
+  if (/^GOAL15MIN/i.test(catalogName)) return 'Гол в интервале';
+  if (/^NEXT_GOAL_TIME/i.test(catalogName)) {
+    return category.trim() || humanizeCatalogMarketName(catalogName);
+  }
+  if (/^NEXT_GOAL_HALF|^NEXT_GOAL_PERIOD|^NEXT_GOAL_EXTRA|^NEXT_GOALSCORER|^NEXT_GOAL_MIN/i.test(catalogName)) {
+    return category.trim() || humanizeCatalogMarketName(catalogName);
+  }
+  if (/^NEXT_GOAL$/i.test(catalogName) || /^NEXT_GOAL_2WAY/i.test(catalogName)) {
     return 'Следующий гол';
+  }
+  if (/следующ.*очк|очко.*гейм/i.test(category)) return category;
+  if (/следующ/i.test(category) && /гол/i.test(category) && !/когда/i.test(category)) {
+    return 'Следующий гол';
+  }
+  if (/^NUMBER_OF_SETS/i.test(catalogName) || /NUMBER_OF_SETS/i.test(marketKey)) {
+    return 'Количество сетов';
+  }
+  if (/^SCORING_EVENTS/i.test(catalogName)) {
+    if (/[а-яё]/i.test(category) && category !== catalogName) return category;
+    return 'Голевые факты (Да/Нет)';
+  }
+  if (/^OWNGOAL/i.test(catalogName)) {
+    if (/[а-яё]/i.test(category) && category !== catalogName) return category;
+    return 'Автогол в матче';
+  }
+  if (/^NUMBER_FINAL/i.test(catalogName)) {
+    if (/[а-яё]/i.test(category) && category !== catalogName) return category;
+    return 'Цифра в итоговом счёте (Да/Нет)';
   }
   if (/^SCORE_SET/i.test(catalogName)) return category;
   if (/^CORRECT_SCORE|^SCORE_VARIANT/i.test(catalogName) || /точн/i.test(category)) return 'Точный счёт';
@@ -338,8 +378,20 @@ function normalizeOutcomeDisplayName(
     return `${comboTotalCode[1]} — ${side}`;
   }
 
-  if (/^К1$/i.test(label) || (/^К1_/i.test(code) && !/_\d/.test(code.replace(/^К1_/i, '')))) return 'П1';
-  if (/^К2$/i.test(label) || (/^К2_/i.test(code) && !/_\d/.test(code.replace(/^К2_/i, '')))) return 'П2';
+  const winningMethod = formatWinningMethodOutcome(code);
+  if (winningMethod) return winningMethod;
+
+  const nextGoal = formatNextGoalOutcome(code);
+  if (nextGoal) return nextGoal;
+
+  const bttsOutcome = formatBttsAndOutcomeCode(code);
+  if (bttsOutcome) return bttsOutcome;
+
+  const firstGoalWinner = formatFirstGoalAndWinnerCode(code);
+  if (firstGoalWinner) return firstGoalWinner;
+
+  if (/^К1$/i.test(label) || /^К1\b/i.test(label) || (/^К1_/i.test(code) && !/^К1[_-]\d/.test(code) && !/^ПерГ1_/i.test(code))) return 'П1';
+  if (/^К2$/i.test(label) || /^К2\b/i.test(label) || (/^К2_/i.test(code) && !/^К2[_-]\d/.test(code) && !/^ПерГ2_/i.test(code))) return 'П2';
   if (/^П1$/i.test(code)) return 'П1';
   if (/^П2$/i.test(code)) return 'П2';
   if (code === 'Х' || code === 'X') return 'X';
@@ -354,6 +406,20 @@ function normalizeOutcomeDisplayName(
     return yn ? `Ничья: ${yn}` : 'Ничья';
   }
   if (/^ничья\s+в\s+матче$/i.test(label)) return 'Ничья';
+
+  if (/^SCORE\s+AFTER/i.test(label)) {
+    if (/не\s*будет/i.test(label)) return 'Не будет';
+    const score = label.match(/(\d+:\d+)/);
+    if (score) return score[1]!;
+  }
+
+  const halfWinCode = /^(П1ОбеПол|П2ОбеПол|П1Пол|П2Пол|НичьяПол)(Да|Нет)$/i.exec(code.replace(/\s/g, ''));
+  if (halfWinCode) {
+    const prefix = /^Ничья/i.test(halfWinCode[1]!) ? 'Х' : halfWinCode[1]!.slice(0, 2);
+    const yn = halfWinCode[2]!.charAt(0).toUpperCase() + halfWinCode[2]!.slice(1).toLowerCase();
+    return `${prefix}-${yn}`;
+  }
+
   if (/^Ф1/i.test(code) || /^Ф1/i.test(label)) {
     const suffix = line ? ` (${line})` : '';
     return `Ф1${suffix}`.trim();
@@ -371,7 +437,6 @@ function normalizeOutcomeDisplayName(
   if (/^ровно$/i.test(label)) return 'Ровно';
   if (/никто/i.test(label) || /no\s*goal/i.test(label)) return 'Никто';
   if (/небудет/i.test(label.replace(/\s/g, '')) || /_небудет/i.test(code)) return 'Не будет';
-  if (/^слгол/i.test(label.replace(/\s/g, ''))) return 'След. гол';
   if (/^ОчкоП1/i.test(code)) return 'П1';
   if (/^ОчкоП2/i.test(code)) return 'П2';
   if (/^да\s*\(/i.test(label)) return 'Да';
@@ -500,6 +565,14 @@ function resolveCategory(
 ): string {
   if (!isMainEvent && sectionLabel) return sectionLabel;
 
+  if (/^NUMBER_OF_SETS/i.test(catalogName)) return 'Количество сетов';
+
+  const setNum = paramValue(parameters, 'PARAMETER_SET_NUMBER');
+  if (/^RACE_TO_GAME/i.test(catalogName)) {
+    if (setNum) return setCategoryLabel(setNum);
+    return 'Гонка по геймам';
+  }
+
   const half = paramValue(parameters, 'PARAMETER_HALF_NUMBER');
   const exactGoalsCategory = resolveExactGoalsCategory(catalogName, half);
   if (exactGoalsCategory) return exactGoalsCategory;
@@ -507,10 +580,14 @@ function resolveCategory(
   const virtualCategory = resolveVirtualCategoryName(catalog, marketId, parameters);
   if (virtualCategory) return virtualCategory;
 
+  if (/^SCORING_EVENTS/i.test(catalogName)) return 'Голевые факты (Да/Нет)';
+  if (/^OWNGOAL/i.test(catalogName)) return 'Автогол в матче';
+  const numberFinalCategory = resolveNumberFinalScoreCategoryName(catalogName, parameters);
+  if (numberFinalCategory) return numberFinalCategory;
+
   const quarter = paramValue(parameters, 'PARAMETER_QUARTER_NUMBER');
   if (quarter) return quarterCategoryLabel(quarter);
 
-  const setNum = paramValue(parameters, 'PARAMETER_SET_NUMBER');
   if (/^MULTISCORE/i.test(catalogName)) {
     if (setNum) return setCategoryLabel(setNum);
     return 'Мультисчёт сета';
@@ -544,6 +621,10 @@ function resolveCategory(
   }
   if (mapped) return mapped;
 
+  if (/^GOAL15MIN/i.test(catalogName)) {
+    return 'Гол в интервале';
+  }
+
   const humanized = humanizeCatalogMarketName(catalogName, parameters);
   if (humanized !== catalogName) return humanized;
 
@@ -563,8 +644,13 @@ function buildScoreInGameGroupLabel(
   gameNum?: string,
 ): string | null {
   const catalogStem = marketKey.replace(/^display_/i, '');
+  if (/^RACE_TO_GAME|^RACE_TO_POINT/i.test(catalogStem)) return null;
   if (!gameNum && !setNum) return null;
-  if (!/гейм/i.test(category) && !/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_FIRST_X_GAMES/i.test(catalogStem)) {
+  if (
+    !/\d+-[йи]\s+гейм/i.test(category)
+    && !/сч[её]т\s+в\s+гейме/i.test(category)
+    && !/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_FIRST_X_GAMES/i.test(catalogStem)
+  ) {
     return null;
   }
 
@@ -643,10 +729,46 @@ function buildGroupLabel(
 
   const pointNum = paramValue(parameters, 'PARAMETER_POINT_NUMBER');
 
+  const catalogStem = marketKey.replace(/^display_/i, '');
+
+  const specialBetsGroupLabel = resolveSpecialBetsGroupLabel(catalogStem, category);
+  if (specialBetsGroupLabel !== null) return specialBetsGroupLabel;
+
+  const scoringEventsLabel = resolveScoringEventsGroupLabel(catalogStem);
+  if (scoringEventsLabel) return scoringEventsLabel;
+
+  const cleanWinTeamSide = resolveCleanWinTeamSideGroupLabel(catalogStem);
+  if (cleanWinTeamSide) return cleanWinTeamSide;
+
+  const numberFinalScoreLabel = resolveNumberFinalScoreGroupLabel(catalogStem, parameters);
+  if (numberFinalScoreLabel) return numberFinalScoreLabel;
+
+  if (/^SCORE_AFTER/i.test(catalogStem)) {
+    if (/сч[её]т\s+после/i.test(category)) return '';
+    const labeled = humanizeCatalogMarketName(catalogStem, parameters);
+    if (labeled && !/^SCORE AFTER/i.test(labeled)) return labeled;
+  }
+
+  if (/^FIRST_GOAL_AND|^LAST_GOAL_AND/i.test(catalogStem)) {
+    if (/первый\s+гол|последний\s+гол/i.test(category)) return '';
+  }
+
+  const nextGoalGroupLabel = resolveNextGoalGroupLabel(catalogStem, parameters);
+  if (nextGoalGroupLabel !== null) return nextGoalGroupLabel;
+
+  if (/^RACE_TO_GAME/i.test(catalogStem)) {
+    const target = paramValue(parameters, 'PARAMETER_NUMBER')
+      ?? paramValue(parameters, 'PARAMETER_VALUE')
+      ?? gameNum;
+    const raceLabel = target ? `Гонка до ${target} геймов` : 'Гонка по геймам';
+    if (setNum && !/\d+-[йи]\s+сет/i.test(category)) {
+      return `${setNum}-й сет · ${raceLabel}`;
+    }
+    return raceLabel;
+  }
+
   const scoreInGameLabel = buildScoreInGameGroupLabel(category, marketKey, setNum, gameNum);
   if (scoreInGameLabel) return scoreInGameLabel;
-
-  const catalogStem = marketKey.replace(/^display_/i, '');
 
   if (/^DEUSE_POINT/i.test(catalogStem)) {
     const parts: string[] = [];
@@ -662,6 +784,10 @@ function buildGroupLabel(
 
   if (/^MULTISCORE/i.test(catalogStem)) {
     return '';
+  }
+
+  if (/^NUMBER_OF_SETS/i.test(catalogStem)) {
+    return 'Количество сетов';
   }
 
   if (/следующ.*очк|NEXT_POINTS/i.test(category) && setNum && gameNum) {
@@ -722,7 +848,29 @@ function buildGroupLabel(
     );
   }
 
-  if (!suffixParts.length) return displayCategory;
+  if (!suffixParts.length) {
+    const bttsGroupLabel = resolveBttsOutcomeGroupLabel(catalogStem);
+    if (bttsGroupLabel) return bttsGroupLabel;
+
+    if (
+      /^WINNER_AND_GOALS_BOTH$/i.test(catalogStem)
+      || /^DOUBLECHANCE_AND_GOALS_BOTH$/i.test(catalogStem)
+    ) {
+      return displayCategory;
+    }
+
+    if (marketKey.startsWith('display_')) {
+      const marketHumanized = humanizeCatalogMarketName(catalogStem, parameters);
+      if (
+        marketHumanized !== catalogStem
+        && !isTechnicalEnglishCatalogLabel(marketHumanized)
+        && marketHumanized.trim().toLowerCase() !== category.trim().toLowerCase()
+      ) {
+        return marketHumanized;
+      }
+    }
+    return displayCategory;
+  }
   if (category.length > 24) return `${suffixParts.join(' ')}`.trim() || category;
   return `${category} ${suffixParts.join(' ')}`.trim();
 }
@@ -798,11 +946,15 @@ function compareExactScoreOutcomes(
   return leftScore.away - rightScore.away;
 }
 
-function sortExactScoreOutcomes<T extends { name: string }>(
+function sortExactScoreOutcomes<T extends { name: string; point?: number }>(
   marketKey: string,
   catalogName: string,
   outcomes: T[],
 ): T[] {
+  if (/NUMBER_OF_SETS/i.test(marketKey) || /^NUMBER_OF_SETS/i.test(catalogName)) {
+    if (outcomes.length < 2) return outcomes;
+    return [...outcomes].sort((a, b) => Number(a.point ?? 0) - Number(b.point ?? 0));
+  }
   if (!/^CORRECT_SCORE|^SCORE_VARIANT/i.test(catalogName) && !/CORRECT_SCORE|SCORE_VARIANT/i.test(marketKey)) {
     return outcomes;
   }
@@ -815,6 +967,14 @@ function mapBttsOutcome(outcomeTypeId: number, catalog: OlimpbetMarketCatalog, m
   if (code.includes('Да')) return 'YES';
   if (code.includes('Нет')) return 'NO';
   return `BTTS_${outcomeTypeId}`;
+}
+
+function mapNextGoalTimeOutcome(outcomeTypeId: number, catalog: OlimpbetMarketCatalog, marketId: number): string {
+  const code = catalog.markets.get(marketId)?.outcomes.get(outcomeTypeId)?.code ?? '';
+  const compact = code.replace(/\s/g, '');
+  if (/небудет/i.test(compact)) return 'NO';
+  if (/слгол/i.test(compact)) return 'YES';
+  return `NGT_${outcomeTypeId}`;
 }
 
 function mapYesNoOutcome(outcomeTypeId: number, catalog: OlimpbetMarketCatalog, marketId: number): string {
@@ -888,10 +1048,10 @@ function parseMarketGroup(
   const catalogMarket = catalog.markets.get(market.marketId);
   if (!catalogMarket) return [];
 
-  const active = market.probabilities.filter(
-    (p) => !hasPlayerParam(p) && p.odd > 1 && p.tradingStatus !== 'PROBABILITY_SUSPENDED',
+  const eligible = market.probabilities.filter(
+    (p) => !hasPlayerParam(p) && p.odd > 1,
   );
-  if (!active.length) return [];
+  if (!eligible.length) return [];
 
   const { marketKey: resolvedMarketKey } = resolveWcMarketKey(catalogMarket.name, isMainEvent);
   let baseKey =
@@ -900,7 +1060,7 @@ function parseMarketGroup(
       : resolvedMarketKey;
 
   const bySig = new Map<string, { marketKey: string; innerSig: string; probs: OlimpbetProbability[] }>();
-  for (const p of active) {
+  for (const p of eligible) {
     let marketKey = baseKey;
     if (
       baseMarketKey(marketKey) === 'double_chance'
@@ -935,6 +1095,7 @@ function parseMarketGroup(
     const groupKey = `${market.marketId}__${innerSig}`;
 
     const outcomes = probs.map((p) => {
+      const probLine = paramValue(p.parameters, 'PARAMETER_VALUE');
       const rawName = formatOutcomeLabel(catalog, market.marketId, p);
       const name = normalizeOutcomeDisplayName(
         rawName,
@@ -943,7 +1104,7 @@ function parseMarketGroup(
         p.outcomeTypeId,
         homeTeam,
         awayTeam,
-        line,
+        probLine ?? line,
       );
       let outcomeKey = `OUT_${p.outcomeTypeId}`;
       const mk = baseMarketKey(marketKey);
@@ -968,18 +1129,47 @@ function parseMarketGroup(
       else if (/TEAM1_WIN_EXACTLY|TEAM2_WIN_EXACTLY|SET_TEAM/i.test(catalogMarket.name)) {
         outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
       }
+      else if (/TEAM[12]_WIN_(BOTHPART|ONE_PART)|DRAW_ONE_HALF/i.test(catalogMarket.name)) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
+      else if (/NOT_(WIN|LOSE)_IN_REGULATION_TIME/i.test(catalogMarket.name.replace(/\s+/g, ''))) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
+      else if (/AND_BOTH_TEAM_TO_SCORE_YES_NO|BOTH_TEAM_TO_SCORE_HALF_YES_NO/i.test(catalogMarket.name)) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
+      else if (/^GOAL15MIN|^NEXT_GOAL_MIN_YES_NO/i.test(catalogMarket.name)) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
+      else if (/^NEXT_GOAL_TIME_\d+MIN$/i.test(catalogMarket.name)) {
+        outcomeKey = mapNextGoalTimeOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
       else if (/DEUSE_POINT/i.test(catalogMarket.name)) {
         outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
       }
       else if (mk === 'double_chance') {
         outcomeKey = mapDcOutcome(p.outcomeTypeId, catalog, market.marketId, name);
       }
+      else if (/^NUMBER_OF_SETS/i.test(catalogMarket.name)) {
+        const setCount = paramValue(p.parameters, 'PARAMETER_VALUE')
+          ?? paramValue(p.parameters, 'PARAMETER_NUMBER')
+          ?? innerSig;
+        outcomeKey = `DISPLAY_${market.marketId}_${p.outcomeTypeId}_PARAMETER_VALUE:${setCount}`;
+      }
       else outcomeKey = `DISPLAY_${market.marketId}_${p.outcomeTypeId}_${innerSig}`;
+
+      let point = probLine != null ? Number(probLine) : line != null ? Number(line) : undefined;
+      if (/^RACE_TO_GAME/i.test(catalogMarket.name)) {
+        const raceTarget = paramValue(p.parameters, 'PARAMETER_NUMBER')
+          ?? paramValue(p.parameters, 'PARAMETER_VALUE')
+          ?? paramValue(p.parameters, 'PARAMETER_GAME_NUMBER');
+        if (raceTarget != null) point = Number(raceTarget);
+      }
 
       return {
         name,
         price: p.odd,
-        point: line != null ? Number(line) : undefined,
+        point,
         outcomeKey,
         suspended: p.tradingStatus === 'PROBABILITY_SUSPENDED' || !!p.suspended,
       };
@@ -1004,6 +1194,21 @@ function parseMarketGroup(
   }
 
   return items;
+}
+
+function raceToGameSortKey(group: WcMarketGroup): number {
+  const fromOutcome = group.outcomes.find((o) => o.point != null)?.point;
+  if (fromOutcome != null && Number.isFinite(fromOutcome)) return fromOutcome;
+  const fromKey = /PARAMETER_GAME_NUMBER:(\d+)/.exec(group.key);
+  if (fromKey) return Number(fromKey[1]);
+  const fromLabel = /до\s+(\d+)/i.exec(group.label);
+  if (fromLabel) return Number(fromLabel[1]);
+  return 0;
+}
+
+function sortCategoryMarketGroups(groups: WcMarketGroup[]): WcMarketGroup[] {
+  if (!groups.some((g) => /RACE_TO_GAME/i.test(g.marketKey))) return groups;
+  return [...groups].sort((a, b) => raceToGameSortKey(a) - raceToGameSortKey(b));
 }
 
 export async function parseOlimpbetEventToGroupedMarkets(
@@ -1037,6 +1242,10 @@ export async function parseOlimpbetEventToGroupedMarkets(
       if (!grouped[category]) grouped[category] = [];
       grouped[category].push(group);
     }
+  }
+
+  for (const category of Object.keys(grouped)) {
+    grouped[category] = sortCategoryMarketGroups(grouped[category]!);
   }
 
   return finalizeGroupedMarkets(grouped);

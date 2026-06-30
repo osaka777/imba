@@ -1,7 +1,13 @@
 import type { WcEvent, WcParsedScore } from "~/entities/wc-odds/api/client";
 
-import { formatWcLiveClock, secondsToLiveClock } from "./wcLiveClock";
+import {
+  formatWcLiveClock,
+  isPlausiblePeriodClockSec,
+  parseClockStringToSeconds,
+  secondsToLiveClock,
+} from "./wcLiveClock";
 import { isBasketballLikeSport, isSoccerLikeSport } from "./wcSportKinds";
+import { refineWcParsedScorePhase } from "./wcSoccerPhase";
 
 /** Olimpbet encodes tennis advantage as 50 — display as A (40:50 → 40:A). */
 export function formatTennisGameScore(raw: string | null | undefined): string | null {
@@ -96,7 +102,36 @@ export function mergeWcParsedScore(
   const prevText = prev.text ?? {};
   const incText = incoming.text ?? {};
 
-  return {
+  const periodChanged =
+    incoming.period != null
+    && prev.period != null
+    && incoming.period !== prev.period;
+
+  let seconds = incoming.seconds ?? prev.seconds;
+  if (
+    prev.seconds != null
+    && incoming.seconds != null
+    && !periodChanged
+    && incoming.seconds < prev.seconds - 2
+  ) {
+    seconds = prev.seconds;
+  }
+
+  const mergedDetails = incoming.details?.length ? incoming.details : prev.details;
+  const mergedGamePhase = incoming.gamePhase ?? prev.gamePhase;
+  const mergedPeriod = incoming.period ?? prev.period;
+
+  // When Olimpbet doesn't send match_phase but 5+ period details exist → penalties started
+  const inferredGamePhase =
+    !mergedGamePhase && (mergedDetails?.length ?? 0) >= 5
+      ? "penalties"
+      : mergedGamePhase;
+  const inferredPeriod =
+    inferredGamePhase === "penalties" && (!mergedPeriod || Number(mergedPeriod) < 5)
+      ? 5
+      : mergedPeriod;
+
+  return refineWcParsedScorePhase({
     ...prev,
     ...incoming,
     text: {
@@ -106,9 +141,9 @@ export function mergeWcParsedScore(
       liveScore: incText.liveScore || prevText.liveScore,
       time: incText.time || prevText.time,
     },
-    details: incoming.details?.length ? incoming.details : prev.details,
-    seconds: incoming.seconds ?? prev.seconds,
-    period: incoming.period ?? prev.period,
+    details: mergedDetails,
+    seconds,
+    period: inferredPeriod,
     extraTime: incoming.extraTime ?? prev.extraTime,
     announcedAddedTime: incoming.announcedAddedTime ?? prev.announcedAddedTime,
     varState: incoming.varState ?? prev.varState,
@@ -116,10 +151,10 @@ export function mergeWcParsedScore(
     currentTimeInPeriodSec: incoming.currentTimeInPeriodSec ?? prev.currentTimeInPeriodSec,
     overtimeNumber: incoming.overtimeNumber ?? prev.overtimeNumber,
     penaltyRisk: incoming.penaltyRisk ?? prev.penaltyRisk,
-    gamePhase: incoming.gamePhase ?? prev.gamePhase,
+    gamePhase: inferredGamePhase,
     currentScore: incoming.currentScore ?? prev.currentScore,
     liveScore: incoming.liveScore ?? prev.liveScore,
-  };
+  });
 }
 
 /**
@@ -133,6 +168,7 @@ export function formatWcRowLiveTime(
 ): string | null {
   if (!parsedScore) return null;
   if (parsedScore.gamePhase === "break") return "Перерыв";
+  if (parsedScore.gamePhase === "penalties" || (parsedScore.details?.length ?? 0) >= 5) return "Пен";
 
   const isSetSport =
     sport === "tennis" || sport === "table-tennis" || sport === "volleyball";
@@ -141,6 +177,8 @@ export function formatWcRowLiveTime(
 
   if (rawTime) {
     if (!isSetSport) {
+      const secFromText = parseClockStringToSeconds(rawTime);
+      if (!isPlausiblePeriodClockSec(sport, secFromText)) return null;
       // Convert "47:30" → "47'"
       const colonIdx = rawTime.indexOf(":");
       if (colonIdx > 0) {
@@ -156,7 +194,7 @@ export function formatWcRowLiveTime(
   }
 
   const secs = parsedScore.seconds;
-  if (secs != null && secs > 0) {
+  if (secs != null && secs > 0 && isPlausiblePeriodClockSec(sport, secs)) {
     const totalMin = Math.floor(secs / 60);
     if (!isSetSport) return `${totalMin}'`;
     const ss = String(secs % 60).padStart(2, "0");

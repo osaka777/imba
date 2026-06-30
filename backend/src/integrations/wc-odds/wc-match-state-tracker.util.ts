@@ -1,4 +1,4 @@
-import { extractOlimpbetScore, statValue } from '../olimpbet-wc/olimpbet-event-result.util';
+import { extractOlimpbetScore, parseScorePair, statValue } from '../olimpbet-wc/olimpbet-event-result.util';
 import { parsePeriodScoreList } from '../olimpbet-wc/olimpbet-score-scope.util';
 import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
 
@@ -271,12 +271,29 @@ function recordGoal(
   }
 }
 
+function captureSoccerFeedSnapshots(
+  soccer: WcMatchStateSoccer,
+  detail: OlimpbetEventDetail,
+): void {
+  const periods = parsePeriodScoreList(detail);
+  if (periods.length > 0) {
+    soccer.periodScores = periods;
+  }
+
+  const penRaw = statValue(detail, 'penalty_score');
+  const penPair = parseScorePair(penRaw);
+  if (penPair) {
+    soccer.penaltyScore = { home: penPair.home, away: penPair.away };
+  }
+}
+
 /** Record match goals only when feed score increases (no retroactive guess). */
 export function advanceSoccerMatchState(
   state: WcMatchState,
   detail: OlimpbetEventDetail,
 ): WcMatchState {
   const soccer = ensureSoccer(state);
+  captureSoccerFeedSnapshots(soccer, detail);
   const score = extractOlimpbetScore(detail);
   const home = score.homeScore ?? 0;
   const away = score.awayScore ?? 0;

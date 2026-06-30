@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { OperationType, OperationStatus, BetStatus, OperationSource, DepositStatus } from '@prisma/client';
+import { AffilatorStatus, OperationType, OperationStatus, BetStatus, OperationSource, DepositStatus, WcOddsBetStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+
+import { PartnersService } from '../partners/partners.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { DepositUserNotifyService } from '../deposit/deposit-user-notify.service';
 import { readPublicOrderId } from '../deposit/deposit-public-order-id.util';
 
@@ -10,6 +12,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private depositUserNotify: DepositUserNotifyService,
+    private partnersService: PartnersService,
   ) {}
 
   private getDateFilter(period: string) {
@@ -135,27 +138,6 @@ export class AdminService {
         users: {
           select: {
             id: true,
-            createdAt: true,
-            bets: {
-              where: {
-                createdAt: dateFilter,
-              },
-              select: {
-                amount: true,
-                status: true,
-              },
-            },
-            operations: {
-              where: {
-                type: OperationType.INCOME,
-                source: OperationSource.PAYMENT_SYSTEM,
-                status: OperationStatus.SUCCESS,
-                createdAt: dateFilter,
-              },
-              select: {
-                amount: true,
-              },
-            },
           },
         },
       },
@@ -163,43 +145,157 @@ export class AdminService {
 
     const partnersData = await Promise.all(
       partners.map(async (partner) => {
-        // Calculate total referral deposits for earnings calculation
-        const totalReferralDeposits = partner.users.reduce((sum, user) => {
-          const userDeposits = user.operations.reduce((userSum, op) => userSum + Number(op.amount), 0);
-          return sum + userDeposits;
-        }, 0);
+        const [earnedIncome, earnedReversals, wcBets] = await Promise.all([
+          this.prisma.operation.aggregate({
+            where: {
+              userId: partner.userId,
+              source: OperationSource.AFFILIATE,
+              type: OperationType.INCOME,
+              status: OperationStatus.SUCCESS,
+              createdAt: dateFilter,
+            },
+            _sum: { amount: true },
+          }),
+          this.prisma.operation.aggregate({
+            where: {
+              userId: partner.userId,
+              source: OperationSource.AFFILIATE,
+              type: OperationType.OUTCOME,
+              status: OperationStatus.SUCCESS,
+              createdAt: dateFilter,
+            },
+            _sum: { amount: true },
+          }),
+          this.prisma.wcOddsBet.findMany({
+            where: {
+              user: { affiliatedById: partner.userId },
+              createdAt: dateFilter,
+            },
+            select: { status: true },
+          }),
+        ]);
 
-        // Calculate partner earnings based on percentage
-        const earnings = totalReferralDeposits * (Number(partner.percent) / 100);
-
-        // Calculate referral activity
-        const totalBets = partner.users.reduce((sum, user) => sum + user.bets.length, 0);
-        const totalWins = partner.users.reduce((sum, user) => {
-          return sum + user.bets.filter(bet => bet.status === BetStatus.WIN).length;
-        }, 0);
-        const totalLosses = partner.users.reduce((sum, user) => {
-          return sum + user.bets.filter(bet => bet.status === BetStatus.LOSE).length;
-        }, 0);
+        const totalWins = wcBets.filter((bet) => bet.status === WcOddsBetStatus.WIN).length;
+        const totalLosses = wcBets.filter((bet) => bet.status === WcOddsBetStatus.LOSE).length;
+        const totalEarned =
+          Number(earnedIncome._sum.amount ?? 0) - Number(earnedReversals._sum.amount ?? 0);
 
         return {
           id: partner.userId,
           name: partner.user.email.split('@')[0],
           email: partner.user.email,
-          totalEarned: earnings,
+          totalEarned,
           clientsCount: partner.users.length,
           clientsWins: totalWins,
           clientsLosses: totalLosses,
-          totalGames: totalBets,
-          conversionRate: totalBets > 0 ? (totalWins / totalBets) * 100 : 0,
+          totalGames: wcBets.length,
+          conversionRate: wcBets.length > 0 ? (totalWins / wcBets.length) * 100 : 0,
           status: 'active' as const,
         };
-      })
+      }),
     );
 
     return {
       activeCount: partners.length,
       data: partnersData,
     };
+  }
+
+  async getReferralsOverview(limit = 200) {
+    const referredUsers = await this.prisma.user.findMany({
+      where: { affiliatedById: { not: null } },
+      include: {
+        affiliatedBy: {
+          include: {
+            user: { select: { id: true, email: true } },
+          },
+        },
+        deposits: {
+          where: { status: DepositStatus.SUCCESS },
+          select: { amount: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        wcOddsBets: {
+          select: { status: true, stake: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const rows = await Promise.all(
+      referredUsers.map(async (player) => {
+        const partner = player.affiliatedBy;
+        if (!partner) return null;
+
+        const partnerEarned = await this.prisma.operation.aggregate({
+          where: {
+            userId: partner.userId,
+            source: OperationSource.AFFILIATE,
+            type: OperationType.INCOME,
+            status: OperationStatus.SUCCESS,
+            meta: {
+              path: ['originalUserId'],
+              equals: player.id,
+            },
+          },
+          _sum: { amount: true },
+        });
+
+        const totalDeposits = player.deposits.reduce(
+          (sum, deposit) => sum + Number(deposit.amount),
+          0,
+        );
+
+        return {
+          playerId: player.id,
+          playerEmail: player.email,
+          playerRegisteredAt: player.createdAt.toISOString(),
+          registrationIp: player.registrationIp,
+          partnerId: partner.userId,
+          partnerEmail: partner.user.email,
+          partnerUid: partner.uid,
+          totalDeposits,
+          firstDepositAt: player.deposits[0]?.createdAt?.toISOString() ?? null,
+          totalBets: player.wcOddsBets.length,
+          totalLosses: player.wcOddsBets.filter((bet) => bet.status === WcOddsBetStatus.LOSE).length,
+          affiliateEarnedFromPlayer: Number(partnerEarned._sum.amount ?? 0),
+        };
+      }),
+    );
+
+    return {
+      total: rows.filter(Boolean).length,
+      items: rows.filter((row): row is NonNullable<typeof row> => row != null),
+    };
+  }
+
+  async getAffiliatePartners(limit = 200) {
+    const items = await this.partnersService.getAffiliatePartnersOverview(limit);
+    return { total: items.length, items };
+  }
+
+  async updateAffiliatePartnerStatus(userId: number, status: AffilatorStatus) {
+    return this.partnersService.updatePartnerStatus(userId, status);
+  }
+
+  async updateAffiliatePartnerPercent(userId: number, percent: number) {
+    await this.partnersService.updatePartnerPercent(userId, percent);
+    return { ok: true, userId, percent };
+  }
+
+  async updateAffiliatePartnerCpa(
+    userId: number,
+    cpaPayoutAmount: number,
+    cpaCurrencyCode: string,
+  ) {
+    await this.partnersService.updatePartnerCpa(userId, cpaPayoutAmount, cpaCurrencyCode);
+    return { ok: true, userId, cpaPayoutAmount, cpaCurrencyCode };
+  }
+
+  async getAffiliatePartnerPromos(userId: number) {
+    const items = await this.partnersService.getPartnerPromoCodes(userId);
+    return { items };
   }
 
   async getUsersStatistics(period: string) {
@@ -566,6 +662,9 @@ export class AdminService {
       const bonusPercentage = bonusData.bonusPercentage ? Number(bonusData.bonusPercentage) : undefined;
 
       let value: any = {};
+      const partnerPct = bonusData.partnerPercentage
+        ? Number(bonusData.partnerPercentage)
+        : 0;
       if (promoType === 'DEPOSIT_BONUS') {
         value = {
           percentage: bonusPercentage || 0,
@@ -573,6 +672,7 @@ export class AdminService {
           totalTokens,
           tokensPerBet,
           tokenMinOdds,
+          partnerPercentage: partnerPct,
         };
       } else {
         // DIRECT_BONUS or VOUCHER
@@ -581,6 +681,7 @@ export class AdminService {
           totalTokens,
           tokensPerBet,
           tokenMinOdds,
+          partnerPercentage: partnerPct,
         };
       }
 
@@ -752,10 +853,11 @@ export class AdminService {
         let cardType = '';
 
         // Пытаемся найти связанный WithdrawRequest
-        if (meta?.withdrawalId) {
+        const requestId = meta?.withdrawRequestId ?? meta?.withdrawalId;
+        if (requestId) {
           try {
             const withdrawRequest = await this.prisma.withdrawRequest.findUnique({
-              where: { id: meta.withdrawalId }
+              where: { id: Number(requestId) }
             });
             
             if (withdrawRequest) {
@@ -784,7 +886,9 @@ export class AdminService {
           currencyCode: withdrawal.currencyCode,
           method: method,
           cardNumber: cardNumber,
-          cardType: cardType, // Добавляем тип карты
+          cardType: cardType,
+          isAffiliate: method === 'affiliate',
+          requiresReview: meta?.requiresReview === true,
           meta: withdrawal.meta
         };
       }))
@@ -1065,6 +1169,7 @@ export class AdminService {
     let tokensGranted = 0;
     let tokensPerBet = 0;
     let tokenMinOdds = 0;
+    let redeemedPromo: { id: number; code: string; partnerId: string | null; value: unknown } | null = null;
     let diagnostics: any = { path: 'approveDeposit', promoFound: false, alreadyUsed: null as null | boolean, remaining: null as null | number, voucher: null as null | string };
 
     console.log(`[approveDeposit] start id=${id}`);
@@ -1243,6 +1348,12 @@ export class AdminService {
                 bonusApplied = true;
                 bonusAmountCredited = bonusAmount;
                 bonusCurrencyUsed = bonusCurrency;
+                redeemedPromo = {
+                  id: promo.id,
+                  code: promo.code,
+                  partnerId: promo.partnerId,
+                  value: promo.value,
+                };
                 
                 tokensGranted = totalTokens;
                 tokensPerBet = tokensPerBetVal;
@@ -1261,6 +1372,15 @@ export class AdminService {
         data: { status: DepositStatus.SUCCESS, updatedAt: new Date() },
       });
     });
+
+    if (bonusApplied && redeemedPromo && bonusCurrencyUsed) {
+      await this.partnersService.handlePromoRedemption(
+        depo.userId,
+        redeemedPromo,
+        bonusAmountCredited,
+        bonusCurrencyUsed,
+      );
+    }
 
     const summary = {
       ok: true,

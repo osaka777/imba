@@ -15,11 +15,13 @@ interface Withdrawal {
   currency: string
   method: string
   cardNumber: string
-  cardType?: string // Добавляем cardType как отдельное поле
+  cardType?: string
   reason?: string
   createdAt: string
   status: string
   processedAt?: string
+  isAffiliate?: boolean
+  requiresReview?: boolean
   meta?: {
     method?: string
     cardType?: string
@@ -46,7 +48,8 @@ const CARD_TYPES = {
 // Названия методов
 const METHOD_NAMES = {
   [WITHDRAWAL_METHODS.CARD]: 'Банковская карта',
-  [WITHDRAWAL_METHODS.CRYPTO]: 'Криптовалюта'
+  [WITHDRAWAL_METHODS.CRYPTO]: 'Криптовалюта',
+  affiliate: 'Партнёрский (USDT)',
 }
 
 // Названия типов карт и криптовалют
@@ -234,7 +237,21 @@ export default function WithdrawalsPage() {
     { header: 'ID', accessor: 'id' as keyof Withdrawal, render: (item: Withdrawal) => (
       <span className="font-mono text-sm">{item.id}</span>
     )},
-    { header: 'Пользователь', accessor: 'userEmail' as keyof Withdrawal },
+    { header: 'Пользователь', accessor: 'userEmail' as keyof Withdrawal, render: (item: Withdrawal) => (
+      <div className="flex flex-col gap-1">
+        <span>{item.userEmail}</span>
+        {item.isAffiliate && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 w-fit">
+            affiliate
+          </span>
+        )}
+        {item.requiresReview && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 w-fit">
+            первый вывод
+          </span>
+        )}
+      </div>
+    )},
     { header: 'Сумма', accessor: 'amount' as keyof Withdrawal, render: (item: Withdrawal) => 
       formatCurrency(item.amount, item.currency)
     },

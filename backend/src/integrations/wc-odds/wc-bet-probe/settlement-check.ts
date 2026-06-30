@@ -10,6 +10,11 @@ import { emptyMatchState } from '../wc-match-state.types';
 import type { WcBetPlacementContext } from '../wc-bet-placement-context.util';
 import { resolveDeterminateBetResult } from '../wc-verified-settlement.util';
 
+function isWinAndTotalMarketKey(marketKey: string): boolean {
+  const stem = marketKey.replace(/^display_/i, '');
+  return /^(?:WIN[12X]*_AND_TOTAL|X2_AND_TOTAL|DRAW_AND_TOTAL)/i.test(stem);
+}
+
 import { buildOlimpbetDetailFromPublicEvent } from './detail-from-event';
 import type { WcBetProbeCandidate, WcBetProbeEventDetail, WcBetProbeFinding } from './types';
 
@@ -62,7 +67,7 @@ export function validateSettlementLogic(
   const scopeFinalized = scope ? isMarketScopeFinalized(detail, scope) : null;
 
   if (
-    isTotalsMarketKey(marketKey)
+    (isTotalsMarketKey(marketKey) || isWinAndTotalMarketKey(candidate.marketKey))
     && scope?.kind === 'set'
     && isPointSetSportFeed(detail)
     && scopeFinalized === false
@@ -88,7 +93,7 @@ export function validateSettlementLogic(
   }
 
   if (
-    isTotalsMarketKey(marketKey)
+    (isTotalsMarketKey(marketKey) || isWinAndTotalMarketKey(candidate.marketKey))
     && scope?.kind === 'set'
     && isPointSetSportFeed(detail)
     && scopeFinalized === false

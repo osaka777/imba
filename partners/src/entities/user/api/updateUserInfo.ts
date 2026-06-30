@@ -10,7 +10,7 @@ export async function updateUserInfo(data: any) {
         return null;
     }
     try {
-        const stats =  await api.patch<any>("/affiliate-program/user", data, { headers: { Authorization: `Bearer ${token.value}` } });
+        const stats =  await api.patch<any>("/affiliate-program/user/profile", data, { headers: { Authorization: `Bearer ${token.value}` } });
 
         return stats.data
     } catch (error) {

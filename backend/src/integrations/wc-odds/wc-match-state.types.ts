@@ -21,6 +21,10 @@ export type WcMatchStateSoccer = {
   goalScorers?: Record<string, 'home' | 'away'>;
   /** 1-based match goal index → match minute when goal was detected (from feed current_time). */
   goalMinutes?: Record<string, number>;
+  /** Half/quarter/ET period scores from scores_by_periods (survives EVENT_CLOSED). */
+  periodScores?: Array<{ home: number; away: number }>;
+  /** Penalty shootout score when available from feed. */
+  penaltyScore?: { home: number; away: number };
   initialized: boolean;
 };
 

@@ -3,6 +3,7 @@ import { PrismaService } from '~/prisma/prisma.service';
 import { CreateWithdrawalDto, WithdrawalMethod, CardType, CurrencyCode } from './dto/create-withdrawal.dto';
 import { OperationStatus, OperationSource, OperationType } from '@prisma/client';
 import { OperationService } from '~/main/operation/operation.service';
+import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class WithdrawalService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly operationService: OperationService,
+    private readonly telegramUserNotify: TelegramUserNotifyService,
   ) {}
 
   async create(userId: number, dto: CreateWithdrawalDto) {
@@ -297,6 +299,25 @@ export class WithdrawalService {
       status: operationStatus,
       currency: withdrawRequest.currencyCode
     });
+
+    if (operationStatus === OperationStatus.SUCCESS) {
+      void this.telegramUserNotify.notifyWithdraw({
+        userId: withdrawRequest.userId,
+        withdrawId: id,
+        status: 'completed',
+        amount: Number(withdrawRequest.amount),
+        currency: withdrawRequest.currencyCode,
+      }).catch(() => undefined);
+    } else if (operationStatus === OperationStatus.FAILED) {
+      void this.telegramUserNotify.notifyWithdraw({
+        userId: withdrawRequest.userId,
+        withdrawId: id,
+        status: 'rejected',
+        amount: Number(withdrawRequest.amount),
+        currency: withdrawRequest.currencyCode,
+        reason,
+      }).catch(() => undefined);
+    }
   }
 
   async processWithdrawal(id: number) {

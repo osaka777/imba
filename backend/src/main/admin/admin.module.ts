@@ -4,11 +4,12 @@ import { AuthenticationModule } from '../user/authentication/authentication.modu
 import { OperationModule } from '../operation/operation.module';
 import { EventModule } from '../event/event.module';
 import { DepositModule } from '../deposit/deposit.module';
+import { PartnersModule } from '../partners/partners.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 
 @Module({
-  imports: [PrismaModule, AuthenticationModule, OperationModule, EventModule, DepositModule],
+  imports: [PrismaModule, AuthenticationModule, OperationModule, EventModule, DepositModule, PartnersModule],
   controllers: [AdminController],
   providers: [AdminService],
   exports: [AdminService],

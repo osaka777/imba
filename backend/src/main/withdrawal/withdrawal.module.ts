@@ -5,6 +5,7 @@ import { PrismaModule } from '~/prisma/prisma.module';
 import { AuthenticationModule } from '../user/authentication/authentication.module';
 import { ConfigModule } from '@nestjs/config';
 import { OperationModule } from '../operation/operation.module';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { OperationModule } from '../operation/operation.module';
     AuthenticationModule,
     ConfigModule,
     OperationModule,
+    TelegramModule,
   ],
   controllers: [WithdrawalController],
   providers: [WithdrawalService],

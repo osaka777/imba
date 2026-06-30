@@ -120,11 +120,11 @@ export function isOlimpbetFeedBettingOpen(
   const status = (detail.status ?? '').toUpperCase();
   if (FINISHED_STATUS_MARKERS.some((marker) => status.includes(marker))) return false;
 
-  const kickoffMs = Date.parse(detail.eventDate);
-  const started = Number.isFinite(kickoffMs) && kickoffMs <= nowMs;
-
-  if (started && !hasOpenTradingMarkets(detail)) {
-    return false;
+  if (!hasOpenTradingMarkets(detail)) {
+    if (hasAnyProbabilityOutcomes(detail)) return false;
+    const kickoffMs = Date.parse(detail.eventDate);
+    const started = Number.isFinite(kickoffMs) && kickoffMs <= nowMs;
+    if (started) return false;
   }
 
   return true;

@@ -16,12 +16,15 @@ import { LoginForm } from "@/entities/user/ui/AuthForm/LoginForm";
 
 import { IUser } from "@/entities/user/interface/IUser";
 import { updateUserInfo } from "@/entities/user/api/updateUserInfo";
+import { getReferralLink, ReferralLinkData } from "@/entities/user/api/getReferralLink";
+import { testPostback } from "@/entities/user/api/testPostback";
 
 type AuthFormState = {
     telegram?: string | null,
     phone?: string | null,
     whatsapp?: string | null,
     wallet?: string | null,
+    postbackUrl?: string | null,
     password?: string | null,
 };
 
@@ -30,15 +33,35 @@ export const ProfileForm: FC<{onClose: () => void}> = ({onClose}) => {
     const [formError, setFormError] = useState<string>("")
     const router = useRouter();
     const [info, setInfo] = useState<IUser>()
+    const [referral, setReferral] = useState<ReferralLinkData | null>(null)
+    const [postbackTestResult, setPostbackTestResult] = useState<string>("")
+
+    const handleTestPostback = async () => {
+        setPostbackTestResult("");
+        const result = await testPostback();
+        if (!result) {
+            setPostbackTestResult("Ошибка: нужна авторизация");
+            return;
+        }
+        if (result.success) {
+            setPostbackTestResult(`OK (HTTP ${result.httpStatus ?? 200})`);
+        } else {
+            setPostbackTestResult(result.error ?? "Postback не доставлен");
+        }
+    };
 
     useEffect(() => {
         const fetchInfo = async () => {
             try {
-                const response = await fetch('/api/user');
-                if (response.ok) {
-                    const user = await response.json();
+                const [userResponse, referralData] = await Promise.all([
+                    fetch('/api/user'),
+                    getReferralLink(),
+                ]);
+                if (userResponse.ok) {
+                    const user = await userResponse.json();
                     setInfo(user);
                 }
+                setReferral(referralData);
             } catch (error) {
                 console.error('Failed to fetch user info:', error);
             }
@@ -51,6 +74,7 @@ export const ProfileForm: FC<{onClose: () => void}> = ({onClose}) => {
         phone: info?.affilator.meta.phone,
         whatsapp: info?.affilator.meta.whatsapp,
         wallet: info?.affilator.meta.wallet,
+        postbackUrl: info?.affilator.meta.postbackUrl ?? "",
     };
 
 
@@ -61,12 +85,13 @@ export const ProfileForm: FC<{onClose: () => void}> = ({onClose}) => {
         validateOnBlur: false,
         enableReinitialize: true,
         onSubmit: async (values, { resetForm }) => {
-            updateUserInfo({
+            await updateUserInfo({
                 meta: {
                     telegram: values.telegram,
                     phone: values.phone,
                     whatsapp: values.whatsapp,
                     wallet: values.wallet,
+                    postbackUrl: values.postbackUrl?.trim() || null,
                 },
                 password: values.password
             })
@@ -131,6 +156,24 @@ export const ProfileForm: FC<{onClose: () => void}> = ({onClose}) => {
                     placeholder="Введите кошелек"
                 />
                 <Input
+                    label="Postback URL (reg / FTD / commission)"
+                    onChange={formik.handleChange}
+                    value={formik.values.postbackUrl as string}
+                    className={styles.input}
+                    type="url"
+                    name="postbackUrl"
+                    id="postbackUrl"
+                    placeholder="https://tracker.example/postback"
+                />
+                <Button
+                    type="button"
+                    onClick={handleTestPostback}
+                    className={styles.authButton}
+                >
+                    Тест postback
+                </Button>
+                {postbackTestResult ? <p className={styles.error}>{postbackTestResult}</p> : null}
+                <Input
                     label="Ваш новый пароль"
                     onChange={formik.handleChange}
                     value={formik.values.password as string}
@@ -141,14 +184,8 @@ export const ProfileForm: FC<{onClose: () => void}> = ({onClose}) => {
                     placeholder="Введите ваш новый пароль"
                 />
                 <Input
-                    label="Реф ссылка"
-                    value={"https://imbabk.xyz/?tag=" + info?.affilator.uid + "&auth=register"}
-                    className={styles.input}
-                    type="text"
-                />
-                <Input
-                    label="Реф ссылка (для реф-ов)"
-                    value={"https://imbabk.xyz/?tag=" + info?.affilator.uid + "&auth=register"}
+                    label="Реферальная ссылка"
+                    value={referral?.referralLink ?? ""}
                     className={styles.input}
                     type="text"
                 />

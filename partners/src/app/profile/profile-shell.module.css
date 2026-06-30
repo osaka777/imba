@@ -1,0 +1,116 @@
+.canvas {
+  flex: 1;
+  background: #eef1f8;
+  min-height: calc(100vh - 1px);
+}
+
+.sheet {
+  max-width: 1280px;
+  margin: -28px auto 0;
+  padding: 0 24px 56px;
+  position: relative;
+  z-index: 2;
+}
+
+.pageHeader {
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f0e27;
+}
+
+.pageSubtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  box-shadow:
+    0 1px 2px rgba(15, 14, 39, 0.04),
+    0 12px 32px rgba(15, 14, 39, 0.06);
+}
+
+.cardPadding {
+  padding: 24px;
+}
+
+.section {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  box-shadow:
+    0 1px 2px rgba(15, 14, 39, 0.04),
+    0 12px 32px rgba(15, 14, 39, 0.06);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f0e27;
+  letter-spacing: -0.01em;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dataTable th,
+.dataTable td {
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef1f8;
+  color: #0f0e27;
+}
+
+.dataTable th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dataTable tbody tr:hover {
+  background: rgba(111, 72, 167, 0.03);
+}
+
+.dataTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .sheet {
+    padding: 0 16px 40px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+}

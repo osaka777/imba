@@ -21,6 +21,8 @@ export function fingerprintWcListEvent(event: WcOddsEventDto): string {
     clockSec,
     event.completed,
     event.phase,
+    event.bettingOpen,
+    event.feedStatus ?? '',
     event.priorityLevel,
     event.hasBroadcast,
   ].join('|');

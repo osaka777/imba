@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
 import { Logger } from 'winston';
 
+import { BonusBalanceService } from '~/main/bonus-balance/bonus-balance.service';
 import { PartnersService } from '~/main/partners/partners.service';
 import { PrismaService } from '~/prisma/prisma.service';
 import { CurrencyService } from '~/main/currency/currency.service';
@@ -19,11 +20,12 @@ export class UserService {
     private readonly prismaService: PrismaService,
     private readonly partnersService: PartnersService,
     private readonly currencyService: CurrencyService,
+    private readonly bonusBalanceService: BonusBalanceService,
     @Inject('winston')
     private readonly logger: Logger,
   ) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, registrationIp?: string) {
     if (await this.isEmailTaken(dto.email)) {
       throw new EmailIsAlreadyTakenException();
     }
@@ -64,6 +66,7 @@ export class UserService {
         phone: dto.phone,
         birthDate,
         defaultCurrencyCode: currencyCode,
+        registrationIp,
         balances: {
           create: {
             currencyCode,
@@ -80,7 +83,36 @@ export class UserService {
       user_id: user.id,
     });
 
-    await this.partnersService.connectAffiliator(user, dto.tag);
+    await this.partnersService.connectAffiliator(
+      user,
+      dto.tag,
+      registrationIp,
+      dto.subs,
+    );
+
+    if (dto.promoCode?.trim()) {
+      const partnerFromPromo = await this.partnersService.resolvePartnerUserIdFromPromoCode(
+        dto.promoCode,
+      );
+      if (partnerFromPromo) {
+        await this.partnersService.connectAffiliatorByPartnerUserId(
+          user,
+          partnerFromPromo,
+          registrationIp,
+          dto.subs,
+        );
+      }
+      try {
+        await this.bonusBalanceService.applyPromoCode(user.id, dto.promoCode.trim());
+      } catch (err) {
+        this.logger.debug('promo not applied on registration', {
+          userId: user.id,
+          promoCode: dto.promoCode,
+          reason: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
     // await this.emailService.sendConfirmation(user.id, user.email)
 
     return user;
@@ -142,6 +174,13 @@ export class UserService {
       where: {
         id: userId,
       },
+    });
+  }
+
+  async updateAvatarPreset(userId: number, preset: string | null) {
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: { avatarPreset: preset },
     });
   }
 }

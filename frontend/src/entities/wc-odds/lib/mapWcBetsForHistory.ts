@@ -18,6 +18,8 @@ export type WcHistoryOrdinarBet = {
   betVariant: "ORDINAR";
   score?: string;
   eventCompleted: boolean;
+  sport?: string;
+  leagueName?: string;
 };
 
 /**
@@ -62,6 +64,8 @@ export function mapWcBetsForHistory(wcBets: WcBet[]): WcHistoryOrdinarBet[] {
         ? `${bet.event.homeScore}:${bet.event.awayScore}`
         : undefined,
       eventCompleted: Boolean(bet.event.completed),
+      sport: bet.event.sport,
+      leagueName: bet.event.leagueName,
     };
   });
 }

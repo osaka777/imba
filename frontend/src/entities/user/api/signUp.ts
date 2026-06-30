@@ -10,9 +10,17 @@ export type SignUpBody = {
   phone: string;
   birthDate: string;
   tag?: string;
+  promoCode?: string;
+  subs?: {
+    sub1?: string;
+    sub2?: string;
+    sub3?: string;
+    sub4?: string;
+    sub5?: string;
+  };
 };
 
-export const signUp = async (body: SignUpBody, promo?: string) => {
+export const signUp = async (body: SignUpBody) => {
   const { data, error } = await api.POST("/api/sign-up", { body });
   if (data) {
     await createSessionClient(data.accessToken);

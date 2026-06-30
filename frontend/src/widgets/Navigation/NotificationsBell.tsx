@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { FiBell, FiX } from "react-icons/fi";
+import { FiBell, FiCheckCircle, FiClock, FiGift, FiInfo, FiX, FiXCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import {
   getMyKztForeignCardOrder,
@@ -43,6 +43,37 @@ const formatDate = (ts: number) => {
     minute: "2-digit",
   });
 };
+
+type NotificationIconType = "success" | "error" | "warning" | "info" | "general";
+
+const ICON_CLASS: Record<NotificationIconType, string> = {
+  success: styles.itemIconSuccess,
+  error: styles.itemIconError,
+  warning: styles.itemIconWarning,
+  info: styles.itemIconInfo,
+  general: styles.itemIconGeneral,
+};
+
+function resolveNotificationIcon(item: AppNotification): {
+  type: NotificationIconType;
+  Icon: typeof FiInfo;
+} {
+  if (item.kind === "general") {
+    return { type: "general", Icon: FiGift };
+  }
+
+  const text = `${item.title} ${item.message}`.toLowerCase();
+  if (/одобр|зачисл|выигр|успешн|approved|win/i.test(text)) {
+    return { type: "success", Icon: FiCheckCircle };
+  }
+  if (/отклон|проигр|lose|rejected|ошиб/i.test(text)) {
+    return { type: "error", Icon: FiXCircle };
+  }
+  if (/истек|ожидан|pending|expired|проверк/i.test(text)) {
+    return { type: "warning", Icon: FiClock };
+  }
+  return { type: "info", Icon: FiInfo };
+}
 
 const slidesToGeneralNotifications = (slides: Slide[]): AppNotification[] =>
   slides
@@ -294,7 +325,7 @@ export const NotificationsBell = () => {
       role="presentation"
     >
       <div
-        className={styles.modal}
+        className={styles.drawer}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-labelledby="notifications-title"
@@ -332,14 +363,18 @@ export const NotificationsBell = () => {
         <div className={styles.list}>
           {filteredItems.length === 0 ? (
             <div className={styles.empty}>
-              <FiBell aria-hidden className={styles.emptyIcon} size={36} />
-              <p className={styles.emptyTitle}>Ничего нет</p>
+              <div className={styles.emptyIconWrap}>
+                <FiBell aria-hidden className={styles.emptyIcon} size={28} />
+              </div>
+              <p className={styles.emptyTitle}>Нет уведомлений</p>
               <p className={styles.emptyText}>
-                Когда придет уведомление, оно отобразится в этом разделе
+                Здесь появятся уведомления о ставках, пополнениях и акциях
               </p>
             </div>
           ) : (
-            filteredItems.map((item) => (
+            filteredItems.map((item) => {
+              const { type: iconType, Icon } = resolveNotificationIcon(item);
+              return (
               <div
                 key={item.id}
                 className={`${styles.item} ${item.read ? "" : styles.itemUnread}`}
@@ -353,32 +388,39 @@ export const NotificationsBell = () => {
                 role="button"
                 tabIndex={0}
               >
+                {!item.read ? <span className={styles.itemUnreadDot} aria-hidden /> : null}
                 <button
                   aria-label="Удалить уведомление"
                   className={styles.deleteBtn}
                   onClick={(e) => handleDeleteItem(e, item)}
                   type="button"
                 >
-                  <FiX size={16} />
+                  <FiX size={14} />
                 </button>
-                <div className={styles.itemTop}>
-                  <span className={styles.itemKind}>
-                    {item.kind === "personal" ? "Личное" : "Общее"}
-                  </span>
-                  <span className={styles.itemTime}>
-                    {item.kind === "personal"
-                      ? formatTime(item.createdAt)
-                      : formatDate(item.createdAt)}
-                  </span>
+                <div className={`${styles.itemIcon} ${ICON_CLASS[iconType]}`}>
+                  <Icon size={18} />
                 </div>
-                <div className={styles.itemTitle}>
-                  {item.title || "Уведомление"}
-                </div>
-                <div className={styles.itemMessage}>
-                  {item.message || "Подробности в личном кабинете"}
+                <div className={styles.itemBody}>
+                  <div className={styles.itemTop}>
+                    <span className={styles.itemKind}>
+                      {item.kind === "personal" ? "Личное" : "Акция"}
+                    </span>
+                    <span className={styles.itemTime}>
+                      {item.kind === "personal"
+                        ? formatTime(item.createdAt)
+                        : formatDate(item.createdAt)}
+                    </span>
+                  </div>
+                  <div className={styles.itemTitle}>
+                    {item.title || "Уведомление"}
+                  </div>
+                  <div className={styles.itemMessage}>
+                    {item.message || "Подробности в личном кабинете"}
+                  </div>
                 </div>
               </div>
-            ))
+            );
+            })
           )}
         </div>
 

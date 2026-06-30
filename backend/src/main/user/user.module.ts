@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 
 import { CurrencyModule } from '~/main/currency/currency.module';
+import { BonusBalanceModule } from '~/main/bonus-balance/bonus-balance.module';
 import { PartnersModule } from '~/main/partners/partners.module';
 import { PrismaModule } from '~/prisma/prisma.module';
 
@@ -15,6 +16,7 @@ import { UserService } from './user.service';
     CurrencyModule,
     PrismaModule,
     PartnersModule,
+    BonusBalanceModule,
     forwardRef(() => AuthenticationModule),
   ],
   providers: [UserService],

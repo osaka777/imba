@@ -106,7 +106,7 @@ export function resolvePeriodSportGamePhase(
   matchPhase: string | null,
   detailsLength = 0,
 ): SoccerGamePhase {
-  if (isSoccerLikeSport(sport)) return resolveSoccerGamePhase(matchPhase);
+  if (isSoccerLikeSport(sport)) return resolveSoccerGamePhaseFromMatchPhase(matchPhase);
 
   if (isPeriodClockSport(sport) && sport !== 'soccer' && sport !== 'cyber-football') {
     const decoded = decodeSportradarMatchPhase(matchPhase);
@@ -150,21 +150,12 @@ function resolveSoccerPeriod(matchPhase: string | null): string | number | undef
   return undefined;
 }
 
-type SoccerGamePhase = 'extra_time_1' | 'extra_time_2' | 'penalties' | 'break' | null;
-
-function resolveSoccerGamePhase(matchPhase: string | null): SoccerGamePhase {
-  if (!matchPhase) return null;
-  // Sportradar
-  if (matchPhase === '31' || matchPhase === '33') return 'break';
-  if (matchPhase === '32' || matchPhase === '34') return 'break';
-  if (matchPhase === '41') return 'extra_time_1';
-  if (matchPhase === '42') return 'extra_time_2';
-  if (matchPhase === '50') return 'penalties';
-  // Legacy
-  if (matchPhase === '5') return 'extra_time_1';
-  if (matchPhase === '8' || matchPhase === '9') return 'break';
-  return null;
-}
+import type { SoccerGamePhase } from './wc-soccer-phase.util';
+import {
+  applySoccerPhaseRefinement,
+  refineSoccerGamePhase,
+  resolveSoccerGamePhaseFromMatchPhase,
+} from './wc-soccer-phase.util';
 
 const SOCCER_FIRST_HALF_PHASES = new Set(['3', '6']);
 const SOCCER_SECOND_HALF_PHASES = new Set(['4', '7']);
@@ -440,8 +431,14 @@ function buildParsedScore(
     if (isSoccerLikeSport(sport)) {
       const extraTime = calcSoccerExtraTime(timer, matchPhase);
       if (extraTime !== null) parsed.extraTime = extraTime;
-      const gamePhase = resolveSoccerGamePhase(matchPhase);
+      const gamePhase = resolveSoccerGamePhaseFromMatchPhase(matchPhase);
       if (gamePhase) parsed.gamePhase = gamePhase;
+      applySoccerPhaseRefinement(parsed, matchPhase);
+      // When Olimpbet doesn't send match_phase but 5 periods exist → penalties already started
+      if (!parsed.gamePhase && details.length >= 5) {
+        parsed.gamePhase = 'penalties';
+        if (!parsed.period || Number(parsed.period) < 5) parsed.period = 5;
+      }
     } else if (isPeriodClockSport(sport)) {
       const gamePhase = resolvePeriodSportGamePhase(sport, matchPhase, details.length);
       if (gamePhase) parsed.gamePhase = gamePhase;
@@ -594,7 +591,7 @@ export function mergeWcParsedScore(
   const prevText = prev.text ?? {};
   const incText = incoming.text ?? {};
 
-  return {
+  const merged = {
     ...prev,
     ...incoming,
     text: {
@@ -618,6 +615,24 @@ export function mergeWcParsedScore(
     currentScore: incoming.currentScore ?? prev.currentScore,
     liveScore: incoming.liveScore ?? prev.liveScore,
   };
+
+  const refinedPhase = refineSoccerGamePhase(
+    null,
+    merged.seconds,
+    merged.gamePhase,
+  );
+  if (refinedPhase) merged.gamePhase = refinedPhase;
+  if (merged.gamePhase === 'extra_time_2') merged.period = 4;
+  else if (merged.gamePhase === 'extra_time_1') merged.period = 3;
+  else if (merged.gamePhase === 'penalties') merged.period = 5;
+
+  // Infer penalty phase from period details when match_phase wasn't in feed
+  if (!merged.gamePhase && (merged.details?.length ?? 0) >= 5) {
+    merged.gamePhase = 'penalties';
+    if (!merged.period || Number(merged.period) < 5) merged.period = 5;
+  }
+
+  return merged;
 }
 
 const RICH_STAT_IDS = new Set([

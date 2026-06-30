@@ -25,10 +25,4 @@ export class PartnersController {
   }) {
     return this.partnersService.createPartner(data);
   }
-
-  @Get('test-bonus')
-  @UseGuards(SuperuserGuard)
-  async testBonus() {
-    return this.partnersService.testPlayerBonus();
-  }
 }

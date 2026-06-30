@@ -2,23 +2,15 @@ import type { OlimpbetMarketCatalog } from './olimpbet-wc-catalog';
 import { parseOlimpbetEventToGroupedMarkets } from './olimpbet-wc-markets.parser';
 import type { OlimpbetEventDetail } from './olimpbet-wc.types';
 
-jest.mock('./olimpbet-wc-catalog', () => ({
-  ...jest.requireActual('./olimpbet-wc-catalog'),
-  loadOlimpbetMarketCatalog: jest.fn(),
-  formatOutcomeLabel: jest.fn((_catalog, marketId, prob) => {
-    const codes: Record<string, string> = {
-      '1076:1189': 'ТМ',
-      '1076:1190': 'ТБ',
-      '1104:1246': 'Ф1',
-      '1104:1247': 'Ф2',
-      '1060:1147': 'П1',
-      '1060:1148': 'П2',
-    };
-    return codes[`${marketId}:${prob.outcomeTypeId}`] ?? `OUT_${prob.outcomeTypeId}`;
-  }),
-  catalogMarketLabel: jest.fn((_catalog, marketId) => `Market ${marketId}`),
-  resolveVirtualCategoryName: jest.fn(() => null),
-}));
+jest.mock('./olimpbet-wc-catalog', () => {
+  const actual = jest.requireActual('./olimpbet-wc-catalog');
+  return {
+    ...actual,
+    loadOlimpbetMarketCatalog: jest.fn(),
+    catalogMarketLabel: jest.fn((_catalog: unknown, marketId: number) => `Market ${marketId}`),
+    resolveVirtualCategoryName: jest.fn(() => null),
+  };
+});
 
 function buildCatalog(
   markets: Array<{
@@ -72,12 +64,20 @@ function buildEvent(markets: OlimpbetEventDetail['probabilities']['markets']): O
 }
 
 describe('parseOlimpbetEventToGroupedMarkets', () => {
-  const { loadOlimpbetMarketCatalog } = jest.requireMock('./olimpbet-wc-catalog') as {
+  const { loadOlimpbetMarketCatalog, resolveVirtualCategoryName, catalogMarketLabel } = jest.requireMock(
+    './olimpbet-wc-catalog',
+  ) as {
     loadOlimpbetMarketCatalog: jest.Mock;
+    resolveVirtualCategoryName: jest.Mock;
+    catalogMarketLabel: jest.Mock;
   };
 
   beforeEach(() => {
     loadOlimpbetMarketCatalog.mockReset();
+    resolveVirtualCategoryName.mockReset();
+    resolveVirtualCategoryName.mockReturnValue(null);
+    catalogMarketLabel.mockReset();
+    catalogMarketLabel.mockImplementation((_catalog: unknown, marketId: number) => `Market ${marketId}`);
   });
 
   it('parses TOTAL_WITH_OT into totals with OVER/UNDER outcome keys', async () => {
@@ -641,5 +641,508 @@ describe('parseOlimpbetEventToGroupedMarkets', () => {
     expect(grouped['П1: выиграет ровно 1 сет']).toHaveLength(1);
     expect(grouped['П2: выиграет ровно 1 сет']).toHaveLength(1);
     expect(grouped['П1: выиграет ровно 1 сет'][0].outcomes.map((o) => o.name)).toEqual(['Да', 'Нет']);
+  });
+
+  it('labels half-win yes/no rows inside «Победа в половинах»', async () => {
+    resolveVirtualCategoryName.mockImplementation(
+      (_catalog: unknown, marketId: number) =>
+        [1265, 1266, 1267, 1268, 1379].includes(marketId) ? 'Победа в половинах' : null,
+    );
+
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1379,
+          name: 'DRAW_ONE_HALF',
+          outcomes: [
+            { id: 1924, code: 'НичьяПолДа' },
+            { id: 1925, code: 'НичьяПолНет' },
+          ],
+        },
+        {
+          id: 1265,
+          name: 'TEAM1_WIN_BOTHPART',
+          outcomes: [
+            { id: 1654, code: 'П1ОбеПолДа' },
+            { id: 1655, code: 'П1ОбеПолНет' },
+          ],
+        },
+        {
+          id: 1267,
+          name: 'TEAM1_WIN_ONE_PART',
+          outcomes: [
+            { id: 1658, code: 'П1ПолДа' },
+            { id: 1659, code: 'П1ПолНет' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1379,
+          probabilities: [
+            { outcomeTypeId: 1924, odd: 1.15 },
+            { outcomeTypeId: 1925, odd: 5.15 },
+          ],
+        },
+        {
+          marketId: 1265,
+          probabilities: [
+            { outcomeTypeId: 1654, odd: 7.42 },
+            { outcomeTypeId: 1655, odd: 1.08 },
+          ],
+        },
+        {
+          marketId: 1267,
+          probabilities: [
+            { outcomeTypeId: 1658, odd: 1.35 },
+            { outcomeTypeId: 1659, odd: 3.11 },
+          ],
+        },
+      ]),
+    );
+
+    const category = grouped['Победа в половинах'];
+    expect(category).toHaveLength(3);
+    expect(category.map((group) => group.label)).toEqual([
+      'Х хотя бы в одной половине',
+      'П1 в обеих половинах',
+      'П1 хотя бы в одной половине',
+    ]);
+    expect(category[0].outcomes.map((o) => o.outcomeKey)).toEqual(['YES', 'NO']);
+  });
+
+  it('labels btts-and-outcome markets with readable outcome names', async () => {
+    resolveVirtualCategoryName.mockReturnValue('Обе забьют и Исход');
+
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1281,
+          name: 'WINNER_AND_GOALS_BOTH',
+          outcomes: [
+            { id: 1686, code: 'ОбеДаП1' },
+            { id: 1687, code: 'ОбеНетП1' },
+            { id: 1688, code: 'ОбеДаХ' },
+            { id: 1689, code: 'ОбеНетХ' },
+            { id: 1690, code: 'ОбеДаП2' },
+            { id: 1691, code: 'ОбеНетП2' },
+          ],
+        },
+        {
+          id: 2462,
+          name: 'WIN1_AND_BOTH_TEAM_TO_SCORE_YES_NO',
+          outcomes: [
+            { id: 4475, code: 'П1иОбеЗаб_Да' },
+            { id: 4476, code: 'П1иОбеЗаб_Нет' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1281,
+          probabilities: [
+            { outcomeTypeId: 1686, odd: 2.03 },
+            { outcomeTypeId: 1688, odd: 1.98 },
+            { outcomeTypeId: 1690, odd: 11.0 },
+          ],
+        },
+        {
+          marketId: 2462,
+          probabilities: [
+            { outcomeTypeId: 4475, odd: 2.03 },
+            { outcomeTypeId: 4476, odd: 1.5 },
+          ],
+        },
+      ]),
+    );
+
+    const category = grouped['Обе забьют и Исход'];
+    const legacy = category.find((g) => g.marketKey === 'display_WINNER_AND_GOALS_BOTH');
+    expect(legacy?.label).toBe('Обе забьют и Исход');
+    expect(legacy?.outcomes.map((o) => o.name)).toEqual([
+      'ОЗ·Да·П1',
+      'ОЗ·Да·X',
+      'ОЗ·Да·П2',
+    ]);
+
+    const split = category.find((g) => g.marketKey === 'display_WIN1_AND_BOTH_TEAM_TO_SCORE_YES_NO');
+    expect(split?.label).toBe('П1');
+    expect(split?.outcomes.map((o) => o.name)).toEqual(['ОЗ·Да·П1', 'ОЗ·Нет·П1']);
+    expect(split?.outcomes.map((o) => o.outcomeKey)).toEqual(['YES', 'NO']);
+  });
+
+  it('labels next-goal markets with readable names', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1153,
+          name: 'NEXT_GOAL',
+          outcomes: [
+            { id: 1359, code: 'Сл_Гол1' },
+            { id: 1360, code: 'Сл_Гол2' },
+            { id: 1361, code: 'Сл_ГолНик' },
+          ],
+        },
+        {
+          id: 2020,
+          name: 'NEXT_GOAL_TIME_15MIN',
+          outcomes: [
+            { id: 3504, code: 'СлГол_15мин' },
+            { id: 3505, code: 'СлГол_15мин_НеБудет' },
+          ],
+        },
+        {
+          id: 1995,
+          name: 'GOAL15MIN_YES_NO',
+          outcomes: [
+            { id: 3381, code: 'Гол15мин_Да' },
+            { id: 3382, code: 'Гол15мин_Нет' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1153,
+          probabilities: [
+            { outcomeTypeId: 1359, odd: 1.92, parameters: [{ type: 'PARAMETER_GOAL_NUMBER', value: '2' }] },
+            { outcomeTypeId: 1360, odd: 10.75, parameters: [{ type: 'PARAMETER_GOAL_NUMBER', value: '2' }] },
+            { outcomeTypeId: 1361, odd: 2.24, parameters: [{ type: 'PARAMETER_GOAL_NUMBER', value: '2' }] },
+          ],
+        },
+        {
+          marketId: 2020,
+          probabilities: [
+            { outcomeTypeId: 3504, odd: 1.92 },
+            { outcomeTypeId: 3505, odd: 2.5 },
+          ],
+        },
+        {
+          marketId: 1995,
+          probabilities: [
+            {
+              outcomeTypeId: 3381,
+              odd: 1.97,
+              parameters: [
+                { type: 'PARAMETER_FROM', value: '76' },
+                { type: 'PARAMETER_TO', value: '90' },
+              ],
+            },
+            {
+              outcomeTypeId: 3382,
+              odd: 1.5,
+              parameters: [
+                { type: 'PARAMETER_FROM', value: '76' },
+                { type: 'PARAMETER_TO', value: '90' },
+              ],
+            },
+          ],
+        },
+      ]),
+    );
+
+    const nextGoal = grouped['Следующий гол'];
+    expect(nextGoal.find((g) => g.marketKey === 'display_NEXT_GOAL')?.label).toBe('');
+    expect(nextGoal.find((g) => g.marketKey === 'display_NEXT_GOAL')?.outcomes.map((o) => o.name)).toEqual([
+      'П1',
+      'П2',
+      'Никто',
+    ]);
+
+    const whenGoal15 =
+      grouped['Когда будет забит следующий гол? (15 мин)']
+      ?? grouped['В течение 15 мин'];
+    expect(whenGoal15).toHaveLength(1);
+    expect(whenGoal15[0].label).toBe('В течение 15 мин');
+    expect(whenGoal15[0].outcomes.map((o) => o.name)).toEqual(['Будет гол', 'Не будет']);
+    expect(whenGoal15[0].outcomes.map((o) => o.outcomeKey)).toEqual(['YES', 'NO']);
+
+    const interval = grouped['Гол в интервале'];
+    expect(interval).toHaveLength(1);
+    expect(interval[0].label).toBe('76–90 мин');
+    expect(interval[0].outcomes.map((o) => o.name)).toEqual(['Да', 'Нет']);
+  });
+
+  it('keeps virtual category for next-goal time markets', async () => {
+    resolveVirtualCategoryName.mockReturnValue('Когда будет забит следующий гол? (10 мин)');
+
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 2019,
+          name: 'NEXT_GOAL_TIME_10MIN',
+          outcomes: [
+            { id: 3502, code: 'СлГол_10мин' },
+            { id: 3503, code: 'СлГол_10мин_НеБудет' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 2019,
+          probabilities: [
+            { outcomeTypeId: 3502, odd: 2.06 },
+            { outcomeTypeId: 3503, odd: 1.5 },
+          ],
+        },
+      ]),
+    );
+
+    const whenGoal = grouped['Когда будет забит следующий гол? (10 мин)'];
+    expect(whenGoal).toHaveLength(1);
+    expect(whenGoal[0].label).toBe('В течение 10 мин');
+    expect(whenGoal[0].outcomes.map((o) => o.name)).toEqual(['Будет гол', 'Не будет']);
+    expect(grouped['Следующий гол']).toBeUndefined();
+  });
+
+  it('labels football winning-method outcomes inside one group', async () => {
+    resolveVirtualCategoryName.mockReturnValue('Как определится победитель');
+
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1008,
+          name: 'WINNING_METHOD_FOOTBALL',
+          outcomes: [
+            { id: 1020, code: 'К1_ОснВремя' },
+            { id: 1021, code: 'К1_ОТ' },
+            { id: 1022, code: 'К1_Пен' },
+            { id: 1023, code: 'К2_ОснВремя' },
+            { id: 1024, code: 'К2_ОТ' },
+            { id: 1025, code: 'К2_Пен' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1008,
+          probabilities: [
+            { outcomeTypeId: 1020, odd: 2.42 },
+            { outcomeTypeId: 1021, odd: 5.37 },
+            { outcomeTypeId: 1022, odd: 12.0 },
+            { outcomeTypeId: 1023, odd: 29.0 },
+            { outcomeTypeId: 1024, odd: 3.18 },
+            { outcomeTypeId: 1025, odd: 12.0 },
+          ],
+        },
+      ]),
+    );
+
+    const category = grouped['Как определится победитель'];
+    expect(category).toHaveLength(1);
+    expect(category[0].label).toBe('Как определится победитель');
+    expect(category[0].outcomes.map((o) => o.name)).toEqual([
+      'П1 · основное время',
+      'П1 · ОТ',
+      'П1 · пенальти',
+      'П2 · основное время',
+      'П2 · ОТ',
+      'П2 · пенальти',
+    ]);
+  });
+
+  it('merges NUMBER_OF_SETS into one category with per-set outcomes', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1358,
+          name: 'NUMBER_OF_SETS',
+          outcomes: [{ id: 1870, code: 'КолСет' }],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1358,
+          probabilities: [
+            {
+              outcomeTypeId: 1870,
+              odd: 2.6,
+              parameters: [{ type: 'PARAMETER_VALUE', value: '3' }],
+            },
+            {
+              outcomeTypeId: 1870,
+              odd: 2.61,
+              parameters: [{ type: 'PARAMETER_VALUE', value: '4' }],
+            },
+            {
+              outcomeTypeId: 1870,
+              odd: 3.19,
+              parameters: [{ type: 'PARAMETER_VALUE', value: '5' }],
+            },
+          ],
+        },
+      ]),
+    );
+
+    expect(grouped['Точный счёт']).toBeUndefined();
+    expect(grouped['Количество сетов']).toHaveLength(1);
+    const group = grouped['Количество сетов'][0];
+    expect(group.marketKey).toBe('display_NUMBER_OF_SETS');
+    expect(group.label).toBe('Количество сетов');
+    expect(group.outcomes).toHaveLength(3);
+    expect(group.outcomes.map((o) => o.point)).toEqual([3, 4, 5]);
+    expect(group.outcomes.map((o) => o.outcomeKey)).toEqual([
+      'DISPLAY_1358_1870_PARAMETER_VALUE:3',
+      'DISPLAY_1358_1870_PARAMETER_VALUE:4',
+      'DISPLAY_1358_1870_PARAMETER_VALUE:5',
+    ]);
+  });
+
+  it('routes RACE_TO_GAME to set tab with readable race labels and П1/П2', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1410,
+          name: 'RACE_TO_GAME',
+          outcomes: [
+            { id: 1983, code: 'К1_Гейм[]' },
+            { id: 1984, code: 'П2' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1410,
+          probabilities: [
+            {
+              outcomeTypeId: 1983,
+              odd: 1.3,
+              parameters: [
+                { type: 'PARAMETER_SET_NUMBER', value: '2' },
+                { type: 'PARAMETER_GAME_NUMBER', value: '2' },
+              ],
+            },
+            {
+              outcomeTypeId: 1984,
+              odd: 3.51,
+              parameters: [
+                { type: 'PARAMETER_SET_NUMBER', value: '2' },
+                { type: 'PARAMETER_GAME_NUMBER', value: '2' },
+              ],
+            },
+            {
+              outcomeTypeId: 1983,
+              odd: 1.47,
+              parameters: [
+                { type: 'PARAMETER_SET_NUMBER', value: '2' },
+                { type: 'PARAMETER_GAME_NUMBER', value: '3' },
+              ],
+            },
+            {
+              outcomeTypeId: 1984,
+              odd: 2.68,
+              parameters: [
+                { type: 'PARAMETER_SET_NUMBER', value: '2' },
+                { type: 'PARAMETER_GAME_NUMBER', value: '3' },
+              ],
+            },
+          ],
+        },
+      ]),
+    );
+
+    expect(grouped['Гонка по геймам']).toBeUndefined();
+    expect(grouped['2-й сет']).toHaveLength(2);
+    const labels = grouped['2-й сет']!.map((g) => g.label);
+    expect(labels).toEqual(['Гонка до 2 геймов', 'Гонка до 3 геймов']);
+    expect(grouped['2-й сет']![0].outcomes.map((o) => o.name)).toEqual(['П1', 'П2']);
+  });
+
+  it('formats special football display markets with readable labels', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1538,
+          name: 'HOW_WILL_GOAL_BE_SCORED',
+          outcomes: [
+            { id: 2320, code: 'СлГол_УдНогой' },
+            { id: 2321, code: 'СлГол_Головой' },
+            { id: 2327, code: 'СлГол_НетГола' },
+          ],
+        },
+        {
+          id: 2116,
+          name: 'MINUTE_GOAL_EVEN_ODD',
+          outcomes: [
+            { id: 3180, code: 'МинГол_Чет' },
+            { id: 3181, code: 'МинГол_Нечет' },
+          ],
+        },
+        {
+          id: 1510,
+          name: 'PENALTY_REDCARD_YES_NO',
+          outcomes: [
+            { id: 2280, code: 'Пен_Удал_Да' },
+            { id: 2281, code: 'Пен_Удал_Нет' },
+          ],
+        },
+      ]),
+    );
+    resolveVirtualCategoryName.mockImplementation((_catalog, marketId) => {
+      if (marketId === 1538) return 'Как будет забит первый гол';
+      if (marketId === 2116) return 'Минута гола (Чет/Нечет)';
+      if (marketId === 1510) return 'Пенальти и удаление в матче';
+      return null;
+    });
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1538,
+          probabilities: [
+            { outcomeTypeId: 2320, odd: 2.12 },
+            { outcomeTypeId: 2321, odd: 7.07 },
+            { outcomeTypeId: 2327, odd: 2.52 },
+          ],
+        },
+        {
+          marketId: 2116,
+          probabilities: [
+            { outcomeTypeId: 3180, odd: 1.72 },
+            { outcomeTypeId: 3181, odd: 2.02 },
+          ],
+        },
+        {
+          marketId: 1510,
+          probabilities: [
+            { outcomeTypeId: 2280, odd: 16 },
+            { outcomeTypeId: 2281, odd: 1.05 },
+          ],
+        },
+      ]),
+    );
+
+    const howGoal = grouped['Как будет забит первый гол']?.[0];
+    expect(howGoal?.marketKey).toBe('display_HOW_WILL_GOAL_BE_SCORED');
+    expect(howGoal?.label).toBe('');
+    expect(howGoal?.outcomes).toHaveLength(3);
+
+    const minuteGoal = grouped['Минута гола (Чет/Нечет)']?.[0];
+    expect(minuteGoal?.label).toBe('');
+    expect(minuteGoal?.outcomes.map((o) => o.name)).toEqual(['Да', 'Нет']);
+
+    const penaltyRed = grouped['Пенальти и удаление в матче']?.[0];
+    expect(penaltyRed?.label).toBe('');
+    expect(penaltyRed?.outcomes.map((o) => o.name)).toEqual(['Да', 'Нет']);
   });
 });

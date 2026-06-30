@@ -1,8 +1,8 @@
-/** World Cup promo image from /public/wc2026.png */
-export const LUCKY_DRIVE_IMAGE = "/wc2026.png";
+/** World Cup promo image from /public/football2026.png */
+export const LUCKY_DRIVE_IMAGE = "/football2026.png";
 
 /** Full banner for World Cup modal */
-export const WORLD_CUP_MODAL_IMAGE = "/wcup2026.png";
+export const WORLD_CUP_MODAL_IMAGE = "/football2026.png";
 
 export const WORLD_CUP_PROMO_TITLE = "World Cup";
 export const WORLD_CUP_PROMO_SUBTITLE = "Дарим 100$ долларов на первый депозит";

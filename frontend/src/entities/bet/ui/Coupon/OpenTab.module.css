@@ -41,6 +41,21 @@
   font-size: 13px;
   text-align: center;
   padding: 32px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.filterResetBtn {
+  border-radius: 999px;
+  border: 1px solid rgb(96 165 250 / 0.5);
+  background: rgb(37 99 235 / 0.25) !important;
+  color: #dbeafe !important;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
 }
 
 /* ── Card ── */
@@ -94,6 +109,22 @@
   border-radius: 999px;
 }
 
+.openBetHeaderBar .openBetHeaderBrandLogo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.15) !important;
+  line-height: 0;
+}
+
+.openBetHeaderBar .openBetHeaderBrandLogoImg {
+  display: block;
+  height: 18px;
+  width: auto;
+}
+
 .openBetHeaderBar .openBetHeaderId {
   font-size: 10px;
   font-weight: 500;
@@ -116,8 +147,9 @@
 .openBetSlip span { color: #0f172a !important; }
 .openBetSlip a { color: #2563eb !important; }
 
-/* ── Live/Line badge ── */
+/* ── Live/Line/status badge ── */
 
+.openBetRibbon,
 .openBetSlip .openBetLiveRibbon,
 .openBetSlip .openBetLineRibbon {
   position: absolute;
@@ -135,16 +167,121 @@
   line-height: 1;
 }
 
+.openBetRibbon_live,
 .openBetSlip .openBetLiveRibbon {
   color: #dc2626 !important;
   background: #fef2f2 !important;
   border: 1px solid #fecaca !important;
 }
 
+.openBetRibbon_line,
 .openBetSlip .openBetLineRibbon {
   color: #2563eb !important;
   background: #eff6ff !important;
   border: 1px solid #bfdbfe !important;
+}
+
+.openBetRibbon_win {
+  color: #15803d !important;
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.openBetRibbon_lose {
+  color: #b91c1c !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+}
+
+.openBetRibbon_pending {
+  color: #b45309 !important;
+  background: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+}
+
+.openBetRibbon_return {
+  color: #1d4ed8 !important;
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+.openBetRibbon_settling {
+  color: #c2410c !important;
+  background: #fff7ed !important;
+  border: 1px solid #fed7aa !important;
+}
+
+.openBetLiveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dc2626;
+  flex-shrink: 0;
+  animation: openBetLivePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes openBetLivePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.openBetCoefPillUp {
+  animation: openBetCoefUp 1.2s ease-out 1;
+}
+
+.openBetCoefPillDown {
+  animation: openBetCoefDown 1.2s ease-out 1;
+}
+
+@keyframes openBetCoefUp {
+  0%, 35% { box-shadow: 0 0 0 3px rgb(22 163 74 / 0.55); }
+  100% { box-shadow: 0 3px 10px rgb(8 71 192 / 0.3); }
+}
+
+@keyframes openBetCoefDown {
+  0%, 35% { box-shadow: 0 0 0 3px rgb(220 38 38 / 0.5); }
+  100% { box-shadow: 0 3px 10px rgb(8 71 192 / 0.3); }
+}
+
+.openBetScoreFlash {
+  animation: openBetScoreFlash 1.2s ease-out 1;
+}
+
+@keyframes openBetScoreFlash {
+  0%, 40% { color: #2563eb !important; transform: scale(1.08); }
+  100% { color: #0f172a !important; transform: scale(1); }
+}
+
+.openBetMatchRowLink {
+  display: block;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f4f8;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.openBetMatchRowLink:hover {
+  background: #f8fafc;
+}
+
+.openBetMatchRowLink .openBetMatchRow {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.openBetMatchRowLink > .openBetTeamsText {
+  margin: 0;
+  padding: 4px 0;
+}
+
+.openBetSlip .openBetFooterDanger {
+  color: #dc2626 !important;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 /* ── Pick row (coef + outcome) ── */
@@ -220,15 +357,6 @@
   text-overflow: ellipsis;
 }
 
-.openBetSlip .openBetScoreMain {
-  flex-shrink: 0;
-  color: #0f172a !important;
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
 /* ── Meta row (league + score detail) ── */
 
 .openBetMetaRow {
@@ -267,6 +395,17 @@
 
 .openBetMatchLink { display: none; }
 
+.openBetSlip .openBetScoreMain {
+  flex-shrink: 0;
+  color: #0f172a !important;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
 /* ── Divider ── */
 
 .openBetDivider {
@@ -280,8 +419,8 @@
 
 .openBetFooterGrid {
   display: grid;
-  grid-template-columns: 1fr 0.65fr 1fr;
-  gap: 0;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   align-items: start;
   margin-top: 10px;
   padding: 10px 10px 8px;
@@ -359,6 +498,7 @@
 .openBetExpressBlock { margin-top: 4px; }
 .openBetExpressBlock .openBetMatchLink  { display: none; }
 .openBetExpressBlock .openBetPickRow    { padding-right: 0; }
+.openBetExpressBlock .openBetRibbon,
 .openBetExpressBlock .openBetLiveRibbon,
 .openBetExpressBlock .openBetLineRibbon { display: none; }
 .openBetExpressBlock .openBetPlacedHint { display: none; }

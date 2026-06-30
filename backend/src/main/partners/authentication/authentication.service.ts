@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { AffilatorStatus, User } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
 import * as crypto from 'crypto';
+import type { Request } from 'express';
+
+import { extractClientIp } from '~/common/utils/client-ip.util';
 
 import { PartnersService } from '~/main/partners/partners.service';
 import { UserDto } from '~/main/user/dto/user.dto';
@@ -61,7 +64,7 @@ export class AuthenticationService {
     };
   }
 
-  async register(dto: PartnerRegistrationDto) {
+  async register(dto: PartnerRegistrationDto, request?: Request) {
     try {
       
       // Проверяем, что email не занят
@@ -69,11 +72,15 @@ export class AuthenticationService {
         throw new BadRequestException(['Email уже занят']);
       }
 
+    const registrationIp = request ? extractClientIp(request) : undefined;
+
     // Хешируем пароль
     const hashedPassword = await hash(
       dto.password,
       this.configService.get<string>('PASSWORD_HASH_SALT'),
     );
+
+    const baseMeta = dto.meta ? JSON.parse(JSON.stringify(dto.meta)) : {};
 
     // Создаем пользователя и партнера в транзакции
     const result = await this.prismaService.$transaction(async (prisma) => {
@@ -82,6 +89,7 @@ export class AuthenticationService {
         data: {
           email: dto.email,
           password: hashedPassword,
+          registrationIp,
         },
       });
 
@@ -89,13 +97,17 @@ export class AuthenticationService {
     // Создаем запись партнера
       const affilator = await prisma.affilator.create({
       data: {
-          meta: dto.meta ? JSON.parse(JSON.stringify(dto.meta)) : null,
+          meta: {
+            ...baseMeta,
+            ...(registrationIp ? { registrationIp } : {}),
+          },
         trafficSource: dto.trafficSource,
         type: dto.type,
         userId: user.id,
         uid: crypto.randomUUID(), // Генерируем уникальный ID
         percent: dto.type === 'REVSHARE' ? 50 : 0, // Процент для REVSHARE (50% по умолчанию)
         affilatorsPercent: dto.type === 'REVSHARE' ? 10 : 0, // Процент для рефералов
+        status: AffilatorStatus.PENDING,
       },
     });
 

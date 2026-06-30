@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { getSessionClient } from "~/entities/user/lib";
 import { api, components } from "~/shared/api";
 import { UserSettings } from "~/entities/user";
 
-type UserData = components["schemas"]["UserDto"];
+type UserData = components["schemas"]["UserDto"] & {
+  telegramLinked?: boolean;
+  telegramUsername?: string | null;
+};
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,16 +26,18 @@ export default function SettingsPage() {
         }
 
         const { data, error: apiError } = await api.GET("/api/user", {
-    headers: {
+          headers: {
             Authorization: `Bearer ${token}`,
-    },
-  });
+          },
+        });
 
         if (apiError) {
           console.error("Error fetching user data:", apiError);
-          setError(`Ошибка при загрузке данных пользователя: ${(apiError as any)?.message || 'Неизвестная ошибка'}`);
+          setError(
+            `Ошибка при загрузке данных пользователя: ${(apiError as { message?: string })?.message || "Неизвестная ошибка"}`,
+          );
         } else {
-          setUserData(data);
+          setUserData(data as UserData);
         }
       } catch (err) {
         console.error("Unexpected error in SettingsPage:", err);
@@ -47,12 +52,12 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Загрузка настроек...</div>
+      <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm">
+        Загрузка настроек...
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -60,6 +65,14 @@ export default function SettingsPage() {
       </div>
     );
   }
-  
+
   return <UserSettings userData={userData} />;
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Загрузка...</div>}>
+      <SettingsPageContent />
+    </Suspense>
+  );
 }

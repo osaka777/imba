@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import type { WcMarketGroup } from "~/entities/wc-odds/api/client";
 import {
   buildTimeWindowYesNoTitle,
+  expandTimeWindowYesNoCategories,
   extractTimeWindowMinutes,
   extractTimeWindowRange,
   filterRelevantTimeWindowGroups,
   findYesNoOutcomes,
+  formatTimeWindowYesNoCategoryName,
   isTimeWindowYesNoCategory,
   sortTimeWindowYesNoGroups,
 } from "~/entities/wc-odds/lib/wcYesNoTimeGroups";
@@ -71,5 +73,27 @@ describe("wcYesNoTimeGroups", () => {
 
     expect(buildTimeWindowYesNoTitle(sample, yes!, "GOAL15MIN: да/нет")).toBe("16–30 мин·Да");
     expect(buildTimeWindowYesNoTitle(sample, no!, "GOAL15MIN: да/нет")).toBe("16–30 мин·Нет");
+  });
+
+  it("splits 15-minute goal windows into separate category titles", () => {
+    const groups = [
+      group("GOAL15MIN: да/нет 1–15 мин", 1, 15),
+      group("GOAL15MIN: да/нет 16–30 мин", 16, 30),
+    ];
+
+    const expanded = expandTimeWindowYesNoCategories([
+      ["Гол в 15-минутном интервале", groups],
+    ]);
+
+    expect(expanded).toEqual([
+      ["1–15 мин", [groups[0]]],
+      ["16–30 мин", [groups[1]]],
+    ]);
+    expect(formatTimeWindowYesNoCategoryName("Гол в 15-минутном интервале", groups[0]!)).toBe("1–15 мин");
+  });
+
+  it("does not treat expanded interval category as time-window block", () => {
+    const sample = group("GOAL15MIN: да/нет 1–15 мин", 1, 15);
+    expect(isTimeWindowYesNoCategory("1–15 мин", [sample])).toBe(false);
   });
 });

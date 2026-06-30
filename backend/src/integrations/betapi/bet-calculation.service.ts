@@ -4,6 +4,7 @@ import { PrismaService } from '~/prisma/prisma.service';
 import { BetStatus, OperationStatus } from '@prisma/client';
 import { OperationService } from '~/main/operation/operation.service';
 import { EventGateway } from '~/main/event/event.gateway';
+import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import axios, { AxiosInstance } from 'axios';
 import { BetPlaceResponse } from '~/integrations/betapi/types/bet-place-response';
@@ -32,6 +33,7 @@ export class BetCalculationService {
     private readonly operationService: OperationService,
     private readonly eventGateway: EventGateway,
     private readonly languageService: LanguageService,
+    private readonly telegramUserNotify: TelegramUserNotifyService,
   ) {
     this.username = this.configService.get<string>('BETAPI_USERNAME');
     this.password = this.configService.get<string>('BETAPI_PASSWORD');
@@ -1797,6 +1799,15 @@ export class BetCalculationService {
       // Используем новый метод для отправки уведомлений пользователю
       const sent = this.eventGateway.sendUserNotification(userId.toString(), notification as any);
       
+      void this.telegramUserNotify.notifyBetSettled({
+        userId,
+        betCode,
+        status: status as 'WIN' | 'LOSE' | 'RETURN',
+        amount: status === 'WIN' ? amountOut : (status === 'RETURN' ? betAmount : 0),
+        betAmount,
+        currencyCode,
+      }).catch(() => undefined);
+
       if (sent) {
         this.logger.log(`Bet notification sent to user ${userId}: ${betCode} → ${status}`);
       } else {

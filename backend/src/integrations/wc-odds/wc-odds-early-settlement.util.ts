@@ -8,6 +8,7 @@ export {
   resolveScoreSetGameBet,
   resolveMultiscoreSetBet,
   resolveMatchCorrectScoreBet,
+  resolveWinAndTotalBet,
   resolveNextGoalBet,
   resolveGoalsTeamBet,
   parseYesNoOutcome,

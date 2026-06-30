@@ -164,6 +164,35 @@
   grid-auto-rows: min-content;
 }
 
+/* WC / imba: one container, categories flow into balanced columns (no tall empty half-column). */
+.oddsTablesBalanced {
+  display: block;
+  width: 100%;
+}
+
+.oddsTableBalancedColumns {
+  display: block;
+  overflow: visible;
+  column-gap: 10px;
+  column-fill: balance;
+}
+
+@media screen and (min-width: 631px) {
+  .oddsTableBalancedColumns {
+    column-count: 2;
+  }
+}
+
+.oddsCategorySlot {
+  break-inside: avoid;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.oddsCategorySlot:last-child {
+  margin-bottom: 0;
+}
+
 .oddsBlockCategory {
   display: flex;
   flex-direction: column;
@@ -209,6 +238,50 @@
   .oddsTotalsRow .oddCoef {
     min-width: 0;
     font-size: 12px;
+  }
+
+  .oddsHandicapRow .handicapPivotWrap .totalsPivot {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    font-size: 10px;
+  }
+
+  .oddsHandicapRow .handicapPivotWrap {
+    gap: 5px;
+  }
+
+  .oddsHandicapRow .handicapPivotLabelLeft,
+  .oddsHandicapRow .handicapPivotLabelRight {
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .oddsHandicapRow > .oddsItem:first-child .oddHandicap {
+    padding-right: 36px;
+  }
+
+  .oddsHandicapRow > .oddsItem:last-child .oddHandicap {
+    padding-left: 36px;
+  }
+
+  .oddsHandicapRow .oddHandicap {
+    min-height: 40px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .oddsHandicapRow .oddCoef {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .oddsHandicapRow .pairSideLabel_start,
+  .oddsHandicapRow .pairSideLabel_end {
+    font-size: 10px;
+    font-weight: 400;
   }
 
   .oddsBlockPairOU > .totalsPivot {
@@ -309,6 +382,19 @@
   min-width: 0;
 }
 
+.oddsBlockCorrectScore .oddsItem:last-child:nth-child(odd),
+.oddsBlockCorrectScore .oddsItem:only-child {
+  grid-column: 1 / -1;
+}
+
+.oddsBlock:not(.oddsBlockPair):not(.oddsBlockPairOU):not(.oddsBlockPX):not(.oddsHandicapRow):not(.oddsTotalsRow):not(.oddsHandicap3Row):not(.oddsBlockCorrectScore)
+  .oddsItem:last-child:nth-child(odd),
+.oddsBlock:not(.oddsBlockPair):not(.oddsBlockPairOU):not(.oddsBlockPX):not(.oddsHandicapRow):not(.oddsTotalsRow):not(.oddsHandicap3Row):not(.oddsBlockCorrectScore)
+  .oddsItem:only-child {
+  flex-basis: 100%;
+  max-width: 100%;
+}
+
 .oddsBlockPair .oddsItem {
   flex-basis: calc(50% - .75px);
 }
@@ -391,6 +477,12 @@
   color: #111827 !important;
 }
 
+.oddsTotalsRow .oddCoef.oddCoefficient_up,
+.oddsTotalsRow .oddCoef.oddCoefficient_down {
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
 .oddsTotalsRow .totalsPivot {
   width: 32px;
   height: 32px;
@@ -413,6 +505,136 @@
   padding-right: 12px;
 }
 
+.oddsHandicapRow {
+  column-gap: 1px;
+  align-items: stretch;
+  background-color: var(--black);
+  border-bottom: 1px solid var(--black);
+}
+
+.oddsHandicapRow > .oddsItem {
+  border-bottom: none;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  background: #e4ebff;
+}
+
+.oddsTotalsGroup > *:nth-child(even) .oddsHandicapRow > .oddsItem {
+  background: #edf1ff;
+}
+
+.oddsHandicapRow > .oddsItem:first-child {
+  justify-content: flex-end;
+}
+
+.oddsHandicapRow > .oddsItem:last-child {
+  justify-content: flex-start;
+}
+
+.oddsHandicapRow .oddHandicap {
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 12px;
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+}
+
+.oddsHandicapRow > .oddsItem:last-child .oddHandicap {
+  justify-content: flex-end;
+}
+
+.handicapPivotWrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.handicapPivotLabelLeft,
+.handicapPivotLabelRight {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.handicapPivotLabelLeft {
+  margin-right: 0;
+  padding-right: 2px;
+}
+
+.handicapPivotLabelRight {
+  margin-left: 0;
+  padding-left: 2px;
+}
+
+.oddsHandicapRow .handicapPivotWrap .totalsPivot {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.oddsHandicapRow .pairSideLabel_start,
+.oddsHandicapRow .pairSideLabel_end {
+  width: auto;
+  min-width: 0;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 400;
+  color: #374151 !important;
+}
+
+.oddsHandicapRow > .oddsItem:first-child .oddHandicap {
+  padding-right: 44px;
+}
+
+.oddsHandicapRow > .oddsItem:last-child .oddHandicap {
+  padding-left: 44px;
+}
+
+.oddsHandicapRow .oddCoef {
+  min-width: 0;
+  flex: 0 0 auto;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827 !important;
+}
+
+.oddsHandicapRow .oddCoef.oddCoefficient_up,
+.oddsHandicapRow .oddCoef.oddCoefficient_down {
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.oddsHandicapRow .handicapPivotWrap .totalsPivot {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+  align-self: center;
+  margin: 0;
+}
+
 .oddsBlockPairOU > .oddsItem {
   flex-basis: auto;
   flex-grow: 0;
@@ -420,78 +642,18 @@
   width: 100%;
 }
 
-.oddsHandicapPair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 3.25rem minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-items: stretch;
-  background: #e4ebff;
-  border-bottom: 1px solid #eef3ff;
+.oddsBlockPairOU.oddsTotalsRow,
+.oddsBlockPairOU.oddsHandicapRow {
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
-.oddsTotalsGroup > *:nth-child(even) .oddsHandicapPair {
-  background: #edf1ff;
-}
-
-.oddsHandicapPair > .oddsItem {
-  grid-column: 1 / -1;
-  border-bottom: none;
-}
-
-.oddsHandicapPair > .oddsItem:first-of-type {
-  grid-row: 1;
-}
-
-.oddsHandicapPair > .oddsItem:last-of-type:not(:first-of-type) {
-  grid-row: 2;
-}
-
-.oddsHandicapPair .odd {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 3.25rem minmax(0, 1fr);
-  align-items: center;
-  min-height: 28px;
-  padding: 3px 8px;
-  background: transparent;
-  gap: 0;
-}
-
-.oddsHandicapPair .pairSideLabel_end {
-  grid-column: 1;
-  justify-self: start;
+.oddsBlockPairOU.oddsTotalsRow > .oddsItem,
+.oddsBlockPairOU.oddsHandicapRow > .oddsItem {
+  flex: 1 1 0;
+  flex-grow: 1;
   width: auto;
   min-width: 0;
-  font-size: 12px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.oddsHandicapPair .oddCoef {
-  grid-column: 3;
-  justify-self: end;
-  padding: 0;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 800;
-  color: #111827;
-}
-
-.oddsHandicapPair > .totalsPivot {
-  grid-column: 2;
-  grid-row: 1 / -1;
-  align-self: center;
-  justify-self: center;
-  position: static;
-  top: auto;
-  left: auto;
-  transform: none;
-  min-width: 2.25rem;
-  max-width: 3.25rem;
-  height: 1.375rem;
-  padding: 0 5px;
-  font-size: 10px;
-  line-height: 1;
-  border-radius: 999px;
 }
 
 .pairSideLabel {
@@ -667,19 +829,44 @@
 }
 
 .oddCoefficient_up {
-  animation: coefup 2s linear;
+  animation: coefPillUp 2s ease-out forwards;
 }
 
 .oddCoefficient_down {
-  animation: coefdown 2s linear;
+  animation: coefPillDown 2s ease-out forwards;
 }
 
-.oddFlash_up {
-  animation: oddBgUp 2s ease-out forwards;
+.oddCoef.oddCoefficient_up::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-bottom: 4px solid #2db856;
+  pointer-events: none;
+  animation: flashTriangle 2s ease-out forwards;
 }
 
+.oddCoef.oddCoefficient_down::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid #e85d5d;
+  pointer-events: none;
+  animation: flashTriangle 2s ease-out forwards;
+}
+
+.oddFlash_up,
 .oddFlash_down {
-  animation: oddBgDown 2s ease-out forwards;
+  animation: none;
 }
 
 @keyframes oddBgUp {
@@ -702,9 +889,46 @@
   }
 }
 
+@keyframes coefPillUp {
+  0%,
+  40% {
+    background-color: #dff5e8;
+    color: #1a9b47;
+  }
+
+  100% {
+    background-color: transparent;
+    color: var(--black);
+  }
+}
+
+@keyframes coefPillDown {
+  0%,
+  40% {
+    background-color: #fce8e8;
+    color: #d64545;
+  }
+
+  100% {
+    background-color: transparent;
+    color: var(--black);
+  }
+}
+
+@keyframes flashTriangle {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes coefup {
-  0% {
-    color: var(--red);
+  0%,
+  40% {
+    color: #1a9b47;
   }
 
   100% {
@@ -713,8 +937,9 @@
 }
 
 @keyframes coefdown {
-  0% {
-    color: var(--green-10);
+  0%,
+  40% {
+    color: #d64545;
   }
 
   100% {

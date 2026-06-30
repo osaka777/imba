@@ -20,6 +20,24 @@ export class UserDto extends Dto<UserDto> {
 
   id: number;
 
+  telegramUsername?: string | null;
+
+  telegramLinkedAt?: Date | null;
+
+  telegramLinked?: boolean;
+
+  telegramNotifyDeposit?: boolean;
+
+  telegramNotifyWithdraw?: boolean;
+
+  telegramNotifyBets?: boolean;
+
+  telegramNotifyPromo?: boolean;
+
+  telegram2faEnabled?: boolean;
+
+  avatarPreset?: string | null;
+
   @Exclude()
   password: string;
   updatedAt: Date;

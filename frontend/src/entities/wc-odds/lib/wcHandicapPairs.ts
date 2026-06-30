@@ -40,6 +40,28 @@ function formatHandicapLine(value: number): string {
   return String(value);
 }
 
+export function handicapPairSideLabel(
+  side: "home" | "away",
+  pivot: number | string,
+): string {
+  const value = Number(pivot);
+  if (!Number.isFinite(value) || value === 0) {
+    return side === "away" ? "больше" : "меньше";
+  }
+  if (value < 0) {
+    return side === "away" ? "больше" : "меньше";
+  }
+  return side === "away" ? "меньше" : "больше";
+}
+
+export function handicapDirectionLabel(outcome: WcMarketOutcome): string {
+  const line = lineFromHandicapOutcome(outcome);
+  if (line == null) return handicapSideLabel(outcome);
+  if (line > 0) return "Больше";
+  if (line < 0) return "Меньше";
+  return "Больше";
+}
+
 export function handicapSideLabel(outcome: WcMarketOutcome): string {
   if (outcome.outcomeKey.startsWith("HOME_HCP_") || /^Ф1\b/i.test(outcome.name.trim())) {
     return "Ф1";

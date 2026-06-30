@@ -351,3 +351,85 @@ export async function placeWcBet(token: string, body: PlaceWcBetBody) {
   }
   return res.json();
 }
+
+export type WcBetShare = {
+  text: string;
+  svg: string;
+  url: string;
+};
+
+export type WcMyTournament = {
+  summary: {
+    totalBets: number;
+    wins: number;
+    losses: number;
+    pending: number;
+    totalStaked: number;
+    totalWon: number;
+    roiPercent: number | null;
+  };
+  favoriteTeam: { name: string; betCount: number } | null;
+  openBets: WcBet[];
+  recentSettled: WcBet[];
+};
+
+export type WcEventSubscriptionState = {
+  subscribed: boolean;
+  notifyGoals: boolean;
+  notifyStart: boolean;
+  eventId: string;
+};
+
+export async function fetchWcBetShare(token: string, betId: number): Promise<WcBetShare> {
+  const res = await fetch(`${API()}/api/feed/bets/${betId}/share`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Не удалось получить карточку ставки');
+  return res.json();
+}
+
+export async function fetchWcMyTournament(token: string): Promise<WcMyTournament> {
+  const res = await fetch(`${API()}/api/feed/my-tournament`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Не удалось загрузить статистику');
+  return res.json();
+}
+
+export async function fetchWcEventSubscription(
+  token: string,
+  eventRef: string,
+): Promise<WcEventSubscriptionState> {
+  const res = await fetch(`${API()}/api/feed/events/${encodeURIComponent(eventRef)}/subscription`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Не удалось проверить подписку');
+  return res.json();
+}
+
+export async function subscribeWcEvent(
+  token: string,
+  eventRef: string,
+  opts?: { notifyGoals?: boolean; notifyStart?: boolean },
+): Promise<void> {
+  const res = await fetch(`${API()}/api/feed/events/${encodeURIComponent(eventRef)}/subscribe`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(opts ?? {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(err.message || 'Не удалось подписаться');
+  }
+}
+
+export async function unsubscribeWcEvent(token: string, eventRef: string): Promise<void> {
+  const res = await fetch(`${API()}/api/feed/events/${encodeURIComponent(eventRef)}/subscribe`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Не удалось отписаться');
+}

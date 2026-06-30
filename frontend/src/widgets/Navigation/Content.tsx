@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
-import { ToggleIcon, UserIcon } from "~/shared/assets";
+import { ToggleIcon } from "~/shared/assets";
+import { getUser } from "~/entities/user/api";
+import { UserAvatar } from "~/entities/user/ui/UserAvatar/UserAvatar";
 import { Button } from "~/shared/ui";
 import { Dialog, DialogContent } from "~/shared/ui/Dialog";
 import { deleteSessionClient } from "~/entities/user";
@@ -27,6 +30,11 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   const [headerDepositOpen, setHeaderDepositOpen] = useState(false);
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const router = useRouter();
+  const { data: userData } = useQuery({
+    queryKey: ["user"],
+    queryFn: getUser,
+    enabled: isAuth,
+  });
 
   const openHeaderDeposit = useCallback(() => {
     armGuard();
@@ -152,7 +160,11 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
               <span className={styles.user_line}>
                 <span className={styles.userRound_wrapper}>
                   <span className={styles.userRound}>
-                    <UserIcon />
+                    <UserAvatar
+                      email={userData?.email}
+                      preset={userData?.avatarPreset}
+                      size={32}
+                    />
                   </span>
                 </span>
                 <div className={styles.menu_toggle}>

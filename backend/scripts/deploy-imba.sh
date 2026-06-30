@@ -16,8 +16,9 @@ if [[ -n "$SERVICE" ]]; then
   echo "==> docker compose up -d --no-deps --build $SERVICE"
   docker compose up -d --no-deps --build "$SERVICE"
 else
-  echo "==> docker compose up -d --build frontend backend imba-bot"
-  docker compose up -d --build frontend backend imba-bot
+  echo "==> docker compose up -d --build frontend backend partners imba-bot proxy"
+  docker compose up -d --build frontend backend partners imba-bot proxy
+  docker compose up -d --force-recreate --no-deps proxy
 fi
 
 echo "==> Готово: imba.bet (Kendall-проекты не затронуты)"

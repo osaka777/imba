@@ -1,0 +1,68 @@
+.card {
+  background: #fff;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 12px 32px rgba(15, 14, 39, 0.06);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #0f0e27;
+}
+
+.desc {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.field input,
+.field select {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.submit {
+  grid-column: 1 / -1;
+  background: linear-gradient(125deg, #181940 0%, #6f48a7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  grid-column: 1 / -1;
+  color: #dc2626;
+  font-size: 13px;
+  margin: 0;
+}

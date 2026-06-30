@@ -20,7 +20,7 @@ import {
   isPointSetSportFeed,
   isTennisGameFeed,
 } from '../olimpbet-wc/point-set-sport-score.util';
-import { statValue, isOlimpbetEventCompleted } from '../olimpbet-wc/olimpbet-event-result.util';
+import { statValue, isOlimpbetEventCompleted, parseScorePair } from '../olimpbet-wc/olimpbet-event-result.util';
 
 import { isTotalsMarketKey, normalizeWcMarketKey } from './wc-odds-markets.util';
 import type { WcBetSettlementInput } from './wc-odds-settlement.util';
@@ -32,7 +32,7 @@ import {
   parseMatchMinuteFromFeed,
 } from './wc-match-state-tracker.util';
 import { parseRaceTargetFromParams, parseTennisScopedGameParams } from './tennis-market-params.util';
-import { parseTennisGameScore } from './tennis-game-score.util';
+import { inferTennisGameClosingPointWinner, parseTennisGameScore } from './tennis-game-score.util';
 import {
   tennisGameKey,
   type WcMatchState,
@@ -114,6 +114,59 @@ export function parseTennisSidePick(bet: WcBetSettlementInput): 'home' | 'away' 
   const name = bet.outcomeName ?? '';
   if (/:\s*П1/i.test(name)) return 'home';
   if (/:\s*П2/i.test(name)) return 'away';
+  return null;
+}
+
+function parseTennisSideToken(token: string): 'home' | 'away' | null {
+  const normalized = token.trim().toUpperCase();
+  if (normalized === 'П1' || normalized === 'P1') return 'home';
+  if (normalized === 'П2' || normalized === 'P2') return 'away';
+  return null;
+}
+
+/** Combo like «П2, П1» in WINNER_2GAMES_SET markets. */
+export function parseTwoGameComboFromBet(
+  bet: WcBetSettlementInput,
+): { first: 'home' | 'away'; second: 'home' | 'away' } | null {
+  const match = /(П[12])\s*,\s*(П[12])/i.exec(bet.outcomeName ?? '');
+  if (!match) return null;
+
+  const first = parseTennisSideToken(match[1]!);
+  const second = parseTennisSideToken(match[2]!);
+  if (!first || !second) return null;
+  return { first, second };
+}
+
+function inferCompletedTennisGameWinner(
+  game: WcTennisGameState | undefined,
+): 'home' | 'away' | null {
+  if (!game?.completed) return null;
+
+  if (game.pointsWon) {
+    const { home = 0, away = 0 } = game.pointsWon;
+    if (home > away) return 'home';
+    if (away > home) return 'away';
+  }
+
+  if (game.pointWinners && Object.keys(game.pointWinners).length > 0) {
+    let home = 0;
+    let away = 0;
+    for (const winner of Object.values(game.pointWinners)) {
+      if (winner === 'home') home += 1;
+      else if (winner === 'away') away += 1;
+    }
+    if (home > away) return 'home';
+    if (away > home) return 'away';
+  }
+
+  if (game.lastGameScore) {
+    const parsed = parseTennisGameScore(game.lastGameScore);
+    if (parsed) {
+      const winner = inferTennisGameClosingPointWinner(parsed);
+      if (winner) return winner;
+    }
+  }
+
   return null;
 }
 
@@ -274,6 +327,155 @@ function parseGoalNumberFromBet(bet: WcBetSettlementInput): number | null {
     'PARAMETER_NUMBER',
     'PARAMETER_VALUE',
   ]) ?? bet.placementContext?.expectedGoalIndex ?? null;
+}
+
+function parseHalfNumberFromBet(bet: WcBetSettlementInput): number | null {
+  const fromParams = parseRaceTargetFromParams(bet, ['PARAMETER_HALF_NUMBER']);
+  if (fromParams != null) return fromParams;
+
+  const scope = parseMarketScopeFromText(bet.outcomeName ?? '');
+  if (scope?.kind === 'half') return scope.index;
+
+  return null;
+}
+
+/** Soccer half boundary: 1st half ≤ 45', 2nd half 46–105' (includes stoppage, not ET). */
+function isGoalInSoccerHalf(minute: number, halfIndex: number): boolean {
+  if (halfIndex === 1) return minute <= 45;
+  if (halfIndex === 2) return minute > 45 && minute <= 105;
+  return false;
+}
+
+function listGoalsInSoccerHalf(
+  soccer: NonNullable<WcMatchState['soccer']>,
+  halfIndex: number,
+): Array<{ goalIndex: number; side: 'home' | 'away'; minute: number }> {
+  const rows: Array<{ goalIndex: number; side: 'home' | 'away'; minute: number }> = [];
+
+  for (const [rawIndex, side] of Object.entries(soccer.goalScorers ?? {})) {
+    const goalIndex = Number(rawIndex);
+    const minute = soccer.goalMinutes?.[rawIndex];
+    if (!Number.isFinite(goalIndex) || minute == null || !side) continue;
+    if (!isGoalInSoccerHalf(minute, halfIndex)) continue;
+    rows.push({ goalIndex, side: side as 'home' | 'away', minute });
+  }
+
+  return rows.sort((a, b) => a.minute - b.minute || a.goalIndex - b.goalIndex);
+}
+
+function isSoccerHalfFinalized(
+  ctx: WcSettlementContext,
+  halfIndex: number,
+): boolean {
+  const halfScope: MarketScope = { kind: 'half', index: halfIndex };
+  if (ctx.detail && isMarketScopeFinalized(ctx.detail, halfScope)) return true;
+
+  const periods = ctx.matchState?.soccer?.periodScores
+    ?? (ctx.detail ? parsePeriodScoreList(ctx.detail) : []);
+  if (halfIndex === 1 && periods.length >= 2) return true;
+  if (halfIndex === 2 && ctx.detail && isOlimpbetEventCompleted(ctx.detail)) return true;
+
+  const soccer = ctx.matchState?.soccer;
+  if (halfIndex === 1 && soccer && listGoalsInSoccerHalf(soccer, 2).length > 0) {
+    return true;
+  }
+  if (halfIndex === 2 && soccer && ctx.homeScore != null && ctx.awayScore != null) {
+    const anySecondHalfGoal = listGoalsInSoccerHalf(soccer, 2).length > 0;
+    if (anySecondHalfGoal || (ctx.detail && isOlimpbetEventCompleted(ctx.detail))) {
+      return true;
+    }
+  }
+
+  if (ctx.detail && isOlimpbetEventCompleted(ctx.detail) && halfIndex === 1) {
+    return true;
+  }
+
+  return false;
+}
+
+function parsePenaltyScoreFromDetail(
+  detail?: OlimpbetEventDetail,
+): { home: number; away: number } | null {
+  if (!detail) return null;
+  const pair = parseScorePair(statValue(detail, 'penalty_score'));
+  return pair ? { home: pair.home, away: pair.away } : null;
+}
+
+function resolveKnockoutQualifierSide(
+  ctx: WcSettlementContext,
+): 'home' | 'away' | null {
+  const penFromState = ctx.matchState?.soccer?.penaltyScore;
+  const penFromDetail = parsePenaltyScoreFromDetail(ctx.detail);
+  const pen = penFromState ?? penFromDetail;
+  if (pen && pen.home !== pen.away) {
+    return pen.home > pen.away ? 'home' : 'away';
+  }
+
+  if (ctx.homeScore !== ctx.awayScore) {
+    return ctx.homeScore > ctx.awayScore ? 'home' : 'away';
+  }
+
+  const periods = ctx.matchState?.soccer?.periodScores
+    ?? (ctx.detail ? parsePeriodScoreList(ctx.detail) : []);
+  if (periods.length >= 5) {
+    const shootout = periods[periods.length - 1];
+    if (shootout && shootout.home !== shootout.away) {
+      return shootout.home > shootout.away ? 'home' : 'away';
+    }
+  }
+
+  return null;
+}
+
+/** Soccer NEXT_GOAL_HALF / LAST_GOAL_HALF: who scores goal N within a half. */
+export function resolveNextGoalHalfBet(
+  bet: WcBetSettlementInput,
+  ctx: WcSettlementContext,
+): WcOddsBetStatus | null {
+  if (!/NEXT_GOAL_HALF|LAST_GOAL_HALF/i.test(bet.marketKey)) return null;
+
+  const goalNum = parseGoalNumberFromBet(bet);
+  const halfNum = parseHalfNumberFromBet(bet);
+  if (goalNum == null || halfNum == null || (halfNum !== 1 && halfNum !== 2)) return null;
+
+  const side = parseTennisSidePick(bet);
+  if (!side) return null;
+
+  const soccer = ctx.matchState?.soccer;
+  if (!soccer?.initialized) return null;
+  if (!isSoccerHalfFinalized(ctx, halfNum)) return null;
+
+  const goalsInHalf = listGoalsInSoccerHalf(soccer, halfNum);
+  const scopedGoal = goalsInHalf[goalNum - 1];
+  if (!scopedGoal) return WcOddsBetStatus.LOSE;
+
+  return scopedGoal.side === side ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
+}
+
+/** Knockout «Проход: П1/П2» — who advances (incl. ET / penalties). */
+export function resolveToQualifyBet(
+  bet: WcBetSettlementInput,
+  ctx: WcSettlementContext,
+): WcOddsBetStatus | null {
+  if (!/TO_QUALIFY/i.test(bet.marketKey)) return null;
+
+  const side = parseTennisSidePick(bet);
+  if (!side) return null;
+
+  const qualifier = resolveKnockoutQualifierSide(ctx);
+  if (qualifier == null) return null;
+
+  const penKnown = Boolean(
+    ctx.matchState?.soccer?.penaltyScore
+    || parsePenaltyScoreFromDetail(ctx.detail)
+    || (ctx.matchState?.soccer?.periodScores?.length ?? 0) >= 5,
+  );
+  const completed = ctx.detail ? isOlimpbetEventCompleted(ctx.detail) : false;
+  const decisiveScore = ctx.homeScore !== ctx.awayScore;
+
+  if (!penKnown && !completed && !decisiveScore) return null;
+
+  return qualifier === side ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
 }
 
 /** Soccer NEXT_GOAL: who scores goal N (tracked only after feed baseline init). */
@@ -778,6 +980,252 @@ export function resolveMatchCorrectScoreBet(
   return null;
 }
 
+/** Tennis WINNER_GAME: who wins a scoped game. */
+export function resolveWinnerGameBet(
+  bet: WcBetSettlementInput,
+  ctx: WcSettlementContext,
+): WcOddsBetStatus | null {
+  if (!/WINNER_GAME/i.test(bet.marketKey) || /2GAMES/i.test(bet.marketKey)) return null;
+
+  const scope = parseTennisScopedGameParams(bet.outcomeKey);
+  if (!scope) return null;
+
+  const side = parseTennisSidePick(bet);
+  if (!side) return null;
+
+  const game = ctx.matchState?.tennis?.games[tennisGameKey(scope.setNum, scope.gameNum)];
+  const winner = inferCompletedTennisGameWinner(game);
+  if (!winner) return null;
+
+  return side === winner ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
+}
+
+/**
+ * Tennis WINNER_2GAMES_SET: exact winners of two consecutive games (e.g. «6-й гейм: П2, П1»).
+ * PARAMETER_GAME_NUMBER = first game, PARAMETER_NUMBER = second game.
+ */
+export function resolveWinner2GamesSetBet(
+  bet: WcBetSettlementInput,
+  ctx: WcSettlementContext,
+): WcOddsBetStatus | null {
+  if (!/WINNER_2GAMES/i.test(bet.marketKey)) return null;
+
+  const params = parseDisplayOutcomeParameters(bet.outcomeKey ?? '');
+  const setNum = Number(params.PARAMETER_SET_NUMBER);
+  const game1 = Number(params.PARAMETER_GAME_NUMBER);
+  const game2 = Number(params.PARAMETER_NUMBER);
+  if (!Number.isFinite(setNum) || !Number.isFinite(game1) || !Number.isFinite(game2)) return null;
+
+  const combo = parseTwoGameComboFromBet(bet);
+  if (!combo) return null;
+
+  const games = ctx.matchState?.tennis?.games;
+  if (!games) return null;
+
+  const winner1 = inferCompletedTennisGameWinner(games[tennisGameKey(setNum, game1)]);
+  const winner2 = inferCompletedTennisGameWinner(games[tennisGameKey(setNum, game2)]);
+
+  if (winner1 && winner1 !== combo.first) return WcOddsBetStatus.LOSE;
+  if (winner1 && winner2) {
+    return winner1 === combo.first && winner2 === combo.second
+      ? WcOddsBetStatus.WIN
+      : WcOddsBetStatus.LOSE;
+  }
+
+  return null;
+}
+
+type WinAndTotalResultReq =
+  | 'home'
+  | 'away'
+  | 'draw'
+  | 'home_or_draw'
+  | 'away_or_draw'
+  | 'home_or_away';
+
+function isWinAndTotalMarketKey(marketKey: string): boolean {
+  const stem = marketKey.replace(/^display_/i, '');
+  return /^(?:WIN[12X]*_AND_TOTAL|X2_AND_TOTAL|DRAW_AND_TOTAL)/i.test(stem);
+}
+
+function parseWinAndTotalResultReq(marketKey: string): WinAndTotalResultReq | null {
+  const stem = marketKey
+    .replace(/^display_/i, '')
+    .replace(/_WITH_?OT$/i, '')
+    .replace(/_(?:SET|HALF|QUARTER)$/i, '');
+
+  if (/^WIN1_AND_TOTAL/i.test(stem)) return 'home';
+  if (/^WIN2_AND_TOTAL/i.test(stem)) return 'away';
+  if (/^DRAW_AND_TOTAL/i.test(stem)) return 'draw';
+  if (/^WINX2_AND_TOTAL|^X2_AND_TOTAL/i.test(stem)) return 'away_or_draw';
+  if (/^WIN1X_AND_TOTAL|^1X_AND_TOTAL/i.test(stem)) return 'home_or_draw';
+  if (/^WIN12_AND_TOTAL|^12_AND_TOTAL/i.test(stem)) return 'home_or_away';
+  return null;
+}
+
+function parseOverUnderFromBet(bet: WcBetSettlementInput): boolean | null {
+  const name = bet.outcomeName ?? '';
+  if (/:\s*ТМ(?:\s|$)|[:\s]ТМ\s*$|меньше|UNDER/i.test(name)) return false;
+  if (/:\s*ТБ(?:\s|$)|[:\s]ТБ\s*$|больше|OVER/i.test(name)) return true;
+
+  const params = parseDisplayOutcomeParameters(bet.outcomeKey ?? '');
+  const catalogCode = params.PARAMETER_OUTCOME_CODE ?? '';
+  if (/тм|_м$|under|меньше/i.test(catalogCode)) return false;
+  if (/тб|_б$|over|больше/i.test(catalogCode)) return true;
+
+  return null;
+}
+
+function resolveWinAndTotalLine(bet: WcBetSettlementInput): number | null {
+  const fromLine = Number(bet.line);
+  if (Number.isFinite(fromLine)) return fromLine;
+
+  const params = parseDisplayOutcomeParameters(bet.outcomeKey ?? '');
+  const fromParam = Number(params.PARAMETER_VALUE);
+  if (Number.isFinite(fromParam)) return fromParam;
+
+  const fromName = bet.outcomeName?.match(/тотал\s+([\d.]+)/i);
+  if (fromName) {
+    const parsed = Number(fromName[1]);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  return null;
+}
+
+function resolveWinAndTotalScopeHint(bet: WcBetSettlementInput): string | null {
+  const params = parseDisplayOutcomeParameters(bet.outcomeKey ?? '');
+  const setNum = params.PARAMETER_SET_NUMBER;
+  if (setNum) return `${setNum}-й сет`;
+
+  const half = params.PARAMETER_HALF_NUMBER;
+  if (half === '1' || half === '2') return half === '1' ? '1-й тайм' : '2-й тайм';
+
+  const quarter = params.PARAMETER_QUARTER_NUMBER;
+  if (quarter) return `${quarter}-я четверть`;
+
+  if (bet.outcomeName && parseMarketScopeFromText(bet.outcomeName)) return bet.outcomeName;
+  if (bet.placementContext?.totalsGroupLabel) return bet.placementContext.totalsGroupLabel;
+  return bet.outcomeName ?? null;
+}
+
+function scoreMatchesWinAndTotalResult(
+  req: WinAndTotalResultReq,
+  home: number,
+  away: number,
+): boolean {
+  if (home === away) {
+    return req === 'draw' || req === 'home_or_draw' || req === 'away_or_draw';
+  }
+
+  const homeWins = home > away;
+  switch (req) {
+    case 'home':
+      return homeWins;
+    case 'away':
+      return !homeWins;
+    case 'draw':
+      return false;
+    case 'home_or_draw':
+      return homeWins;
+    case 'away_or_draw':
+      return !homeWins;
+    case 'home_or_away':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function resolveWinAndTotalScopedScores(
+  bet: WcBetSettlementInput,
+  ctx: WcSettlementContext,
+  scope: MarketScope | null,
+): { home: number; away: number } | null {
+  const scopeHint = resolveWinAndTotalScopeHint(bet);
+
+  if (scope?.kind === 'set') {
+    const setGames = resolveScopedSetGames(scope.index, ctx);
+    if (setGames) return setGames;
+  }
+
+  const scoped = pickSettlementScores(
+    ctx.detail,
+    ctx.homeScore,
+    ctx.awayScore,
+    bet.marketKey,
+    scopeHint,
+  );
+  return { home: scoped.homeScore, away: scoped.awayScore };
+}
+
+function isWinAndTotalScopeFinalized(
+  scope: MarketScope | null,
+  ctx: WcSettlementContext,
+  scopedScores: { home: number; away: number } | null,
+): boolean {
+  if (!scope) {
+    return ctx.detail ? isOlimpbetEventCompleted(ctx.detail) : false;
+  }
+
+  if (scope.kind === 'set') {
+    if (!scopedScores) return false;
+    return isScopedSetFinalized(scope.index, ctx, scopedScores);
+  }
+
+  return ctx.detail ? isMarketScopeFinalized(ctx.detail, scope) : false;
+}
+
+/**
+ * Combo markets like «П1 + тотал 18.5 1-й сет: ТМ» (WIN1_AND_TOTAL_SET).
+ * Both the result and total legs must succeed; settles when the scoped period ends.
+ */
+export function resolveWinAndTotalBet(
+  bet: WcBetSettlementInput,
+  ctx: WcSettlementContext,
+): WcOddsBetStatus | null {
+  if (!isWinAndTotalMarketKey(bet.marketKey)) return null;
+
+  const resultReq = parseWinAndTotalResultReq(bet.marketKey);
+  if (!resultReq) return null;
+
+  const line = resolveWinAndTotalLine(bet);
+  if (line == null) return null;
+
+  const isOver = parseOverUnderFromBet(bet);
+  if (isOver == null) return null;
+
+  const scopeHint = resolveWinAndTotalScopeHint(bet);
+  const scope = scopeHint ? parseMarketScopeFromText(scopeHint) : null;
+  const scopedScores = resolveWinAndTotalScopedScores(bet, ctx, scope);
+  if (!scopedScores) return null;
+
+  const scopeTotal = scopedScores.home + scopedScores.away;
+  const scopeFinalized = isWinAndTotalScopeFinalized(scope, ctx, scopedScores);
+
+  if (!isOver && scopeTotal > line) {
+    return WcOddsBetStatus.LOSE;
+  }
+
+  if (isOver && scopeFinalized && scopeTotal <= line) {
+    return WcOddsBetStatus.LOSE;
+  }
+
+  if (!scopeFinalized) return null;
+
+  if (scopeTotal === line) return WcOddsBetStatus.VOID;
+
+  const resultMatches = scoreMatchesWinAndTotalResult(
+    resultReq,
+    scopedScores.home,
+    scopedScores.away,
+  );
+  const totalMatches = isOver ? scopeTotal > line : scopeTotal < line;
+
+  if (resultMatches && totalMatches) return WcOddsBetStatus.WIN;
+  return WcOddsBetStatus.LOSE;
+}
+
 export function resolveWinnerSetBet(
   bet: WcBetSettlementInput,
   ctx: WcSettlementContext,
@@ -951,8 +1399,23 @@ export function resolveVerifiedBetResult(
   const matchScore = resolveMatchCorrectScoreBet(bet, ctx);
   if (matchScore != null) return matchScore;
 
+  const winnerGame = resolveWinnerGameBet(bet, ctx);
+  if (winnerGame != null) return winnerGame;
+
+  const winner2Games = resolveWinner2GamesSetBet(bet, ctx);
+  if (winner2Games != null) return winner2Games;
+
   const winnerSet = resolveWinnerSetBet(bet, ctx);
   if (winnerSet != null) return winnerSet;
+
+  const winAndTotal = resolveWinAndTotalBet(bet, ctx);
+  if (winAndTotal != null) return winAndTotal;
+
+  const nextGoalHalf = resolveNextGoalHalfBet(bet, ctx);
+  if (nextGoalHalf != null) return nextGoalHalf;
+
+  const toQualify = resolveToQualifyBet(bet, ctx);
+  if (toQualify != null) return toQualify;
 
   const nextGoal = resolveNextGoalBet(bet, ctx);
   if (nextGoal != null) return nextGoal;

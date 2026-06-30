@@ -49,4 +49,82 @@ describe("expandScopedMarketEntries", () => {
     expect(expanded).toHaveLength(1);
     expect(expanded[0][0]).toBe("Тотал");
   });
+
+  it("splits set-tab race markets into separate categories", () => {
+    const entries: Array<[string, WcMarketGroup[]]> = [
+      [
+        "4-й сет",
+        [
+          group({
+            key: "r2",
+            marketKey: "display_RACE_TO_GAME",
+            label: "Гонка до 2 геймов",
+            outcomes: [{ name: "П1", price: 2.05, outcomeKey: "h" }],
+          }),
+          group({
+            key: "r3",
+            marketKey: "display_RACE_TO_GAME",
+            label: "Гонка до 3 геймов",
+            outcomes: [{ name: "П1", price: 2.05, outcomeKey: "h2" }],
+          }),
+        ],
+      ],
+    ];
+
+    const expanded = expandScopedMarketEntries(entries, { sport: "tennis" });
+    expect(expanded.map(([name]) => name)).toEqual([
+      "Гонка до 2 геймов",
+      "Гонка до 3 геймов",
+    ]);
+  });
+
+  it("splits next-point markets into separate categories", () => {
+    const entries: Array<[string, WcMarketGroup[]]> = [
+      [
+        "Следующее очко в гейме",
+        [
+          group({
+            key: "p1",
+            marketKey: "display_NEXT_POINTS_GAME",
+            label: "4-й сет, 7-й гейм, 3-е очко",
+          }),
+          group({
+            key: "p2",
+            marketKey: "display_NEXT_POINTS_GAME",
+            label: "4-й сет, 7-й гейм, 4-е очко",
+          }),
+        ],
+      ],
+    ];
+
+    const expanded = expandScopedMarketEntries(entries, { sport: "tennis" });
+    expect(expanded).toHaveLength(2);
+    expect(expanded[0][0]).toBe("4-й сет, 7-й гейм, 3-е очко");
+    expect(expanded[1][0]).toBe("4-й сет, 7-й гейм, 4-е очко");
+  });
+
+  it("pulls set totals out of stat categories into their own blocks", () => {
+    const entries: Array<[string, WcMarketGroup[]]> = [
+      [
+        "Эйсы",
+        [
+          group({
+            key: "t1",
+            marketKey: "totals",
+            label: "4-й сет · Тотал геймов · 9.5",
+          }),
+          group({
+            key: "t2",
+            marketKey: "totals",
+            label: "4-й сет · Тотал геймов · 10.5",
+          }),
+        ],
+      ],
+    ];
+
+    const expanded = expandScopedMarketEntries(entries, { sport: "tennis" });
+    expect(expanded).toHaveLength(1);
+    expect(expanded[0][0]).toBe("4-й сет · Тотал геймов");
+    expect(expanded[0][1]).toHaveLength(2);
+  });
 });

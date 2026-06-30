@@ -1,10 +1,19 @@
 .main {
-    background-color: #FBFBFB;
-    padding: 30px;
     flex: 1;
+    background-color: white;
+    position: relative;
+}
+
+.wrapper {
+    position: absolute;
+    padding: 20px 20px 80px;
+    top: -70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
 }
 
 .statistic_section {

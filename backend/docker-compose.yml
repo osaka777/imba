@@ -17,6 +17,7 @@ services:
       - frontend
       - backend
       - admin-panel
+      - partners
 
   frontend:
     build:
@@ -46,9 +47,13 @@ services:
       DATABASE_URL: 'postgresql://onex_app:${POSTGRES_APP_PASSWORD}@postgres:5432/onex?schema=public&connection_limit=25&pool_timeout=20'
       TELEGRAM_NOTIFY_URL: 'http://imba-bot:8088/notify'
       TELEGRAM_NOTIFY_SMOKE_URL: 'http://imba-bot:8088/notify-smoke'
+      TELEGRAM_USER_NOTIFY_URL: 'http://imba-bot:8088/notify-user'
+      TELEGRAM_BOT_USERNAME: 'imbabetalert_bot'
       WC_PROBE_SECRET: '${TELEGRAM_NOTIFY_SECRET}'
       PAYMENT_SETTINGS_PATH: '/data/logs/payment-settings.json'
       PROMO_MODAL_SETTINGS_PATH: '/data/logs/promo-modal-settings.json'
+      AFFILIATE_BASE_URL: 'https://imba.bet/'
+      BASE_URL: 'https://imba.bet'
     volumes:
       - ../data/logs:/data/logs
       - ./uploads:/app/uploads
@@ -76,9 +81,13 @@ services:
     build:
       context: ../partners
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_HOST: 'https://partners.imba.bet'
+        NEXT_PUBLIC_MAIN_SITE: 'https://imba.bet'
     restart: unless-stopped
-    profiles:
-      - partners
+    environment:
+      NEXT_PUBLIC_HOST: 'https://partners.imba.bet'
+      NEXT_PUBLIC_MAIN_SITE: 'https://imba.bet'
     expose:
       - "8001"
 
@@ -91,6 +100,10 @@ services:
       - ../imba-bot/.env
     environment:
       PORT: "8088"
+      TELEGRAM_LINK_API: 'http://backend:3000/api/telegram/complete-link'
+      TELEGRAM_BOT_API: 'http://backend:3000/api/telegram/bot/command'
+      TELEGRAM_USE_WEBHOOK: 'true'
+      TELEGRAM_WEBHOOK_URL: 'https://imba.bet/tg/webhook'
     expose:
       - "8088"
 

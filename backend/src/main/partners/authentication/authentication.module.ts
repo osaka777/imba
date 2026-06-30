@@ -8,6 +8,7 @@ import { PrismaModule } from '~/prisma/prisma.module';
 
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
+import { PartnerGuard } from './partner.guard';
 import { AuthRateLimitGuard } from '~/common/guards/auth-rate-limit.guard';
 
 @Module({
@@ -25,6 +26,7 @@ import { AuthRateLimitGuard } from '~/common/guards/auth-rate-limit.guard';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthenticationService, AuthRateLimitGuard],
+  providers: [AuthenticationService, PartnerGuard, AuthRateLimitGuard],
+  exports: [AuthenticationService, PartnerGuard, JwtModule],
 })
 export class AuthenticationModule {}

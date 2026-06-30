@@ -11,14 +11,19 @@ import {
   resolveGoalsTeamBet,
   resolveLastEventBet,
   resolveNextGoalBet,
+  resolveNextGoalHalfBet,
   resolveNextPointGameBet,
   resolveRaceToGameBet,
   resolveRaceToPointGameBet,
   resolveScoreSetGameBet,
   resolveMultiscoreSetBet,
   resolveMatchCorrectScoreBet,
+  resolveWinAndTotalBet,
   resolveTimeWindowBet,
+  resolveToQualifyBet,
   resolveVerifiedBetResult,
+  resolveWinner2GamesSetBet,
+  resolveWinnerGameBet,
   resolveWinnerSetBet,
 } from './wc-verified-settlement.util';
 
@@ -168,6 +173,97 @@ describe('resolveRaceToGameBet', () => {
         awayScore: 0,
         detail,
         matchState: emptyMatchState(),
+      }),
+    ).toBe(WcOddsBetStatus.WIN);
+  });
+});
+
+describe('resolveNextGoalHalfBet', () => {
+  const betFirstHalfHome = {
+    pick: null,
+    marketKey: 'display_NEXT_GOAL_HALF',
+    outcomeKey: 'DISPLAY_1192_1481_PARAMETER_GOAL_NUMBER:1|PARAMETER_HALF_NUMBER:1',
+    line: null,
+    outcomeName: '1-й тайм: П1',
+  };
+
+  it('loses when first-half goal never came but second half had goals', () => {
+    const state = emptyMatchState();
+    state.soccer = {
+      lastHome: 1,
+      lastAway: 1,
+      initialized: true,
+      goalScorers: { '1': 'home', '2': 'away' },
+      goalMinutes: { '1': 72, '2': 90 },
+    };
+
+    expect(
+      resolveNextGoalHalfBet(betFirstHalfHome, {
+        homeScore: 1,
+        awayScore: 1,
+        matchState: state,
+      }),
+    ).toBe(WcOddsBetStatus.LOSE);
+  });
+
+  it('wins when scoped first-half goal matches pick', () => {
+    const state = emptyMatchState();
+    state.soccer = {
+      lastHome: 1,
+      lastAway: 0,
+      initialized: true,
+      goalScorers: { '1': 'home' },
+      goalMinutes: { '1': 12 },
+    };
+
+    expect(
+      resolveNextGoalHalfBet(betFirstHalfHome, {
+        homeScore: 1,
+        awayScore: 0,
+        matchState: state,
+      }),
+    ).toBe(WcOddsBetStatus.WIN);
+  });
+});
+
+describe('resolveToQualifyBet', () => {
+  const betHomeQualify = {
+    pick: null,
+    marketKey: 'display_TO_QUALIFY',
+    outcomeKey: 'DISPLAY_1006_1012_base',
+    line: null,
+    outcomeName: 'Проход: П1',
+  };
+
+  it('settles from penalty shootout snapshot when feed is stripped', () => {
+    const state = emptyMatchState();
+    state.soccer = {
+      lastHome: 1,
+      lastAway: 1,
+      initialized: true,
+      penaltyScore: { home: 2, away: 3 },
+    };
+
+    expect(
+      resolveToQualifyBet(betHomeQualify, {
+        homeScore: 1,
+        awayScore: 1,
+        matchState: state,
+      }),
+    ).toBe(WcOddsBetStatus.LOSE);
+  });
+
+  it('settles from outright winner when scores differ', () => {
+    expect(
+      resolveToQualifyBet(betHomeQualify, {
+        homeScore: 2,
+        awayScore: 1,
+        detail: {
+          id: 1,
+          competitors: [],
+          eventDate: '',
+          status: 'EVENT_CLOSED',
+        },
       }),
     ).toBe(WcOddsBetStatus.WIN);
   });
@@ -376,6 +472,77 @@ describe('resolveGoalsTeamBet', () => {
   });
 });
 
+describe('resolveWinner2GamesSetBet', () => {
+  const bet = {
+    pick: null,
+    marketKey: 'display_WINNER_2GAMES_SET_4WAY',
+    outcomeKey: 'DISPLAY_1837_2940_PARAMETER_GAME_NUMBER:6|PARAMETER_NUMBER:7|PARAMETER_SET_NUMBER:1',
+    line: null,
+    outcomeName: '6-й гейм: П2, П1',
+  };
+
+  const state = emptyMatchState();
+  state.tennis!.games['1:6'] = {
+    deuce: false,
+    completed: true,
+    pointsWon: { home: 4, away: 2 },
+    pointWinners: { '1': 'away', '2': 'home', '3': 'away', '4': 'home', '5': 'home', '6': 'home' },
+    lastGameScore: '40:30',
+    trackedFromStart: true,
+  };
+  state.tennis!.games['1:7'] = {
+    deuce: false,
+    completed: true,
+    pointsWon: { home: 0, away: 3 },
+    pointWinners: { '1': 'away', '2': 'away', '3': 'away' },
+    lastGameScore: '0:40',
+    trackedFromStart: true,
+  };
+
+  it('loses when first game winner differs from combo', () => {
+    expect(
+      resolveWinner2GamesSetBet(bet, { homeScore: 0, awayScore: 2, matchState: state }),
+    ).toBe(WcOddsBetStatus.LOSE);
+  });
+
+  it('wins when both games match combo П1, П2', () => {
+    const winningBet = { ...bet, outcomeName: '6-й гейм: П1, П2' };
+    expect(
+      resolveWinner2GamesSetBet(winningBet, { homeScore: 0, awayScore: 2, matchState: state }),
+    ).toBe(WcOddsBetStatus.WIN);
+  });
+
+  it('settles via resolveVerifiedBetResult for Vukic vs Brooksby bet #323', () => {
+    expect(
+      resolveVerifiedBetResult(bet, { homeScore: 0, awayScore: 2, matchState: state }),
+    ).toBe(WcOddsBetStatus.LOSE);
+  });
+});
+
+describe('resolveWinnerGameBet', () => {
+  const betHome = {
+    pick: null,
+    marketKey: 'display_WINNER_GAME',
+    outcomeKey: 'DISPLAY_1000_2000_PARAMETER_GAME_NUMBER:6|PARAMETER_SET_NUMBER:1',
+    line: null,
+    outcomeName: '6-й гейм: П1',
+  };
+
+  it('wins when scoped game winner matches pick', () => {
+    const state = emptyMatchState();
+    state.tennis!.games['1:6'] = {
+      deuce: false,
+      completed: true,
+      pointsWon: { home: 4, away: 2 },
+      lastGameScore: '40:30',
+    };
+
+    expect(
+      resolveWinnerGameBet(betHome, { homeScore: 0, awayScore: 1, matchState: state }),
+    ).toBe(WcOddsBetStatus.WIN);
+  });
+});
+
 describe('resolveWinnerSetBet', () => {
   const detail = {
     id: 8264905,
@@ -454,6 +621,112 @@ describe('resolveWinnerSetBet', () => {
         detail: closedDetail,
         matchState: state,
       }),
+    ).toBe(WcOddsBetStatus.WIN);
+  });
+});
+
+describe('resolveWinAndTotalBet', () => {
+  const tableTennisBet = {
+    pick: null,
+    marketKey: 'display_WIN1_AND_TOTAL_SET',
+    outcomeKey: 'DISPLAY_1297_1729_PARAMETER_SET_NUMBER:1|PARAMETER_VALUE:18.5',
+    line: '18.5',
+    outcomeName: 'Результат + тотал 18.5 1-й сет: ТМ',
+  };
+
+  const liveDetail = {
+    id: 8284166,
+    competitors: [],
+    eventDate: '',
+    status: 'EVENT_TRADING',
+    live: true,
+    score: { home: 0, away: 2 },
+    statistics: [{ code: 'scores_by_periods', value: '6:11,8:11,6:3' }],
+  } as OlimpbetEventDetail;
+
+  it('loses WIN1+under when P1 lost set 1 even though total is under line', () => {
+    const state = emptyMatchState();
+    state.tennis!.setScores = [{ home: 6, away: 11 }, { home: 8, away: 11 }, { home: 6, away: 3 }];
+
+    expect(
+      resolveWinAndTotalBet(tableTennisBet, {
+        homeScore: 0,
+        awayScore: 2,
+        detail: liveDetail,
+        matchState: state,
+      }),
+    ).toBe(WcOddsBetStatus.LOSE);
+  });
+
+  it('wins WIN1+under when P1 wins set and total stays under line', () => {
+    const detail = {
+      ...liveDetail,
+      statistics: [{ code: 'scores_by_periods', value: '11:6,0:0' }],
+    } as OlimpbetEventDetail;
+
+    expect(
+      resolveWinAndTotalBet(tableTennisBet, {
+        homeScore: 1,
+        awayScore: 0,
+        detail,
+        matchState: emptyMatchState(),
+      }),
+    ).toBe(WcOddsBetStatus.WIN);
+  });
+
+  it('stays pending while scoped set is still in play', () => {
+    const detail = {
+      ...liveDetail,
+      statistics: [{ code: 'scores_by_periods', value: '6:8' }],
+    } as OlimpbetEventDetail;
+
+    expect(
+      resolveWinAndTotalBet(tableTennisBet, {
+        homeScore: 0,
+        awayScore: 0,
+        detail,
+        matchState: emptyMatchState(),
+      }),
+    ).toBeNull();
+  });
+
+  it('early-loses under when scoped set total already exceeds line', () => {
+    const detail = {
+      ...liveDetail,
+      statistics: [{ code: 'scores_by_periods', value: '10:10' }],
+    } as OlimpbetEventDetail;
+
+    expect(
+      resolveWinAndTotalBet(tableTennisBet, {
+        homeScore: 0,
+        awayScore: 0,
+        detail,
+        matchState: emptyMatchState(),
+      }),
+    ).toBe(WcOddsBetStatus.LOSE);
+  });
+
+  it('settles scoped football half combo after first half ends', () => {
+    const bet = {
+      pick: null,
+      marketKey: 'display_WIN1_AND_TOTAL',
+      outcomeKey: 'DISPLAY_1500_1502_PARAMETER_VALUE:2.5',
+      line: '2.5',
+      outcomeName: '1-й тайм — Результат + тотал 2.5: ТБ',
+    };
+    const detail = {
+      id: 1,
+      competitors: [],
+      eventDate: '',
+      status: 'EVENT_TRADING',
+      statistics: [
+        { code: 'match_phase', value: '7' },
+        { code: 'scores_by_periods', value: '2:1,0:0' },
+      ],
+    } as OlimpbetEventDetail;
+
+    expect(
+      resolveWinAndTotalBet(bet, { homeScore: 2, awayScore: 1, detail, matchState: emptyMatchState() }),
     ).toBe(WcOddsBetStatus.WIN);
   });
 });

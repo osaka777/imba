@@ -27,7 +27,7 @@ export function WcTeamCardBadges({
       )}
     >
       {yellow > 0 && (
-        <span className={cardStyles.badge} title="Жёлтые карточки">
+        <span className={cn(cardStyles.badge, cardStyles.badgeYellow)} title="Жёлтые карточки">
           <img alt="" className={cardStyles.icon} src={YELLOW_CARD_SRC} />
           <span className={cardStyles.count} data-card-count={countMode === "hover" ? "" : undefined}>
             {yellow}
@@ -35,7 +35,7 @@ export function WcTeamCardBadges({
         </span>
       )}
       {red > 0 && (
-        <span className={cardStyles.badge} title="Красные карточки">
+        <span className={cn(cardStyles.badge, cardStyles.badgeRed)} title="Красные карточки">
           <img alt="" className={cardStyles.icon} src={RED_CARD_SRC} />
           <span className={cardStyles.count} data-card-count={countMode === "hover" ? "" : undefined}>
             {red}

@@ -6,7 +6,11 @@ import {
   IsString,
   Matches,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+import { AffiliateSubsDto } from '~/main/partners/dto/affiliate-subs.dto';
 
 export class RegistrationDto {
   @IsEmail()
@@ -36,4 +40,13 @@ export class RegistrationDto {
   @IsString()
   @IsOptional()
   tag?: string;
+
+  @IsString()
+  @IsOptional()
+  promoCode?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AffiliateSubsDto)
+  subs?: AffiliateSubsDto;
 }

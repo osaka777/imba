@@ -54,6 +54,38 @@ export function groupWcEventsByLeague(events: WcEvent[]): WcLeagueBlock[] {
   });
 }
 
+/** Live list: preserve feed order — no priority re-sort (prevents row jumping). */
+export function groupWcEventsByLeagueStable(events: WcEvent[]): WcLeagueBlock[] {
+  const map = new Map<string, WcLeagueBlock>();
+  const leagueOrder: string[] = [];
+
+  for (const event of events) {
+    const leagueName = event.leagueName || "Olimpbet";
+    const sport = event.sport || "soccer";
+    const key = `${sport}::${leagueName}`;
+    const block = map.get(key);
+    if (block) {
+      block.events.push(event);
+      continue;
+    }
+    map.set(key, {
+      leagueName,
+      sport,
+      events: [event],
+      priorityLevel: 0,
+      isPriority: false,
+    });
+    leagueOrder.push(key);
+  }
+
+  return leagueOrder.map((key) => {
+    const block = map.get(key)!;
+    block.priorityLevel = maxWcEventsPriorityLevel(block.events);
+    block.isPriority = block.priorityLevel > 0;
+    return block;
+  });
+}
+
 export function filterWcEventsByTournament(
   events: WcEvent[],
   tournamentId?: string | null,

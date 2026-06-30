@@ -44,6 +44,7 @@ type WcScoreBoardProps = {
   event: WcEventDetail;
   showBroadcastLink?: boolean;
   onBroadcastOpen?: () => void;
+  telegramAction?: ReactNode;
 };
 
 function BroadcastLink({
@@ -82,17 +83,20 @@ function MetaBar({
   status,
   showBroadcastLink,
   onBroadcastOpen,
+  telegramAction,
 }: {
   leagueName: string;
   status: ReactNode;
   showBroadcastLink?: boolean;
   onBroadcastOpen?: () => void;
+  telegramAction?: ReactNode;
 }) {
   return (
     <div className={styles.metaBar}>
       <div className={styles.metaBar_league}>{leagueName}</div>
       <div className={styles.metaBar_right}>
         <div className={styles.metaBar_status}>{status}</div>
+        {telegramAction}
         <BroadcastLink
           variant="meta"
           show={showBroadcastLink}
@@ -130,9 +134,28 @@ const PERIOD_FULL: Record<string, string> = {
 const GAME_PHASE_LABELS: Record<string, string> = {
   extra_time_1: "Доп. время 1",
   extra_time_2: "Доп. время 2",
-  penalties:    "Пенальти",
+  penalties:    "Серия пенальти",
   break:        "Перерыв",
 };
+
+/** Sport-specific label for the "penalties" game phase */
+function getPenaltiesPhaseLabel(sport: string): string {
+  switch (sport) {
+    case "tennis":
+    case "table-tennis":
+    case "volleyball":
+    case "beach-volleyball":
+    case "badminton":
+    case "squash":
+      return "Тай-брейк";
+    case "hockey":
+    case "bandy":
+    case "floorball":
+      return "Буллиты";
+    default:
+      return "Серия пенальти";
+  }
+}
 
 // ── Stat metadata: icon component + label ─────────────────────────────────
 type StatMeta = { icon: React.ReactNode; label: string };
@@ -350,7 +373,7 @@ function StatsBlock({ event }: { event: WcEventDetail }) {
 }
 
 // ── Prematch view ─────────────────────────────────────────────────────────
-function PrematchView({ event, showBroadcastLink, onBroadcastOpen }: WcScoreBoardProps) {
+function PrematchView({ event, showBroadcastLink, onBroadcastOpen, telegramAction }: WcScoreBoardProps) {
   return (
     <div className={styles.wcScoreBoard} style={{
       background: getSportBackgroundCss(event.sport),
@@ -360,6 +383,7 @@ function PrematchView({ event, showBroadcastLink, onBroadcastOpen }: WcScoreBoar
         status={<span className={styles.prematchMetaPill}>Линия</span>}
         showBroadcastLink={showBroadcastLink}
         onBroadcastOpen={onBroadcastOpen}
+        telegramAction={telegramAction}
       />
 
       <div className={styles.prematchBody}>
@@ -386,6 +410,7 @@ export function WcScoreBoard({
   event,
   showBroadcastLink,
   onBroadcastOpen,
+  telegramAction,
 }: WcScoreBoardProps) {
   const score = event.parsedScore;
 
@@ -397,12 +422,15 @@ export function WcScoreBoard({
   const gamePhase      = score?.gamePhase ?? null;
   const gamePhaseLabel = gamePhase ? (GAME_PHASE_LABELS[gamePhase] ?? null) : null;
   const isBreak        = gamePhase === "break";
-
-  const showLiveClockBar = isLive && !isSetSport && !isBreak;
   const isClassicSoccer = event.sport === "soccer";
 
   // ── Period data ─────────────────────────────────────────────────────────
   const details    = score?.details ?? [];
+
+  // Detect penalty shootout: either explicit gamePhase or 5+ periods in details
+  const isPenaltiesPhase = gamePhase === "penalties" || (isClassicSoccer && isLive && details.length >= 5);
+
+  const showLiveClockBar = isLive && !isSetSport && !isBreak && !isPenaltiesPhase;
   const colPrefix  = COL_PREFIX[event.sport] ?? "П";
   const periodStr  = PERIOD_FULL[event.sport] ?? "период";
   const varState = score?.varState ?? null;
@@ -430,11 +458,12 @@ export function WcScoreBoard({
   // Status line ("2 сет", "1 тайм", "Доп. время 1")
   const statusLine = useMemo(() => {
     if (!isLive) return null;
+    if (isPenaltiesPhase) return getPenaltiesPhaseLabel(event.sport);
     if (gamePhaseLabel) return gamePhaseLabel;
     if (isSetSport) return details.length > 0 ? `${details.length} ${periodStr}` : null;
     const p = resolveWcDisplayPeriod(event.sport, score?.period, details.length);
     return p > 0 ? `${p} ${periodStr}` : null;
-  }, [isLive, gamePhaseLabel, isSetSport, details.length, periodStr, score?.period, event.sport]);
+  }, [isLive, isPenaltiesPhase, gamePhaseLabel, isSetSport, details.length, periodStr, score?.period, event.sport]);
 
   // ── Stat columns (inline in table header) ──────────────────────────────
   const statCols = useMemo(() => buildStatCols(event), [event]);
@@ -495,6 +524,7 @@ export function WcScoreBoard({
         event={event}
         onBroadcastOpen={onBroadcastOpen}
         showBroadcastLink={showBroadcastLink}
+        telegramAction={telegramAction}
       />
     );
   }
@@ -510,12 +540,14 @@ export function WcScoreBoard({
         status={
           <>
             {isFinished && "Окончена"}
-            {isLive && !isSetSport && isBreak && (gamePhaseLabel ?? "Перерыв")}
+            {isLive && isPenaltiesPhase && getPenaltiesPhaseLabel(event.sport)}
+            {isLive && !isPenaltiesPhase && !isSetSport && isBreak && (gamePhaseLabel ?? "Перерыв")}
             {isLive && isSetSport && (setsScore ? `Сеты ${setsScore}` : "Live")}
           </>
         }
         showBroadcastLink={showBroadcastLink}
         onBroadcastOpen={onBroadcastOpen}
+        telegramAction={telegramAction}
       />
 
       {showLiveClockBar ? (
@@ -656,7 +688,13 @@ export function WcScoreBoard({
             </div>
           )}
 
-          {isLive && !isSetSport && isBreak && (
+          {isLive && isPenaltiesPhase && (
+            <div className={styles.headerStatusSpanned}>
+              <span className={styles.penaltiesLabel}>{getPenaltiesPhaseLabel(event.sport)}</span>
+            </div>
+          )}
+
+          {isLive && !isPenaltiesPhase && !isSetSport && isBreak && (
             <div className={styles.headerStatusSpanned}>
               <span className={styles.gamePhaseLabel}>{gamePhaseLabel ?? "Перерыв"}</span>
             </div>
@@ -683,11 +721,13 @@ export function WcScoreBoard({
           {details.map((_, i) => {
             const isCurrent = isLive && i === currentPeriodIdx;
             const isDone    = isLive && i < currentPeriodIdx;
+            const isPenCol  = isPenaltiesPhase && i === 4;
             return (
               <div key={i} className={cn(styles.cell_header,
                 isCurrent && styles.cell_header_active,
-                isDone    && styles.cell_header_done)}>
-                {colPrefix}{i + 1}
+                isDone    && styles.cell_header_done,
+                isPenCol  && styles.cell_header_penalties)}>
+                {isPenCol ? "Пен" : `${colPrefix}${i + 1}`}
               </div>
             );
           })}

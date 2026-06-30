@@ -2,7 +2,6 @@ import React from "react";
 import header from "@/widgets/ProfileHeader/header.module.css";
 import { LogoIcon } from "@/shared/assets";
 import { Exit, UserIcon } from "@/shared/assets/icons";
-import { ProfileNavigation } from "@/widgets/ProfileNavigation/ProfileNavigation";
 import { SignOut } from "@/entities/user/ui/SignOut/SignOut";
 import { getUser } from "@/entities/user/api";
 import { verifySession } from "@/entities/user";
@@ -31,8 +30,6 @@ export const ProfileHeader = async () => {
                     <SignOut />
                 </div>
             </div>
-            <ProfileNavigation />
-
         </header>
     );
 };

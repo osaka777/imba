@@ -1,6 +1,6 @@
 import type { WcEvent } from "~/entities/wc-odds/api/client";
 import { isWcEventBettingOpen } from "~/entities/wc-odds/lib/wcRate";
-import { isWcEventActuallyInPlay } from "~/entities/wc-odds/lib/wcLivePlay";
+import { wcMaxLiveWindowMs } from "~/entities/wc-odds/lib/wcLivePlay";
 import { mergeWcParsedScore } from "~/entities/wc-odds/lib/wcLiveScore";
 import { mergeStatListForEvent } from "~/entities/wc-odds/lib/wcStatsMerge";
 
@@ -63,17 +63,26 @@ export function filterVisibleWcLineEvents(events: WcEvent[]): WcEvent[] {
   );
 }
 
-/** Live list: in-play matches (markets may be briefly suspended right after kickoff). */
+
+/** Match is definitively over — safe to drop from the live list. */
+export function isWcLiveListTerminal(event: WcEvent, nowMs: number = Date.now()): boolean {
+  if (event.completed || event.phase === "finished") return true;
+  const kickoffMs = Date.parse(event.commenceTime);
+  if (!Number.isFinite(kickoffMs)) return false;
+  return nowMs - kickoffMs > wcMaxLiveWindowMs(event.sport);
+}
+
+/** Live list: in-play matches stay put until the match is over (ignore brief market gaps). */
 export function filterVisibleWcLiveEvents(events: WcEvent[]): WcEvent[] {
   const nowMs = Date.now();
   return events.filter((event) => {
-    if (event.completed || event.phase === "finished") return false;
-    if (!isWcEventBettingOpen(event)) return false;
-    if (!isWcEventActuallyInPlay(event, nowMs)) return false;
-    if (wcEventHasActiveListBets(event)) return true;
-    if (event.parsedScore || event.statList?.length || event.homeScore != null) return true;
+    if (isWcLiveListTerminal(event, nowMs)) return false;
+    if (event.phase !== "live") return false;
+
     const kickoffMs = Date.parse(event.commenceTime);
-    return Number.isFinite(kickoffMs) && kickoffMs <= nowMs && nowMs - kickoffMs <= 45 * 60 * 1000;
+    if (!Number.isFinite(kickoffMs) || kickoffMs > nowMs) return false;
+
+    return true;
   });
 }
 
@@ -181,7 +190,12 @@ export function mergeWcLiveEvents(
   incoming: WcEvent[],
   removedIds?: string[],
 ): WcEvent[] {
-  return mergeWcFeedDelta(prev, incoming, removedIds, true);
+  const prevById = new Map(prev.map((event) => [event.id, event]));
+  const safeRemoved = removedIds?.filter((id) => {
+    const event = prevById.get(id);
+    return !event || isWcLiveListTerminal(event);
+  });
+  return mergeWcFeedDelta(prev, incoming, safeRemoved, true);
 }
 
 export function wcLineDatesFromEvents(events: WcEvent[]): string[] {

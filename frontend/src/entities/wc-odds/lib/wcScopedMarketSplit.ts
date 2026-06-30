@@ -4,11 +4,18 @@ import {
   formatTotalsScopeLabel,
   getMainTotalsCategoryTitle,
   isMainMatchTotalCategory,
+  isScopeCaptionRedundant,
+  stripLineFromGroupLabel,
   totalsScopeBucketKey,
   type TotalsScopeOptions,
 } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
+import { formatGroupSubLabel, needsGroupSubLabel } from "~/entities/wc-odds/lib/wcGroupSubLabel";
 import { coalesceTotalsGroups } from "~/entities/wc-odds/lib/wcTotalsPairs";
 import { normalizeWcMarketKey } from "~/entities/wc-odds/lib/wcRate";
+
+function normalizeLabel(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
 
 function resolveTotalsBucketTitle(
   group: WcMarketGroup,
@@ -21,6 +28,99 @@ function resolveTotalsBucketTitle(
     return getMainTotalsCategoryTitle(blockName, options.sport);
   }
   return blockName;
+}
+
+/** Category title for a group that would otherwise show a black sub-header. */
+export function resolveGroupDisplayCategory(
+  group: WcMarketGroup,
+  blockName: string,
+  options: TotalsScopeOptions,
+): string | null {
+  const label = group.label?.trim() ?? "";
+  const block = blockName.trim();
+
+  if (needsGroupSubLabel(group, block)) {
+    return formatGroupSubLabel(group, block);
+  }
+
+  const baseKey = normalizeWcMarketKey(group.marketKey);
+  if (baseKey === "totals" || baseKey === "totals_home" || baseKey === "totals_away") {
+    const scope = formatTotalsScopeLabel(group, block, options);
+    if (scope && !isScopeCaptionRedundant(block, scope)) return scope;
+    const stripped = stripLineFromGroupLabel(label);
+    if (stripped && /тотал/i.test(stripped) && normalizeLabel(stripped) !== normalizeLabel(block)) {
+      return stripped;
+    }
+  }
+
+  if (baseKey === "handicap" || baseKey === "handicap_3way") {
+    const scope = formatHandicapScopeLabel(group, block, options);
+    if (scope && !isScopeCaptionRedundant(block, scope) && normalizeLabel(scope) !== normalizeLabel(block)) {
+      return scope;
+    }
+    const stripped = stripLineFromGroupLabel(label);
+    if (stripped && /(фора|гандикап)/i.test(stripped) && normalizeLabel(stripped) !== normalizeLabel(block)) {
+      return stripped;
+    }
+  }
+
+  if (
+    label
+    && normalizeLabel(label) !== normalizeLabel(block)
+    && !block.toLowerCase().includes(label.toLowerCase())
+  ) {
+    if (/^display_/i.test(group.marketKey) && /[,·]|гонка\s+до|\d+-[йи]\s+(сет|гейм|тайм)/i.test(label)) {
+      return label;
+    }
+  }
+
+  return null;
+}
+
+function splitBlockByGroupScope(
+  blockName: string,
+  groups: WcMarketGroup[],
+  options: TotalsScopeOptions,
+): Array<[string, WcMarketGroup[]]> {
+  const buckets = new Map<string, WcMarketGroup[]>();
+  const unsplit: WcMarketGroup[] = [];
+
+  for (const group of groups) {
+    const categoryName = resolveGroupDisplayCategory(group, blockName, options);
+    if (categoryName) {
+      const existing = buckets.get(categoryName) ?? [];
+      if (!existing.some((item) => item.key === group.key)) {
+        buckets.set(categoryName, [...existing, group]);
+      }
+    } else {
+      unsplit.push(group);
+    }
+  }
+
+  if (buckets.size === 0) return [[blockName, groups]];
+
+  const result: Array<[string, WcMarketGroup[]]> = [...buckets.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "ru"))
+    .map(([name, bucketGroups]) => [name, bucketGroups]);
+
+  if (unsplit.length) {
+    result.push([blockName, unsplit]);
+  }
+
+  return result;
+}
+
+function shouldSplitBlockByGroupScope(
+  blockName: string,
+  groups: WcMarketGroup[],
+  options: TotalsScopeOptions,
+): boolean {
+  if (/^\d+-[йи]\s+(сет|тайм)/i.test(blockName)) return true;
+  if (/^Следующее очко|^40:40$/i.test(blockName)) return true;
+  if (groups.some((group) => resolveGroupDisplayCategory(group, blockName, options) != null)) {
+    return true;
+  }
+  return false;
 }
 
 function splitTotalsBlock(
@@ -97,7 +197,28 @@ function splitHandicapBlock(
     .map(([key, bucketGroups]) => [titles.get(key) ?? blockName, bucketGroups]);
 }
 
-/** Split merged totals/handicap blocks into separate accordion categories per scope. */
+function expandCanonicalScopedBlock(
+  blockName: string,
+  groups: WcMarketGroup[],
+  options: TotalsScopeOptions,
+): Array<[string, WcMarketGroup[]]> {
+  if (/^индивидуальный тотал/i.test(blockName)) {
+    return splitTotalsBlock(blockName, groups, options);
+  }
+
+  if (/^тотал/i.test(blockName) && !/чет/i.test(blockName)) {
+    const split = splitTotalsBlock(blockName, groups, options);
+    return split.length > 1 ? split : [[blockName, groups]];
+  }
+
+  if (/^фора/i.test(blockName)) {
+    return splitHandicapBlock(blockName, groups, options);
+  }
+
+  return [[blockName, groups]];
+}
+
+/** Split merged blocks into separate accordion categories (black sub-headers → blue headers). */
 export function expandScopedMarketEntries(
   entries: Array<[string, WcMarketGroup[]]>,
   options: TotalsScopeOptions,
@@ -105,23 +226,15 @@ export function expandScopedMarketEntries(
   const result: Array<[string, WcMarketGroup[]]> = [];
 
   for (const [blockName, groups] of entries) {
-    if (/^индивидуальный тотал/i.test(blockName)) {
-      result.push(...splitTotalsBlock(blockName, groups, options));
+    if (shouldSplitBlockByGroupScope(blockName, groups, options)) {
+      const byScope = splitBlockByGroupScope(blockName, groups, options);
+      for (const [name, bucket] of byScope) {
+        result.push(...expandCanonicalScopedBlock(name, bucket, options));
+      }
       continue;
     }
 
-    if (/^тотал/i.test(blockName) && !/чет/i.test(blockName)) {
-      const split = splitTotalsBlock(blockName, groups, options);
-      result.push(...(split.length > 1 ? split : [[blockName, groups]]));
-      continue;
-    }
-
-    if (/^фора/i.test(blockName)) {
-      result.push(...splitHandicapBlock(blockName, groups, options));
-      continue;
-    }
-
-    result.push([blockName, groups]);
+    result.push(...expandCanonicalScopedBlock(blockName, groups, options));
   }
 
   return result;

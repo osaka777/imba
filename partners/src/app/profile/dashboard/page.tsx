@@ -1,41 +1,18 @@
 "use client";
-import React, { useState } from "react";
-import { DotsIcon } from "@/shared/assets/icons";
-import dashboard from "./dashboard.module.css";
-import '@styles/common.module.css'
-import { ProfileStats } from "@/widgets/Stats/ProfileStats";
-import { Chart } from "@/widgets/Chart/Chart";
-import { CurrencySelector } from "@/widgets/CurrencySelector/CurrencySelector";
 
-const Profile = () => {
-    const [selectedCurrency, setSelectedCurrency] = useState("USD");
-    const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'all'>('month');
+import { DashboardAnalytics } from "@/widgets/DashboardAnalytics/DashboardAnalytics";
+import shell from "../profile-shell.module.css";
 
-    const currencyOptions = ["USD", "KZT", "RUB", "UAH"] as const;
-
-    return (
-        <main className={dashboard.main}>
-            <section className={dashboard.chart_section}>
-                <div className={dashboard.chart_header}>
-                    <h2 className={dashboard.chart_title}>Аналитика доходов</h2>
-                    <CurrencySelector
-                        selectedCurrency={selectedCurrency}
-                        onCurrencyChange={setSelectedCurrency}
-                        className={dashboard.currency_selector}
-                        options={currencyOptions as unknown as string[]}
-                    />
-                </div>
-                
-                <div className={dashboard.chart}>
-                    <Chart 
-                        selectedCurrency={selectedCurrency}
-                        period={selectedPeriod}
-                    />
-                </div>
-            </section>
-            <ProfileStats selectedPeriod={selectedPeriod} onPeriodChange={setSelectedPeriod} selectedCurrency={selectedCurrency} />
-        </main>
-    );
-};
-
-export default Profile;
+export default function ProfileDashboardPage() {
+  return (
+    <>
+      <header className={shell.pageHeader}>
+        <h1 className={shell.pageTitle}>Dashboard</h1>
+        <p className={shell.pageSubtitle}>
+          Аналитика дохода, регистраций и первых депозитов в реальном времени
+        </p>
+      </header>
+      <DashboardAnalytics />
+    </>
+  );
+}

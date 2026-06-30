@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 
+import { EventModule } from '~/main/event/event.module';
+import { TelegramModule } from '~/main/telegram/telegram.module';
 import { OperationModule } from '~/main/operation/operation.module';
+import { PartnersModule } from '~/main/partners/partners.module';
 import { AuthenticationModule } from '~/main/user/authentication/authentication.module';
 import { PrismaModule } from '~/prisma/prisma.module';
 
@@ -16,9 +19,10 @@ import { WcOddsGateway } from './wc-odds.gateway';
 import { WcOddsRealtimeService } from './wc-odds-realtime.service';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
 import { WcOddsSyncService } from './wc-odds-sync.service';
+import { WcTelegramPulseService } from './wc-telegram-pulse.service';
 
 @Module({
-  imports: [PrismaModule, OperationModule, AuthenticationModule, CybersportModule],
+  imports: [PrismaModule, OperationModule, PartnersModule, AuthenticationModule, CybersportModule, EventModule, TelegramModule],
   controllers: [WcOddsController],
   providers: [
     OlimpbetAuthService,
@@ -30,6 +34,7 @@ import { WcOddsSyncService } from './wc-odds-sync.service';
     WcOddsSettlementService,
     WcOddsGateway,
     WcOddsRealtimeService,
+    WcTelegramPulseService,
   ],
   exports: [OlimpbetWcService, WcOddsRealtimeService],
 })

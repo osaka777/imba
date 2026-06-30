@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import type { WcGroupedMarkets } from '../wc-odds/wc-odds-markets.util';
 import { collectGroupedMarketsWarnings, extractMainTotalLine } from '../wc-odds/wc-odds-markets.util';
+import { filterFinalizedScopeMarkets } from '../wc-odds/wc-scope-market-filter.util';
 import type {
   OlimpbetStructuredStatistics,
   WcEventStatsPayload,
@@ -540,8 +541,9 @@ export class OlimpbetWcService {
   async buildLineSnapshotFromDetail(
     main: OlimpbetEventDetail,
     olimpbetEventId: number,
+    options?: { skipLogos?: boolean },
   ): Promise<OlimpbetWcMatchSnapshot> {
-    return this.buildSnapshotFromMain(main, olimpbetEventId, false);
+    return this.buildSnapshotFromMain(main, olimpbetEventId, false, options?.skipLogos === true);
   }
 
   async buildFullSnapshotFromDetail(
@@ -721,10 +723,15 @@ export class OlimpbetWcService {
     main: OlimpbetEventDetail,
     olimpbetEventId: number,
     includeLinked: boolean,
+    skipLogos = false,
   ): Promise<OlimpbetWcMatchSnapshot> {
-    const groupedMarkets = includeLinked
+    let groupedMarkets = includeLinked
       ? await this.fetchFullGroupedMarketsFromMain(main)
       : await parseOlimpbetFullEvent(main, []);
+
+    if (main.live && !isOlimpbetEventCompleted(main)) {
+      groupedMarkets = filterFinalizedScopeMarkets(groupedMarkets, main);
+    }
 
     const marketWarnings = collectGroupedMarketsWarnings(
       groupedMarkets,
@@ -743,10 +750,12 @@ export class OlimpbetWcService {
     const homeRu = main.competitors.find((c) => c.id === homeId)?.name ?? main.competitors[0]?.name ?? '';
     const awayRu = main.competitors.find((c) => c.id !== homeId)?.name ?? main.competitors[1]?.name ?? '';
     const competitorMeta = buildOlimpbetCompetitorMeta(main);
-    const logoMap = await fetchOlimpbetCompetitorLogos(
-      [competitorMeta.homeCompetitorId, competitorMeta.awayCompetitorId]
-        .filter((id): id is number => typeof id === 'number' && Number.isFinite(id)),
-    );
+    const logoMap = skipLogos
+      ? new Map<number, string>()
+      : await fetchOlimpbetCompetitorLogos(
+        [competitorMeta.homeCompetitorId, competitorMeta.awayCompetitorId]
+          .filter((id): id is number => typeof id === 'number' && Number.isFinite(id)),
+      );
 
     return {
       olimpbetEventId,

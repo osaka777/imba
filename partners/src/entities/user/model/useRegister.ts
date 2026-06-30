@@ -20,10 +20,35 @@ export const useRegister = () => {
             setResponse((prev) => ({ ...prev, pending: false }));
             return res;
         } catch (error) {
-            if(axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error)) {
+                const data = error.response?.data as {
+                    message?: string | string[];
+                    errors?: Array<{
+                        property?: string;
+                        constraints?: Record<string, string>;
+                    }>;
+                } | undefined;
 
-                setResponse((prev) => ({ ...prev, error: (error.response as AxiosResponse)?.data?.message[0], pending: false }));
+                let errorMessage = "Произошла ошибка";
 
+                if (Array.isArray(data?.message) && data.message[0]) {
+                    errorMessage = data.message[0];
+                } else if (data?.errors?.length) {
+                    const first = data.errors[0];
+                    const constraint = first.constraints
+                        ? Object.values(first.constraints)[0]
+                        : undefined;
+
+                    if (first.property === "password" && constraint?.includes("8")) {
+                        errorMessage = "Пароль должен быть не короче 8 символов";
+                    } else if (constraint) {
+                        errorMessage = constraint;
+                    }
+                } else if (typeof data?.message === "string" && data.message !== "Validation failed") {
+                    errorMessage = data.message;
+                }
+
+                setResponse((prev) => ({ ...prev, error: errorMessage, pending: false }));
             } else {
                 setResponse((prev) => ({ ...prev, error: "Произошла ошибка", pending: false }));
             }

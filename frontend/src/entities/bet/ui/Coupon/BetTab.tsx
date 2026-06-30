@@ -45,6 +45,15 @@ type Variant = "express" | "ordinar" | "series";
 
 const STAKE_CHIPS = [500, 1000, 5000, 10000];
 
+function getCurrencySuffix(code?: string | null): string {
+  if (!code) return "";
+  return getSymbolFromCurrency(code) || code;
+}
+
+function formatCouponAmount(amount: number, code?: string | null, digits = 2): string {
+  return `${amount.toFixed(digits)}${getCurrencySuffix(code)}`;
+}
+
 export const BetTab: React.FC<BetTabProps> = ({
   classNameContainer,
   setIsOpen,
@@ -491,7 +500,7 @@ export const BetTab: React.FC<BetTabProps> = ({
       };
 
       try {
-        await placeWcBet(token, wcBetBody);
+        const placed = await placeWcBet(token, wcBetBody) as { id?: number };
         await finishWcBetSuccess();
       } catch (e: unknown) {
         const err = e as Error & {
@@ -520,7 +529,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
           if (agree) {
             try {
-              await placeWcBet(token, { ...wcBetBody, acceptOddsChange: true, clientOdds: undefined });
+              const placed = await placeWcBet(token, { ...wcBetBody, acceptOddsChange: true, clientOdds: undefined }) as { id?: number };
               await finishWcBetSuccess();
               setIsCreatingBet(false);
               return;
@@ -958,12 +967,49 @@ export const BetTab: React.FC<BetTabProps> = ({
     ]);
   };
 
+  const renderPotentialWinLabel = () => {
+    if (selectedAccountType === "bonus") {
+      const bonusBalance = userData?.bonusBalances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      );
+      if (bonusBalance?.isTokenBased) {
+        return "Возможный выигрыш (на основной счёт)";
+      }
+    }
+    return "Возможный выигрыш";
+  };
+
+  const renderPotentialWinValue = () => {
+    if (selectedAccountType === "bonus") {
+      const bonusBalance = userData?.bonusBalances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      );
+      if (bonusBalance?.isTokenBased) {
+        return `${totalSum.toFixed(0)} жетонов`;
+      }
+    }
+    return formatCouponAmount(potentialWin, currency);
+  };
+
+  const renderStakeSumValue = () => {
+    if (selectedAccountType === "bonus") {
+      const bonusBalance = userData?.bonusBalances?.find(
+        ({ currencyCode }) => currencyCode === currency,
+      );
+      if (bonusBalance?.isTokenBased) {
+        return `${totalSum.toFixed(0)} жетонов`;
+      }
+    }
+    return formatCouponAmount(Number(sum) || 0, currency);
+  };
+
   const isAllOpen = rates.every((rate) => rate.isOpen);
 
   return (
     <>
       <div className={`${styles.BetTab} ${classNameContainer}`}>
-        <div className={styles.couponTypeRadiogroup}>
+        <div className={styles.betTabScroll}>
+          <div className={styles.couponTypeRadiogroup}>
           <Checkbox
             checked={variant === "ordinar"}
             classNames={{
@@ -998,17 +1044,79 @@ export const BetTab: React.FC<BetTabProps> = ({
           variant={variant}
         />
 
+        <div className={styles.agree}>
+          <Checkbox
+            checked={agree}
+            classNames={{
+              Checkbox: styles.agreeCheckbox,
+              text: styles.agreeText,
+            }}
+            onChange={agreeOnChangeHandler}
+          >{`Всегда соглашаться с изменением коэффициента`}</Checkbox>
+          <Button className={styles.remove} onClick={trashButtonOnClickHandler}>
+            <TrashIcon className={styles.removeIcon} />
+          </Button>
+        </div>
+
+        {selectedAccountType === "bonus" ? (
+          <div
+            className={`${styles.accountTypeIndicator} ${(() => {
+              const bonusBalance = userData?.bonusBalances?.find(
+                ({ currencyCode }) => currencyCode === currency,
+              );
+              return bonusBalance?.isTokenBased ? styles.tokenBasedIndicator : "";
+            })()}`}
+          >
+            <span className={styles.accountTypeLabel}>
+              🎁 Бонусный счет
+              {(() => {
+                const bonusBalance = userData?.bonusBalances?.find(
+                  ({ currencyCode }) => currencyCode === currency,
+                );
+                if (bonusBalance?.isTokenBased) {
+                  return (
+                    <span className={styles.tokenInfo}>
+                      {" "}({bonusBalance.remainingTokens} жетонов осталось)
+                    </span>
+                  );
+                }
+                return null;
+              })()}
+            </span>
+          </div>
+        ) : null}
+
+        {selectedAccountType === 'bonus' && (() => {
+          const bonusBalance = userData?.bonusBalances?.find(
+            ({ currencyCode }) => currencyCode === currency,
+          );
+          if (bonusBalance?.isTokenBased) {
+            return (
+              <div className={styles.tokenHint}>
+                <small>💡 Жетоны - это не деньги! Вы ставите жетоны, а выигрыш получаете в реальных деньгах на основной счет</small>
+                <br />
+                <small>🎯 Можно ставить только {bonusBalance.tokensPerBet} жетон за раз</small>
+              </div>
+            );
+          }
+          return null;
+        })()}
+        </div>
+
+        <div className={styles.betTabStickyFooter}>
         {rates.length === 0 && (
           <>
-            <div className={styles.totalWin}>
-              <p className={styles.totalWinText}>{`Возможный выигрыш`}</p>
-              <p className={styles.totalWinText}>
-                {currency && `0.00${getSymbolFromCurrency(currency)}`}
+            <div className={styles.potentialWinHero}>
+              <p className={styles.potentialWinHeroLabel}>Возможный выигрыш</p>
+              <p className={styles.potentialWinHeroValue}>
+                {formatCouponAmount(0, currency)}
               </p>
             </div>
             <div className={styles.totalSumRow}>
               <p className={styles.totalSumLabel}>Сумма всех ставок:</p>
-              <p className={styles.totalSumValue}>{totalSum.toFixed(2)}{currency && getSymbolFromCurrency(currency)}</p>
+              <p className={styles.totalSumValue}>
+                {formatCouponAmount(totalSum, currency)}
+              </p>
             </div>
             <div className={styles.baseCouponBetForm}>
               <div className={styles.couponStakeField}>
@@ -1026,47 +1134,13 @@ export const BetTab: React.FC<BetTabProps> = ({
 
         {rates.length > 0 && (
           <>
-            <div className={styles.totalWin}>
-              <p className={styles.totalWinText}>
-                {selectedAccountType === 'bonus' && (() => {
-                  const bonusBalance = userData?.bonusBalances?.find(
-                    ({ currencyCode }) => currencyCode === currency,
-                  );
-                  if (bonusBalance?.isTokenBased) {
-                    return 'Возможный выигрыш (на основной счет)';
-                  }
-                  return 'Возможный выигрыш';
-                })() || 'Возможный выигрыш'}
-              </p>
-              <p className={styles.totalWinText}>
-                {(() => {
-                  if (selectedAccountType === 'bonus') {
-                    const bonusBalance = userData?.bonusBalances?.find(
-                      ({ currencyCode }) => currencyCode === currency,
-                    );
-                    if (bonusBalance?.isTokenBased) {
-                      return `${totalSum.toFixed(0)} жетонов`;
-                    }
-                  }
-                  return `${potentialWin.toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
-                })()}
-              </p>
+            <div className={styles.potentialWinHero}>
+              <p className={styles.potentialWinHeroLabel}>{renderPotentialWinLabel()}</p>
+              <p className={styles.potentialWinHeroValue}>{renderPotentialWinValue()}</p>
             </div>
             <div className={styles.totalSumRow}>
               <p className={styles.totalSumLabel}>Сумма всех ставок:</p>
-              <p className={styles.totalSumValue}>
-                {(() => {
-                  if (selectedAccountType === 'bonus') {
-                    const bonusBalance = userData?.bonusBalances?.find(
-                      ({ currencyCode }) => currencyCode === currency,
-                    );
-                    if (bonusBalance?.isTokenBased) {
-                      return `${totalSum.toFixed(0)} жетонов`;
-                    }
-                  }
-                  return `${(Number(sum) || 0).toFixed(2)}${currency && getSymbolFromCurrency(currency)}`;
-                })()}
-              </p>
+              <p className={styles.totalSumValue}>{renderStakeSumValue()}</p>
             </div>
             <div className={styles.baseCouponBetForm}>
               <div className={styles.couponStakeField}>
@@ -1140,76 +1214,17 @@ export const BetTab: React.FC<BetTabProps> = ({
                 ))}
               </div>
             ) : null}
-            {selectedAccountType === 'bonus' && (() => {
-              const bonusBalance = userData?.bonusBalances?.find(
-                ({ currencyCode }) => currencyCode === currency,
-              );
-              if (bonusBalance?.isTokenBased) {
-                return (
-                  <div className={styles.tokenHint}>
-                    <small>💡 Жетоны - это не деньги! Вы ставите жетоны, а выигрыш получаете в реальных деньгах на основной счет</small>
-                    <br />
-                    <small>🎯 Можно ставить только {bonusBalance.tokensPerBet} жетон за раз</small>
-                  </div>
-                );
-              }
-              return null;
-            })()}
           </>
         )}
 
-        <div className={styles.agree}>
-          <Checkbox
-            checked={agree}
-            classNames={{
-              Checkbox: styles.agreeCheckbox,
-              text: styles.agreeText,
-            }}
-            onChange={agreeOnChangeHandler}
-          >{`Всегда соглашаться с изменением коэффициента`}</Checkbox>
-          <Button className={styles.remove} onClick={trashButtonOnClickHandler}>
-            <TrashIcon className={styles.removeIcon} />
-          </Button>
-        </div>
-
-        <div className={`${styles.accountTypeIndicator} ${selectedAccountType === 'bonus' && (() => {
-            const bonusBalance = userData?.bonusBalances?.find(
-              ({ currencyCode }) => currencyCode === currency,
-            );
-            return bonusBalance?.isTokenBased ? styles.tokenBasedIndicator : '';
-          })() || ''
-          }`}>
-          <span className={styles.accountTypeLabel}>
-            {selectedAccountType === 'main' ? (
-              '💰 Основной счет'
-            ) : (
-              <>
-                🎁 Бонусный счет
-                {(() => {
-                  const bonusBalance = userData?.bonusBalances?.find(
-                    ({ currencyCode }) => currencyCode === currency,
-                  );
-                  if (bonusBalance?.isTokenBased) {
-                    return (
-                      <span className={styles.tokenInfo}>
-                        {' '}({bonusBalance.remainingTokens} жетонов осталось)
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
-              </>
-            )}
-          </span>
-        </div>
-
         <Button
           className={styles.baseCouponSubmit}
-          disabled={Number(sum) <= 0 || !agree || isCreatingBet}
+          disabled={Number(sum) <= 0 || !agree || isCreatingBet || (rates.length > 0 && !isAllOpen)}
           onClick={createBetOnClick}
           type="submit"
         >
           {isCreatingBet ? "Создание..." :
+            rates.length === 0 ? "Поставить" :
             selectedAccountType === 'bonus' ?
               (() => {
                 const bonusBalance = userData?.bonusBalances?.find(
@@ -1223,6 +1238,7 @@ export const BetTab: React.FC<BetTabProps> = ({
               'Поставить'
           }
         </Button>
+        </div>
       </div>
     </>
   );

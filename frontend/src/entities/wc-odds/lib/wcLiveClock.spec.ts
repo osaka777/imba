@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { WcEventDetail } from "~/entities/wc-odds/api/client";
 
-import { isWcMatchEffectivelyFinished } from "./wcLiveClock";
+import { isWcLiveClockRunning, isWcMatchEffectivelyFinished, resolveLiveClockSource } from "./wcLiveClock";
 
 function liveEvent(overrides: Partial<WcEventDetail> = {}): WcEventDetail {
   return {
@@ -51,5 +51,104 @@ describe("isWcMatchEffectivelyFinished", () => {
     expect(
       isWcMatchEffectivelyFinished(liveEvent({ feedStatus: "EVENT_FINISHED" })),
     ).toBe(true);
+  });
+
+  it("does not treat extra-time break at 105 min as finished", () => {
+    expect(
+      isWcMatchEffectivelyFinished(
+        liveEvent({
+          sport: "soccer",
+          parsedScore: {
+            seconds: 105 * 60,
+            text: { time: "105:00" },
+            period: 5,
+            gamePhase: "break",
+          },
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("resolveLiveClockSource", () => {
+  it("ignores corrupt remainingTime for cyber-basketball and uses elapsed clock", () => {
+    const source = resolveLiveClockSource({
+      sport: "cyber-basketball",
+      parsedScore: {
+        remainingTimeInPeriodSec: 16_999,
+        text: { time: "04:19" },
+        seconds: 16_999,
+        period: 3,
+      },
+    });
+    expect(source).toEqual({ baseSeconds: 259, countdown: false });
+  });
+
+  it("keeps hockey countdown when remaining time is plausible", () => {
+    const source = resolveLiveClockSource({
+      sport: "hockey",
+      parsedScore: {
+        remainingTimeInPeriodSec: 524,
+        text: { time: "09:52" },
+        seconds: 592,
+        period: 3,
+      },
+    });
+    expect(source).toEqual({ baseSeconds: 524, countdown: true });
+  });
+
+  it("keeps classic basketball countdown when remaining time is plausible", () => {
+    const source = resolveLiveClockSource({
+      sport: "basketball",
+      parsedScore: {
+        remainingTimeInPeriodSec: 312,
+        text: { time: "03:12" },
+        seconds: 192,
+        period: 2,
+      },
+    });
+    expect(source).toEqual({ baseSeconds: 312, countdown: true });
+  });
+
+  it("keeps soccer match elapsed time during the 2nd half", () => {
+    const source = resolveLiveClockSource({
+      sport: "soccer",
+      parsedScore: {
+        seconds: 57 * 60 + 23,
+        text: { time: "57:23" },
+        period: 2,
+      },
+    });
+    expect(source).toEqual({ baseSeconds: 57 * 60 + 23, countdown: false });
+  });
+
+  it("converts 2nd-half period-relative feed time to match elapsed", () => {
+    const source = resolveLiveClockSource({
+      sport: "soccer",
+      parsedScore: {
+        seconds: 12 * 60 + 23,
+        text: { time: "12:23" },
+        period: 2,
+      },
+    });
+    expect(source).toEqual({ baseSeconds: 57 * 60 + 23, countdown: false });
+  });
+
+  it("ticks soccer from kickoff of the 2nd half as 45:00 match time", () => {
+    expect(
+      isWcLiveClockRunning({
+        sport: "soccer",
+        phase: "live",
+        completed: false,
+        feedStatus: "EVENT_TRADING",
+        parsedScore: { seconds: 0, period: 2, text: { time: "00:00" } },
+      }),
+    ).toBe(true);
+
+    const source = resolveLiveClockSource({
+      sport: "soccer",
+      parsedScore: { seconds: 0, period: 2, text: { time: "00:00" } },
+    });
+    expect(source).toEqual({ baseSeconds: 45 * 60, countdown: false });
   });
 });

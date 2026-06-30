@@ -13,6 +13,7 @@ import { wcLineEventWhere, wcLiveEventWhere } from './wc-betting.util';
 import { WC_LINE_WINDOW_MS, WC_LINE_WINDOW_MS_MMA, WC_MMA_SPORT_KEY } from './wc-line-time.util';
 import { advanceMatchState } from './wc-match-state-tracker.util';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
+import { WcTelegramPulseService } from './wc-telegram-pulse.service';
 import { buildUniqueWcSlug, isBrokenWcSlug, olimpbetIdFromWcEventId, wcEventIdFromOlimpbet } from './wc-slug.util';
 
 const LIVE_REFRESH_MIN_MS = 1_000;
@@ -33,6 +34,7 @@ export class WcOddsSyncService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly olimpbet: OlimpbetWcService,
     private readonly settlement: WcOddsSettlementService,
+    private readonly pulse: WcTelegramPulseService,
     private readonly config: ConfigService,
   ) {}
 
@@ -108,6 +110,34 @@ export class WcOddsSyncService implements OnModuleInit {
   async scheduledSettlement() {
     if (!this.olimpbet.isEnabled()) return;
     await this.settlement.settleFinishedEvents();
+  }
+
+  @Cron('*/2 * * * * *')
+  async scheduledStaleSettlement() {
+    if (!this.olimpbet.isEnabled()) return;
+    await this.settlement.settleStalePendingBets();
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async scheduledPreMatchReminders() {
+    if (!this.olimpbet.isEnabled()) return;
+    try {
+      await this.pulse.sendPreMatchReminders();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`WC pre-match reminders failed: ${message.slice(0, 200)}`);
+    }
+  }
+
+  private isEventLive(event: {
+    homeScore: number | null;
+    awayScore: number | null;
+    completed: boolean;
+    commenceTime: Date;
+  } | null): boolean {
+    if (!event || event.completed) return false;
+    if (event.homeScore != null || event.awayScore != null) return true;
+    return event.commenceTime.getTime() <= Date.now();
   }
 
   async syncOdds(): Promise<{ indexed: number; enriched: number }> {
@@ -394,6 +424,12 @@ export class WcOddsSyncService implements OnModuleInit {
         tournamentId: true,
         slug: true,
         matchStateJson: true,
+        homeTeam: true,
+        awayTeam: true,
+        commenceTime: true,
+        homeScore: true,
+        awayScore: true,
+        completed: true,
       },
     });
 
@@ -481,6 +517,43 @@ export class WcOddsSyncService implements OnModuleInit {
         matchStateJson: matchState as object | undefined,
       },
     });
+
+    if (!fast) {
+      const pulseEvent = {
+        id: eventId,
+        slug,
+        homeTeam,
+        awayTeam,
+        commenceTime,
+        homeScore: homeScore ?? existing?.homeScore ?? null,
+        awayScore: awayScore ?? existing?.awayScore ?? null,
+        completed,
+      };
+
+      if (homeScore != null && awayScore != null) {
+        void this.pulse
+          .onScoreChange(
+            pulseEvent,
+            existing?.homeScore ?? null,
+            existing?.awayScore ?? null,
+            homeScore,
+            awayScore,
+          )
+          .catch((err) => {
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.warn(`WC live pulse score failed ${eventId}: ${message.slice(0, 120)}`);
+          });
+      }
+
+      const wasLive = this.isEventLive(existing);
+      const isLive = this.isEventLive(pulseEvent);
+      void this.pulse
+        .detectLiveTransition(pulseEvent, wasLive, isLive)
+        .catch((err) => {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn(`WC live pulse start failed ${eventId}: ${message.slice(0, 120)}`);
+        });
+    }
 
     if (!fast && main && homeScore != null && awayScore != null) {
       const pendingCount = await this.prisma.wcOddsBet.count({

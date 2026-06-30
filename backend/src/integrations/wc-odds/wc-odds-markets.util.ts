@@ -435,3 +435,57 @@ function dedupeIdenticalMarketGroups(grouped: WcGroupedMarkets): WcGroupedMarket
 export function finalizeGroupedMarkets(grouped: WcGroupedMarkets): WcGroupedMarkets {
   return dedupeIdenticalMarketGroups(dedupeMainH2hGroups(grouped));
 }
+
+/** Keep fresher cached prices when merging a full (possibly stale) snapshot. */
+export function mergeFullGroupedMarketsPreservingOdds(
+  full: WcGroupedMarkets,
+  cached: WcGroupedMarkets,
+): WcGroupedMarkets {
+  return patchGroupedMarketsOdds(full, cached);
+}
+
+/** Mark every cached outcome suspended when the Olimpbet feed closed trading. */
+export function markGroupedMarketsSuspended(grouped: WcGroupedMarkets): WcGroupedMarkets {
+  const next: WcGroupedMarkets = {};
+  for (const [category, groups] of Object.entries(grouped)) {
+    next[category] = groups.map((group) => ({
+      ...group,
+      outcomes: group.outcomes.map((outcome) => ({ ...outcome, suspended: true })),
+    }));
+  }
+  return next;
+}
+
+/** Patch prices from a partial (main-event) snapshot without dropping linked-only categories. */
+export function patchGroupedMarketsOdds(
+  prev: WcGroupedMarkets,
+  incoming: WcGroupedMarkets,
+): WcGroupedMarkets {
+  if (!prev || Object.keys(prev).length === 0) return incoming;
+  if (!incoming || Object.keys(incoming).length === 0) return prev;
+
+  const next: WcGroupedMarkets = { ...prev };
+
+  for (const [category, groups] of Object.entries(incoming)) {
+    const prevGroups = prev[category] ?? [];
+    const byKey = new Map(prevGroups.map((group) => [group.key, group]));
+
+    for (const group of groups) {
+      const existing = byKey.get(group.key);
+      if (!existing) {
+        byKey.set(group.key, group);
+        continue;
+      }
+
+      byKey.set(group.key, {
+        ...existing,
+        ...group,
+        outcomes: group.outcomes,
+      });
+    }
+
+    next[category] = [...byKey.values()];
+  }
+
+  return next;
+}

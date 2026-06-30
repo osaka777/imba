@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { safeToast } from "~/shared/lib/safeToast";
@@ -9,8 +11,10 @@ import { api } from "~/shared/api";
 
 import { Button, Checkbox, Input } from "~/shared/ui";
 
-import { signUp } from "../../api";
+import { signUp, type SignUpBody } from "../../api";
 import { getPartnerTag } from "../../lib";
+import { getAffiliateSubs } from "../../lib/getAffiliateSubs";
+import { hasAffiliateSubs } from "../../lib/affiliateSubs";
 import styles from "./AuthForm.module.css";
 import fieldStyles from "./RegistrationFields.module.css";
 import { RegistrationBirthDateInput } from "./RegistrationBirthDateInput";
@@ -71,19 +75,20 @@ export const RegisterForm = () => {
     }
   };
 
+  const searchParams = useSearchParams();
+
   const { isPending, isSuccess, mutateAsync } = useMutation({
-    mutationFn: (payload: AuthFormState & { tag?: string }) =>
-      signUp(
-        {
-          email: payload.email,
-          password: payload.password,
-          currencyCode: payload.currencyCode,
-          phone: payload.phone,
-          birthDate: payload.birthDate,
-          tag: payload.tag,
-        },
-        payload.promo,
-      ),
+    mutationFn: (payload: AuthFormState & { tag?: string; promoCode?: string; subs?: SignUpBody["subs"] }) =>
+      signUp({
+        email: payload.email,
+        password: payload.password,
+        currencyCode: payload.currencyCode,
+        phone: payload.phone,
+        birthDate: payload.birthDate,
+        tag: payload.tag,
+        promoCode: payload.promo?.trim() || undefined,
+        subs: payload.subs,
+      }),
     onError,
     onSuccess: (_data, variables) => {
       localStorage.setItem("currency", JSON.stringify(variables.currencyCode));
@@ -93,7 +98,7 @@ export const RegisterForm = () => {
     },
   });
 
-  const { control, handleSubmit, register, getValues } = useForm<AuthFormState>({
+  const { control, handleSubmit, register, getValues, setValue } = useForm<AuthFormState>({
     defaultValues: {
       ageConfirmed: true,
       birthDate: "",
@@ -105,6 +110,18 @@ export const RegisterForm = () => {
       termsAccepted: true,
     },
   });
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("promo");
+    if (fromUrl) {
+      setValue("promo", fromUrl.toUpperCase());
+      return;
+    }
+    const match = document.cookie.match(/(?:^|;\s*)promoCode=([^;]+)/);
+    if (match?.[1]) {
+      setValue("promo", decodeURIComponent(match[1]));
+    }
+  }, [searchParams, setValue]);
 
   const onFormInvalid = () => {
     const vals = getValues();
@@ -140,15 +157,20 @@ export const RegisterForm = () => {
     }
 
     let tag: string | undefined;
+    let subs: SignUpBody["subs"];
     try {
       tag = await getPartnerTag();
+      const rawSubs = await getAffiliateSubs();
+      subs = hasAffiliateSubs(rawSubs) ? rawSubs : undefined;
     } catch {
       tag = undefined;
+      subs = undefined;
     }
 
     await mutateAsync({
       ...data,
       tag,
+      subs,
     });
   };
 
@@ -208,6 +230,14 @@ export const RegisterForm = () => {
         {...register("password", { required: true, minLength: 8 })}
       />
       <p className={fieldStyles.hint}>Минимум 8 символов</p>
+
+      <Input
+        className={styles.input}
+        placeholder="Промокод (необязательно)"
+        type="text"
+        variant="pill"
+        {...register("promo")}
+      />
 
       <div className={styles.checkboxes}>
       <Controller

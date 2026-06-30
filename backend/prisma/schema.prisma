@@ -78,6 +78,20 @@ model User {
   birthDate           DateTime?
   defaultCurrencyCode String?
   affiliatedById      Int?
+  registrationIp      String?
+  /// sub1..sub5 from affiliate link (campaign tracking)
+  affiliateSubs       Json?
+  telegramUserId         String?           @unique
+  telegramUsername       String?
+  telegramLinkedAt       DateTime?
+  telegramNotifyDeposit  Boolean           @default(true)
+  telegramNotifyWithdraw Boolean           @default(true)
+  telegramNotifyBets     Boolean           @default(true)
+  telegramNotifyPromo    Boolean           @default(false)
+  telegramNotifyLiveMatch Boolean          @default(true)
+  telegramNotifyPreMatch  Boolean          @default(true)
+  telegram2faEnabled     Boolean           @default(false)
+  avatarPreset           String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   affilator        Affilator?        @relation("affilatorData")
@@ -93,22 +107,144 @@ model User {
   affiliatedBy     Affilator?        @relation("affilatedBy", fields: [affiliatedById], references: [userId])
   withdrawRequests WithdrawRequest[]
   wcOddsBets       WcOddsBet[]
+  telegramLinkTokens       TelegramLinkToken[]
+  passwordResetTokens      PasswordResetToken[]
+  trustedDevices           UserTrustedDevice[]
+  telegramLoginChallenges  TelegramLoginChallenge[]
+  telegramNotificationLogs TelegramNotificationLog[]
+  wcEventSubscriptions   WcEventSubscription[]
+  wcTelegramNotifyCursors WcTelegramNotifyCursor[]
 
   @@index([email])
 }
 
-model Affilator {
-  userId            Int           @id
-  type              AffilatorType
-  meta              Json?
-  trafficSource     String        @unique
-  uid               String        @unique @default(uuid())
-  percent           Decimal       @default(50) @db.Decimal(16, 2)
-  affilatorsPercent Decimal       @default(10) @db.Decimal(16, 2)
-  user              User          @relation("affilatorData", fields: [userId], references: [id])
-  users             User[]        @relation("affilatedBy")
+model TelegramLinkToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([expiresAt])
+}
+
+model UserTrustedDevice {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  deviceId   String
+  lastSeenAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+}
+
+model TelegramLoginChallenge {
+  id         String    @id
+  userId     Int
+  codeHash   String
+  requestIp  String?
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model TelegramNotificationLog {
+  id             Int      @id @default(autoincrement())
+  userId         Int?
+  telegramUserId String?
+  type           String
+  status         String
+  error          String?
+  createdAt      DateTime @default(now())
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type, status])
+}
+
+model WcEventSubscription {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  eventId     String
+  notifyGoals Boolean     @default(true)
+  notifyStart Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event       WcOddsEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+}
+
+model WcTelegramNotifyCursor {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eventId   String
+  cursorKey String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId, cursorKey])
+  @@index([eventId])
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  userId    Int
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Affilator {
+  userId            Int             @id
+  type              AffilatorType
+  status            AffilatorStatus @default(PENDING)
+  meta              Json?
+  trafficSource     String          @unique
+  uid               String          @unique @default(uuid())
+  percent           Decimal         @default(50) @db.Decimal(16, 2)
+  affilatorsPercent Decimal         @default(10) @db.Decimal(16, 2)
+  cpaPayoutAmount   Decimal?        @db.Decimal(16, 2)
+  cpaCurrencyCode   String?
+  user              User            @relation("affilatorData", fields: [userId], references: [id])
+  users             User[]          @relation("affilatedBy")
+  postbackLogs      AffiliatePostbackLog[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AffiliatePostbackLog {
+  id            Int                     @id @default(autoincrement())
+  partnerUserId Int
+  playerId      Int?
+  event         AffiliatePostbackEvent
+  url           String
+  payload       Json?
+  httpStatus    Int?
+  responseBody  String?
+  status        AffiliatePostbackStatus @default(PENDING)
+  attempt       Int                     @default(1)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  partner       Affilator               @relation(fields: [partnerUserId], references: [userId])
+
+  @@index([partnerUserId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Game {
@@ -676,6 +812,25 @@ enum AffilatorType {
   CPA
 }
 
+enum AffilatorStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+}
+
+enum AffiliatePostbackEvent {
+  registration
+  ftd
+  commission
+  promo_redeemed
+}
+
+enum AffiliatePostbackStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 enum OperationStatus {
   WAITING
   SUCCESS
@@ -731,6 +886,7 @@ model WcOddsEvent {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   bets           WcOddsBet[]
+  subscriptions  WcEventSubscription[]
 
   @@index([commenceTime])
   @@index([completed])

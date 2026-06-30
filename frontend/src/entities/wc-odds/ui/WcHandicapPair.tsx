@@ -1,12 +1,11 @@
 "use client";
 
 import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/wc-odds/api/client";
-import { MarketPairButton } from "~/entities/markets/ui/MarketPairRow";
-import { handicapSideLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
+import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
+import { handicapPairSideLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
 import { formatHandicapScopeLabel, isScopeCaptionRedundant } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
-import { cn } from "~/shared/lib";
 import { usePrevious } from "~/shared/model";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
@@ -49,46 +48,37 @@ export function WcHandicapPair({
   return (
     <div className={showScopeCaption ? styles.totalsScopedRow : undefined}>
       {showScopeCaption ? <p className={styles.totalsScopeCaption}>{scopeLabel}</p> : null}
-      <div
-        className={cn(
-          styles.oddsBlock,
-          styles.oddsBlockPair,
-          styles.oddsBlockPairOU,
-          styles.oddsHandicapPair,
-        )}
-      >
-        {away ? (
-          <MarketPairButton
-            labelAlign="end"
-            side={{
-              label: handicapSideLabel(away),
-              value: awayValue,
-              selected: isSelected(away),
-              bettable: isBettable(away),
-              flashCell: awayFlash.cell,
-              flashCoef: awayFlash.coef,
-              onClick: () => toggle(away),
-            }}
-          />
-        ) : null}
-
-        {point !== "" ? <div className={styles.totalsPivot}>{point}</div> : null}
-
-        {home ? (
-          <MarketPairButton
-            labelAlign="end"
-            side={{
-              label: handicapSideLabel(home),
-              value: homeValue,
-              selected: isSelected(home),
-              bettable: isBettable(home),
-              flashCell: homeFlash.cell,
-              flashCoef: homeFlash.coef,
-              onClick: () => toggle(home),
-            }}
-          />
-        ) : null}
-      </div>
+      <MarketPairRow
+        handicapLayout
+        pivot={point}
+        showPivot={point !== ""}
+        left={
+          away
+            ? {
+                label: handicapPairSideLabel("away", point),
+                value: awayValue,
+                selected: isSelected(away),
+                bettable: isBettable(away),
+                flashCell: awayFlash.cell,
+                flashCoef: awayFlash.coef,
+                onClick: () => toggle(away),
+              }
+            : undefined
+        }
+        right={
+          home
+            ? {
+                label: handicapPairSideLabel("home", point),
+                value: homeValue,
+                selected: isSelected(home),
+                bettable: isBettable(home),
+                flashCell: homeFlash.cell,
+                flashCoef: homeFlash.coef,
+                onClick: () => toggle(home),
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

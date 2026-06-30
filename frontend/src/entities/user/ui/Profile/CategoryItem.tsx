@@ -6,7 +6,13 @@ import { api } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { toast } from "react-toastify";
     
-export const CategoryItem = React.memo(({ category }: { category: typeof PROFILE_CATEGORIES[0] }) => {
+export const CategoryItem = React.memo(({
+  category,
+  variant = 'card',
+}: {
+  category: typeof PROFILE_CATEGORIES[0];
+  variant?: 'card' | 'row' | 'voucher';
+}) => {
     const router = useRouter();
     const [voucherCode, setVoucherCode] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -45,9 +51,13 @@ export const CategoryItem = React.memo(({ category }: { category: typeof PROFILE
 
     const handleClick = useCallback(() => {
         if (category.link && !category.inputText) {
+            if ('external' in category && category.external) {
+                window.open(category.link, '_blank', 'noopener,noreferrer');
+                return;
+            }
             router.push(category.link);
         }
-    }, [category.link, category.inputText, router]);
+    }, [category, router]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setVoucherCode(e.target.value);
@@ -57,15 +67,45 @@ export const CategoryItem = React.memo(({ category }: { category: typeof PROFILE
         e.stopPropagation();
     }, []);
 
+    const isVoucher = variant === 'voucher' || Boolean(category.inputText);
+    const isRow = variant === 'row';
+
+    const headerBlock = (
+      <div className={styles.sectionContent}>
+        <div className={styles.sectionIconWrap}>
+          <category.icon className={styles.sectionIconImg} aria-hidden />
+        </div>
+        <div className={styles.sectionText}>
+          <span className={styles.sectionTitle}>{category.name}</span>
+          {!isRow && <span className={styles.sectionDesc}>{category.desc}</span>}
+        </div>
+        {isRow && <span className={styles.sectionArrow}>›</span>}
+      </div>
+    );
+
+    if (isRow) {
+      return (
+        <button type="button" className={styles.serviceRow} onClick={handleClick}>
+          {headerBlock}
+        </button>
+      );
+    }
+
     return (
-        <div className={styles.supportSection} key={category.id} onClick={handleClick}>
-            <div className={styles.sectionContent}>
-                <div className={styles.sectionHeader}>
-                    <span className={styles.sectionHeaderTitle}>{category.name}</span>
-                    <span className={styles.sectionDesc}>{category.desc}</span>
-                </div>
-                <category.icon className={styles.sectionIconImg} />
-            </div>
+        <div
+          className={`${styles.supportSection} ${isVoucher ? styles.supportSectionVoucher : ''}`}
+          key={category.id}
+          onClick={isVoucher ? undefined : handleClick}
+          role={isVoucher ? undefined : 'button'}
+          tabIndex={isVoucher ? undefined : 0}
+          onKeyDown={isVoucher ? undefined : (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              handleClick();
+            }
+          }}
+        >
+            {headerBlock}
             {category.inputText && (
                 <div className={styles.voucherInputContainer} onClick={handleInputClick}>
                     <div className={styles.inputWrapper}>

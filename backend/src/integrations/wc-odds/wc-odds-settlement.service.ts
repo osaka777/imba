@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  BetStatus,
   OperationSource,
   OperationStatus,
   OperationType,
@@ -8,7 +9,10 @@ import {
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+import { EventGateway } from '~/main/event/event.gateway';
+import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
 import { OperationService } from '~/main/operation/operation.service';
+import { PartnersService } from '~/main/partners/partners.service';
 import { PrismaService } from '~/prisma/prisma.service';
 
 import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
@@ -32,6 +36,9 @@ export class WcOddsSettlementService {
     private readonly prisma: PrismaService,
     private readonly olimpbet: OlimpbetWcService,
     private readonly operationService: OperationService,
+    private readonly eventGateway: EventGateway,
+    private readonly partnersService: PartnersService,
+    private readonly telegramUserNotify: TelegramUserNotifyService,
   ) {}
 
   async settleFinishedEvents(): Promise<{ settledEvents: number; settledBets: number }> {
@@ -56,28 +63,7 @@ export class WcOddsSettlementService {
       let settledBets = 0;
 
       for (const row of pendingRows) {
-        const olimpbetId = olimpbetIdFromWcEventId(row.eventId);
-        const detail = olimpbetId
-          ? await this.olimpbet.fetchEventDetail(olimpbetId)
-          : null;
-
-        let eventSettledBets = 0;
-
-        if (detail) {
-          const score = this.olimpbet.extractScore(detail);
-          const matchState = await this.loadMatchState(row.eventId);
-          const early = await this.trySettleDeterminateBets(
-            row.eventId,
-            score.homeScore ?? 0,
-            score.awayScore ?? 0,
-            detail,
-            matchState,
-          );
-          eventSettledBets += early.settledBets;
-        }
-
-        const result = await this.trySettleEvent(row.eventId, detail);
-        eventSettledBets += result.settledBets;
+        const eventSettledBets = await this.settlePendingEvent(row.eventId);
         if (eventSettledBets > 0) {
           settledEvents += 1;
           settledBets += eventSettledBets;
@@ -92,6 +78,99 @@ export class WcOddsSettlementService {
     } finally {
       this.settling = false;
     }
+  }
+
+  /** Re-attempt settlement for completed events when the feed went stale (EVENT_CLOSED, empty stats). */
+  async settleStalePendingBets(): Promise<{ settledEvents: number; settledBets: number }> {
+    if (!this.olimpbet.isEnabled() || this.settling) {
+      return { settledEvents: 0, settledBets: 0 };
+    }
+
+    const staleAfterMs = 90 * 60_000;
+    const cutoff = new Date(Date.now() - staleAfterMs);
+
+    const rows = await this.prisma.wcOddsBet.findMany({
+      where: {
+        status: WcOddsBetStatus.PENDING,
+        event: {
+          completed: true,
+          commenceTime: { lt: cutoff },
+        },
+      },
+      select: { eventId: true },
+      distinct: ['eventId'],
+      take: 40,
+    });
+
+    if (rows.length === 0) {
+      return { settledEvents: 0, settledBets: 0 };
+    }
+
+    this.settling = true;
+    try {
+      let settledEvents = 0;
+      let settledBets = 0;
+
+      for (const row of rows) {
+        const eventSettledBets = await this.settlePendingEvent(row.eventId);
+        if (eventSettledBets > 0) {
+          settledEvents += 1;
+          settledBets += eventSettledBets;
+        }
+      }
+
+      if (settledBets > 0) {
+        this.logger.log(`WC stale settlement: ${settledEvents} events, ${settledBets} bets`);
+      }
+
+      return { settledEvents, settledBets };
+    } finally {
+      this.settling = false;
+    }
+  }
+
+  private async settlePendingEvent(eventId: string): Promise<number> {
+    const olimpbetId = olimpbetIdFromWcEventId(eventId);
+    const detail = olimpbetId
+      ? await this.olimpbet.fetchEventDetail(olimpbetId)
+      : null;
+
+    let eventSettledBets = 0;
+
+    const dbEvent = await this.prisma.wcOddsEvent.findUnique({ where: { id: eventId } });
+    const homeScore = detail
+      ? this.olimpbet.extractScore(detail).homeScore ?? dbEvent?.homeScore ?? 0
+      : dbEvent?.homeScore ?? 0;
+    const awayScore = detail
+      ? this.olimpbet.extractScore(detail).awayScore ?? dbEvent?.awayScore ?? 0
+      : dbEvent?.awayScore ?? 0;
+
+    if (detail && homeScore != null && awayScore != null) {
+      const matchState = await this.loadMatchState(eventId);
+      const early = await this.trySettleDeterminateBets(
+        eventId,
+        homeScore,
+        awayScore,
+        detail,
+        matchState,
+      );
+      eventSettledBets += early.settledBets;
+    } else if (dbEvent?.completed && dbEvent.homeScore != null && dbEvent.awayScore != null) {
+      const matchState = await this.loadMatchState(eventId);
+      const early = await this.trySettleDeterminateBets(
+        eventId,
+        dbEvent.homeScore,
+        dbEvent.awayScore,
+        detail ?? undefined,
+        matchState,
+      );
+      eventSettledBets += early.settledBets;
+    }
+
+    const result = await this.trySettleEvent(eventId, detail);
+    eventSettledBets += result.settledBets;
+
+    return eventSettledBets;
   }
 
   async trySettleEvent(
@@ -250,11 +329,13 @@ export class WcOddsSettlementService {
     eventId: string,
     homeScore: number,
     awayScore: number,
-    detail: OlimpbetEventDetail,
+    detail?: OlimpbetEventDetail,
     matchState?: WcMatchState | null,
   ): Promise<{ settledBets: number }> {
     const baseState = matchState ?? (await this.loadMatchState(eventId)) ?? emptyMatchState();
-    const { state, settlementDetail } = await this.refreshMatchStateFromDetail(eventId, baseState, detail);
+    const { state, settlementDetail } = detail
+      ? await this.refreshMatchStateFromDetail(eventId, baseState, detail)
+      : { state: baseState, settlementDetail: undefined };
 
     if (isPointSetSportFeed(settlementDetail)) {
       await this.repairMisSettledBets(eventId, homeScore, awayScore, settlementDetail, state);
@@ -437,6 +518,8 @@ export class WcOddsSettlementService {
           meta: { wcBetId: bet.id, eventId, void: true, reason: 'cancelled' },
         });
       });
+
+      this.notifyWcBetSettlement(bet, WcOddsBetStatus.VOID);
     }
 
     return pending.length;
@@ -464,12 +547,18 @@ export class WcOddsSettlementService {
         continue;
       }
 
-      await this.prisma.wcOddsBet.update({
-        where: { id: bet.id },
-        data: {
-          status: WcOddsBetStatus.PENDING,
-          settledAt: null,
-        },
+      await this.prisma.$transaction(async (tx) => {
+        if (bet.status === WcOddsBetStatus.LOSE) {
+          await this.partnersService.reverseAffiliateBonusForWcBet(tx, bet.id);
+        }
+
+        await tx.wcOddsBet.update({
+          where: { id: bet.id },
+          data: {
+            status: WcOddsBetStatus.PENDING,
+            settledAt: null,
+          },
+        });
       });
       reopened += 1;
     }
@@ -525,6 +614,7 @@ export class WcOddsSettlementService {
       potentialPayout: Decimal;
       currencyCode: string;
       marketKey: string;
+      outcomeName?: string | null;
     },
     eventId: string,
     result: WcOddsBetStatus,
@@ -556,8 +646,107 @@ export class WcOddsSettlementService {
           type: OperationType.INCOME,
           meta: { wcBetId: bet.id, eventId, void: true },
         });
+      } else if (result === WcOddsBetStatus.LOSE) {
+        const user = await tx.user.findUnique({ where: { id: bet.userId } });
+        if (user) {
+          await this.partnersService.processAffiliateBonus(
+            tx,
+            user,
+            bet.id,
+            bet.currencyCode,
+            bet.stake,
+            BetStatus.LOSE,
+          );
+        }
       }
     });
+
+    this.notifyWcBetSettlement(bet, result, eventId);
+
+    if (result === WcOddsBetStatus.LOSE) {
+      void this.partnersService.notifyCommissionForBet(bet.id);
+    }
+  }
+
+  private notifyWcBetSettlement(
+    bet: {
+      id: number;
+      userId: number;
+      stake: Decimal;
+      potentialPayout: Decimal;
+      currencyCode: string;
+      outcomeName?: string | null;
+    },
+    result: WcOddsBetStatus,
+    eventId?: string,
+  ): void {
+    let status: string;
+    let amount: number;
+
+    switch (result) {
+      case WcOddsBetStatus.WIN:
+        status = 'WIN';
+        amount = Number(bet.potentialPayout);
+        break;
+      case WcOddsBetStatus.LOSE:
+        status = 'LOSE';
+        amount = 0;
+        break;
+      case WcOddsBetStatus.VOID:
+        status = 'RETURN';
+        amount = Number(bet.stake);
+        break;
+      default:
+        return;
+    }
+
+    try {
+      const notification = {
+        eventId: `user_${bet.userId}`,
+        type: 'bet_status_changed',
+        payload: {
+          wcBetId: bet.id,
+          status,
+          amount,
+          betAmount: Number(bet.stake),
+          currencyCode: bet.currencyCode,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      this.eventGateway.sendUserNotification(bet.userId.toString(), notification as {
+        type: string;
+        payload: unknown;
+      });
+
+      void (async () => {
+        let homeTeam: string | undefined;
+        let awayTeam: string | undefined;
+        if (eventId) {
+          try {
+            const ev = await this.prisma.wcOddsEvent.findUnique({
+              where: { id: eventId },
+              select: { homeTeam: true, awayTeam: true },
+            });
+            homeTeam = ev?.homeTeam ?? undefined;
+            awayTeam = ev?.awayTeam ?? undefined;
+          } catch { /* ignore */ }
+        }
+        await this.telegramUserNotify.notifyBetSettled({
+          userId: bet.userId,
+          wcBetId: bet.id,
+          status: status as 'WIN' | 'LOSE' | 'RETURN',
+          amount,
+          betAmount: Number(bet.stake),
+          currencyCode: bet.currencyCode,
+          outcomeName: bet.outcomeName ?? undefined,
+          homeTeam,
+          awayTeam,
+        });
+      })().catch(() => undefined);
+    } catch (error) {
+      this.logger.warn(`Failed to send WC bet notification for bet #${bet.id}`, error);
+    }
   }
 
   private resolveBetResult(

@@ -6,4 +6,5 @@ export class PaymentSystemWithdrawDto {
   userId: number;
   method: string;
   wallet?: string;
+  meta?: Record<string, unknown>;
 }

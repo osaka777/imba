@@ -1,37 +1,50 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { getOperations } from "@/entities/user/api/getOperations";
+
+import { useEffect, useState } from "react";
 import styles from "@/app/profile/withdrawal/withdrawal.module.css";
+import { getWithdrawalSummary, WithdrawalSummaryItem } from "@/entities/user/api/getWithdrawalSummary";
 
 export const PaymentInfo = () => {
-    const [operations, setOperations] = useState<{
-        amount: number;
-    }>({
-        amount: 0
-    })
+  const [summary, setSummary] = useState<WithdrawalSummaryItem[]>([]);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const data = await getOperations();
-            if(data) {
-                setOperations(data)
-            }
-        }
-        fetchData()
-    }, []);
+  useEffect(() => {
+    getWithdrawalSummary().then(setSummary).catch(() => setSummary([]));
+  }, []);
 
-    return (
-        <div className={styles.stats}>
-            <div className={styles.stats_header}>
-                Информация о выводах:
+  const primary = summary[0];
+
+  return (
+    <div className={styles.stats}>
+      <div className={styles.stats_header}>Условия вывода</div>
+      <hr className={styles.stats_hr} />
+      <div className={styles.stats_info}>
+        {primary ? (
+          <>
+            <div className={styles.stats_item}>
+              <div className={styles.stats_item_name}>Доступно к выводу:</div>
+              <div className={styles.stats_item_value}>
+                {primary.available.toFixed(2)} {primary.currencyCode}
+              </div>
             </div>
-            <hr className={styles.stats_hr} />
-            <div className={styles.stats_info}>
-                <div className={styles.stats_item}>
-                    <div className={styles.stats_item_name}>Количество выводов:</div>
-                    <div className={styles.stats_item_value}>{operations.amount}</div>
-                </div>
+            <div className={styles.stats_item}>
+              <div className={styles.stats_item_name}>На hold ({primary.holdDays} дн.):</div>
+              <div className={styles.stats_item_value}>
+                {primary.held.toFixed(2)} {primary.currencyCode}
+              </div>
             </div>
-        </div>
-    );
+            <div className={styles.stats_item}>
+              <div className={styles.stats_item_name}>Минимальный вывод:</div>
+              <div className={styles.stats_item_value}>
+                {primary.minWithdraw} {primary.currencyCode}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className={styles.stats_item}>
+            <div className={styles.stats_item_name}>Hold period: 7 дней после начисления комиссии</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };

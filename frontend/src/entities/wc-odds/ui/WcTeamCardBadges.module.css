@@ -29,10 +29,17 @@
   justify-content: center;
   font-size: 7px;
   font-weight: 700;
-  color: #fff;
   line-height: 1;
-  text-shadow: 0 0 1px rgb(0 0 0 / 0.65);
   pointer-events: none;
+}
+
+.badgeYellow .count {
+  color: #000;
+}
+
+.badgeRed .count {
+  color: #fff;
+  text-shadow: 0 0 1px rgb(0 0 0 / 0.65);
 }
 
 .badges_countOnHover .count {

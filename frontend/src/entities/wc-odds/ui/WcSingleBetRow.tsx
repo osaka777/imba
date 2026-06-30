@@ -80,7 +80,7 @@ export function WcSingleBetRow({
   return (
     <div className={cn(styles.oddsItem, showLock && styles.oddsItem_lock, is1X2 && styles.oddsItem_1x2)}>
       <Button
-        className={cn(styles.odd, styles.odd_left, flash.cell, isRateAdded && styles.odd_added)}
+        className={cn(styles.odd, styles.odd_left, isRateAdded && styles.odd_added)}
         disabled={!isBettable}
         onClick={toggleRate}
       >

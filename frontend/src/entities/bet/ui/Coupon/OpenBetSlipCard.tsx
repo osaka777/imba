@@ -3,7 +3,27 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { cn } from "~/shared/lib";
+import { useFlashOnChange } from "~/shared/lib/useFlashOnChange";
+
 import styles from "./OpenTab.module.css";
+
+const ORDINAR_BRAND_LOGO = "/imbalogo.png";
+
+export type SlipRibbonVariant =
+  | "live"
+  | "line"
+  | "win"
+  | "lose"
+  | "pending"
+  | "return"
+  | "settling";
+
+export type SlipRibbon = {
+  label: string;
+  variant: SlipRibbonVariant;
+  pulse?: boolean;
+};
 
 export type OpenBetSlipCardProps = {
   kindLabel: string;
@@ -11,6 +31,7 @@ export type OpenBetSlipCardProps = {
   placedAt: string;
   headerDate: string;
   isLive: boolean;
+  ribbon?: SlipRibbon;
   coef: string;
   outcome: string;
   sportIcon?: React.ComponentType<{ className?: string }>;
@@ -26,6 +47,7 @@ export type OpenBetSlipCardProps = {
   footerRightLabel?: string;
   footerRightValue?: string;
   footerRightWin?: boolean;
+  footerRightDanger?: boolean;
   highlight?: boolean;
   dataKey: string;
   children?: ReactNode;
@@ -46,17 +68,25 @@ export function OpenBetSlipCard({
   league,
   kickoffLabel,
   matchHref,
-  matchLinkText = "Перейти к матчу →",
   stakeLabel,
   winLabel,
   footerRightLabel = "Возм. выигрыш",
   footerRightValue,
   footerRightWin = true,
+  footerRightDanger = false,
+  ribbon,
   highlight,
   dataKey,
   children,
 }: OpenBetSlipCardProps) {
   const rightValue = footerRightValue ?? winLabel;
+  const coefFlash = useFlashOnChange(coef);
+  const scoreFlash = useFlashOnChange(scoreMain);
+  const effectiveRibbon: SlipRibbon =
+    ribbon ?? (isLive
+      ? { label: "Live", variant: "live", pulse: true }
+      : { label: "Линия", variant: "line" });
+
   return (
     <div
       className={`${styles.openBetCard} ${highlight ? styles.openBetCardFresh : ""}`}
@@ -64,31 +94,69 @@ export function OpenBetSlipCard({
     >
       <div className={styles.openBetHeaderBar}>
         <span className={styles.openBetHeaderDate}>{headerDate}</span>
-        <span className={styles.openBetHeaderBrand}>{kindLabel}</span>
+        {kindLabel === "Ординар" ? (
+          <span className={styles.openBetHeaderBrandLogo}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              alt="Imba.bet"
+              className={styles.openBetHeaderBrandLogoImg}
+              height={18}
+              src={ORDINAR_BRAND_LOGO}
+              width={72}
+            />
+          </span>
+        ) : (
+          <span className={styles.openBetHeaderBrand}>{kindLabel}</span>
+        )}
         <span className={styles.openBetHeaderId}>ID {ticketId}</span>
       </div>
 
       <div className={styles.openBetSlip}>
-        {isLive ? (
-          <span className={styles.openBetLiveRibbon}>Live</span>
-        ) : (
-          <span className={styles.openBetLineRibbon}>Линия</span>
-        )}
+        <span
+          className={cn(
+            styles.openBetRibbon,
+            styles[`openBetRibbon_${effectiveRibbon.variant}`],
+          )}
+        >
+          {effectiveRibbon.pulse ? (
+            <span className={styles.openBetLiveDot} aria-hidden />
+          ) : null}
+          {effectiveRibbon.label}
+        </span>
 
         <div className={styles.openBetPickRow}>
-          <div className={styles.openBetCoefPill}>{coef}</div>
+          <div
+            className={cn(
+              styles.openBetCoefPill,
+              coefFlash === "up" && styles.openBetCoefPillUp,
+              coefFlash === "down" && styles.openBetCoefPillDown,
+            )}
+          >
+            {coef}
+          </div>
           <p className={styles.openBetOutcome}>{outcome}</p>
         </div>
 
         {teamsLabel ? (
           <>
-            <div className={styles.openBetMatchRow}>
-              <div className={styles.openBetMatchTeams}>
-                {SportIcon ? <SportIcon className={styles.openBetSportIcon} /> : null}
-                <span className={styles.openBetTeamsText}>{teamsLabel}</span>
+            <Link className={styles.openBetMatchRowLink} href={matchHref}>
+              <div className={styles.openBetMatchRow}>
+                <div className={styles.openBetMatchTeams}>
+                  {SportIcon ? <SportIcon className={styles.openBetSportIcon} /> : null}
+                  <span className={styles.openBetTeamsText}>{teamsLabel}</span>
+                </div>
+                {scoreMain ? (
+                  <span
+                    className={cn(
+                      styles.openBetScoreMain,
+                      scoreFlash && styles.openBetScoreFlash,
+                    )}
+                  >
+                    {scoreMain}
+                  </span>
+                ) : null}
               </div>
-              {scoreMain ? <span className={styles.openBetScoreMain}>{scoreMain}</span> : null}
-            </div>
+            </Link>
 
             {(scoreDetail || league || kickoffLabel) ? (
               <div className={styles.openBetMetaRow}>
@@ -114,13 +182,17 @@ export function OpenBetSlipCard({
             <span className={styles.openBetFooterLabel}>Ставка</span>
             <span className={styles.openBetFooterValue}>{stakeLabel}</span>
           </div>
-          <div className={styles.openBetFooterCol}>
-            <span className={styles.openBetFooterLabel}>Коэф.</span>
-            <span className={styles.openBetFooterValue}>{coef}</span>
-          </div>
           <div className={`${styles.openBetFooterCol} ${styles.openBetFooterColRight}`}>
             <span className={styles.openBetFooterLabel}>{footerRightLabel}</span>
-            <span className={footerRightWin ? styles.openBetFooterWin : styles.openBetFooterValue}>
+            <span
+              className={cn(
+                footerRightWin
+                  ? styles.openBetFooterWin
+                  : footerRightDanger
+                    ? styles.openBetFooterDanger
+                    : styles.openBetFooterValue,
+              )}
+            >
               {rightValue}
             </span>
           </div>
@@ -147,20 +219,29 @@ export function OpenBetSlipExpressLeg({
   scoreDetail?: string | null;
   matchHref: string;
 }) {
+  const coefFlash = useFlashOnChange(coef);
+
   return (
     <div className={styles.openBetExpressLeg}>
       <div className={styles.openBetPickRow}>
-        <div className={styles.openBetCoefPill}>{coef}</div>
+        <div
+          className={cn(
+            styles.openBetCoefPill,
+            coefFlash === "up" && styles.openBetCoefPillUp,
+            coefFlash === "down" && styles.openBetCoefPillDown,
+          )}
+        >
+          {coef}
+        </div>
         <div className={styles.openBetExpressLegText}>
           {sportLabel ? <span className={styles.openBetExpressSport}>{sportLabel}</span> : null}
           <p className={styles.openBetOutcome}>{outcome}</p>
         </div>
       </div>
-      <p className={styles.openBetTeamsText}>{teamsLabel}</p>
-      {scoreDetail ? <p className={styles.openBetScoreDetailInline}>{scoreDetail}</p> : null}
-      <Link className={styles.openBetMatchLink} href={matchHref}>
-        Перейти к событию →
+      <Link className={styles.openBetMatchRowLink} href={matchHref}>
+        <p className={styles.openBetTeamsText}>{teamsLabel}</p>
       </Link>
+      {scoreDetail ? <p className={styles.openBetScoreDetailInline}>{scoreDetail}</p> : null}
     </div>
   );
 }

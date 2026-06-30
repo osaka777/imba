@@ -1,5 +1,7 @@
 import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
+import { AffiliateSubsDto } from '~/main/partners/dto/affiliate-subs.dto';
+
 import { Dto } from '~/common/types/dto';
 
 export class CreateUserDto extends Dto<CreateUserDto> {
@@ -12,6 +14,12 @@ export class CreateUserDto extends Dto<CreateUserDto> {
 
   @IsOptional()
   tag?: string;
+
+  @IsOptional()
+  promoCode?: string;
+
+  @IsOptional()
+  subs?: AffiliateSubsDto;
 
   @IsString()
   @IsNotEmpty()

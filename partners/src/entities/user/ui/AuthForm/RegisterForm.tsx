@@ -42,7 +42,9 @@ export const RegisterForm = () => {
 
     const validateSchema = Yup.object().shape({
         email: Yup.string().required("Введите почту").email("Неверный формат почты"),
-        password: Yup.string().required("Введите пароль"),
+        password: Yup.string()
+            .required("Введите пароль")
+            .min(8, "Пароль должен быть не короче 8 символов"),
         trafficSource: Yup.string().required("Введите ссылку на источник трафика"),
         checked: Yup.boolean().isTrue("Вы не согласились с условиями"),
     });
@@ -128,7 +130,7 @@ export const RegisterForm = () => {
                 type="password"
                 name="password"
                 id="password"
-                placeholder="Введите пароль"
+                placeholder="Введите пароль (минимум 8 символов)"
             />
             <Input
                 label="Номер телефона (необязательно)"
@@ -173,6 +175,7 @@ export const RegisterForm = () => {
             <Checkbox
                 onChange={e => formik.setFieldValue("checked", e.target.checked)}
                 checked={formik.values.checked}
+                classNames={{ Checkbox: styles.agreement, text: styles.agreementText }}
             >{`Я согласен с Условиями и Соглашениями об использовании сайта oneX`}</Checkbox>
 
             <Button
@@ -180,7 +183,7 @@ export const RegisterForm = () => {
                 type="submit"
                 className={`${styles.authButton} ${success ? styles.authButton_succes : null}`}
             >
-                {success ? `Входим...` : `Зарегистрироваться`}
+                {success ? `Вход` : `Зарегистрироваться`}
                 {pending || success ? <LoadingSpiner className={styles.loading} /> : null}
             </Button>
             {formError !== '' ? <p className={styles.error}>{formError}</p> : null}

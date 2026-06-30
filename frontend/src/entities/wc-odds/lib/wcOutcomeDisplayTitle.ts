@@ -21,9 +21,9 @@ const MARKET_LABEL_RULES: Array<{ pattern: RegExp; replace: string }> = [
   { pattern: /инд(?:ивидуальный|\.)\s*тотал\s*(?:команд(?:ы|а)\s*)?2|инд\.?\s*тотал\s*гост/gi, replace: "ИТ2" },
   { pattern: /инд(?:ивидуальный|\.)\s*тотал/gi, replace: "ИТ" },
   { pattern: /гол\s+в\s+обоих\s+таймах/gi, replace: "ГОТ" },
-  { pattern: /точн(?:ый|ого)\s+сч[её]t/gi, replace: "ТС" },
+  { pattern: /точн(?:ый|ого)\s+сч[её]т/gi, replace: "ТС" },
   { pattern: /след(?:ующ(?:ее|ий))?\s*очк(?:о)?(?:\s*в\s*гейме)?/gi, replace: "Сл.очко" },
-  { pattern: /сч[её]t\s*в\s*гейме/gi, replace: "Счёт гейма" },
+  { pattern: /сч[её]т\s*в\s*гейме/gi, replace: "Счёт гейма" },
   { pattern: /deuse\s*point/gi, replace: "Дьюс" },
   { pattern: /след(?:ующий)?\.?\s*гол/gi, replace: "СГ" },
   { pattern: /исход\s+матча/gi, replace: "1X2" },
@@ -105,6 +105,9 @@ export function abbreviateWcOutcomeName(name: string, outcomeKey?: string): stri
   if (normalized === "12") return "12";
   if (/^да$/i.test(normalized)) return "Да";
   if (/^нет$/i.test(normalized)) return "Нет";
+  if (/^SCORE\s+AFTER/i.test(normalized) && /не\s*будет/i.test(normalized)) return "Не будет";
+  if (/^П[12]\s*·\s*[ПP12XХ]$/i.test(normalized)) return normalized.replace(/\s+/g, " ").replace(/P/g, "П").replace(/Х/g, "X");
+  if (/^гола\s+не\s+будет$/i.test(normalized)) return "Гола не будет";
   if (/^к1пob1/i.test(normalized.replace(/\s/g, "")) || /^к1.*1.*сет/i.test(normalized.replace(/\s/g, ""))) {
     if (/нет/i.test(normalized)) return "Нет";
     if (/да/i.test(normalized)) return "Да";
@@ -127,6 +130,9 @@ export function abbreviateWcOutcomeName(name: string, outcomeKey?: string): stri
 
   const drawYesNo = /^ничья\s*:\s*(да|нет)$/i.exec(normalized);
   if (drawYesNo) return `X·${capitalizeWord(drawYesNo[1]!)}`;
+
+  const halfWinYesNo = /^(Х|П1|П2)-(Да|Нет)$/i.exec(normalized);
+  if (halfWinYesNo) return `${halfWinYesNo[1]}-${halfWinYesNo[2]}`;
 
   return normalized;
 }
@@ -168,6 +174,26 @@ function isBrokenExactGoalsLabel(name: string): boolean {
   if (/^Т\d?Кол$/i.test(trimmed.replace(/\s/g, ""))) return true;
   if (/^Кол\s*Пол\b/i.test(trimmed)) return true;
   return false;
+}
+
+function isBrokenSetCountLabel(name: string): boolean {
+  const compact = name.trim().replace(/\s/g, "");
+  return /^КолСет$/i.test(compact) || /^Количествосетов?$/i.test(compact);
+}
+
+function extractSetCountFromOutcomeKey(outcomeKey: string): string | null {
+  const match = /PARAMETER_VALUE:([^|]+)/i.exec(outcomeKey);
+  return match?.[1]?.trim() ?? null;
+}
+
+function formatSetCountValue(value: string): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return value;
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} сет`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${n} сета`;
+  return `${n} сетов`;
 }
 
 function labelsMatch(a: string, b: string): boolean {
@@ -337,14 +363,25 @@ export function buildWcOutcomeButtonTitle(
   const exactGoalsFromKey = isBrokenExactGoalsLabel(outcomeName)
     ? extractExactGoalsFromOutcomeKey(outcome.outcomeKey)
     : null;
-  const shortOutcome = exactGoalsFromKey ?? abbreviateWcOutcomeName(outcomeName, outcome.outcomeKey);
+  const setCountFromKey = isBrokenSetCountLabel(outcomeName)
+    ? extractSetCountFromOutcomeKey(outcome.outcomeKey)
+    : null;
+  const shortOutcome = exactGoalsFromKey
+    ?? (setCountFromKey ? formatSetCountValue(setCountFromKey) : null)
+    ?? abbreviateWcOutcomeName(outcomeName, outcome.outcomeKey);
+
+  if (/NUMBER_OF_SETS/i.test(group.marketKey)) {
+    const setCount = extractSetCountFromOutcomeKey(outcome.outcomeKey)
+      ?? (outcome.point != null ? String(outcome.point) : null);
+    if (setCount) return formatSetCountValue(setCount);
+  }
 
   if (/^\d+:\d+(,\s*\d+:\d+)*$/.test(outcomeName.trim())) {
     return outcomeName.trim();
   }
 
   if (/^\d+:\d+$/.test(shortOutcome)) {
-    if (/гейм|сч[её]t/i.test(categoryName) || /гейм|сч[её]t/i.test(group.label)) {
+    if (/гейм|сч[её]т/i.test(categoryName) || /гейм|сч[её]т/i.test(group.label)) {
       return shortOutcome;
     }
   }
@@ -362,6 +399,53 @@ export function buildWcOutcomeButtonTitle(
   }
 
   if (/WINNER_SET/i.test(group.marketKey) && (shortOutcome === "П1" || shortOutcome === "П2")) {
+    return shortOutcome;
+  }
+
+  if (/WINNING_METHOD/i.test(group.marketKey) || /^П[12]\s*·\s*.+/i.test(shortOutcome)) {
+    return shortOutcome;
+  }
+
+  if (/^ОЗ·(Да|Нет)·/i.test(shortOutcome)) {
+    return shortOutcome;
+  }
+
+  const plainNextGoalKey = group.marketKey.replace(/^display_/i, "");
+  if (/^NEXT_GOAL$|^NEXT_GOAL_2WAY$|^NEXT_GOAL_2WAY_WITH_OT$/i.test(plainNextGoalKey)) {
+    if (/^(П1|П2|Никто|X)$/.test(shortOutcome)) return shortOutcome;
+  }
+
+  if (/NEXT_GOAL_TIME/i.test(group.marketKey)) {
+    const normalized =
+      /^след\.?\s*гол$/i.test(shortOutcome) || shortOutcome === "—" ? "Будет гол"
+        : /^гола\s+не\s+будет$/i.test(shortOutcome) ? "Не будет"
+          : shortOutcome;
+    if (/^(Будет гол|Не будет|П1|П2)$/.test(normalized)) return normalized;
+  }
+
+  if (/GOAL15MIN/i.test(group.marketKey)) {
+    const yn =
+      shortOutcome === "Да" || shortOutcome === "Нет"
+        ? shortOutcome
+        : /^след\.?\s*гол$/i.test(shortOutcome) ? "Да"
+          : null;
+    if (yn) {
+      const interval = group.label.match(/(\d+\s*[–-]\s*\d+\s*мин)/i)?.[1]?.replace(/\s+/g, " ").trim();
+      if (interval) return `${interval}·${yn}`;
+      return yn;
+    }
+  }
+
+  if (/HOW_WILL_GOAL_BE_SCORED|LAST_EVENT|MINUTE_GOAL_EVEN_ODD/i.test(group.marketKey)) {
+    return shortOutcome;
+  }
+
+  if (/SCORING_EVENTS|CLEAN_WIN_TEAM|NUMBER_FINAL_SCORE|OWNGOAL/i.test(group.marketKey)
+    && (shortOutcome === "Да" || shortOutcome === "Нет")) {
+    return shortOutcome;
+  }
+
+  if (!group.label?.trim()) {
     return shortOutcome;
   }
 
@@ -392,6 +476,9 @@ export function buildWcOutcomeButtonTitle(
       if (inferred) return inferred;
     }
     if (/^\d+\+?\s*гол/i.test(shortOutcome) || /^\d+\+?\s*голов/i.test(shortOutcome)) {
+      return shortOutcome;
+    }
+    if (/^\d+\s*сет/i.test(shortOutcome)) {
       return shortOutcome;
     }
     return shortOutcome;

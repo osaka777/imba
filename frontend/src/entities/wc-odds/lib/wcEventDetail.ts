@@ -16,7 +16,10 @@ function mergeMarketGroup(prev: WcMarketGroup, incoming: WcMarketGroup): WcMarke
   const prevByKey = new Map(prev.outcomes.map((outcome) => [outcome.outcomeKey, outcome]));
   const outcomes = incoming.outcomes.map((incomingOutcome) => {
     const prevOutcome = prevByKey.get(incomingOutcome.outcomeKey);
-    if (prevOutcome && JSON.stringify(prevOutcome) === JSON.stringify(incomingOutcome)) {
+    if (!prevOutcome) return incomingOutcome;
+    if (prevOutcome.price === incomingOutcome.price) return prevOutcome;
+    if (Math.abs(prevOutcome.price - incomingOutcome.price) < 0.005) return prevOutcome;
+    if (JSON.stringify(prevOutcome) === JSON.stringify(incomingOutcome)) {
       return prevOutcome;
     }
     return incomingOutcome;

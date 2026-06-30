@@ -71,6 +71,34 @@ cdn.imba.bet {
   tls /etc/caddy/certs/imba.bet.pem /etc/caddy/certs/imba.bet.key
 }
 
+partners.imba.bet {
+  @api {
+    path /api/*
+  }
+  @scanner {
+    not path /api/*
+    path_regexp scan (?i)(?:^/\.git|^/\.github|^/\.gitlab|\.env|\.php$|wp-admin|wp-login\.php|xmlrpc\.php|phpinfo|docker-compose\.yml|web\.config|/config/(?:application\.yml|parameters\.yml)|configuration\.php|settings\.(?:py|php)|database\.php|db\.php|functions\.php|test\.php|index\.php)
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  handle @api {
+    reverse_proxy backend:3000
+  }
+  handle @scanner {
+    respond "Not Found" 404
+  }
+  handle {
+    reverse_proxy partners:8001
+  }
+  tls /etc/caddy/certs/imba.bet.pem /etc/caddy/certs/imba.bet.key
+}
+
 kendall.bot, www.kendall.bot {
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"

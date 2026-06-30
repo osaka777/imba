@@ -484,10 +484,13 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen }: WcOddsI
                   const intervalLabel = range
                     ? `${range.from}–${range.to} мин`
                     : group.label.replace(/^GOAL15MIN:\s*да\/нет\s*/i, "").trim();
+                  const showIntervalSubLabel =
+                    intervalLabel
+                    && intervalLabel.trim().toLowerCase() !== categoryName.trim().toLowerCase();
 
                   return (
                     <div key={group.key} className={matchStyles.oddsBlockScoped}>
-                      {intervalLabel ? (
+                      {showIntervalSubLabel ? (
                         <p className={matchStyles.oddsGroupSubLabel}>{intervalLabel}</p>
                       ) : null}
                       <div className={matchStyles.oddsBlock}>

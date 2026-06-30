@@ -1,58 +1,47 @@
 import { LogoWhiteIcon } from "@/shared/assets";
-import {
-    InstagramIcon, Telegram,
-    TelegramIcon,
-} from "@/shared/assets/icons";
-import { ScrollToTopButton } from "@/shared/UI/Button";
+import { Telegram } from "@/shared/assets/icons";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./Footer.module.css";
 
+const NAV = [
+    { label: "Преимущества", href: "#features" },
+    { label: "Продукт", href: "#product" },
+    { label: "FAQ", href: "#FAQ" },
+    { label: "Контакты", href: "#contacts" },
+];
+
 export const Footer = () => {
     return (
         <footer className={styles.Footer}>
-            <div className={styles.Footer_logoContainer}>
-                <div className={styles.Footer_logoWrapper}>
-                    <div className={`${styles.SvgLogo_svgLogoContainer} ${styles.Footer_logo}`}>
-                        <Image src={LogoWhiteIcon} alt="" width={100} height={15} />
+            <div className={styles.inner}>
+                <div className={styles.top}>
+                    <div className={styles.logo}>
+                        <Image src={LogoWhiteIcon} alt="imba.bet" width={120} height={18} />
                     </div>
+                    <nav className={styles.nav}>
+                        {NAV.map(({ label, href }) => (
+                            <Link key={href} href={href} className={styles.navLink}>
+                                {label}
+                            </Link>
+                        ))}
+                    </nav>
                 </div>
-                <div className={styles.Footer_LogoSeparator}></div>
-            </div>
-            <div className={styles.Footer_promotionSection}>
-                <div className={styles.SocialList_root}>
-                    <ul className={styles.SocialList_list}>
-                        <li className={styles.SocialList_item}>
-                            <a
-                                className={`${styles.SocialList_link}`}
-                                href="#"
-                                rel="noopener noreferrer"
-                                target="_blank"
-                            >
-                                <Telegram />
-                            </a>
-                        </li>
-                        <li className={styles.SocialList_item}>
-                            <a
-                                className={`${styles.SocialList_link}`}
-                                href="#"
-                                rel="noopener noreferrer"
-                                target="_blank"
-                            >
-                                <InstagramIcon />
-                            </a>
-                        </li>
-                    </ul>
-                    <div className={styles.links}>
-                        <div className={styles.link}>Преимущества</div>
-                        <div className={styles.link}>Продукт</div>
-                        <div className={styles.link}>FAQ</div>
-                        <div className={styles.link}>Контакты</div>
+                <div className={styles.bottom}>
+                    <div className={styles.socials}>
+                        <a
+                            className={styles.socialLink}
+                            href="https://t.me/imbabetofficial"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                            aria-label="Telegram"
+                        >
+                            <Telegram />
+                        </a>
                     </div>
-                </div>
-                <div className={styles.link}>
-                    © 2024 imba.bet <br />
-                    Правила и условия
+                    <p className={styles.copyright}>
+                        © {new Date().getFullYear()} imba.bet · Правила и условия
+                    </p>
                 </div>
             </div>
         </footer>

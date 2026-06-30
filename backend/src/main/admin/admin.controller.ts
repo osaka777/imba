@@ -51,6 +51,95 @@ export class AdminController {
     }
   }
 
+  @Get('referrals')
+  @UseGuards(SuperuserGuard)
+  async getReferralsOverview(@Query('limit') limit?: string) {
+    try {
+      return await this.adminService.getReferralsOverview(
+        limit ? Number(limit) : 200,
+      );
+    } catch (error) {
+      console.error('Error in getReferralsOverview:', error);
+      return { error: error.message, total: 0, items: [] };
+    }
+  }
+
+  @Get('affiliate-partners')
+  @UseGuards(SuperuserGuard)
+  async getAffiliatePartners(@Query('limit') limit?: string) {
+    try {
+      return await this.adminService.getAffiliatePartners(
+        limit ? Number(limit) : 200,
+      );
+    } catch (error) {
+      console.error('Error in getAffiliatePartners:', error);
+      return { error: error.message, total: 0, items: [] };
+    }
+  }
+
+  @Post('affiliate-partners/:userId/status')
+  @UseGuards(SuperuserGuard)
+  async updateAffiliatePartnerStatus(
+    @Param('userId') userId: string,
+    @Body() body: { status: 'PENDING' | 'ACTIVE' | 'BLOCKED' },
+  ) {
+    try {
+      return await this.adminService.updateAffiliatePartnerStatus(
+        Number(userId),
+        body.status,
+      );
+    } catch (error) {
+      console.error('Error in updateAffiliatePartnerStatus:', error);
+      return { error: error.message };
+    }
+  }
+
+  @Post('affiliate-partners/:userId/percent')
+  @UseGuards(SuperuserGuard)
+  async updateAffiliatePartnerPercent(
+    @Param('userId') userId: string,
+    @Body() body: { percent: number },
+  ) {
+    try {
+      return await this.adminService.updateAffiliatePartnerPercent(
+        Number(userId),
+        body.percent,
+      );
+    } catch (error) {
+      console.error('Error in updateAffiliatePartnerPercent:', error);
+      return { error: error.message };
+    }
+  }
+
+  @Get('affiliate-partners/:userId/promos')
+  @UseGuards(SuperuserGuard)
+  async getAffiliatePartnerPromos(@Param('userId') userId: string) {
+    try {
+      return await this.adminService.getAffiliatePartnerPromos(Number(userId));
+    } catch (error) {
+      console.error('Error in getAffiliatePartnerPromos:', error);
+      return { error: error.message, items: [] };
+    }
+  }
+
+  @Post('affiliate-partners/:userId/cpa')
+  @UseGuards(SuperuserGuard)
+  async updateAffiliatePartnerCpa(
+    @Param('userId') userId: string,
+    @Body() body: { cpaPayoutAmount: number; cpaCurrencyCode: string },
+  ) {
+    try {
+      return await this.adminService.updateAffiliatePartnerCpa(
+        Number(userId),
+        body.cpaPayoutAmount,
+        body.cpaCurrencyCode,
+      );
+    } catch (error) {
+      console.error('Error in updateAffiliatePartnerCpa:', error);
+      return { error: error.message };
+    }
+  }
+
   @Get('users-stats')
   @UseGuards(SuperuserGuard)
   async getUsersStatistics(@Query('period') period: string = 'day') {

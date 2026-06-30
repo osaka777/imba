@@ -1,0 +1,20 @@
+.banner {
+  margin: 0 0 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.pending {
+  background: linear-gradient(90deg, rgba(255, 202, 77, 0.18), rgba(255, 148, 0, 0.08));
+  color: #92400e;
+  border: 1px solid rgba(255, 148, 0, 0.25);
+}
+
+.blocked {
+  background: linear-gradient(90deg, rgba(211, 72, 72, 0.12), rgba(211, 72, 72, 0.05));
+  color: #991b1b;
+  border: 1px solid rgba(211, 72, 72, 0.22);
+}

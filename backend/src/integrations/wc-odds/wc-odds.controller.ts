@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   NotFoundException,
@@ -214,6 +215,18 @@ export class WcOddsController {
   }
 
   @UseGuards(AuthenticationGuard)
+  @Get('my-tournament')
+  myTournament(@Req() req: { user: { id: number } }) {
+    return this.betService.getMyTournament(req.user.id);
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Get('bets/:id/share')
+  betShare(@Req() req: { user: { id: number } }, @Param('id') id: string) {
+    return this.betService.getBetShare(req.user.id, Number(id));
+  }
+
+  @UseGuards(AuthenticationGuard)
   @Get('bets/my')
   myBets(@Req() req: { user: { id: number } }) {
     return this.betService.listUserBets(req.user.id);
@@ -223,6 +236,34 @@ export class WcOddsController {
   @Get('bets/:id')
   getBet(@Req() req: { user: { id: number } }, @Param('id') id: string) {
     return this.betService.getUserBet(req.user.id, Number(id));
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Get('events/:ref/subscription')
+  eventSubscription(
+    @Req() req: { user: { id: number } },
+    @Param('ref') ref: string,
+  ) {
+    return this.betService.getEventSubscription(req.user.id, ref);
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Post('events/:ref/subscribe')
+  subscribeEvent(
+    @Req() req: { user: { id: number } },
+    @Param('ref') ref: string,
+    @Body() body: { notifyGoals?: boolean; notifyStart?: boolean },
+  ) {
+    return this.betService.subscribeEvent(req.user.id, ref, body);
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Delete('events/:ref/subscribe')
+  unsubscribeEvent(
+    @Req() req: { user: { id: number } },
+    @Param('ref') ref: string,
+  ) {
+    return this.betService.unsubscribeEvent(req.user.id, ref);
   }
 
   @UseGuards(SuperuserGuard)

@@ -12,6 +12,7 @@ export type WcMarketTab = {
 
 const TAB_ORDER: string[] = [
   "Основные",
+  "Серия пенальти",
   "Быстрые события",
   "Результат + тотал",
   "1-й тайм",
@@ -51,10 +52,39 @@ const CANONICAL_BLOCK_ORDER: string[] = [
   "Гол в обоих таймах",
   "Результат + тотал",
   "Точный счёт",
+  "Количество сетов",
   "Следующий гол",
 ];
 
+/** First N canonical main-line blocks stay expanded on mobile (not raw array index). */
+export const WC_MOBILE_DEFAULT_OPEN_CANONICAL_COUNT = 5;
+
+/** Whether a category accordion should start open on mobile (survives DC/time-window splits). */
+export function isWcMobileDefaultOpenCategory(
+  categoryName: string,
+  groups: WcMarketGroup[],
+  openCount = WC_MOBILE_DEFAULT_OPEN_CANONICAL_COUNT,
+): boolean {
+  // Penalty series categories are always expanded when present
+  if (/серии?\s*пенальти|пенальти\s*по\s*команд|разница\s*по\s*пенальти|победитель\s*в\s*серии|счёт\s*в\s*серии|счет\s*в\s*серии/i.test(categoryName)) {
+    return true;
+  }
+
+  const canonical = getCanonicalMarketBlock(categoryName, groups);
+  const canonicalIdx = CANONICAL_BLOCK_ORDER.indexOf(canonical);
+  if (canonicalIdx >= 0 && canonicalIdx < openCount) return true;
+
+  const lower = categoryName.trim().toLowerCase();
+  if (/^тотал/i.test(lower) && !/индивид/i.test(lower) && !/чет.*нечет/i.test(lower)) {
+    const totalsIdx = CANONICAL_BLOCK_ORDER.indexOf("Тотал");
+    return totalsIdx >= 0 && totalsIdx < openCount;
+  }
+
+  return false;
+}
+
 const EXACT_TAB_NAMES = new Set([
+  "Серия пенальти",
   "Быстрые события",
   "1-й сет",
   "2-й сет",
@@ -178,6 +208,13 @@ const FRONTEND_CATALOG_LABELS: Record<string, string> = {
   WINNER_YES_NO: "Победа: да/нет",
   WINNER_10MIN: "Победа (10 мин)",
   WINNER_5MIN: "Победа (5 мин)",
+  FIRST_GOAL_AND_WINNER: "Первый гол и победа",
+  SCORE_AFTER_X_GOALS: "Счет после X голов",
+  STRONG_WILLED_TEAM1: "П1: волевая победа",
+  STRONG_WILLED_TEAM2: "П2: волевая победа",
+  STRONG_WILLED_ANY_TEAM: "Волевая победа",
+  TEAM1_GOALS_BOTH: "П1: голы в обоих таймах",
+  TEAM2_GOALS_BOTH: "П2: голы в обоих таймах",
   GOALS_TEAM1: "Забьёт команда 1",
   GOALS_TEAM2: "Забьёт команда 2",
   EXACT_GOALS: "Точное число голов",
@@ -197,6 +234,8 @@ const FRONTEND_CATALOG_LABELS: Record<string, string> = {
   MULTISCORE_SET: "Мультисчёт сета",
   NEXT_POINTS_GAME: "Следующее очко в гейме",
   RACE_TO_POINT_GAME: "Гонка по очкам в гейме",
+  OWNGOAL_YES_NO: "Автогол в матче",
+  NUMBER_FINAL_SCORE_YES_NO: "Цифра в итоговом счёте",
 };
 
 function isExact1X2Category(category: string): boolean {
@@ -209,7 +248,7 @@ export function shouldKeepCategoryIntact(categoryName: string, groups: WcMarketG
   const category = categoryName.trim();
   if (!category) return false;
 
-  if (groups.some((g) => g.marketKey.startsWith("display_") && /NEXT_GOAL|OR_|AND_|YES_NO|HALF_MATCH|1HALF_2HALF|WINNER_\d+MIN|EXACT_|GOAL_RANGE|SCORE_TEAM/i.test(g.marketKey))) {
+  if (groups.some((g) => g.marketKey.startsWith("display_") && /NEXT_GOAL|OR_|AND_|YES_NO|HALF_MATCH|1HALF_2HALF|WINNER_\d+MIN|EXACT_|GOAL_RANGE|SCORE_TEAM|SERIESPENALTY|SERIES_PENALTY|MARGIN_PENALTY|NEXT_SERIESPENALTY|WINNER_SERIESPENALTY/i.test(g.marketKey))) {
     return true;
   }
 
@@ -226,6 +265,15 @@ export function shouldKeepCategoryIntact(categoryName: string, groups: WcMarketG
   if (/команд[аы]\s+забьет\s+и/i.test(category)) return true;
   if (/at least one doesnt score/i.test(category)) return true;
   if (/^точн/i.test(category) && /тайм/i.test(category)) return true;
+  if (/победа\s+в\s+половинах/i.test(category)) return true;
+  if (/как\s+определится\s+победитель/i.test(category)) return true;
+  if (/^гол\s+в\s+интервале/i.test(category)) return true;
+  if (/когда\s+будет\s+забит/i.test(category)) return true;
+  if (/специальн/i.test(category)) return true;
+  if (/как\s+будет\s+забит/i.test(category)) return true;
+  if (/последн/i.test(category) && /факт|событи/i.test(category)) return true;
+  if (/минут.*гол|чет.*нечет/i.test(category)) return true;
+  if (/пенальти.*удал|удал.*матч|будет\s+пенальти/i.test(category)) return true;
 
   return false;
 }
@@ -245,6 +293,8 @@ const ENGLISH_CATEGORY_LABELS: Record<string, string> = {
   "DEUSE POINT": "Дьюс",
   "MULTISCORE SET": "Мультисчёт сета",
   "40:40": "40:40",
+  "OWNGOAL: да/нет": "Автогол в матче",
+  "NUMBER FINAL SCORE: да/нет": "Цифра в итоговом счёте",
 };
 
 /** Humanize stale technical category keys from cached feed snapshots. */
@@ -255,6 +305,9 @@ export function humanizeWcCategoryName(name: string): string {
   const englishLabel = ENGLISH_CATEGORY_LABELS[trimmed]
     ?? ENGLISH_CATEGORY_LABELS[trimmed.toUpperCase()];
   if (englishLabel) return englishLabel;
+
+  const staleLabel = humanizeStaleEnglishGroupLabel(trimmed);
+  if (staleLabel) return staleLabel;
 
   const staticLabel =
     FRONTEND_CATALOG_LABELS[trimmed]
@@ -291,6 +344,9 @@ export function humanizeWcCategoryName(name: string): string {
       : /^SCORE_VARIANT|^CORRECT_SCORE/i.test(stripped) ? "Точный счёт"
       : /^BOTHTEAM_WILL_SCORE_OVER/i.test(stripped) ? "Обе забьют + тотал (больше)"
       : /^BOTHTEAM_WILL_SCORE_UNDER/i.test(stripped) ? "Обе забьют + тотал (меньше)"
+      : /^OWNGOAL/i.test(stripped) ? "Автогол в матче"
+      : /^NUMBER_FINAL_SCORE/i.test(stripped) ? "Цифра в итоговом счёте"
+      : /^SCORING_EVENTS/i.test(stripped) ? "Голевые факты"
       : null;
     if (pattern) return pattern;
 
@@ -306,11 +362,61 @@ export function humanizeWcCategoryName(name: string): string {
       .replace(/\bEXACT\b/gi, "Точное")
       .replace(/\bTEAM1\b/gi, "команда 1")
       .replace(/\bTEAM2\b/gi, "команда 2")
+      .replace(/\bSTRONG\b/gi, "Волевая")
+      .replace(/\bWILLED\b/gi, "победа")
+      .replace(/\bBOTH\b/gi, "в обоих таймах")
       .replace(/\s+/g, " ")
       .trim();
   }
 
   return trimmed;
+}
+
+/** Fix cached group labels like «STRONG WILLED команда 1» / «команда 1 Голы BOTH». */
+function humanizeStaleEnglishGroupLabel(name: string): string | null {
+  const trimmed = name.trim();
+  if (/^STRONG\s+WILLED\s+команда\s+1$/i.test(trimmed)) return "П1: волевая победа";
+  if (/^STRONG\s+WILLED\s+команда\s+2$/i.test(trimmed)) return "П2: волевая победа";
+  if (/^CLEAN\s+WIN\s+команда\s+1$/i.test(trimmed)) return "П1";
+  if (/^CLEAN\s+WIN\s+команда\s+2$/i.test(trimmed)) return "П2";
+  if (/^OWNGOAL/i.test(trimmed)) return "Автогол в матче";
+  if (/^NUMBER\s+FINAL\s+SCORE/i.test(trimmed)) return "Цифра в итоговом счёте";
+  if (/^команда\s+1\s+Голы\s+BOTH$/i.test(trimmed)) return "П1: голы в обоих таймах";
+  if (/^команда\s+2\s+Голы\s+BOTH$/i.test(trimmed)) return "П2: голы в обоих таймах";
+  if (/^SCORE\s+AFTER\s+X\s+Гол/i.test(trimmed)) return "Счет после X голов";
+  if (/^SCORE\s+AFTER/i.test(trimmed)) {
+    const goalNum = trimmed.match(/(\d+)/);
+    return goalNum ? `Счет после ${goalNum[1]} голов` : "Счет после X голов";
+  }
+  if (/^SCORE\s+AFTER.*не\s*будет/i.test(trimmed)) return "Не будет";
+  if (/^FIRST\s+Гол\s+AND/i.test(trimmed)) return "Первый гол и победа";
+  if (/^SCORING\s+EVENTS/i.test(trimmed)) {
+    const map: Record<string, string> = {
+      HATTRICK: "Хет-трик",
+      DOUBLE: "Дубль",
+      KICKGOAL: "Гол ногой",
+      HEADER: "Гол головой",
+      DIRECT_FREEKICK: "Гол со штрафного",
+      DIRECT: "Гол со штрафного",
+      STRIKER: "Нападающий забьёт",
+      MIDFIELDER: "Полузащитник забьёт",
+      DEFENDER: "Защитник забьёт",
+      GOALPOST: "Штанга или перекладина",
+      GOALPOST_CROSSBAR: "Штанга или перекладина",
+      DISALLOWED: "Гол не засчитан",
+      DISALLOWED_GOAL: "Гол не засчитан",
+      GOALKEEPER: "Вратарь забьёт",
+    };
+    const tokenMatch = /^SCORING\s+EVENTS\s+([A-Z_]+)/i.exec(trimmed);
+    if (tokenMatch) {
+      const raw = tokenMatch[1]!.toUpperCase().replace(/:.*$/i, '');
+      if (map[raw]) return map[raw]!;
+      const short = raw.replace(/_GOAL.*$/i, '');
+      if (map[short]) return map[short]!;
+    }
+    return "Голевые факты";
+  }
+  return null;
 }
 
 /** Category title for odds accordion — sport-specific overrides. */
@@ -401,6 +507,8 @@ export function getCanonicalMarketBlock(categoryName: string, groups: WcMarketGr
   }
   if (/следующ.*очк/i.test(lower)) return "Следующее очко в гейме";
   if (/следующ.*гол/i.test(lower)) return "Следующий гол";
+  if (/гол\s+в\s+интервале/i.test(lower)) return "Гол в интервале";
+  if (/когда\s+будет\s+забит/i.test(lower)) return category;
   if (/точн/i.test(lower)) return "Точный счёт";
   if (/и\s+тотал|п[12]тот|хтот|1х\s+и/i.test(lower.replace(/\s/g, ""))) {
     return "Результат + тотал";
@@ -417,6 +525,11 @@ export function deriveTabKey(categoryName: string): string {
   if (isFastEventCategory(name)) return "Быстрые события";
 
   if (EXACT_TAB_NAMES.has(name)) return name;
+
+  // Penalty shootout categories → dedicated tab
+  if (/серии?\s*пенальти|пенальти\s*по\s*команд|разница\s*по\s*пенальти|счёт\s*в\s*серии|счет\s*в\s*серии/i.test(name)) {
+    return "Серия пенальти";
+  }
 
   if (/,\s*\d+-й\s+тайм$/i.test(name)) return name;
   if (/,\s*\d+-й\s+сет$/i.test(name)) return name;
@@ -448,6 +561,12 @@ export function deriveTabKey(categoryName: string): string {
   }
 
   if (/^\d+-й\s+сет$/i.test(name)) return name;
+
+  const setScoped = name.match(/^(\d+-[йи]\s+сет)(?:\s*[,·]|,\s)/i);
+  if (setScoped) return setScoped[1]!;
+
+  const halfScoped = name.match(/^(\d+-[йи]\s+тайм)(?:\s*[,·]|,\s)/i);
+  if (halfScoped) return halfScoped[1]!;
 
   return "Основные";
 }

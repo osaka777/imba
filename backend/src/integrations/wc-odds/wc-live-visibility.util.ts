@@ -1,5 +1,17 @@
 import type { WcOddsEventDto } from './wc-odds.types';
-import { isWcEventActuallyInPlay, wcEventHasLiveActivity } from './wc-live-play.util';
+import { wcEventHasLiveActivity, wcMaxLiveWindowMs } from './wc-live-play.util';
+
+const KICKOFF_GRACE_MS = 45 * 60 * 1000;
+
+export function isWcLiveListTerminal(
+  event: Pick<WcOddsEventDto, 'completed' | 'phase' | 'commenceTime' | 'sport'>,
+  nowMs: number = Date.now(),
+): boolean {
+  if (event.completed || event.phase === 'finished') return true;
+  const kickoffMs = new Date(event.commenceTime).getTime();
+  if (!Number.isFinite(kickoffMs)) return false;
+  return nowMs - kickoffMs > wcMaxLiveWindowMs(event.sport);
+}
 
 export function isWcValidListOdd(value: number | null | undefined): boolean {
   return value != null && Number.isFinite(value) && value > 1;
@@ -55,14 +67,19 @@ export function isWcEventVisibleInLiveList(
   nowMs: number = Date.now(),
 ): boolean {
   if (event.completed || event.phase === 'finished') return false;
-  if (!isWcEventActuallyInPlay(event, nowMs)) return false;
-
-  if (wcEventHasActiveListBets(event)) return true;
-  if (wcEventHasLiveActivity(event)) return true;
+  if (event.phase !== 'live') return false;
 
   const kickoffMs = new Date(event.commenceTime).getTime();
   if (!Number.isFinite(kickoffMs) || kickoffMs > nowMs) return false;
-  return nowMs - kickoffMs <= 45 * 60 * 1000;
+
+  const elapsed = nowMs - kickoffMs;
+  if (elapsed > wcMaxLiveWindowMs(event.sport)) return false;
+
+  // Keep matches with open list odds visible for the whole live window (0:0 can last 90+ min).
+  if (wcEventHasActiveListBets(event)) return true;
+  if (wcEventHasLiveActivity(event)) return true;
+
+  return elapsed <= KICKOFF_GRACE_MS;
 }
 
 export function filterVisibleWcLiveListEvents(events: WcOddsEventDto[]): WcOddsEventDto[] {

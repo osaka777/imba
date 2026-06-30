@@ -39,6 +39,25 @@ describe('isOlimpbetFeedBettingOpen', () => {
       },
     }))).toBe(true);
   });
+
+  it('closes prematch when all outcomes are suspended', () => {
+    expect(isOlimpbetFeedBettingOpen(detail({
+      status: 'EVENT_OPEN',
+      live: false,
+      eventDate: new Date(Date.now() + 3_600_000).toISOString(),
+      probabilities: {
+        eventId: 1,
+        markets: [{
+          marketId: 1,
+          probabilities: [{
+            outcomeTypeId: 1,
+            odd: 2.1,
+            tradingStatus: 'PROBABILITY_SUSPENDED',
+          }],
+        }],
+      },
+    }))).toBe(false);
+  });
 });
 
 describe('isOlimpbetEventCompleted', () => {

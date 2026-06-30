@@ -1,4 +1,5 @@
 import type { Rate } from "~/entities/bet/types";
+import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
 
 export function formatCouponPlacedAt(iso: string): string {
   return new Date(iso).toLocaleString("ru-RU", {
@@ -69,6 +70,18 @@ export function formatCouponWinLine(
   const stakeFmt = Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2 }).format(stake);
   const winFmt = Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2 }).format(win);
   return `${stakeFmt}${currencySymbol} → ${winFmt}${currencySymbol}`;
+}
+
+export function getCouponMatchHref(rate: Rate): string {
+  if (rate.source === "wc-odds" || rate.wcPick) {
+    return buildWcGameHref({
+      id: rate.eventId || "",
+      homeTeam: rate.homeTeam || "",
+      awayTeam: rate.awayTeam || "",
+    });
+  }
+  const gameId = rate.parentEventId || rate.eventId;
+  return gameId ? `/game/${gameId}` : "/line/soccer";
 }
 
 export function truncateLeagueName(name: string, maxLen = 42): string {

@@ -90,7 +90,7 @@ export const LoginForm = () => {
                 disabled={pending}
                 className={`${styles.authButton} ${success ? styles.authButton_succes : null}`}
             >
-                {success ? `Вход выполнен...` : `Войти`}
+                Вход
                 {pending || success ? <LoadingSpiner className={styles.loading} /> : null}
             </Button>
             {formError !== '' ? <p className={styles.error}>{formError}</p> : null}

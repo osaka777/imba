@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getApiBaseUrl } from "@/shared/lib/apiBaseUrl";
+
 export async function middleware(request: NextRequest) {
   const partnerTag = request.nextUrl.searchParams.get("tag");
   const response = NextResponse.next();
+  const isProd = process.env.NODE_ENV === "production";
   
-  if (partnerTag) {
-    response.cookies.set("partnerTag", partnerTag);
+  if (partnerTag && /^[0-9a-f-]{36}$/i.test(partnerTag)) {
+    response.cookies.set("partnerTag", partnerTag, {
+      maxAge: 60 * 60 * 24 * 90,
+      path: "/",
+      sameSite: "lax",
+      secure: isProd,
+    });
   }
 
   // Проверяем токен для защищенных маршрутов
@@ -20,8 +28,7 @@ export async function middleware(request: NextRequest) {
 
     // Проверяем валидность токена
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3001';
-      const userResponse = await fetch(`${backendUrl}/affiliate-program/user`, {
+      const userResponse = await fetch(`${getApiBaseUrl()}/affiliate-program/user`, {
         headers: {
           'Authorization': `Bearer ${token.value}`,
           'Content-Type': 'application/json',

@@ -70,7 +70,7 @@
 
 .trigger {
   position: fixed;
-  bottom: 68px;
+  bottom: 86px;
   left: 50%;
   transform: translate(-50%, 0);
   z-index: 11;
@@ -97,7 +97,7 @@
 @media screen and (max-width: 767px) {
   .trigger {
     display: flex;
-    bottom: 80px;
+    bottom: 100px;
     width: 56px;
     height: 56px;
   }
@@ -105,7 +105,7 @@
 
 @media screen and (max-width: 480px) {
   .trigger {
-    bottom: 70px;
+    bottom: 92px;
     width: 52px;
     height: 52px;
   }

@@ -17,6 +17,7 @@ const mainConfig = (app: NestExpressApplication) => {
       'http://127.0.0.1:8088',
       'http://localhost:3000',
       'https://imba.bet',
+      'https://partners.imba.bet',
       'https://imba.partners',
       'https://cdn.imba.bet',
     ],

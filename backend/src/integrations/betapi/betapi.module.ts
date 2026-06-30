@@ -20,6 +20,7 @@ import { EventGateway } from '~/main/event/event.gateway';
 import { EventBridgeService } from '~/main/event/event-bridge.service';
 import { AuthenticationModule } from '~/main/user/authentication/authentication.module';
 import { OperationModule } from '~/main/operation/operation.module';
+import { TelegramModule } from '~/main/telegram/telegram.module';
 import { WebSocketConfig } from './betapi-websocket-adapter';
 import { ChangeDetectionConfig } from './types/betapi.types';
 
@@ -48,7 +49,8 @@ const CHANGE_DETECTION_CONFIG: ChangeDetectionConfig = {
     OddsCorpModule,
     forwardRef(() => EventModule),
     AuthenticationModule,
-    OperationModule
+    OperationModule,
+    TelegramModule,
   ],
   controllers: [
       BetApiController,

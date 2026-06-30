@@ -34,9 +34,10 @@ export const PROFILE_CATEGORIES = [
   {
     id: 3,
     name: 'Партнерская программа',
-    desc: 'Приглашай друзей и получай 50% от их проигрышей',
+    desc: 'Зарабатывайте 50% RevShare — кабинет партнёра',
     icon: SupportIcon,
-    link: '/profile/referral'
+    link: 'https://partners.imba.bet',
+    external: true,
   },
   {
     id: 4,
@@ -44,6 +45,13 @@ export const PROFILE_CATEGORIES = [
     desc: 'Все ваши ставки, которые вы совершили за последнее время',
     icon: HistorysIcon,
     link: '/profile/betHistory'
+  },
+  {
+    id: 7,
+    name: 'Мой ЧМ-2026',
+    desc: 'Статистика ставок на чемпионат мира',
+    icon: FavoritesIcon,
+    link: '/profile/wc'
   },
   {
     id: 5,
@@ -222,11 +230,14 @@ export const Profile = React.memo(() => {
     }).format(Number(amount));
   }, [mainBalance?.amount]);
 
-  // Мемоизируем категории профиля на верхнем уровне
-  const profileCategories = useMemo(() => 
-    PROFILE_CATEGORIES.map((category) => (
-      <CategoryItem category={category} key={category.id} />
-    )), []
+  const voucherCategory = useMemo(
+    () => PROFILE_CATEGORIES.find((category) => category.inputText),
+    [],
+  );
+
+  const serviceLinkCategories = useMemo(
+    () => PROFILE_CATEGORIES.filter((category) => category.link && !category.inputText),
+    [],
   );
 
   // Оптимизированные обработчики
@@ -248,28 +259,19 @@ export const Profile = React.memo(() => {
   if (userLoading) {
     return (
       <div className={styles.profileContainer}>
-        <div className={styles.walletsList}>
-          <div className={styles.mainInfo}>
-            <div className={styles.loadingMessage}>Загрузка профиля...</div>
-          </div>
-        </div>
+        <div className={styles.loadingMessage}>Загрузка профиля...</div>
       </div>
     );
   }
 
-  // Показываем ошибку если не удалось загрузить данные
   if (userError || !user) {
     return (
       <div className={styles.profileContainer}>
-        <div className={styles.walletsList}>
-          <div className={styles.mainInfo}>
-                          <div className={styles.errorMessage}>
-                Не удалось загрузить данные профиля.
-                <div className={styles.errorActions}>
-                  <button onClick={() => window.location.reload()}>Перезагрузить страницу</button>
-                  <button onClick={forceRefresh}>Обновить данные</button>
-                </div>
-              </div>
+        <div className={styles.errorMessage}>
+          Не удалось загрузить данные профиля.
+          <div className={styles.errorActions}>
+            <button type="button" onClick={() => window.location.reload()}>Перезагрузить страницу</button>
+            <button type="button" onClick={forceRefresh}>Обновить данные</button>
           </div>
         </div>
       </div>
@@ -278,136 +280,180 @@ export const Profile = React.memo(() => {
 
   return (
     <div className={styles.profileContainer}>
-      <div className={styles.walletsList}>
-        <div className={styles.mainInfo}>
-          {/* Переключатель счетов */}
-          {isClient && (
-            <div className={styles.accountTypeSelector}>
-              <button
-                className={`${styles.accountTypeButton} ${selectedAccountType === 'main' ? styles.active : ''}`}
-                onClick={() => setSelectedAccountType('main')}
-              >
-                💰 Основной счет
-              </button>
-              <button
-                className={`${styles.accountTypeButton} ${selectedAccountType === 'bonus' ? styles.active : ''}`}
-                onClick={() => setSelectedAccountType('bonus')}
-              >
-                🎁 Бонусный счет
-              </button>
-            </div>
-          )}
-
-          <div className={styles.mainBalanceSection}>
-            <div className={styles.balanceHeaderContainer}>
-              <div className={styles.balanceHeader} suppressHydrationWarning>
-                {selectedAccountType === 'main' ? 'Основной счет' : '🎁 Бонусный счет'}
-              </div>
-              <div className={styles.balanceAmount} suppressHydrationWarning>
-                {selectedAccountType === 'main' 
-                  ? `${formattedBalance} ${getCurrencySymbol(currency)}`
-                  : `${formattedBonusBalance} ${getCurrencySymbol(currency)}`
-                }
-              </div>
-            </div>
-            <div className={styles.balanceActions}>
-              {selectedAccountType === 'main' ? (
-                <>
-                  <Withdraw />
-                  <button
-                    type="button"
-                    className={styles.Deposit}
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openDepositModal();
-                    }}
-                  >
-                    Пополнить
-                  </button>
-                </>
-              ) : (
-                <div className={styles.bonusInfo}>
-                  {bonusBalance?.isTokenBased ? (
-                    <>
-                      <small>
-                        Жетоны: {bonusBalance.remainingTokens || 0} / {bonusBalance.totalTokens || 0}
-                      </small>
-                      <small>
-                        Победы подряд: {bonusBalance.consecutiveWins || 0} / {bonusBalance.requiredConsecutiveWins || 0}
-                      </small>
-                      <small>
-                        Жетонов за ставку: {bonusBalance.tokensPerBet || 1}
-                      </small>
-                    </>
-                  ) : (
-                    <>
-                      <small>
-                        Отыграно: {bonusBalance?.totalWagered || 0} / {bonusBalance?.requiredWager || 0}
-                      </small>
-                      {bonusBalance && (
-                        <div className={styles.bonusDetails}>
-                          <small>Мин. кэф: {bonusBalance.minOdds} (макс. из всех бонусов)</small>
-                          <small>Прогресс: {Math.round((Number(bonusBalance.totalWagered) / Number(bonusBalance.requiredWager)) * 100)}%</small>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+      <section className={styles.walletHero}>
+        {isClient && (
+          <div className={styles.accountTabs} role="tablist" aria-label="Тип счёта">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedAccountType === 'main'}
+              className={`${styles.accountTab} ${selectedAccountType === 'main' ? styles.accountTabActive : ''}`}
+              onClick={() => setSelectedAccountType('main')}
+            >
+              Основной
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedAccountType === 'bonus'}
+              className={`${styles.accountTab} ${selectedAccountType === 'bonus' ? styles.accountTabActive : ''}`}
+              onClick={() => setSelectedAccountType('bonus')}
+            >
+              Бонусный
+            </button>
           </div>
+        )}
 
-          <div className={styles.moneyList}>
-            {mergedCurrencies?.map((currency) => (
-              <div className={styles.moneyItem} key={`${currency.currencyCode}-${currency.id}`}>
-                <div className={styles.moneyInfo}>
-                  <div className={styles.moneyIconContainer}>
-                    <Image
-                      src={currencyIcons[currency.currencyCode] ?? UsdImage}
-                      alt={currency.currencyName}
-                      className={styles.moneyIcon}
-                    />
-                  </div>
-                  <span className={styles.moneyName}>{currency.currencyCode}</span>
-                </div>
-                <div className={styles.moneyBalance}>
-                  {languageService.getNumberFormat().format(+currency.amount)} {getCurrencySymbol(currency.currencyCode)}
-                  <button
-                    className={styles.addButton}
-                    onClick={() => handleDepositClick(currency.currencyCode)}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.accountManagement} onClick={handleWalletManagementClick}>
-            <div className={styles.sectionSettings}>
-              <div className={styles.sectionSettingsIcon}>
-                <img src="/settings.svg" alt="settings" className={styles.sectionSettingsIconImg} />
-              </div>
-              <span>Управление счетами</span>
-            </div>
-            <span className={styles.arrowIcon}>›</span>
-          </div>
-
-          <div className={styles.accountManagement} onClick={() => router.push('/profile/promocodes')}>
-            <div className={styles.sectionSettings}>
-              <div className={styles.sectionSettingsIcon}>
-                <img src="/ticket.svg" alt="bonuses" className={styles.sectionSettingsIconImg} />
-              </div>
-              <span>Бонусы</span>
-            </div>
-            <span className={styles.arrowIcon}>›</span>
+        <div className={styles.heroBalance}>
+          <span className={styles.heroLabel} suppressHydrationWarning>
+            {selectedAccountType === 'main' ? 'Баланс' : 'Бонусный баланс'}
+          </span>
+          <div className={styles.heroAmountRow} suppressHydrationWarning>
+            <span className={styles.heroAmount}>
+              {selectedAccountType === 'main' ? formattedBalance : formattedBonusBalance}
+            </span>
+            <span className={styles.heroCurrency}>{getCurrencySymbol(currency)}</span>
           </div>
         </div>
 
-        {profileCategories}
+        {selectedAccountType === 'main' ? (
+          <div className={styles.heroActions}>
+            <Withdraw />
+            <button
+              type="button"
+              className={styles.depositBtn}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openDepositModal();
+              }}
+            >
+              Пополнить
+            </button>
+          </div>
+        ) : (
+          <div className={styles.bonusInfo}>
+            {bonusBalance?.isTokenBased ? (
+              <>
+                <small>
+                  Жетоны: {bonusBalance.remainingTokens || 0} / {bonusBalance.totalTokens || 0}
+                </small>
+                <small>
+                  Победы подряд: {bonusBalance.consecutiveWins || 0} / {bonusBalance.requiredConsecutiveWins || 0}
+                </small>
+                <small>
+                  Жетонов за ставку: {bonusBalance.tokensPerBet || 1}
+                </small>
+              </>
+            ) : (
+              <>
+                <small>
+                  Отыграно: {bonusBalance?.totalWagered || 0} / {bonusBalance?.requiredWager || 0}
+                </small>
+                {bonusBalance && (
+                  <div className={styles.bonusDetails}>
+                    <small>Мин. кэф: {bonusBalance.minOdds}</small>
+                    <small>
+                      Прогресс:{' '}
+                      {Math.round(
+                        (Number(bonusBalance.totalWagered) / Number(bonusBalance.requiredWager)) * 100,
+                      )}
+                      %
+                    </small>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </section>
 
-        <hr className={styles.divider} />
+      {selectedAccountType === 'main' && mergedCurrencies.length > 0 && (
+        <section className={styles.currenciesSection}>
+          <h2 className={styles.sectionTitle}>Кошельки</h2>
+          <div className={styles.currencyGrid}>
+            {mergedCurrencies.map((item) => {
+              const isActive = item.currencyCode === currency;
+              return (
+                <div
+                  className={`${styles.currencyCard} ${isActive ? styles.currencyCardActive : ''}`}
+                  key={`${item.currencyCode}-${item.id}`}
+                  onClick={() => setCurrency(item.currencyCode)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setCurrency(item.currencyCode);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className={styles.currencyCardTop}>
+                    <div className={styles.currencyIconWrap}>
+                      <Image
+                        src={currencyIcons[item.currencyCode] ?? UsdImage}
+                        alt={item.currencyName}
+                        className={styles.currencyIcon}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.currencyDepositBtn}
+                      aria-label={`Пополнить ${item.currencyCode}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDepositClick(item.currencyCode);
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className={styles.currencyCode}>{item.currencyCode}</span>
+                  <span className={styles.currencyAmount}>
+                    {languageService.getNumberFormat().format(+item.amount)}{' '}
+                    {getCurrencySymbol(item.currencyCode)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className={styles.quickLinksCard}>
+        <button type="button" className={styles.quickLinkRow} onClick={handleWalletManagementClick}>
+          <span className={styles.quickLinkIconWrap}>
+            <img src="/settings.svg" alt="" className={styles.quickLinkIcon} />
+          </span>
+          <span className={styles.quickLinkLabel}>Управление счетами</span>
+          <span className={styles.quickLinkArrow}>›</span>
+        </button>
+        <button type="button" className={styles.quickLinkRow} onClick={() => router.push('/profile/promocodes')}>
+          <span className={styles.quickLinkIconWrap}>
+            <img src="/ticket.svg" alt="" className={styles.quickLinkIcon} />
+          </span>
+          <span className={styles.quickLinkLabel}>Бонусы</span>
+          <span className={styles.quickLinkArrow}>›</span>
+        </button>
+      </section>
+
+      <section className={styles.servicesSection}>
+        <h2 className={styles.sectionTitle}>Сервисы</h2>
+        <div className={styles.servicesList}>
+          {voucherCategory && (
+            <CategoryItem category={voucherCategory} variant="voucher" />
+          )}
+          {serviceLinkCategories.length > 0 && (
+            <div className={styles.servicesLinksCard}>
+              {serviceLinkCategories.map((category) => (
+                <CategoryItem category={category} key={category.id} variant="row" />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className={styles.profileFooter}>
         <SignOut />
       </div>
 

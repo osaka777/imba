@@ -11,13 +11,15 @@ export type InputProps = React.HTMLAttributes<HTMLInputElement> & {
     required?: boolean;
 };
 
-export const Input: React.FC<InputProps> = (props) => {
-    return props.label ? (
-        <label className={styles.label} htmlFor={props.name} title={props.label}>
-            <span className={styles.labelText}>{props.label}</span>
-            <input {...props} className={styles.Input} />
+export const Input: React.FC<InputProps> = ({ className, label, ...props }) => {
+    const inputClassName = [styles.Input, className].filter(Boolean).join(" ");
+
+    return label ? (
+        <label className={styles.label} htmlFor={props.name} title={label}>
+            <span className={styles.labelText}>{label}</span>
+            <input {...props} className={inputClassName} />
         </label>
     ) : (
-        <input {...props} className={styles.Input} />
+        <input {...props} className={inputClassName} />
     );
 };

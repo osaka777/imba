@@ -30,7 +30,7 @@
 @media screen and (max-width: 768px) {
   .page {
     margin-top: 0;
-    padding-bottom: 88px;
+    padding-bottom: 96px;
   }
 
   .header :global([class*="slider"]) {
@@ -41,7 +41,7 @@
 
 @media screen and (max-width: 1080px) {
   .page {
-    padding-bottom: 88px;
+    padding-bottom: 96px;
   }
 }
 

@@ -68,8 +68,12 @@
 
 .wcMatchRow :global(.oddCell_up::after),
 .wcMatchRow :global(.oddCell_down::after),
+.wcMatchRow :global(.oddFlash_up::after),
+.wcMatchRow :global(.oddFlash_down::after),
 .wcOddsRow :global(.oddCell_up::after),
-.wcOddsRow :global(.oddCell_down::after) {
+.wcOddsRow :global(.oddCell_down::after),
+.wcOddsRow :global(.oddFlash_up::after),
+.wcOddsRow :global(.oddFlash_down::after) {
   content: "";
   position: absolute;
   right: 2px;
@@ -82,13 +86,17 @@
 }
 
 .wcMatchRow :global(.oddCell_up::after),
-.wcOddsRow :global(.oddCell_up::after) {
+.wcOddsRow :global(.oddCell_up::after),
+.wcMatchRow :global(.oddFlash_up::after),
+.wcOddsRow :global(.oddFlash_up::after) {
   top: 2px;
   border-bottom: 4px solid #2db856;
 }
 
 .wcMatchRow :global(.oddCell_down::after),
-.wcOddsRow :global(.oddCell_down::after) {
+.wcOddsRow :global(.oddCell_down::after),
+.wcMatchRow :global(.oddFlash_down::after),
+.wcOddsRow :global(.oddFlash_down::after) {
   bottom: 2px;
   border-top: 4px solid #e85d5d;
 }
@@ -284,7 +292,7 @@
 /* Mobile / tablet: stacked odds rows */
 @media screen and (max-width: 1024px) {
   .wcPage {
-    padding-bottom: 88px;
+    padding-bottom: 96px;
   }
 
   .wcTournament {

@@ -30,6 +30,7 @@ import {
 } from '../olimpbet-wc/olimpbet-head-to-head.util';
 
 import { WcBroadcastProxyService } from './wc-broadcast-proxy.service';
+import { buildWcBetShareSvg, buildWcBetShareText } from './wc-bet-share.util';
 import { buildWcOddsEventDto } from './wc-event-dto.util';
 import { isWcEventVisibleInLiveList } from './wc-live-visibility.util';
 import { compareOlimpbetPriority, isOlimpbetPriorityLevel } from '../olimpbet-wc/olimpbet-priority.util';
@@ -51,6 +52,8 @@ import {
   type WcGroupedMarkets,
 } from './wc-odds-markets.util';
 import { buildBetPlacementContext } from './wc-bet-placement-context.util';
+import { isMarketScopeFinalized } from '../olimpbet-wc/olimpbet-score-scope.util';
+import { resolveBetPlacementScope } from './wc-scope-market-filter.util';
 import { buildTotalsOutcomeName } from './wc-totals-outcome-name.util';
 import { advanceMatchState } from './wc-match-state-tracker.util';
 import { parseMatchState } from './wc-match-state.types';
@@ -711,6 +714,10 @@ export class WcOddsBetService {
       if (!event) throw new NotFoundException('Event not found');
     }
 
+    if (refreshed?.bettingOpen === false) {
+      throw new BadRequestException('Betting closed for this match');
+    }
+
     if (!isWcBettingOpen(event.completed, event.commenceTime)) {
       throw new BadRequestException('Betting closed for this match');
     }
@@ -816,7 +823,25 @@ export class WcOddsBetService {
 
     const totalsGroupLabel = isTotalsMarketKey(marketKey)
       ? findMarketGroup(groupedMarkets, rawMarketKey, outcomeKey ?? '', line, groupKey)?.label ?? null
-      : null;
+      : findMarketGroup(groupedMarkets, rawMarketKey, outcomeKey ?? '', line, groupKey)?.label ?? null;
+
+    const olimpbetId = olimpbetIdFromWcEventId(event.id);
+    let placementDetail: Awaited<ReturnType<OlimpbetWcService['fetchEventDetail']>> = null;
+    if (olimpbetId) {
+      placementDetail = await this.olimpbet.fetchEventDetail(olimpbetId);
+      if (placementDetail) {
+        const scope = resolveBetPlacementScope({
+          marketKey: rawMarketKey,
+          outcomeKey,
+          outcomeName,
+          groupKey,
+          totalsGroupLabel,
+        });
+        if (scope && isMarketScopeFinalized(placementDetail, scope)) {
+          throw new BadRequestException('Betting closed for this period');
+        }
+      }
+    }
 
     const oddsTolerance = Number(this.config.get<string>('WC_ODDS_TOLERANCE', '0.02'));
     if (
@@ -864,26 +889,22 @@ export class WcOddsBetService {
       totalsGroupLabel,
     });
 
-    const olimpbetId = olimpbetIdFromWcEventId(event.id);
-    if (olimpbetId) {
-      const detail = await this.olimpbet.fetchEventDetail(olimpbetId);
-      if (detail) {
-        const score = this.olimpbet.extractScore(detail);
-        const matchState = advanceMatchState(
-          event.matchStateJson,
-          detail,
-          olimpbetSportKeyToSlug(event.sportKey),
-        );
-        placementContext = buildBetPlacementContext({
-          marketKey: storedMarketKey,
-          outcomeKey,
-          homeScore: score.homeScore ?? homeScore,
-          awayScore: score.awayScore ?? awayScore,
-          detail,
-          matchState,
-          totalsGroupLabel,
-        });
-      }
+    if (placementDetail) {
+      const score = this.olimpbet.extractScore(placementDetail);
+      const matchState = advanceMatchState(
+        event.matchStateJson,
+        placementDetail,
+        olimpbetSportKeyToSlug(event.sportKey),
+      );
+      placementContext = buildBetPlacementContext({
+        marketKey: storedMarketKey,
+        outcomeKey,
+        homeScore: score.homeScore ?? homeScore,
+        awayScore: score.awayScore ?? awayScore,
+        detail: placementDetail,
+        matchState,
+        totalsGroupLabel,
+      });
     }
 
     const bet = await this.prisma.$transaction(async (tx) => {
@@ -1077,6 +1098,169 @@ export class WcOddsBetService {
     }
 
     return base;
+  }
+
+  async getBetShare(userId: number, betId: number) {
+    this.assertEnabled();
+    const bet = await this.prisma.wcOddsBet.findFirst({
+      where: { id: betId, userId, isProbe: false },
+      include: { event: true },
+    });
+    if (!bet || !bet.event) throw new NotFoundException('Bet not found');
+
+    const baseUrl = (this.config.get<string>('BASE_URL') || 'https://imba.bet').replace(/\/$/, '');
+    const shareInput = {
+      id: bet.id,
+      outcomeName: bet.outcomeName,
+      odds: Number(bet.odds).toFixed(2),
+      stake: Number(bet.stake).toFixed(2),
+      potentialPayout: Number(bet.potentialPayout).toFixed(2),
+      currencyCode: bet.currencyCode,
+      status: bet.status,
+      homeTeam: bet.event.homeTeam,
+      awayTeam: bet.event.awayTeam,
+      commenceTime: bet.event.commenceTime.toISOString(),
+      eventSlug: bet.event.slug,
+    };
+
+    return {
+      text: buildWcBetShareText(shareInput, baseUrl),
+      svg: buildWcBetShareSvg(shareInput),
+      url: shareInput.eventSlug
+        ? `${baseUrl}/game/${shareInput.eventSlug}`
+        : baseUrl,
+    };
+  }
+
+  async getMyTournament(userId: number) {
+    this.assertEnabled();
+    const bets = await this.prisma.wcOddsBet.findMany({
+      where: { userId, isProbe: false },
+      include: { event: true },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    let totalStaked = 0;
+    let totalWon = 0;
+    let wins = 0;
+    let losses = 0;
+    let pending = 0;
+    const teamCounts = new Map<string, number>();
+
+    for (const bet of bets) {
+      const stake = Number(bet.stake);
+      totalStaked += stake;
+      if (bet.status === WcOddsBetStatus.WIN) {
+        wins += 1;
+        totalWon += Number(bet.potentialPayout);
+      } else if (bet.status === WcOddsBetStatus.LOSE) {
+        losses += 1;
+      } else if (bet.status === WcOddsBetStatus.PENDING) {
+        pending += 1;
+      }
+
+      if (bet.event) {
+        for (const team of [bet.event.homeTeam, bet.event.awayTeam]) {
+          teamCounts.set(team, (teamCounts.get(team) ?? 0) + 1);
+        }
+      }
+    }
+
+    const favoriteTeam = [...teamCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+    const settled = wins + losses;
+    const roiPercent = totalStaked > 0 && settled > 0
+      ? Math.round(((totalWon - totalStaked) / totalStaked) * 1000) / 10
+      : null;
+
+    const openBets = await this.mapBetsToPublicDtos(
+      bets.filter((b) => b.status === WcOddsBetStatus.PENDING).slice(0, 10),
+    );
+    const recentSettled = await this.mapBetsToPublicDtos(
+      bets
+        .filter((b) => b.status !== WcOddsBetStatus.PENDING)
+        .slice(0, 10),
+    );
+
+    return {
+      summary: {
+        totalBets: bets.length,
+        wins,
+        losses,
+        pending,
+        totalStaked: Math.round(totalStaked * 100) / 100,
+        totalWon: Math.round(totalWon * 100) / 100,
+        roiPercent,
+      },
+      favoriteTeam: favoriteTeam
+        ? { name: favoriteTeam[0], betCount: favoriteTeam[1] }
+        : null,
+      openBets,
+      recentSettled,
+    };
+  }
+
+  async getEventSubscription(userId: number, ref: string) {
+    this.assertEnabled();
+    const event = await this.findEventByRef(ref);
+    if (!event) throw new NotFoundException('Event not found');
+
+    const sub = await this.prisma.wcEventSubscription.findUnique({
+      where: { userId_eventId: { userId, eventId: event.id } },
+    });
+
+    return {
+      subscribed: Boolean(sub),
+      notifyGoals: sub?.notifyGoals ?? true,
+      notifyStart: sub?.notifyStart ?? true,
+      eventId: event.id,
+    };
+  }
+
+  async subscribeEvent(
+    userId: number,
+    ref: string,
+    opts?: { notifyGoals?: boolean; notifyStart?: boolean },
+  ) {
+    this.assertEnabled();
+    const event = await this.findEventByRef(ref);
+    if (!event) throw new NotFoundException('Event not found');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { telegramLinkedAt: true },
+    });
+    if (!user?.telegramLinkedAt) {
+      throw new BadRequestException('Привяжите Telegram в настройках профиля');
+    }
+
+    await this.prisma.wcEventSubscription.upsert({
+      where: { userId_eventId: { userId, eventId: event.id } },
+      create: {
+        userId,
+        eventId: event.id,
+        notifyGoals: opts?.notifyGoals ?? true,
+        notifyStart: opts?.notifyStart ?? true,
+      },
+      update: {
+        notifyGoals: opts?.notifyGoals ?? true,
+        notifyStart: opts?.notifyStart ?? true,
+      },
+    });
+
+    return { ok: true, subscribed: true };
+  }
+
+  async unsubscribeEvent(userId: number, ref: string) {
+    this.assertEnabled();
+    const event = await this.findEventByRef(ref);
+    if (!event) throw new NotFoundException('Event not found');
+
+    await this.prisma.wcEventSubscription.deleteMany({
+      where: { userId, eventId: event.id },
+    });
+
+    return { ok: true, subscribed: false };
   }
 
   async listAllBets(status?: WcOddsBetStatus) {

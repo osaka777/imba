@@ -10,6 +10,7 @@ export interface IUser {
             phone: string | null;
             whatsapp: string | null;
             wallet: string | null;
+            postbackUrl?: string | null;
         },
         trafficSource: string,
         uid: string;

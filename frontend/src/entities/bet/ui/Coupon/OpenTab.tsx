@@ -299,7 +299,20 @@ export const OpenTab = () => {
         <div className={styles.notFound}>
           {filter === "all"
             ? "Вы не сделали ни одной ставки"
-            : "Нет ставок по выбранному фильтру"}
+            : (
+              <>
+                Нет ставок по фильтру «{FILTERS.find((f) => f.id === filter)?.label}»
+                {allEntries.length > 0 ? (
+                  <button
+                    className={styles.filterResetBtn}
+                    onClick={() => setFilter("all")}
+                    type="button"
+                  >
+                    Показать все
+                  </button>
+                ) : null}
+              </>
+            )}
         </div>
       )}
     </div>

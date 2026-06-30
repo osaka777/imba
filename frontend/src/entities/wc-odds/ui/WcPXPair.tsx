@@ -58,14 +58,15 @@ function PxButton({
   const value = outcome.price.toFixed(2);
   const { prevState } = usePrevious(value);
   const hasPrice = Number.isFinite(outcome.price) && outcome.price > 1;
-  const isBettable = bettingOpen && hasPrice && isWcMarketBettable(group.marketKey, outcome.outcomeKey);
-  const showLock = !bettingOpen || !hasPrice;
+  const isBettable = bettingOpen && hasPrice && !outcome.suspended
+    && isWcMarketBettable(group.marketKey, outcome.outcomeKey);
+  const showLock = !isBettable && hasPrice;
   const flash = wcOddsFlashClasses(value, prevState, styles);
 
   return (
     <div className={cn(styles.oddsItem, showLock && styles.oddsItem_lock, styles.oddsItemPX)}>
       <Button
-        className={cn(styles.odd, flash.cell, isRateAdded && styles.odd_added)}
+        className={cn(styles.odd, isRateAdded && styles.odd_added)}
         disabled={!isBettable}
         onClick={onToggle}
       >

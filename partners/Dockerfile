@@ -11,7 +11,7 @@ COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN \
   if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
   elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile --ignore-scripts; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
@@ -19,6 +19,10 @@ RUN \
 # Rebuild the source code only when needed
 FROM base AS builder
 
+ARG NEXT_PUBLIC_HOST=https://imba.bet
+ARG NEXT_PUBLIC_MAIN_SITE=https://imba.bet
+ENV NEXT_PUBLIC_HOST=$NEXT_PUBLIC_HOST
+ENV NEXT_PUBLIC_MAIN_SITE=$NEXT_PUBLIC_MAIN_SITE
 ENV NEXT_PRIVATE_STANDALONE=true
 
 WORKDIR /app

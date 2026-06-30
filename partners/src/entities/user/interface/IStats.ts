@@ -1,8 +1,9 @@
 export interface IStats {
-    allTimeAffiliated: string;
-    balanceForDay: string;
-    balanceForMonth: string;
-    balanceForWeek: string;      // Добавлено
-    balanceForAll: string;       // Добавлено
-    currency?: string;
+  allTimeAffiliated: string;
+  firstDeposits?: string;
+  balanceForDay: string;
+  balanceForMonth: string;
+  balanceForWeek: string;
+  balanceForAll: string;
+  currency?: string;
 }

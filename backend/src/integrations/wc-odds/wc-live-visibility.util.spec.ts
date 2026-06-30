@@ -52,6 +52,17 @@ describe('wc-live-visibility', () => {
     expect(wcEventHasActiveListBets(baseEvent({ oddsOver: 2.05, totalLine: 2.5 }))).toBe(true);
   });
 
+  it('keeps 0:0 matches with list odds visible after kickoff grace', () => {
+    expect(isWcEventVisibleInLiveList(baseEvent({
+      oddsHome: 4.6,
+      oddsDraw: 1.65,
+      oddsAway: 4.5,
+      homeScore: 0,
+      awayScore: 0,
+      commenceTime: new Date(Date.now() - 95 * 60_000).toISOString(),
+    }))).toBe(true);
+  });
+
   it('hides stale past kickoffs without live feed', () => {
     expect(isWcEventVisibleInLiveList(baseEvent({
       oddsHome: 1.85,
@@ -63,8 +74,14 @@ describe('wc-live-visibility', () => {
     const events = [
       baseEvent({ id: 'ol-1' }),
       baseEvent({ id: 'ol-2', oddsHome: 2.1 }),
+      baseEvent({
+        id: 'ol-3',
+        commenceTime: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+        oddsHome: 2.1,
+      }),
     ];
-    expect(filterVisibleWcLiveListEvents(events)).toHaveLength(1);
-    expect(filterVisibleWcLiveListEvents(events)[0].id).toBe('ol-2');
+    const visible = filterVisibleWcLiveListEvents(events);
+    expect(visible).toHaveLength(2);
+    expect(visible.map((event) => event.id)).toEqual(['ol-1', 'ol-2']);
   });
 });

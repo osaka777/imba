@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { AuthGuard } from '@/shared/components/AuthGuard'
 import { bonusAPI, Bonus } from '@/shared/api/bonuses'
+import { adminAffiliatePartnersAPI } from '@/shared/api/affiliatePartners'
 
 interface EnhancedBonusForm {
   promoCode: string
@@ -53,6 +54,7 @@ export default function BonusesPage() {
 
   useEffect(() => {
     fetchBonuses()
+    adminAffiliatePartnersAPI.getPartners(500).then(setPartners).catch(console.error)
   }, [])
 
   const fetchBonuses = async () => {
@@ -318,6 +320,21 @@ export default function BonusesPage() {
                     min="1"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Партнёр (атрибуция)</label>
+                  <select
+                    value={newBonus.partnerId}
+                    onChange={(e) => setNewBonus({ ...newBonus, partnerId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Без партнёра</option>
+                    {partners.map((p) => (
+                      <option key={p.userId} value={String(p.userId)}>
+                        {p.email} ({p.uid.slice(0, 8)}…)
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

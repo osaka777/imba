@@ -1,26 +1,49 @@
 .Input {
-    border-radius: 10px;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  color: #0f0e27;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.25;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
 
-    padding: 8px 15px;
+.Input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
 
-    background-color: var(--white-10);
+.Input:hover {
+  border-color: #cbd5e1;
+  background-color: #fff;
+}
 
-    width: 100%;
-
-    color: var(--gray-30-transparent);
-    font-size: 12px;
+.Input:focus {
+  outline: none;
+  border-color: #6f48a7;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(111, 72, 167, 0.12);
 }
 
 .label {
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.labelText {
-    padding-left: 4px;
 
-    color: var(--gray-30-transparent);
-    font-size: 11px;
+.labelText {
+  padding-left: 2px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.3;
 }

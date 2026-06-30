@@ -7,6 +7,7 @@ import { api } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { toast } from "react-toastify";
 import { changePassword as changePasswordApi } from "~/entities/user/api/changePassword";
+import { TelegramModal } from "./TelegramModal";
 import { useAccountType } from "~/shared/model/useAccountType";
 
 interface ApiResponse<T> {
@@ -39,6 +40,8 @@ interface UserData {
   phone?: string;
   accountNumber?: string;
   hideBalance?: boolean;
+  telegramLinked?: boolean;
+  telegramUsername?: string | null;
 }
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
@@ -51,6 +54,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [hideBalance, setHideBalance] = useLocalStorage<boolean>("hideBalance", false);
   const { selectedAccountType, setSelectedAccountType, isClient } = useAccountType();
+  const [showTelegram, setShowTelegram] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -142,6 +146,21 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (showTelegram) {
+    return (
+      <TelegramModal
+        onClose={() => setShowTelegram(false)}
+        linked={Boolean(userData?.telegramLinked)}
+        username={userData?.telegramUsername}
+        onLinkedChange={(linked, username) =>
+          setUserData((prev) =>
+            prev ? { ...prev, telegramLinked: linked, telegramUsername: username } : prev,
+          )
+        }
+      />
     );
   }
 
@@ -259,6 +278,28 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
           <div className={styles.otherSettingsTitle}>Остальные настройки</div>
 
           <div className={styles.otherSettings}>
+            <div className={styles.otherSettingsRow}>
+              <button
+                type="button"
+                className={styles.settingBlock}
+                onClick={() => setShowTelegram(true)}
+              >
+                <div className={styles.leftContent}>
+                  <div className={styles.settingHeader}>
+                    <div className={styles.settingTitle}>Telegram</div>
+                  </div>
+                  <div className={styles.settingDescription}>
+                    {userData?.telegramLinked
+                      ? `Привязан${userData.telegramUsername ? `: @${userData.telegramUsername}` : ""}. Уведомления и 2FA.`
+                      : "Привяжите бота для уведомлений и сброса пароля"}
+                  </div>
+                </div>
+                <div className={styles.rightContent}>
+                  <span className={styles.tgNavArrow}>›</span>
+                </div>
+              </button>
+            </div>
+
             <div className={styles.otherSettingsRow}>
               <label className={styles.settingBlock}>
                 <div className={styles.leftContent}>

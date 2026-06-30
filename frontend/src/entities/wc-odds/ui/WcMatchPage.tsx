@@ -5,10 +5,13 @@ import Link from "next/link";
 
 import { LoadingScreen } from "~/shared/ui";
 import { fetchWcEventDetail, type WcEventDetail } from "~/entities/wc-odds/api/client";
+import { mergeWcEventDetail } from "~/entities/wc-odds/lib/wcEventDetail";
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { useWcOddsEventStream } from "~/entities/wc-odds/lib/useWcOddsStream";
+import { wcOddsFeedStore } from "~/entities/wc-odds/lib/wcOddsFeedStore";
 import { WcScoreBoard } from "~/entities/wc-odds/ui/WcScoreBoard";
 import { WcOddsSection } from "~/entities/wc-odds/ui/WcOddsSection";
+import { WcMatchTelegramSubscribe } from "~/entities/wc-odds/ui/WcMatchTelegramSubscribe";
 
 import matchStyles from "~/entities/game/ui/Match/Match.module.css";
 import pageStyles from "~/entities/wc-odds/ui/WcMatchPage.module.css";
@@ -39,22 +42,27 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
     if (connected || !slug) return undefined;
 
     let cancelled = false;
+    const pollMs = event?.phase === "live" ? 1000 : 3000;
+
     const poll = async () => {
       try {
         const data = await fetchWcEventDetail(slug);
-        if (!cancelled && data) setEvent(data);
+        if (!cancelled && data) {
+          const prev = wcOddsFeedStore.getEventDetail(slug);
+          setEvent(prev ? mergeWcEventDetail(prev, data) : data);
+        }
       } catch {
         // ignore
       }
     };
 
     void poll();
-    const id = window.setInterval(poll, 3000);
+    const id = window.setInterval(poll, pollMs);
     return () => {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [connected, slug, setEvent]);
+  }, [connected, slug, setEvent, event?.phase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +144,9 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
         event={event}
         onBroadcastOpen={broadcastOpen}
         showBroadcastLink={showBroadcastBtn}
+        telegramAction={
+          <WcMatchTelegramSubscribe eventRef={event.slug || slug} variant="meta" />
+        }
       />
       <section className={matchStyles.TournamentOdds}>
         <WcOddsSection event={event} />

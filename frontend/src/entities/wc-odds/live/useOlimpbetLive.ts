@@ -12,7 +12,7 @@ import {
   filterWcEventsBySport,
   filterWcEventsByTournament,
   filterWcEventsByBroadcast,
-  groupWcEventsByLeague,
+  groupWcEventsByLeagueStable,
   type WcLeagueBlock,
 } from "~/entities/wc-odds/line/groupWcByLeague";
 import {
@@ -20,7 +20,7 @@ import {
   WC_LIVE_INITIAL_LIMIT_MOBILE,
   WC_LIVE_PAGE_SIZE,
 } from "~/entities/wc-odds/live/wcLivePagination";
-import { filterVisibleWcLiveEvents } from "~/entities/wc-odds/lib/wcLineEvents";
+import { filterVisibleWcLiveEvents, isWcLiveListTerminal } from "~/entities/wc-odds/lib/wcLineEvents";
 import { useWcListPaginationLimits } from "~/entities/wc-odds/lib/useWcListPaginationLimits";
 import { useWcOddsLiveStream } from "~/entities/wc-odds/lib/useWcOddsStream";
 
@@ -122,12 +122,12 @@ export function useOlimpbetLive(sport?: string) {
 
   useEffect(() => {
     for (const event of streamEvents) {
-      if (event.completed || event.phase === "finished") hideEvent(event.id);
+      if (isWcLiveListTerminal(event)) hideEvent(event.id);
     }
   }, [streamEvents, hideEvent]);
 
   const leagues = useMemo(
-    () => groupWcEventsByLeague(visibleEvents),
+    () => groupWcEventsByLeagueStable(visibleEvents),
     [visibleEvents],
   );
 

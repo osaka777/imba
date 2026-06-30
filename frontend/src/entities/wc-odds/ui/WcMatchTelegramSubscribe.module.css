@@ -1,0 +1,46 @@
+.metaBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.375rem;
+  background: rgb(255 255 255 / 0.14);
+  color: rgb(255 255 255 / 0.78);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.metaBtn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.22);
+  color: #fff;
+}
+
+.metaBtn:active:not(:disabled) {
+  opacity: 0.82;
+}
+
+.metaBtn:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.metaBtnActive {
+  background: rgb(56 189 248 / 0.24);
+  color: #7dd3fc;
+}
+
+.metaBtnActive:hover:not(:disabled) {
+  background: rgb(56 189 248 / 0.32);
+  color: #bae6fd;
+}
+
+.icon {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}

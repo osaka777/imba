@@ -1,272 +1,172 @@
-.pageContainer {
-    max-width: 800px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 20px;
-    background: var(--blue-00);
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.10);
-    min-height: 80vh;
-    display: flex;
-    flex-direction: column;
+.page {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 8px calc(88px + env(safe-area-inset-bottom, 0px));
+  min-height: 70vh;
 }
 
 .pageHeader {
-    background: var(--blue-00);
-    padding: 0 16px 16px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px;
 }
 
-.headerRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 40px;
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.15s ease;
 }
 
-.headerTitle {
-    font-size: 24px;
-    font-weight: 600;
-    color: #fff;
+.backLink:hover {
+  color: #cbd5e1;
 }
 
-.headerAccount {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    color: #9299A2;
+.pageTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: -0.02em;
 }
 
-.tabs {
-    display: flex;
-    gap: 8px;
-    padding: 12px 16px 0 16px;
-    background: var(--blue-00);
-    flex-shrink: 0;
+.pageSubtitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
 }
 
-.tabItem {
-    padding: 8px 16px;
-    border-radius: 8px 8px 0 0;
-    font-size: 14px;
-    color: #9299A2;
-    cursor: pointer;
-    background: transparent;
-    transition: background 0.2s, color 0.2s;
-    font-weight: 500;
-    border: none;
+/* ── Filters ── */
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 4px;
 }
 
-.tabItem.active {
-    background: #0095ff;
-    color: #fff;
-    font-weight: 500;
+.filterChip {
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.75);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.content {
-    padding: 20px;
-    background: var(--blue-00);
-    min-height: 200px;
-    flex-grow: 1;
-    overflow-y: auto;
+.filterChip:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
 }
 
-.emptyBlock {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 0;
+.filterChipActive {
+  border-color: #3b82f6;
+  background: rgb(37 99 235 / 0.35);
+  color: #fff;
 }
 
-.emptyTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: #ccc;
-    margin-bottom: 8px;
+/* ── List ── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.emptyText {
-    font-size: 14px;
-    color: #ccc;
-    text-align: center;
+.historyCardWrap {
+  cursor: pointer;
+  border-radius: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.historyCardWrap:hover {
+  transform: translateY(-1px);
+}
+
+.historyCardWrap:active {
+  transform: scale(0.995);
+}
+
+.historyCardWrap:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* ── Empty / loading ── */
+
+.loadingWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 16px;
 }
 
 .loadingText {
-    text-align: center;
-    color: #ccc;
-    font-size: 16px;
-    padding: 40px 0;
+  font-size: 13px;
+  color: #94a3b8;
 }
 
-.operationsList {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.emptyBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 20px;
+  border-radius: 14px;
+  border: 1px dashed rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.03);
+  text-align: center;
 }
 
-.betItem {
-    background: var(--blue-20);
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: box-shadow 0.2s;
+.emptyIcon {
+  font-size: 28px;
+  line-height: 1;
+  opacity: 0.7;
 }
 
-.betItem:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.emptyTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #cbd5e1;
 }
 
-.betItem.clickable:hover {
-    background: var(--blue-30);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.emptyText {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 260px;
+  line-height: 1.45;
 }
 
-.betItem.clickable {
-    transition: all 0.2s ease;
-}
+@media (min-width: 769px) {
+  .page {
+    max-width: 720px;
+    padding-top: 16px;
+  }
 
-.betHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 14px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
+  .pageTitle {
+    font-size: 24px;
+  }
 
-.betHeaderLeft {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.betDate {
-    font-size: 12px;
-    color: #9299A2;
-}
-
-.betType {
-    font-size: 12px;
-    color: #0095ff;
-    background: rgba(0,149,255,0.1);
-    padding: 3px 8px;
-    border-radius: 4px;
-}
-
-.betStatus {
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.statusWin {
-    color: #52c41a;
-}
-
-.statusLose {
-    color: #f5222d;
-}
-
-.statusPending {
-    color: #faad14;
-}
-
-.statusReturn {
-    color: #1890ff;
-}
-
-.betContent {
-    padding: 14px;
-}
-
-.betEvent {
-    font-size: 14px;
-    color: #fff;
-    font-weight: 500;
-    margin-bottom: 6px;
-}
-
-.betChoice {
-    font-size: 12px;
-    color: #9299A2;
-}
-
-.betFooter {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 14px;
-    background: rgba(0,0,0,0.02);
-}
-
-.betCoefficient, .betAmount {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    font-size: 13px;
-}
-
-.betCoefficientLabel, .betAmountLabel {
-    color: #9299A2;
-}
-
-.betCoefficientValue {
-    color: #f5222d;
-    font-weight: 600;
-}
-
-.betAmountValue {
-    color: #fff;
-    font-weight: 500;
-}
-
-@media (max-width: 768px) {
-    .pageContainer {
-        margin: 10px;
-        padding: 16px;
-        border-radius: 8px;
-    }
-    
-    .headerTitle {
-        font-size: 20px;
-    }
-    
-    .tabs {
-        padding: 8px 12px 0 12px;
-    }
-    
-    .tabItem {
-        padding: 6px 12px;
-        font-size: 13px;
-    }
-    
-    .content {
-        padding: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .pageContainer {
-        margin: 5px;
-        padding: 12px;
-    }
-    
-    .betHeader {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-    
-    .betFooter {
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .headerRow {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
+  .list {
+    gap: 14px;
+  }
 }

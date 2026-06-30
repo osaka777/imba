@@ -1,23 +1,28 @@
 import React from "react";
-import styles from "./withdrawal.module.css"
-import { LogoIcon } from "@/shared/assets";
-import { SadSmile } from "@/shared/assets/icons";
+import styles from "./withdrawal.module.css";
 import { WithdrawalCard } from "@/widgets/WithdrawalCard/WithdrawalCard";
 import { PaymentTable } from "@/widgets/PaymentTable/PaymentTable";
 import { PaymentInfo } from "@/widgets/PaymentInfo/PaymentInfo";
+import shell from "../profile-shell.module.css";
 
 const Page = () => {
-    return (
-        <main className={styles.main}>
-            <div className={styles.wrapper}>
-                <div className={styles.payment_actions}>
-                    <WithdrawalCard />
-                    <PaymentInfo />
-                </div>
-                <PaymentTable />
-            </div>
-        </main>
-    );
+  return (
+    <>
+      <header className={shell.pageHeader}>
+        <h1 className={shell.pageTitle}>Выводы</h1>
+        <p className={shell.pageSubtitle}>
+          Запрос выплаты на USDT TRC-20 и история операций
+        </p>
+      </header>
+      <div className={styles.layout}>
+        <div className={styles.payment_actions}>
+          <WithdrawalCard />
+          <PaymentInfo />
+        </div>
+        <PaymentTable />
+      </div>
+    </>
+  );
 };
 
 export default Page;

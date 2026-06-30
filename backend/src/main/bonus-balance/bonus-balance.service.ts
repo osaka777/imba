@@ -3,9 +3,14 @@ import { OperationSource, OperationStatus, OperationType } from '@prisma/client'
 import { PrismaService } from '../../prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
+import { PartnersService } from '../partners/partners.service';
+
 @Injectable()
 export class BonusBalanceService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly partnersService: PartnersService,
+  ) {}
 
   /**
    * Получает историю бонусов пользователя
@@ -600,6 +605,8 @@ export class BonusBalanceService {
       throw new BadRequestException('Промокод не найден');
     }
 
+    await this.partnersService.assertPartnerPromoRedeemable(promo);
+
     if (promo.type === 'DEPOSIT_BONUS') {
       throw new BadRequestException('Этот промокод активируется при пополнении счёта');
     }
@@ -728,7 +735,7 @@ export class BonusBalanceService {
         },
       });
 
-      return {
+      const result = {
         ok: true,
         bonusAmount,
         bonusCurrency,
@@ -737,6 +744,20 @@ export class BonusBalanceService {
           ? `Начислено ${totalTokens} жетон(ов) на бонусный счёт`
           : `Начислено ${bonusAmount} ${bonusCurrency} на бонусный счёт`,
       };
+
+      await this.partnersService.handlePromoRedemption(
+        userId,
+        {
+          id: promo.id,
+          code: promo.code,
+          partnerId: promo.partnerId,
+          value: promo.value,
+        },
+        bonusAmount,
+        bonusCurrency,
+      );
+
+      return result;
     });
   }
 } 

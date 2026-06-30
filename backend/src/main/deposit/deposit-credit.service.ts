@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 
+import { PartnersService } from '~/main/partners/partners.service';
 import { PrismaService } from '~/prisma/prisma.service';
 import { DepositUserNotifyService } from './deposit-user-notify.service';
 import { readPublicOrderId } from './deposit-public-order-id.util';
@@ -10,6 +11,7 @@ export class DepositCreditService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly depositUserNotify: DepositUserNotifyService,
+    private readonly partnersService: PartnersService,
   ) {}
 
   async creditDeposit(depositId: number, extraMeta?: Record<string, unknown>) {
@@ -65,6 +67,12 @@ export class DepositCreditService {
       amount: Number(depo.amount),
       currency: depo.currencyCode,
     });
+
+    void this.partnersService.notifyFirstDeposit(
+      depo.userId,
+      depo.amount,
+      depo.currencyCode,
+    );
 
     return { ok: true };
   }

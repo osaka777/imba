@@ -25,16 +25,19 @@ type MarketPairRowProps = {
   pivot: ReactNode;
   showPivot?: boolean;
   totalsLayout?: boolean;
+  handicapLayout?: boolean;
 };
 
 export function MarketPairButton({
   side,
   labelAlign,
   totalsLayout = false,
+  handicapLayout = false,
 }: {
   side: MarketPairSide;
   labelAlign: "start" | "end";
   totalsLayout?: boolean;
+  handicapLayout?: boolean;
 }) {
   const showLock = !side.bettable;
   const labelClass = cn(
@@ -50,19 +53,23 @@ export function MarketPairButton({
     </p>
   );
 
+  const useTotalsStyle = totalsLayout || handicapLayout;
+
   return (
     <div className={cn(styles.oddsItem, showLock && styles.oddsItem_lock)}>
       <Button
         className={cn(
           styles.odd,
-          totalsLayout && styles.oddTotals,
-          side.flashCell,
+          useTotalsStyle && styles.oddTotals,
+          handicapLayout && styles.oddHandicap,
           side.selected && styles.odd_added,
         )}
         disabled={!side.bettable}
         onClick={() => side.bettable && side.onClick()}
       >
-        {totalsLayout ? (
+        {handicapLayout ? (
+          coefNode
+        ) : totalsLayout ? (
           <>
             {labelNode}
             {coefNode}
@@ -89,6 +96,7 @@ export function MarketPairRow({
   pivot,
   showPivot = true,
   totalsLayout = false,
+  handicapLayout = false,
 }: MarketPairRowProps) {
   return (
     <div
@@ -97,11 +105,38 @@ export function MarketPairRow({
         styles.oddsBlockPair,
         showPivot && styles.oddsBlockPairOU,
         totalsLayout && styles.oddsTotalsRow,
+        handicapLayout && styles.oddsHandicapRow,
       )}
     >
-      {left ? <MarketPairButton labelAlign="start" side={left} totalsLayout={totalsLayout} /> : null}
-      {showPivot ? <div className={styles.totalsPivot}>{pivot}</div> : null}
-      {right ? <MarketPairButton labelAlign="end" side={right} totalsLayout={totalsLayout} /> : null}
+      {left ? (
+        <MarketPairButton
+          handicapLayout={handicapLayout}
+          labelAlign="start"
+          side={left}
+          totalsLayout={totalsLayout}
+        />
+      ) : null}
+      {showPivot && handicapLayout ? (
+        <div className={styles.handicapPivotWrap}>
+          {left?.label ? (
+            <span className={styles.handicapPivotLabelLeft}>{left.label}</span>
+          ) : null}
+          <div className={styles.totalsPivot}>{pivot}</div>
+          {right?.label ? (
+            <span className={styles.handicapPivotLabelRight}>{right.label}</span>
+          ) : null}
+        </div>
+      ) : showPivot ? (
+        <div className={styles.totalsPivot}>{pivot}</div>
+      ) : null}
+      {right ? (
+        <MarketPairButton
+          handicapLayout={handicapLayout}
+          labelAlign="end"
+          side={right}
+          totalsLayout={totalsLayout}
+        />
+      ) : null}
     </div>
   );
 }

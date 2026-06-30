@@ -20,6 +20,7 @@ import { BannerModule } from './banner/banner.module';
 import { SlideModule } from './slide/slide.module';
 import { PromoModalModule } from './promo-modal/promo-modal.module';
 import { PaymentSettingsModule } from './payment-settings/payment-settings.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { PaymentSettingsModule } from './payment-settings/payment-settings.modul
     SlideModule,
     PaymentSettingsModule,
     PromoModalModule,
+    TelegramModule,
   ],
 })
 export class MainModule {}

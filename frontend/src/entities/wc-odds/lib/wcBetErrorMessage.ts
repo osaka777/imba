@@ -1,6 +1,7 @@
 const WC_BET_ERROR_RU: Record<string, string> = {
   "Odds unavailable for this outcome": "Приём ставок на этот исход закрыт",
   "This outcome is temporarily suspended": "Исход временно приостановлен",
+  "Betting closed for this period": "Приём ставок на этот период закрыт",
   "Betting closed for this match": "Приём ставок на этот матч закрыт",
   "This market is not available for betting": "Этот рынок недоступен для ставок",
   "Insufficient funds": "Недостаточно средств на счёте",
