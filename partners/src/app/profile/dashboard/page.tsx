@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardAnalytics } from "@/widgets/DashboardAnalytics/DashboardAnalytics";
+import { SubIdAnalytics } from "@/widgets/SubIdAnalytics/SubIdAnalytics";
 import shell from "../profile-shell.module.css";
 
 export default function ProfileDashboardPage() {
@@ -13,6 +14,7 @@ export default function ProfileDashboardPage() {
         </p>
       </header>
       <DashboardAnalytics />
+      <SubIdAnalytics />
     </>
   );
 }

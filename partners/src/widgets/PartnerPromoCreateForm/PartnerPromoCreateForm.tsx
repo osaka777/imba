@@ -39,7 +39,8 @@ export function PartnerPromoCreateForm({ onCreated }: Props) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || data?.error || "Ошибка создания");
+      if (!res.ok) throw new Error(data?.error || data?.message || "Ошибка создания");
+      alert(data?.message || "Промокод создан");
       setCode("");
       onCreated?.();
       router.refresh();
@@ -54,7 +55,7 @@ export function PartnerPromoCreateForm({ onCreated }: Props) {
     <section className={styles.card}>
       <h2 className={styles.title}>Создать промокод</h2>
       <p className={styles.desc}>
-        До 10 активных кодов. Игроки, активировавшие код, закрепляются за вами.
+        До 10 активных кодов. Код активен сразу после одобрения аккаунта менеджером.
       </p>
       <form className={styles.form} onSubmit={submit}>
         <label className={styles.field}>

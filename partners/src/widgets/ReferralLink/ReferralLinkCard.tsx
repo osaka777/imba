@@ -100,7 +100,12 @@ export function ReferralLinkCard({ referralLink, percent, promoCodes = [] }: Pro
             {promoCodes.map((promo) => (
               <li key={promo.id} className={styles.promoItem}>
                 <div className={styles.promoMeta}>
-                  <strong>{promo.code}</strong>
+                  <strong>
+                    {promo.code}
+                    {promo.partnerCreated && !promo.redeemable && (
+                      <span className={styles.pendingBadge}> ожидает активации</span>
+                    )}
+                  </strong>
                   <span>
                     {promo.used}/{promo.available} · до{" "}
                     {new Date(promo.validUntil).toLocaleDateString("ru-RU")}

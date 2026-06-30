@@ -12,7 +12,8 @@ export type PartnerPromoCode = {
   used: number;
   remaining: number;
   partnerPercentage: number;
-  currencyCode: string | null;
+  partnerCreated?: boolean;
+  redeemable?: boolean;
 };
 
 export type ReferralLinkData = {
