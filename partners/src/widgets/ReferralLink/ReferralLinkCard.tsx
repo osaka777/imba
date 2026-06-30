@@ -16,12 +16,22 @@ export function ReferralLinkCard({ referralLink, percent, promoCodes = [] }: Pro
   const [sub1, setSub1] = useState("");
   const [sub2, setSub2] = useState("");
   const [sub3, setSub3] = useState("");
+  const [sub4, setSub4] = useState("");
+  const [sub5, setSub5] = useState("");
 
   const buildLink = (promoCode?: string) => {
     const url = new URL(referralLink);
-    if (sub1.trim()) url.searchParams.set("sub1", sub1.trim().slice(0, 64));
-    if (sub2.trim()) url.searchParams.set("sub2", sub2.trim().slice(0, 64));
-    if (sub3.trim()) url.searchParams.set("sub3", sub3.trim().slice(0, 64));
+    const subs: [string, string][] = [
+      ["sub1", sub1],
+      ["sub2", sub2],
+      ["sub3", sub3],
+      ["sub4", sub4],
+      ["sub5", sub5],
+    ];
+    for (const [key, val] of subs) {
+      const t = val.trim().slice(0, 64);
+      if (t) url.searchParams.set(key, t);
+    }
     if (promoCode) url.searchParams.set("promo", promoCode);
     return url.toString();
   };
@@ -72,6 +82,14 @@ export function ReferralLinkCard({ referralLink, percent, promoCodes = [] }: Pro
         <label className={styles.subField}>
           sub3
           <input value={sub3} onChange={(e) => setSub3(e.target.value)} placeholder="banner" />
+        </label>
+        <label className={styles.subField}>
+          sub4
+          <input value={sub4} onChange={(e) => setSub4(e.target.value)} placeholder="geo" />
+        </label>
+        <label className={styles.subField}>
+          sub5
+          <input value={sub5} onChange={(e) => setSub5(e.target.value)} placeholder="creative" />
         </label>
       </div>
 

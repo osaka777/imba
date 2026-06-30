@@ -862,6 +862,12 @@ export class PartnersService {
   }
 
   async getPartnerPromoCodes(partnerUserId: number) {
+    const affiliator = await this.prismaService.affilator.findUnique({
+      where: { userId: partnerUserId },
+      select: { status: true },
+    });
+    const partnerActive = affiliator?.status === AffilatorStatus.ACTIVE;
+
     const promos = await this.prismaService.promo.findMany({
       where: { partnerId: String(partnerUserId) },
       orderBy: { createdAt: 'desc' },
@@ -882,6 +888,7 @@ export class PartnersService {
         remaining,
         partnerPercentage: Number(value.partnerPercentage ?? 0),
         partnerCreated: value.partnerCreated === true,
+        redeemable: partnerActive,
         currencyCode: p.currencyCode,
       };
     });
