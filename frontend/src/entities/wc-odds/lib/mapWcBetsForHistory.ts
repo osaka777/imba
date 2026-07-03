@@ -6,7 +6,7 @@ export type WcHistoryOrdinarBet = {
   id: string;
   wcBetId: number;
   isWcBet: true;
-  status: "PENDING" | "WIN" | "LOSE" | "RETURN";
+  status: "PENDING" | "WIN" | "LOSE" | "RETURN" | "CASHOUT";
   createdAt: string;
   cf: string;
   amount: string;
@@ -39,15 +39,24 @@ export function mapWcBetsForHistory(wcBets: WcBet[]): WcHistoryOrdinarBet[] {
       bet.event.homeScore != null && bet.event.awayScore != null;
     const showMatchScore = hasMatchScore && !isPeriodScopedBet(bet, label);
 
+    const isCashout = bet.status === "CASHED_OUT";
+    const payoutValue = isCashout && bet.cashoutAmount
+      ? Number(bet.cashoutAmount)
+      : Number(bet.potentialPayout);
+
     return {
       id: `wc-${bet.id}`,
       wcBetId: bet.id,
       isWcBet: true,
-      status: bet.status === "VOID" ? "RETURN" : bet.status,
+      status: bet.status === "VOID"
+        ? "RETURN"
+        : bet.status === "CASHED_OUT"
+          ? "CASHOUT"
+          : bet.status,
       createdAt: bet.createdAt,
       cf: Number(bet.odds).toFixed(2),
       amount: Number(bet.stake).toFixed(0),
-      payout: Number(bet.potentialPayout).toFixed(0),
+      payout: payoutValue.toFixed(0),
       currencyCode: bet.currencyCode,
       eventName: `${bet.event.homeTeam} — ${bet.event.awayTeam}`,
       betInfo: label,

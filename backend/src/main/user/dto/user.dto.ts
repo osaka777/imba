@@ -18,6 +18,12 @@ export class UserDto extends Dto<UserDto> {
 
   email: string;
 
+  phone?: string | null;
+
+  phoneVerifiedAt?: Date | null;
+
+  phoneVerified?: boolean;
+
   id: number;
 
   telegramUsername?: string | null;

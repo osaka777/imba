@@ -6,6 +6,7 @@ import { PartnersModule } from '~/main/partners/partners.module';
 import { PrismaModule } from '~/prisma/prisma.module';
 
 import { AuthenticationModule } from './authentication/authentication.module';
+import { PhoneVerificationModule } from './phone-verification.module';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -17,6 +18,7 @@ import { UserService } from './user.service';
     PrismaModule,
     PartnersModule,
     BonusBalanceModule,
+    PhoneVerificationModule,
     forwardRef(() => AuthenticationModule),
   ],
   providers: [UserService],

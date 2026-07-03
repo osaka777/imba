@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import getSymbolFromCurrency from "currency-symbol-map";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalStorage } from "usehooks-ts";
@@ -11,17 +11,26 @@ import { Withdraw } from "./Withdraw";
 import { SignOut } from "./SignOut";
 import { CategoryItem } from "./CategoryItem";
 import { DepositForm } from "~/entities/finance/ui/DepositForm";
+import {
+  parseWelcomeDepositParams,
+  WELCOME_DEPOSIT_SOURCE,
+} from "~/entities/game/ui/LuckyDrive/welcomeBonusDeposit";
+import { getWelcomeLimit } from "~/entities/game/ui/LuckyDrive/welcomeBonusLimits";
 import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
 import { DetailsIcon, SettingsIcon, FavoritesIcon, HistorysIcon, SupportIcon, VoucherIcon } from "~/shared/assets/icons";
-import { KztImage, RubImage, UahImage, UsdImage, KgsImage, AznImage, TjsImage, UzsImage, TryImage } from "~/shared/assets/images";
+import { KztImage, RubImage, UahImage, KgsImage, AznImage, TjsImage, UzsImage, TryImage } from "~/shared/assets/images";
 import { useRouter } from "next-nprogress-bar";
+import { useSearchParams } from "next/navigation";
 import Image, { StaticImageData } from "next/image";
 import { getSessionClient } from "~/entities/user/lib";
 import { api } from "~/shared/api";
 import { useCurrency } from "~/shared/model/useCurrency";
 import { useAccountType } from "~/shared/model/useAccountType";
 import { useProfileAutoRefresh } from "../../hooks/useProfileAutoRefresh";
+import { TelegramConnectBanner } from "~/entities/user/ui/TelegramConnectBanner/TelegramConnectBanner";
 import { languageService } from "~/shared/services/language.service";
+import { DEFAULT_SITE_CURRENCY, SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
+import { getCurrencyIconUrl } from "~/entities/user/lib/registrationCountries";
 
 export const PROFILE_CATEGORIES = [
   {
@@ -61,6 +70,13 @@ export const PROFILE_CATEGORIES = [
     link: '/profile/financeHistory'
   },
   {
+    id: 8,
+    name: 'Обращения в поддержку',
+    desc: 'История ваших чатов с операторами imba.bet',
+    icon: SupportIcon,
+    link: '/profile/support'
+  },
+  {
     id: 6,
     name: 'Настройки',
     desc: 'Возможность скрыть баланс и отредактировать личные данные',
@@ -70,7 +86,6 @@ export const PROFILE_CATEGORIES = [
 ];
 
 const currencyIcons: Record<string, StaticImageData> = {
-  USD: UsdImage,
   KZT: KztImage,
   RUB: RubImage,
   UAH: UahImage,
@@ -79,15 +94,25 @@ const currencyIcons: Record<string, StaticImageData> = {
 };
 
 const currencySymbols: Record<string, string> = {
-  USD: '$',
   KZT: '₸',
   RUB: '₽',
   UAH: '₴',
   TRY: '₺',
   UZS: "so'm",
+  USDT: 'USDT',
 };
 
 const getCurrencySymbol = (code: string) => currencySymbols[code] || code;
+
+function formatBonusTimeLeft(expiresAt?: string | null): string | null {
+  if (!expiresAt) return null;
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) return 'истёк';
+  const hours = Math.floor(diff / (60 * 60 * 1000));
+  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+  if (hours > 0) return `${hours} ч ${minutes} мин`;
+  return `${minutes} мин`;
+}
 
 interface Currency {
   isoCode: string;
@@ -118,20 +143,27 @@ interface BonusBalance {
   remainingTokens: number;
   tokensPerBet: number;
   isTokenBased: boolean;
+  requiresDeposit?: boolean;
+  depositActivated?: boolean;
+  expiresAt?: string | null;
 }
 
 interface User {
   id: number;
   email: string;
+  telegramLinked?: boolean;
   balances?: Balance[];
   bonusBalances?: BonusBalance[];
 }
 
 export const Profile = React.memo(() => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currency, setCurrency } = useCurrency();
   const [depositCurrency, setDepositCurrency] = useState<string>("");
+  const [depositDefaultAmount, setDepositDefaultAmount] = useState<number | undefined>();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [telegramBannerDismissed, setTelegramBannerDismissed] = useState(true);
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const { selectedAccountType, setSelectedAccountType, isClient } = useAccountType();
 
@@ -195,10 +227,22 @@ export const Profile = React.memo(() => {
     }).format(Number(amount));
   }, [bonusBalance?.amount]);
 
+  const [bonusTick, setBonusTick] = useState(0);
+  useEffect(() => {
+    if (!bonusBalance?.expiresAt) return;
+    const id = setInterval(() => setBonusTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, [bonusBalance?.expiresAt]);
+
+  const bonusTimeLeft = useMemo(
+    () => formatBonusTimeLeft(bonusBalance?.expiresAt),
+    [bonusBalance?.expiresAt, bonusTick],
+  );
+
   const mergedCurrencies = useMemo(() => {
     if (!currencies?.length || !user?.balances?.length) return [];
     
-    const supportedCurrencies = ['USD', 'KZT', 'UAH', 'RUB', 'TRY', 'UZS', 'USDT'];
+    const supportedCurrencies = [...SITE_CURRENCY_CODES];
     const balanceMap = new Map(user.balances.map(b => [b.currencyCode, b]));
     
     return currencies
@@ -216,11 +260,11 @@ export const Profile = React.memo(() => {
 
   const mainBalance = useMemo(() => {
     if (!user?.balances?.length) {
-      return { id: 0, amount: '0', currencyCode: currency || 'USD' };
+      return { id: 0, amount: '0', currencyCode: currency || DEFAULT_SITE_CURRENCY };
     }
     
     const foundBalance = user.balances.find((balance: Balance) => balance.currencyCode === currency);
-    return foundBalance || { id: 0, amount: '0', currencyCode: currency || 'USD' };
+    return foundBalance || { id: 0, amount: '0', currencyCode: currency || DEFAULT_SITE_CURRENCY };
   }, [user?.balances, currency]);
 
   const formattedBalance = useMemo(() => {
@@ -241,15 +285,43 @@ export const Profile = React.memo(() => {
   );
 
   // Оптимизированные обработчики
-  const openDepositModal = useCallback((currencyCode?: string) => {
+  const openDepositModal = useCallback((currencyCode?: string, defaultAmount?: number) => {
     armGuard();
     setDepositCurrency(currencyCode ?? currency);
+    setDepositDefaultAmount(defaultAmount);
     scheduleDialogOpen(setIsDepositOpen);
   }, [armGuard, currency]);
 
   const handleDepositClick = useCallback((currencyCode: string) => {
     openDepositModal(currencyCode);
   }, [openDepositModal]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setTelegramBannerDismissed(localStorage.getItem("telegramBannerDismissed") === "1");
+  }, []);
+
+  const dismissTelegramBanner = useCallback(() => {
+    setTelegramBannerDismissed(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("telegramBannerDismissed", "1");
+    }
+  }, []);
+
+  useEffect(() => {
+    const welcome = parseWelcomeDepositParams(searchParams);
+    if (!welcome) return;
+
+    const limit = getWelcomeLimit(welcome.currency);
+    const amount = Math.max(welcome.amount, limit.minDeposit);
+
+    if (welcome.currency !== currency) {
+      setCurrency(welcome.currency);
+    }
+
+    openDepositModal(welcome.currency, amount);
+    router.replace("/profile", { scroll: false });
+  }, [searchParams, currency, setCurrency, openDepositModal, router]);
 
   const handleWalletManagementClick = useCallback(() => {
     router.push('/profile/wallets');
@@ -333,7 +405,17 @@ export const Profile = React.memo(() => {
           </div>
         ) : (
           <div className={styles.bonusInfo}>
-            {bonusBalance?.isTokenBased ? (
+            {bonusBalance?.requiresDeposit && !bonusBalance?.depositActivated ? (
+              <>
+                <small>
+                  🎁 Бонус до {formattedBonusBalance} {currency} ждёт активации
+                </small>
+                <small>Пополните счёт, чтобы начать играть с бонуса</small>
+                {bonusTimeLeft && (
+                  <small>⏱ Сгорит через: {bonusTimeLeft}</small>
+                )}
+              </>
+            ) : bonusBalance?.isTokenBased ? (
               <>
                 <small>
                   Жетоны: {bonusBalance.remainingTokens || 0} / {bonusBalance.totalTokens || 0}
@@ -360,6 +442,9 @@ export const Profile = React.memo(() => {
                       )}
                       %
                     </small>
+                    {bonusTimeLeft && (
+                      <small>⏱ Сгорит через: {bonusTimeLeft}</small>
+                    )}
                   </div>
                 )}
               </>
@@ -367,6 +452,10 @@ export const Profile = React.memo(() => {
           </div>
         )}
       </section>
+
+      {!user.telegramLinked && !telegramBannerDismissed ? (
+        <TelegramConnectBanner onDismiss={dismissTelegramBanner} />
+      ) : null}
 
       {selectedAccountType === 'main' && mergedCurrencies.length > 0 && (
         <section className={styles.currenciesSection}>
@@ -390,11 +479,19 @@ export const Profile = React.memo(() => {
                 >
                   <div className={styles.currencyCardTop}>
                     <div className={styles.currencyIconWrap}>
-                      <Image
-                        src={currencyIcons[item.currencyCode] ?? UsdImage}
-                        alt={item.currencyName}
-                        className={styles.currencyIcon}
-                      />
+                      {currencyIcons[item.currencyCode] ? (
+                        <Image
+                          src={currencyIcons[item.currencyCode]}
+                          alt={item.currencyName}
+                          className={styles.currencyIcon}
+                        />
+                      ) : (
+                        <img
+                          src={getCurrencyIconUrl(item.currencyCode)}
+                          alt={item.currencyName}
+                          className={styles.currencyIcon}
+                        />
+                      )}
                     </div>
                     <button
                       type="button"
@@ -468,7 +565,11 @@ export const Profile = React.memo(() => {
           onPointerDownOutside={blockIfArmed}
         >
           {isDepositOpen ? (
-            <DepositForm forceCurrency={depositCurrency || undefined} />
+            <DepositForm
+              forceCurrency={depositCurrency || undefined}
+              defaultAmount={depositDefaultAmount}
+              depositSource={depositDefaultAmount ? WELCOME_DEPOSIT_SOURCE : undefined}
+            />
           ) : null}
         </DialogContent>
       </Dialog>

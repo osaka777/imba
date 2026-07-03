@@ -59,6 +59,14 @@ model BonusBalance {
   remainingTokens         Int      @default(0)
   tokensPerBet            Int      @default(1)
   isTokenBased            Boolean  @default(false)
+  requiresDeposit         Boolean  @default(false)
+  depositActivated        Boolean  @default(true)
+  activationDepositAmount Decimal  @default(0) @db.Decimal(16, 2)
+  maxCashout              Decimal? @db.Decimal(16, 2)
+  wagerMultiplier         Int      @default(6)
+  expiresAt               DateTime?
+  isFreeBet               Boolean  @default(false)
+  freeBetStake            Decimal? @db.Decimal(16, 2)
   currency                Currency @relation(fields: [currencyCode], references: [isoCode])
   promo                   Promo?   @relation("BonusBalancePromo", fields: [promoId], references: [id])
   user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -75,10 +83,12 @@ model User {
   email               String            @unique
   password            String?
   phone               String?
+  phoneVerifiedAt     DateTime?
   birthDate           DateTime?
   defaultCurrencyCode String?
   affiliatedById      Int?
   registrationIp      String?
+  registrationDeviceId String?
   /// sub1..sub5 from affiliate link (campaign tracking)
   affiliateSubs       Json?
   telegramUserId         String?           @unique
@@ -107,6 +117,7 @@ model User {
   affiliatedBy     Affilator?        @relation("affilatedBy", fields: [affiliatedById], references: [userId])
   withdrawRequests WithdrawRequest[]
   wcOddsBets       WcOddsBet[]
+  wcOddsExpressBets WcOddsExpressBet[]
   telegramLinkTokens       TelegramLinkToken[]
   passwordResetTokens      PasswordResetToken[]
   trustedDevices           UserTrustedDevice[]
@@ -114,8 +125,86 @@ model User {
   telegramNotificationLogs TelegramNotificationLog[]
   wcEventSubscriptions   WcEventSubscription[]
   wcTelegramNotifyCursors WcTelegramNotifyCursor[]
+  welcomeBonusClaim       WelcomeBonusClaim?
+  weeklyCashbackGrants    WeeklyCashbackGrant[]
+  bonusExpiryNotifyCursors BonusExpiryNotifyCursor[]
+  pushDevices              PushDevice[]
+  phoneVerificationChallenges PhoneVerificationChallenge[]
 
   @@index([email])
+}
+
+model PhoneVerificationChallenge {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PushDevice {
+  id              Int      @id @default(autoincrement())
+  userId          Int?
+  fcmToken        String   @unique
+  platform        String   @default("android")
+  appVersion      String?
+  notifyBets      Boolean  @default(true)
+  notifyDeposit   Boolean  @default(true)
+  notifyWithdraw  Boolean  @default(true)
+  notifyPromo     Boolean  @default(false)
+  notifyLiveMatch Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model WelcomeBonusClaim {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+  registrationIp     String?
+  deviceId           String?
+  paymentFingerprint String?
+  createdAt          DateTime @default(now())
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([registrationIp])
+  @@index([deviceId])
+  @@index([paymentFingerprint])
+}
+
+model BonusExpiryNotifyCursor {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  currencyCode String
+  expiresAt    DateTime
+  cursorKey    String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currencyCode, expiresAt, cursorKey])
+  @@index([expiresAt])
+}
+
+model WeeklyCashbackGrant {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  currencyCode   String
+  weekStart      DateTime
+  netLoss        Decimal  @db.Decimal(16, 2)
+  cashbackAmount Decimal  @db.Decimal(16, 2)
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currencyCode, weekStart])
+  @@index([weekStart])
 }
 
 model TelegramLinkToken {
@@ -223,6 +312,7 @@ model Affilator {
   user              User            @relation("affilatorData", fields: [userId], references: [id])
   users             User[]          @relation("affilatedBy")
   postbackLogs      AffiliatePostbackLog[]
+  landings          PartnerLanding[]
 
   @@index([userId])
   @@index([status])
@@ -795,6 +885,7 @@ enum PromoType {
   DIRECT_BONUS
   DEPOSIT_BONUS
   VOUCHER
+  FREE_BET
 }
 
 enum BetVariants {
@@ -905,6 +996,25 @@ enum WcOddsBetStatus {
   WIN
   LOSE
   VOID
+  CASHED_OUT
+}
+
+model WcOddsExpressBet {
+  id              Int             @id @default(autoincrement())
+  userId          Int
+  stake           Decimal         @db.Decimal(16, 2)
+  combinedOdds    Decimal         @db.Decimal(8, 2)
+  potentialPayout Decimal         @db.Decimal(16, 2)
+  currencyCode    String          @default("KZT")
+  status          WcOddsBetStatus @default(PENDING)
+  settledAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id])
+  legs            WcOddsBet[]
+
+  @@index([userId])
+  @@index([status])
 }
 
 model WcOddsBet {
@@ -921,18 +1031,48 @@ model WcOddsBet {
   currencyCode    String          @default("KZT")
   status          WcOddsBetStatus @default(PENDING)
   potentialPayout Decimal         @db.Decimal(16, 2)
+  cashoutAmount   Decimal?        @db.Decimal(16, 2)
   settledAt       DateTime?
   placementContextJson Json?
   isProbe             Boolean         @default(false)
+  wcExpressBetId      Int?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   user            User            @relation(fields: [userId], references: [id])
   event           WcOddsEvent     @relation(fields: [eventId], references: [id])
+  wcExpressBet    WcOddsExpressBet? @relation(fields: [wcExpressBetId], references: [id])
 
   @@index([userId])
   @@index([eventId])
   @@index([status])
   @@index([isProbe])
+  @@index([wcExpressBetId])
+}
+
+enum PartnerLandingTemplate {
+  HERO_MATCH
+  EVENTS_GRID
+  PROMO_FOCUS
+}
+
+model PartnerLanding {
+  id            String                 @id @default(uuid())
+  partnerUserId Int
+  slug          String                 @unique
+  title         String
+  template      PartnerLandingTemplate
+  headline      String?
+  subheadline   String?
+  promoCode     String?
+  eventRefs     String[]
+  defaultSub1   String?
+  isPublished   Boolean                @default(true)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  partner       Affilator              @relation(fields: [partnerUserId], references: [userId], onDelete: Cascade)
+
+  @@index([partnerUserId])
+  @@index([slug])
 }
 
 enum GameBetApiType {

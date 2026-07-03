@@ -510,3 +510,98 @@
   font-size: 10px;
   font-weight: 600;
 }
+
+.openBetCashoutWrap {
+  margin-top: 12px;
+}
+
+.openBetCashoutBtn {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.openBetCashoutBtn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.openBetCashoutBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.openBetCashoutBtnUp {
+  animation: openBetCashoutUp 1.2s ease-out 1;
+}
+
+.openBetCashoutBtnDown {
+  animation: openBetCashoutDown 1.2s ease-out 1;
+}
+
+@keyframes openBetCashoutUp {
+  0%, 35% { box-shadow: 0 0 0 3px rgb(22 163 74 / 0.45); }
+  100% { box-shadow: none; }
+}
+
+@keyframes openBetCashoutDown {
+  0%, 35% { box-shadow: 0 0 0 3px rgb(220 38 38 / 0.4); }
+  100% { box-shadow: none; }
+}
+
+.openBetCashoutAmount {
+  font-weight: 800;
+}
+
+.openBetCashoutAmountUp {
+  color: #16a34a !important;
+}
+
+.openBetCashoutAmountDown {
+  color: #dc2626 !important;
+}
+
+.openBetCashoutCancelBtn {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #64748b !important;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.openBetCashoutActions {
+  display: flex;
+  gap: 8px;
+}
+
+.openBetCashoutActions .openBetCashoutBtn {
+  flex: 1.4;
+}
+
+.openBetCashoutConfirmText {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155 !important;
+  text-align: center;
+}
+
+.openBetCashoutHint,
+.openBetCashoutUnavailable {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8 !important;
+  text-align: center;
+}

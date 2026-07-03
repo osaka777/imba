@@ -9,7 +9,8 @@ import getSymbolFromCurrency from "currency-symbol-map";
 import { api, components } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { createTitleForBet } from "~/entities/bet/lib";
-import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
+import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
 import { getWcBetLabel } from "~/entities/wc-odds/lib/wcRate";
 
@@ -72,14 +73,14 @@ export const BetsHistory: React.FC = () => {
     refetchIntervalInBackground: true,
   });
 
-  const { data: wcBets = [], isLoading: wcLoading } = useQuery({
+  const { data: wcGrouped = { ordinar: [], express: [] }, isLoading: wcLoading } = useQuery({
     queryKey: ["wc-bets", "all"],
-    queryFn: () => getMyWcBets(),
+    queryFn: () => getMyWcBetsGrouped(),
     refetchInterval: 30000,
     refetchIntervalInBackground: true,
   });
 
-  const wcAsOrdinar = wcBets.map((bet) => ({
+  const wcAsOrdinar = wcGrouped.ordinar.map((bet) => ({
     id: `wc-${bet.id}`,
     wcBetId: bet.id,
     isWcBet: true,
@@ -106,7 +107,7 @@ export const BetsHistory: React.FC = () => {
   }));
 
   const mergedBets: BetsResponse = {
-    express: bets?.express || [],
+    express: [...(bets?.express || []), ...mapWcExpressForHistory(wcGrouped.express)],
     ordinar: [...(bets?.ordinar || []), ...wcAsOrdinar],
   };
 

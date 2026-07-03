@@ -149,6 +149,11 @@
   color: #e2e8f0;
 }
 
+.cardHighlight {
+  border-color: rgb(34 158 217 / 0.45);
+  box-shadow: 0 0 0 1px rgb(34 158 217 / 0.15), 0 8px 24px rgb(34 158 217 / 0.12);
+}
+
 .cardDesc {
   margin: 0 0 12px;
   font-size: 12px;

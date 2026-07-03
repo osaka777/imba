@@ -11,6 +11,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 import { EventGateway } from '~/main/event/event.gateway';
 import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
+import { PushUserNotifyService } from '~/main/push/push-user-notify.service';
 import { OperationService } from '~/main/operation/operation.service';
 import { PartnersService } from '~/main/partners/partners.service';
 import { PrismaService } from '~/prisma/prisma.service';
@@ -21,6 +22,7 @@ import { isPointSetSportFeed } from '../olimpbet-wc/point-set-sport-score.util';
 import { isOlimpbetEventCompleted } from '../olimpbet-wc/olimpbet-event-result.util';
 
 import { resolveDeterminateBetResult } from './wc-odds-early-settlement.util';
+import { resolveWcExpressStatus } from './wc-odds-express-settlement.util';
 import { parseBetPlacementContext } from './wc-bet-placement-context.util';
 import { captureProbabilitySnapshots } from './wc-match-state-tracker.util';
 import { emptyMatchState, parseMatchState, type WcMatchState } from './wc-match-state.types';
@@ -39,6 +41,7 @@ export class WcOddsSettlementService {
     private readonly eventGateway: EventGateway,
     private readonly partnersService: PartnersService,
     private readonly telegramUserNotify: TelegramUserNotifyService,
+    private readonly pushUserNotify: PushUserNotifyService,
   ) {}
 
   async settleFinishedEvents(): Promise<{ settledEvents: number; settledBets: number }> {
@@ -615,10 +618,13 @@ export class WcOddsSettlementService {
       currencyCode: string;
       marketKey: string;
       outcomeName?: string | null;
+      wcExpressBetId?: number | null;
     },
     eventId: string,
     result: WcOddsBetStatus,
   ): Promise<void> {
+    const expressId = bet.wcExpressBetId ?? null;
+
     await this.prisma.$transaction(async (tx) => {
       await tx.wcOddsBet.update({
         where: { id: bet.id },
@@ -627,6 +633,10 @@ export class WcOddsSettlementService {
           settledAt: new Date(),
         },
       });
+
+      if (expressId) {
+        return;
+      }
 
       if (result === WcOddsBetStatus.WIN) {
         await this.operationService.create(tx, bet.userId, {
@@ -661,10 +671,91 @@ export class WcOddsSettlementService {
       }
     });
 
+    if (expressId) {
+      await this.trySettleExpressBet(expressId);
+      return;
+    }
+
     this.notifyWcBetSettlement(bet, result, eventId);
 
     if (result === WcOddsBetStatus.LOSE) {
       void this.partnersService.notifyCommissionForBet(bet.id);
+    }
+  }
+
+  private async trySettleExpressBet(expressId: number): Promise<void> {
+    const parent = await this.prisma.wcOddsExpressBet.findUnique({
+      where: { id: expressId },
+      include: { legs: true },
+    });
+    if (!parent || parent.status !== WcOddsBetStatus.PENDING) return;
+
+    const nextStatus = resolveWcExpressStatus(parent.legs.map((leg) => leg.status));
+    if (nextStatus == null) return;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.wcOddsExpressBet.update({
+        where: { id: expressId },
+        data: { status: nextStatus, settledAt: new Date() },
+      });
+
+      if (nextStatus === WcOddsBetStatus.WIN) {
+        await this.operationService.create(tx, parent.userId, {
+          amount: parent.potentialPayout,
+          currencyCode: parent.currencyCode,
+          source: OperationSource.WC_BET,
+          status: OperationStatus.SUCCESS,
+          type: OperationType.INCOME,
+          meta: { wcExpressBetId: expressId },
+        });
+      } else if (nextStatus === WcOddsBetStatus.VOID) {
+        await this.operationService.create(tx, parent.userId, {
+          amount: parent.stake,
+          currencyCode: parent.currencyCode,
+          source: OperationSource.WC_BET,
+          status: OperationStatus.SUCCESS,
+          type: OperationType.INCOME,
+          meta: { wcExpressBetId: expressId, void: true },
+        });
+      } else if (nextStatus === WcOddsBetStatus.LOSE) {
+        const user = await tx.user.findUnique({ where: { id: parent.userId } });
+        if (user) {
+          await this.partnersService.processAffiliateBonus(
+            tx,
+            user,
+            expressId,
+            parent.currencyCode,
+            parent.stake,
+            BetStatus.LOSE,
+          );
+        }
+      }
+    });
+
+    if (nextStatus === WcOddsBetStatus.WIN) {
+      this.notifyWcBetSettlement(
+        {
+          id: expressId,
+          userId: parent.userId,
+          stake: parent.stake,
+          potentialPayout: parent.potentialPayout,
+          currencyCode: parent.currencyCode,
+          outcomeName: `Экспресс · ${parent.legs.length} событий`,
+        },
+        nextStatus,
+      );
+    } else if (nextStatus === WcOddsBetStatus.VOID) {
+      this.notifyWcBetSettlement(
+        {
+          id: expressId,
+          userId: parent.userId,
+          stake: parent.stake,
+          potentialPayout: parent.stake,
+          currencyCode: parent.currencyCode,
+          outcomeName: `Экспресс · ${parent.legs.length} событий`,
+        },
+        nextStatus,
+      );
     }
   }
 
@@ -743,6 +834,16 @@ export class WcOddsSettlementService {
           homeTeam,
           awayTeam,
         });
+        void this.pushUserNotify.notifyBetSettled({
+          userId: bet.userId,
+          status: status as 'WIN' | 'LOSE' | 'RETURN',
+          amount,
+          betAmount: Number(bet.stake),
+          currencyCode: bet.currencyCode,
+          outcomeName: bet.outcomeName ?? undefined,
+          homeTeam,
+          awayTeam,
+        }).catch(() => undefined);
       })().catch(() => undefined);
     } catch (error) {
       this.logger.warn(`Failed to send WC bet notification for bet #${bet.id}`, error);

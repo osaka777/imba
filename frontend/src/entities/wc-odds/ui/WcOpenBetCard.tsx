@@ -21,6 +21,8 @@ import {
 import { getWcOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDisplay";
 
 import { OpenBetSlipCard } from "~/entities/bet/ui/Coupon/OpenBetSlipCard";
+import { WcCashoutButton } from "~/entities/wc-odds/ui/WcCashoutButton";
+import { WcBetShareButton } from "~/entities/wc-odds/ui/WcBetShareButton";
 
 type WcOpenBetCardProps = {
   bet: WcBet;
@@ -72,6 +74,11 @@ export function WcOpenBetCard({ bet, highlight }: WcOpenBetCardProps) {
       teamsLabel={teamsLabel}
       ticketId={ticketId}
       winLabel={formatCouponMoney(bet.potentialPayout, bet.currencyCode)}
-    />
+    >
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <WcCashoutButton bet={bet} />
+        <WcBetShareButton betId={bet.id} />
+      </div>
+    </OpenBetSlipCard>
   );
 }

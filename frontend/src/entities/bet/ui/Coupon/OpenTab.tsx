@@ -15,7 +15,8 @@ import {
   type OpenBetFilter,
 } from "~/entities/bet/lib/openBetFilters";
 import { getLegacyOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDisplay";
-import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
+import { WcExpressOpenBetCard } from "~/entities/wc-odds/ui/WcExpressOpenBetCard";
 import { WcOpenBetCard } from "~/entities/wc-odds/ui/WcOpenBetCard";
 import { gamesList } from "~/entities/game";
 import { LoadingSpinner } from "~/shared/ui";
@@ -211,13 +212,16 @@ export const OpenTab = () => {
     staleTime: 0,
   });
 
-  const { data: wcBets = [], isLoading: wcLoading } = useQuery({
-    queryFn: () => getMyWcBets("PENDING"),
+  const { data: wcGrouped = { ordinar: [], express: [] }, isLoading: wcLoading } = useQuery({
+    queryFn: () => getMyWcBetsGrouped("PENDING"),
     queryKey: ["wc-bets", "pending"],
     refetchInterval: 3000,
     refetchIntervalInBackground: true,
     staleTime: 0,
   });
+
+  const wcBets = wcGrouped.ordinar;
+  const wcExpressBets = wcGrouped.express;
 
   const filteredData = data
     ? {
@@ -230,10 +234,11 @@ export const OpenTab = () => {
     () =>
       buildOpenBetEntries(
         wcBets,
+        wcExpressBets,
         filteredData.ordinar as unknown as Array<Record<string, unknown>>,
         filteredData.express as unknown as Array<Record<string, unknown>>,
       ),
-    [wcBets, filteredData.ordinar, filteredData.express],
+    [wcBets, wcExpressBets, filteredData.ordinar, filteredData.express],
   );
 
   const visibleEntries = useMemo(
@@ -256,7 +261,7 @@ export const OpenTab = () => {
     if (!fresh) return;
     const node = listRef.current?.querySelector(`[data-open-bet-key="${fresh.key}"]`);
     node?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [allEntries.length, wcBets.length]);
+  }, [allEntries.length, wcBets.length, wcExpressBets.length]);
 
   return (
     <div className={styles.openTab} data-open-bets-panel ref={listRef}>
@@ -277,6 +282,15 @@ export const OpenTab = () => {
       {(isLoading || wcLoading) && <LoadingSpinner />}
 
       {visibleEntries.map((entry) => {
+        if (entry.kind === "wc-express" && entry.wcExpressBet) {
+          return (
+            <WcExpressOpenBetCard
+              bet={entry.wcExpressBet}
+              highlight={isFreshOpenBet(entry.createdAt)}
+              key={entry.key}
+            />
+          );
+        }
         if (entry.kind === "wc" && entry.wcBet) {
           return (
             <WcOpenBetCard

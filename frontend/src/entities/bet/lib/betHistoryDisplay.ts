@@ -2,7 +2,7 @@ import { createTitleForBet } from "~/entities/bet/lib";
 import { formatCouponMoney } from "~/entities/bet/lib/formatCouponMoney";
 import type { SlipRibbon } from "~/entities/bet/ui/Coupon/OpenBetSlipCard";
 
-export type BetHistoryStatus = "PENDING" | "WIN" | "LOSE" | "RETURN";
+export type BetHistoryStatus = "PENDING" | "WIN" | "LOSE" | "RETURN" | "CASHOUT";
 
 export function getBetNameFromApiResponse(
   bet: Record<string, unknown>,
@@ -86,6 +86,16 @@ export function getBetGameStatus(bet: Record<string, unknown>): {
   isFinished: boolean;
   isLive: boolean;
 } {
+  if (bet.isWcExpress) {
+    const legs = bet.bets as Array<{
+      eventCompleted?: boolean;
+      score?: string;
+    }>;
+    const allFinished = legs.every((leg) => leg.eventCompleted);
+    const anyLive = legs.some((leg) => !leg.eventCompleted && Boolean(leg.score));
+    return { isFinished: allFinished, isLive: anyLive && !allFinished };
+  }
+
   if (bet.isWcBet) {
     return {
       isFinished: Boolean(bet.eventCompleted),
@@ -123,6 +133,8 @@ export function getHistoryRibbon(
       return { label: "Проигрыш", variant: "lose" };
     case "RETURN":
       return { label: "Возврат", variant: "return" };
+    case "CASHOUT":
+      return { label: "Продажа", variant: "win" };
     default:
       if (gameStatus.isFinished) {
         return { label: "Расчёт", variant: "settling" };
@@ -139,6 +151,7 @@ export function getHistoryFooter(
   amount: number,
   cf: number,
   currencyCode: string,
+  payoutOverride?: number,
 ): {
   footerRightLabel: string;
   footerRightValue: string;
@@ -166,6 +179,12 @@ export function getHistoryFooter(
         footerRightLabel: "Возврат",
         footerRightValue: formatCouponMoney(amount, currencyCode),
         footerRightWin: false,
+      };
+    case "CASHOUT":
+      return {
+        footerRightLabel: "Продажа",
+        footerRightValue: formatCouponMoney(payoutOverride ?? amount * cf, currencyCode),
+        footerRightWin: true,
       };
     default:
       return {

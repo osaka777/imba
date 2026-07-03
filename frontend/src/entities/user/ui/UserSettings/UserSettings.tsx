@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import { changePassword as changePasswordApi } from "~/entities/user/api/changePassword";
 import { updateAvatarPreset } from "~/entities/user/api/avatar";
 import { TelegramLinkBlock } from "~/entities/user/ui/TelegramLinkBlock/TelegramLinkBlock";
+import { PhoneVerifyBlock } from "~/entities/user/ui/PhoneVerifyBlock/PhoneVerifyBlock";
+import { AppPushSettingsBlock } from "~/entities/push/ui/AppPushSettingsBlock";
 import {
   AVATAR_PRESET_COLORS,
   AVATAR_PRESET_OPTIONS,
@@ -21,6 +23,8 @@ import styles from "./UserSettings.module.css";
 interface UserData {
   id: number;
   email: string;
+  phone?: string | null;
+  phoneVerified?: boolean;
   telegramLinked?: boolean;
   telegramUsername?: string | null;
   avatarPreset?: string | null;
@@ -49,6 +53,7 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
   const [avatarPreset, setAvatarPreset] = useState(userData?.avatarPreset || "");
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [heroAvatarSize, setHeroAvatarSize] = useState(56);
+  const connectTelegram = searchParams.get("connectTelegram") === "1";
 
   useEffect(() => {
     setTelegramLinked(Boolean(userData?.telegramLinked));
@@ -57,10 +62,18 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
   }, [userData?.telegramLinked, userData?.telegramUsername, userData?.avatarPreset]);
 
   useEffect(() => {
-    if (searchParams.get("telegram") === "linked") {
-      toast.success("Telegram успешно привязан");
+    if (searchParams.get("telegram") === "linked" || connectTelegram) {
+      if (searchParams.get("telegram") === "linked") {
+        toast.success("Telegram успешно привязан");
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, connectTelegram]);
+
+  useEffect(() => {
+    if (!connectTelegram || telegramLinked) return;
+    const el = document.querySelector("[data-telegram-highlight]");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [connectTelegram, telegramLinked]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -202,7 +215,7 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
                 <p className={styles.profileEmail}>{userData?.email}</p>
                 <span className={styles.profileStatus}>
                   <span className={styles.profileStatusDot} aria-hidden />
-                  Аккаунт активен
+                  {telegramLinked ? "Telegram подключён" : "Аккаунт активен"}
                 </span>
               </div>
             </div>
@@ -211,7 +224,7 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
         </aside>
 
         <div className={styles.colRight}>
-          <section className={styles.card}>
+          <section className={cn(styles.card, connectTelegram && !telegramLinked && styles.cardHighlight)}>
             <div className={styles.cardHead}>
               <span className={styles.cardHeadTitle}>Telegram</span>
             </div>
@@ -219,6 +232,7 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
               <TelegramLinkBlock
                 linked={telegramLinked}
                 username={telegramUsername}
+                highlight={connectTelegram && !telegramLinked}
                 className={styles.telegramBlock}
                 headClassName={styles.telegramHead}
                 descClassName={styles.telegramDesc}
@@ -236,6 +250,22 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
               />
             </div>
           </section>
+
+          <section className={styles.card}>
+            <div className={styles.cardHead}>
+              <span className={styles.cardHeadTitle}>Верификация</span>
+            </div>
+            <div className={styles.cardBody}>
+              <PhoneVerifyBlock
+                phone={userData?.phone}
+                phoneVerified={userData?.phoneVerified}
+                telegramLinked={telegramLinked}
+                onVerified={() => window.location.reload()}
+              />
+            </div>
+          </section>
+
+          <AppPushSettingsBlock />
 
           <div className={styles.rowPair}>
             <section className={styles.card}>
@@ -285,10 +315,10 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
                     </button>
                   </div>
                 ) : null}
-              </div>
-            </section>
+            </div>
+          </section>
 
-            <section className={styles.card}>
+          <section className={styles.card}>
               <div className={styles.cardHead}>
                 <span className={styles.cardHeadTitle}>Интерфейс</span>
               </div>

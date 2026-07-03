@@ -103,7 +103,11 @@ export function isMarketScopeFinalized(
     // status codes (e.g. 7 = soccer 2nd half) that are unrelated to set number.
     if (periods.length > scope.index) return true;
 
-    if (isOlimpbetEventCompleted(detail) && periods.length >= scope.index) return true;
+    if (isOlimpbetEventCompleted(detail)) {
+      if (periods.length >= scope.index) return true;
+      // Match ended before this set started (e.g. 2:1 → no 4th set).
+      if (periods.length < scope.index) return true;
+    }
     return false;
   }
 

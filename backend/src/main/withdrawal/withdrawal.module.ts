@@ -6,6 +6,9 @@ import { AuthenticationModule } from '../user/authentication/authentication.modu
 import { ConfigModule } from '@nestjs/config';
 import { OperationModule } from '../operation/operation.module';
 import { TelegramModule } from '../telegram/telegram.module';
+import { PushModule } from '../push/push.module';
+import { BonusBalanceModule } from '../bonus-balance/bonus-balance.module';
+import { PhoneVerificationModule } from '../user/phone-verification.module';
 
 @Module({
   imports: [
@@ -14,6 +17,9 @@ import { TelegramModule } from '../telegram/telegram.module';
     ConfigModule,
     OperationModule,
     TelegramModule,
+    PushModule,
+    BonusBalanceModule,
+    PhoneVerificationModule,
   ],
   controllers: [WithdrawalController],
   providers: [WithdrawalService],

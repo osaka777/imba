@@ -94,7 +94,7 @@ export const RegisterForm = () => {
       localStorage.setItem("currency", JSON.stringify(variables.currencyCode));
       window.dispatchEvent(new Event("currencyChanged"));
       safeToast.success("Регистрация успешна! Добро пожаловать!");
-      window.location.href = "/";
+      window.location.href = "/profile/settings?connectTelegram=1";
     },
   });
 

@@ -4,6 +4,9 @@ import { CreateWithdrawalDto, WithdrawalMethod, CardType, CurrencyCode } from '.
 import { OperationStatus, OperationSource, OperationType } from '@prisma/client';
 import { OperationService } from '~/main/operation/operation.service';
 import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
+import { PushUserNotifyService } from '~/main/push/push-user-notify.service';
+import { BonusBalanceService } from '~/main/bonus-balance/bonus-balance.service';
+import { PhoneVerificationService } from '~/main/user/phone-verification.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -12,6 +15,9 @@ export class WithdrawalService {
     private readonly prisma: PrismaService,
     private readonly operationService: OperationService,
     private readonly telegramUserNotify: TelegramUserNotifyService,
+    private readonly pushUserNotify: PushUserNotifyService,
+    private readonly bonusBalanceService: BonusBalanceService,
+    private readonly phoneVerification: PhoneVerificationService,
   ) {}
 
   async create(userId: number, dto: CreateWithdrawalDto) {
@@ -81,6 +87,14 @@ export class WithdrawalService {
       });
       throw new BadRequestException("Такой же запрос на вывод уже был отправлен недавно");
     }
+
+    await this.bonusBalanceService.assertWithdrawalAllowed(userId, dto.currency);
+
+    await this.phoneVerification.assertWithdrawalWithinLimit(
+      userId,
+      Number(dto.amount),
+      dto.currency,
+    );
 
     // Проверяем баланс пользователя
     const balance = await this.prisma.balance.findFirst({
@@ -308,8 +322,23 @@ export class WithdrawalService {
         amount: Number(withdrawRequest.amount),
         currency: withdrawRequest.currencyCode,
       }).catch(() => undefined);
+      void this.pushUserNotify.notifyWithdraw({
+        userId: withdrawRequest.userId,
+        withdrawId: id,
+        status: 'completed',
+        amount: Number(withdrawRequest.amount),
+        currency: withdrawRequest.currencyCode,
+      }).catch(() => undefined);
     } else if (operationStatus === OperationStatus.FAILED) {
       void this.telegramUserNotify.notifyWithdraw({
+        userId: withdrawRequest.userId,
+        withdrawId: id,
+        status: 'rejected',
+        amount: Number(withdrawRequest.amount),
+        currency: withdrawRequest.currencyCode,
+        reason,
+      }).catch(() => undefined);
+      void this.pushUserNotify.notifyWithdraw({
         userId: withdrawRequest.userId,
         withdrawId: id,
         status: 'rejected',

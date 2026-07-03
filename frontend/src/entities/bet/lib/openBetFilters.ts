@@ -1,8 +1,8 @@
-import type { WcBet } from "~/entities/wc-odds/api/client";
+import type { WcBet, WcExpressBet } from "~/entities/wc-odds/api/client";
 
 export type OpenBetFilter = "all" | "live" | "line" | "today";
 
-export type OpenBetKind = "wc" | "ordinar" | "express";
+export type OpenBetKind = "wc" | "wc-express" | "ordinar" | "express";
 
 export type OpenBetEntry = {
   key: string;
@@ -12,6 +12,7 @@ export type OpenBetEntry = {
   isLine: boolean;
   isToday: boolean;
   wcBet?: WcBet;
+  wcExpressBet?: WcExpressBet;
   ordinarBet?: Record<string, unknown>;
   expressBet?: Record<string, unknown>;
 };
@@ -52,6 +53,7 @@ function isLegacyGameLive(game: Record<string, unknown> | undefined): boolean {
 
 export function buildOpenBetEntries(
   wcBets: WcBet[],
+  wcExpressBets: WcExpressBet[],
   ordinars: Array<Record<string, unknown>>,
   expresses: Array<Record<string, unknown>>,
 ): OpenBetEntry[] {
@@ -67,6 +69,20 @@ export function buildOpenBetEntries(
       isLine: !isLive && !bet.event.completed,
       isToday: isSameLocalDay(bet.createdAt),
       wcBet: bet,
+    });
+  }
+
+  for (const bet of wcExpressBets) {
+    const isLive = bet.legs.some((leg) => isWcBetLive(leg));
+    const allCompleted = bet.legs.every((leg) => leg.event.completed);
+    entries.push({
+      key: `wc-e-${bet.id}`,
+      kind: "wc-express",
+      createdAt: bet.createdAt,
+      isLive,
+      isLine: !isLive && !allCompleted,
+      isToday: isSameLocalDay(bet.createdAt),
+      wcExpressBet: bet,
     });
   }
 

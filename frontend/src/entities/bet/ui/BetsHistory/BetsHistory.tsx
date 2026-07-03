@@ -6,8 +6,15 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api, components } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
-import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import {
+  HISTORY_STATUS_FILTERS,
+  matchesHistoryStatusFilter,
+  normalizeBetHistoryStatus,
+  type HistoryStatusFilter,
+} from "~/entities/bet/lib/betHistoryStatus";
+import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { mapWcBetsForHistory } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
+import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import { LoadingSpinner } from "~/shared/ui";
 
 import { BetHistoryCard } from "./BetHistoryCard";
@@ -30,6 +37,7 @@ const TABS: { id: TabType; label: string }[] = [
 
 export const BetsHistory: React.FC = () => {
   const [tab, setTab] = useState<TabType>("all");
+  const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
 
   const { data: bets, isLoading } = useQuery<BetsResponse>({
     queryKey: ["bets"],
@@ -57,24 +65,25 @@ export const BetsHistory: React.FC = () => {
     refetchIntervalInBackground: true,
   });
 
-  const { data: wcBets = [], isLoading: wcLoading } = useQuery({
+  const { data: wcGrouped = { ordinar: [], express: [] }, isLoading: wcLoading } = useQuery({
     queryKey: ["wc-bets", "all"],
-    queryFn: () => getMyWcBets(),
+    queryFn: () => getMyWcBetsGrouped(),
     refetchInterval: 30000,
     refetchIntervalInBackground: true,
   });
 
-  const wcAsOrdinar = mapWcBetsForHistory(wcBets);
+  const wcAsOrdinar = mapWcBetsForHistory(wcGrouped.ordinar);
+  const wcAsExpress = mapWcExpressForHistory(wcGrouped.express);
 
   const mergedBets = useMemo(
     () => ({
-      express: bets?.express || [],
+      express: [...(bets?.express || []), ...wcAsExpress],
       ordinar: [...(bets?.ordinar || []), ...wcAsOrdinar],
     }),
-    [bets, wcAsOrdinar],
+    [bets, wcAsOrdinar, wcAsExpress],
   );
 
-  const filteredBets = useMemo(() => {
+  const tabFilteredBets = useMemo(() => {
     const list =
       tab === "all"
         ? [...mergedBets.express, ...mergedBets.ordinar]
@@ -87,13 +96,32 @@ export const BetsHistory: React.FC = () => {
     );
   }, [mergedBets, tab]);
 
+  const filteredBets = useMemo(
+    () => tabFilteredBets.filter((bet) =>
+      matchesHistoryStatusFilter(bet as Record<string, unknown>, statusFilter),
+    ),
+    [tabFilteredBets, statusFilter],
+  );
+
   const stats = useMemo(() => {
-    const all = [...mergedBets.express, ...mergedBets.ordinar];
-    return {
+    const all = [...mergedBets.express, ...mergedBets.ordinar] as Record<string, unknown>[];
+    const counts = {
       total: all.length,
-      wins: all.filter((b) => b.status === "WIN").length,
-      pending: all.filter((b) => b.status === "PENDING").length,
+      pending: 0,
+      cashout: 0,
+      win: 0,
+      lose: 0,
+      return: 0,
     };
+    for (const bet of all) {
+      const s = normalizeBetHistoryStatus(bet);
+      if (s === "PENDING") counts.pending += 1;
+      else if (s === "CASHOUT") counts.cashout += 1;
+      else if (s === "WIN") counts.win += 1;
+      else if (s === "LOSE") counts.lose += 1;
+      else if (s === "RETURN") counts.return += 1;
+    }
+    return counts;
   }, [mergedBets]);
 
   const loading = isLoading || wcLoading;
@@ -108,11 +136,50 @@ export const BetsHistory: React.FC = () => {
         {!loading && stats.total > 0 ? (
           <p className={styles.pageSubtitle}>
             {stats.total} {pluralBets(stats.total)}
-            {stats.wins > 0 ? ` · ${stats.wins} выигр.` : ""}
+            {stats.win > 0 ? ` · ${stats.win} выигр.` : ""}
             {stats.pending > 0 ? ` · ${stats.pending} в игре` : ""}
           </p>
         ) : null}
       </header>
+
+      {!loading && stats.total > 0 ? (
+        <div className={styles.statsRow}>
+          <StatPill
+            active={statusFilter === "all"}
+            label="Всего"
+            onClick={() => setStatusFilter("all")}
+            value={stats.total}
+          />
+          <StatPill
+            active={statusFilter === "pending"}
+            label="В игре"
+            onClick={() => setStatusFilter("pending")}
+            tone="pending"
+            value={stats.pending}
+          />
+          <StatPill
+            active={statusFilter === "cashout"}
+            label="Продажа"
+            onClick={() => setStatusFilter("cashout")}
+            tone="cashout"
+            value={stats.cashout}
+          />
+          <StatPill
+            active={statusFilter === "win"}
+            label="Выигрыш"
+            onClick={() => setStatusFilter("win")}
+            tone="win"
+            value={stats.win}
+          />
+          <StatPill
+            active={statusFilter === "lose"}
+            label="Проигрыш"
+            onClick={() => setStatusFilter("lose")}
+            tone="lose"
+            value={stats.lose}
+          />
+        </div>
+      ) : null}
 
       <div className={styles.filterBar}>
         {TABS.map((item) => (
@@ -120,6 +187,19 @@ export const BetsHistory: React.FC = () => {
             key={item.id}
             className={`${styles.filterChip} ${tab === item.id ? styles.filterChipActive : ""}`}
             onClick={() => setTab(item.id)}
+            type="button"
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.filterBar}>
+        {HISTORY_STATUS_FILTERS.map((item) => (
+          <button
+            key={item.id}
+            className={`${styles.filterChip} ${styles.filterChipSubtle} ${statusFilter === item.id ? styles.filterChipStatusActive : ""}`}
+            onClick={() => setStatusFilter(item.id)}
             type="button"
           >
             {item.label}
@@ -140,9 +220,9 @@ export const BetsHistory: React.FC = () => {
             </span>
             <p className={styles.emptyTitle}>Пока пусто</p>
             <p className={styles.emptyText}>
-              {tab === "all"
-                ? "Здесь появятся ваши ставки после первого пари"
-                : `Нет ставок в разделе «${TABS.find((t) => t.id === tab)?.label}»`}
+              {statusFilter !== "all" || tab !== "all"
+                ? "Нет ставок с выбранными фильтрами"
+                : "Здесь появятся ваши ставки после первого пари"}
             </p>
           </div>
         ) : (
@@ -159,6 +239,37 @@ export const BetsHistory: React.FC = () => {
     </div>
   );
 };
+
+function StatPill({
+  label,
+  value,
+  active,
+  onClick,
+  tone,
+}: {
+  label: string;
+  value: number;
+  active: boolean;
+  onClick: () => void;
+  tone?: "pending" | "cashout" | "win" | "lose";
+}) {
+  if (value <= 0 && !active) return null;
+
+  return (
+    <button
+      className={[
+        styles.statPill,
+        active ? styles.statPillActive : "",
+        tone ? styles[`statPill_${tone}`] : "",
+      ].filter(Boolean).join(" ")}
+      onClick={onClick}
+      type="button"
+    >
+      <span className={styles.statPillValue}>{value}</span>
+      <span className={styles.statPillLabel}>{label}</span>
+    </button>
+  );
+}
 
 function pluralBets(n: number): string {
   const mod10 = n % 10;

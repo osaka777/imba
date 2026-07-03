@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getBets } from "~/entities/bet/api";
-import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { countPendingWcBets, getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { useAdaptivePollInterval } from "~/shared/lib/useAdaptivePollInterval";
 import { OpenTab } from "~/entities/bet/ui/Coupon/OpenTab";
 import { Button } from "~/shared/ui";
@@ -37,8 +37,8 @@ export const Coupon: React.FC<CouponProps> = ({ className, setIsOpen }) => {
     staleTime: 0,
   });
 
-  const { data: wcPending = [] } = useQuery({
-    queryFn: () => getMyWcBets("PENDING"),
+  const { data: wcGrouped = { ordinar: [], express: [] } } = useQuery({
+    queryFn: () => getMyWcBetsGrouped("PENDING"),
     queryKey: ["wc-bets", "pending"],
     refetchInterval: pollInterval,
     refetchIntervalInBackground: false,
@@ -48,8 +48,8 @@ export const Coupon: React.FC<CouponProps> = ({ className, setIsOpen }) => {
   const counter = data
     ? (data.ordinar?.filter((bet) => bet.status === "PENDING").length ?? 0)
       + (data.express?.filter((bet) => bet.status === "PENDING").length ?? 0)
-      + wcPending.length
-    : wcPending.length;
+      + countPendingWcBets(wcGrouped)
+    : countPendingWcBets(wcGrouped);
 
   return (
     <>

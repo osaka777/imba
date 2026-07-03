@@ -6,6 +6,7 @@ import { useLocalStorage} from "usehooks-ts";
 
 import { useCurrency, useGamesBettingContext } from "~/app/providers";
 import { getUser } from "~/entities/user/api";
+import { BONUS_WAGERING_RULES } from "~/entities/user/lib/bonusWageringRules";
 import { getSessionClient } from "~/entities/user/lib/getSessionClient";
 import { TrashIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
@@ -13,8 +14,8 @@ import { Button, Checkbox, Input } from "~/shared/ui";
 import { useAccountType } from "~/shared/model/useAccountType";
 import type { User } from "~/shared/types";
 
-import { createBet } from "../../api/createBet";
-import { placeWcBet } from "~/entities/wc-odds/api/client";
+import { hapticBetAccepted } from "~/shared/lib/haptic";
+import { placeWcBet, placeWcExpressBet } from "~/entities/wc-odds/api/client";
 import {
   isWcBetOutcomeClosedError,
 } from "~/entities/wc-odds/lib/wcBetErrorMessage";
@@ -442,32 +443,33 @@ export const BetTab: React.FC<BetTabProps> = ({
     }
 
     if (wcRates.length > 0) {
-      if (wcRates.length > 1) {
-        return toast("⚠️ Для этого события доступен только ординар", {
-          position: "top-right",
-        });
-      }
       if (selectedAccountType !== "main") {
         return toast("⚠️ Эта ставка доступна только с основного счёта", {
           position: "top-right",
         });
       }
 
-      const wcRate = wcRates[0];
-      const marketKey = getWcMarketKeyFromRate(wcRate);
-      const normalizedMarketKey = normalizeWcMarketKey(marketKey);
-      const outcomeKey = getWcOutcomeKeyFromRate(wcRate);
-      const wcPick = getWcPickFromRate(wcRate);
-
-      if (!wcRate.eventId) {
-        return toast("⚠️ Некорректная ставка", { position: "top-right" });
+      if (wcRates.length > 1 && variant === "ordinar") {
+        return toast("⚠️ Для ординара выберите одно событие", {
+          position: "top-right",
+        });
       }
 
-      if (normalizedMarketKey === "h2h" && !wcPick) {
-        return toast("⚠️ Некорректная ставка", { position: "top-right" });
-      }
-      if (normalizedMarketKey !== "h2h" && !outcomeKey) {
-        return toast("⚠️ Некорректная ставка", { position: "top-right" });
+      for (const wcRate of wcRates) {
+        const marketKey = getWcMarketKeyFromRate(wcRate);
+        const normalizedMarketKey = normalizeWcMarketKey(marketKey);
+        const outcomeKey = getWcOutcomeKeyFromRate(wcRate);
+        const wcPick = getWcPickFromRate(wcRate);
+
+        if (!wcRate.eventId) {
+          return toast("⚠️ Некорректная ставка", { position: "top-right" });
+        }
+        if (normalizedMarketKey === "h2h" && !wcPick) {
+          return toast("⚠️ Некорректная ставка", { position: "top-right" });
+        }
+        if (normalizedMarketKey !== "h2h" && !outcomeKey) {
+          return toast("⚠️ Некорректная ставка", { position: "top-right" });
+        }
       }
 
       setIsCreatingBet(true);
@@ -481,22 +483,81 @@ export const BetTab: React.FC<BetTabProps> = ({
         return;
       }
 
-      const wcBetBody = {
-        eventId: wcRate.eventId,
-        pick: wcPick ?? undefined,
-        marketKey,
+      const finishWcBetSuccess = async () => {
+        await finishAcceptedBet(toastId);
+      };
+
+      const buildWcLeg = (wcRate: typeof wcRates[number]) => ({
+        eventId: wcRate.eventId!,
+        pick: getWcPickFromRate(wcRate) ?? undefined,
+        marketKey: getWcMarketKeyFromRate(wcRate),
         groupKey: getWcGroupKeyFromRate(wcRate) ?? undefined,
-        outcomeKey,
+        outcomeKey: getWcOutcomeKeyFromRate(wcRate) ?? undefined,
         line: wcRate.wcLine,
         outcomeName: wcRate.title,
+        clientOdds: agree ? undefined : Number(wcRate.coef),
+      });
+
+      if (wcRates.length > 1) {
+        const expressBody = {
+          stake: Number(sum),
+          currencyCode: currency,
+          acceptOddsChange: agree,
+          legs: wcRates.map(buildWcLeg),
+        };
+
+        try {
+          await placeWcExpressBet(token, expressBody);
+          await finishWcBetSuccess();
+        } catch (e: unknown) {
+          const err = e as Error & {
+            coefficientChanged?: boolean;
+            statusCode?: number;
+            rawMessage?: string;
+          };
+          const oddsChanged =
+            err?.coefficientChanged
+            || /odds have changed|коэффициент/i.test(err?.message ?? "");
+
+          if (oddsChanged) {
+            toast.dismiss(toastId);
+            toast.info("Коэффициенты обновлены", { toastId: "wc-bet-odds-updated" });
+            if (agree) {
+              try {
+                await placeWcExpressBet(token, {
+                  ...expressBody,
+                  acceptOddsChange: true,
+                  legs: expressBody.legs.map((leg) => ({ ...leg, clientOdds: undefined })),
+                });
+                await finishWcBetSuccess();
+                setIsCreatingBet(false);
+                return;
+              } catch (retryErr: unknown) {
+                const retry = retryErr as Error;
+                toast.error(retry instanceof Error ? retry.message : "Ошибка ставки");
+              }
+            }
+          } else {
+            toast.update(toastId, {
+              render: err instanceof Error ? err.message : "Ошибка ставки",
+              type: "error",
+              isLoading: false,
+              autoClose: 5000,
+            });
+          }
+        } finally {
+          setIsCreatingBet(false);
+        }
+        return;
+      }
+
+      const wcRate = wcRates[0];
+      const marketKey = getWcMarketKeyFromRate(wcRate);
+      const wcBetBody = {
+        ...buildWcLeg(wcRate),
         stake: Number(sum),
         currencyCode: currency,
         acceptOddsChange: agree,
-        clientOdds: agree ? undefined : Number(wcRate.coef),
-      };
-
-      const finishWcBetSuccess = async () => {
-        await finishAcceptedBet(toastId);
       };
 
       try {
@@ -587,12 +648,32 @@ export const BetTab: React.FC<BetTabProps> = ({
         return;
       }
 
-      // Проверяем минимальный коэффициент для бонусных ставок
-      const minOdds = Number(bonusBalance.minOdds) || 1.8;
+      if (rates.length > 1) {
+        toast("⚠️ С бонусного счёта — только одиночные ставки на исход или тотал", { position: "top-right" });
+        return;
+      }
+
+      const selectedRate = rates[0];
+      const bonusMarketKey = normalizeWcMarketKey(getWcMarketKeyFromRate(selectedRate));
+      const allowedBonusMarkets = new Set(['h2h', 'totals', 'totals_home', 'totals_away']);
+      if (!allowedBonusMarkets.has(bonusMarketKey)) {
+        toast("⚠️ С бонуса можно ставить только на исход (П1/X/П2) или тотал", { position: "top-right" });
+        return;
+      }
+
+      // Проверяем коэффициент для бонусных ставок
+      const minOdds = Number(bonusBalance.minOdds) || BONUS_WAGERING_RULES.minOdds;
+      const maxOdds = BONUS_WAGERING_RULES.maxOdds;
       const hasLowOdds = rates.some(rate => Number(rate.coef) < minOdds);
+      const hasHighOdds = rates.some(rate => Number(rate.coef) > maxOdds);
 
       if (hasLowOdds) {
         toast(`⚠️ Для бонусных ставок минимальный коэффициент: ${minOdds}`, { position: "top-right" });
+        return;
+      }
+
+      if (hasHighOdds) {
+        toast(`⚠️ Для бонусных ставок максимальный коэффициент: ${maxOdds}`, { position: "top-right" });
         return;
       }
 
@@ -607,6 +688,15 @@ export const BetTab: React.FC<BetTabProps> = ({
           return;
         }
       } else {
+        const maxBetPct = BONUS_WAGERING_RULES.maxBetPercentOfBalance;
+        const maxStake = (Number(bonusBalance.amount) * maxBetPct) / 100;
+        if (Number(sum) > maxStake) {
+          toast(
+            `⚠️ Максимальная ставка с бонуса — ${maxBetPct}% от баланса (${maxStake.toFixed(2)})`,
+            { position: "top-right" },
+          );
+          return;
+        }
         if (Number(bonusBalance.amount) < Number(sum)) {
           toast("⚠️ На вашем бонусном счету недостаточно средств", { position: "top-right" });
           refetch();
@@ -783,7 +873,8 @@ export const BetTab: React.FC<BetTabProps> = ({
           // Поддержка sub_games
           subGameId: selectedRate.subGameId ? String(selectedRate.subGameId) : undefined,
           subGameName: selectedRate.subGameName ?? undefined,
-          accountType: selectedAccountType
+          accountType: selectedAccountType,
+          marketKey: normalizeWcMarketKey(getWcMarketKeyFromRate(selectedRate)),
         };
 
         // Валидация перед отправкой
@@ -951,6 +1042,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
   const finishAcceptedBet = async (toastId?: string | number) => {
     if (toastId != null) toast.dismiss(toastId);
+    hapticBetAccepted();
     toast.success("Ставка принята");
     setRates([]);
     setSum("");

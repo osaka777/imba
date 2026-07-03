@@ -32,12 +32,25 @@ export const useBetNotifications = () => {
 
     const handleBetMessage = (message: any) => {
       // Игнорируем служебные сообщения (subscribed, heartbeat и т.д.)
-      if (message.status === 'success' || message.type === 'heartbeat' || !message.eventId) {
+      if (message.status === 'success' || message.type === 'heartbeat') {
+        return;
+      }
+
+      if (message.type === 'telegram_linked') {
+        const username = message.payload?.telegramUsername ?? null;
+        queryClient.invalidateQueries({ queryKey: ['user'] });
+        window.dispatchEvent(
+          new CustomEvent('imba:telegram-linked', { detail: { username } }),
+        );
+        toast.success('Telegram успешно привязан', {
+          position: 'top-right',
+          autoClose: 4000,
+        });
         return;
       }
 
       // Проверяем, что это уведомление о ставке для текущего пользователя
-      if (message.eventId !== `user_${userData.id}`) {
+      if (!message.eventId || message.eventId !== `user_${userData.id}`) {
         return;
       }
 
@@ -66,6 +79,10 @@ export const useBetNotifications = () => {
           case 'RETURN':
             statusText = `Возврат: ${amount} ${currencyCode}`;
             toastType = 'info';
+            break;
+          case 'CASHOUT':
+            statusText = `Продажа: +${amount} ${currencyCode}`;
+            toastType = 'success';
             break;
           case 'PENDING':
             statusText = 'Ставка обрабатывается';

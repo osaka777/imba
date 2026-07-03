@@ -22,6 +22,7 @@ import {
   formatOpenBetKickoff,
 } from "~/entities/bet/lib/formatOpenBetDates";
 import { getLegacyOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDisplay";
+import type { WcHistoryExpressBet } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import type { WcHistoryOrdinarBet } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
 import { gamesList } from "~/entities/game";
 import { components } from "~/shared/api";
@@ -44,6 +45,7 @@ function getBetStatus(bet: AnyHistoryBet): BetHistoryStatus {
     || status === "LOSE"
     || status === "RETURN"
     || status === "PENDING"
+    || status === "CASHOUT"
   ) {
     return status;
   }
@@ -57,7 +59,11 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
   const amount = Number(bet.amount);
   const cf = Number(bet.cf);
   const currencyCode = String(bet.currencyCode ?? "KZT");
-  const footer = getHistoryFooter(status, amount, cf, currencyCode);
+  const payoutOverride =
+    (bet as WcHistoryOrdinarBet).isWcBet && (bet as WcHistoryOrdinarBet).status === "CASHOUT"
+      ? Number((bet as WcHistoryOrdinarBet).payout)
+      : undefined;
+  const footer = getHistoryFooter(status, amount, cf, currencyCode, payoutOverride);
   const ribbon = getHistoryRibbon(status, gameStatus);
   const ticketId = formatBetDisplayId(
     (bet as WcHistoryOrdinarBet).isWcBet
@@ -164,6 +170,87 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
   );
 }
 
+function WcExpressBetHistoryCard({ bet }: { bet: WcHistoryExpressBet }) {
+  const router = useRouter();
+  const legs = bet.bets;
+  const status = bet.status as BetHistoryStatus;
+  const gameStatus = getBetGameStatus(bet as unknown as Record<string, unknown>);
+  const amount = Number(bet.amount);
+  const cf = Number(bet.cf);
+  const currencyCode = bet.currencyCode;
+  const footer = getHistoryFooter(status, amount, cf, currencyCode);
+  const ribbon = getHistoryRibbon(status, gameStatus);
+  const ticketId = formatBetDisplayId(bet.wcExpressId);
+  const isLive = gameStatus.isLive;
+  const firstHref = legs[0]?.wcGameHref ?? "#";
+
+  return (
+    <div
+      className={styles.historyCardWrap}
+      onClick={() => {
+        if (firstHref !== "#") router.push(firstHref);
+      }}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && firstHref !== "#") {
+          router.push(firstHref);
+        }
+      }}
+      role="link"
+      tabIndex={0}
+    >
+      <OpenBetSlipCard
+        coef={cf.toFixed(2)}
+        dataKey={`wh-wce-${bet.wcExpressId}`}
+        footerRightDanger={footer.footerRightDanger}
+        footerRightLabel={footer.footerRightLabel}
+        footerRightValue={footer.footerRightValue}
+        footerRightWin={footer.footerRightWin}
+        headerDate={formatOpenBetHeaderDate(bet.createdAt)}
+        isLive={isLive}
+        kindLabel="Экспресс"
+        matchHref={firstHref}
+        outcome={`${legs.length} ${legs.length === 1 ? "событие" : legs.length < 5 ? "события" : "событий"}`}
+        placedAt={formatCouponPlacedAt(bet.createdAt)}
+        ribbon={ribbon}
+        stakeLabel={formatCouponMoney(amount, currencyCode)}
+        teamsLabel=""
+        ticketId={ticketId}
+        winLabel={footer.footerRightValue}
+      >
+        <div className={openStyles.openBetExpressBlock}>
+          {legs.map((leg) => {
+            const href = leg.wcGameHref ?? "#";
+            const sportLabel =
+              leg.sport && gamesList[leg.sport]
+                ? gamesList[leg.sport].label
+                : leg.sport;
+
+            return (
+              <div
+                key={leg.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (href !== "#") router.push(href);
+                }}
+                role="presentation"
+              >
+                <OpenBetSlipExpressLeg
+                  coef={leg.cf}
+                  matchHref={href}
+                  outcome={leg.betInfo}
+                  scoreDetail={leg.score}
+                  sportLabel={sportLabel}
+                  teamsLabel={leg.eventName}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </OpenBetSlipCard>
+    </div>
+  );
+}
+
 function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
   const router = useRouter();
   const legs = bet.bets ?? [];
@@ -260,6 +347,9 @@ function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
 }
 
 export function BetHistoryCard({ bet }: { bet: AnyHistoryBet }) {
+  if ((bet as WcHistoryExpressBet).isWcExpress) {
+    return <WcExpressBetHistoryCard bet={bet as WcHistoryExpressBet} />;
+  }
   if ((bet as WcHistoryOrdinarBet).isWcBet) {
     return <OrdinarBetHistoryCard bet={bet as WcHistoryOrdinarBet} />;
   }

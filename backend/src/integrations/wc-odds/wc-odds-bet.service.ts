@@ -463,6 +463,9 @@ export class WcOddsBetService {
         ) ?? dto.statList,
         homeScore: cached?.homeScore ?? dto.homeScore,
         awayScore: cached?.awayScore ?? dto.awayScore,
+        oddsHome: cached?.oddsHome ?? dto.oddsHome,
+        oddsDraw: cached?.oddsDraw ?? dto.oddsDraw,
+        oddsAway: cached?.oddsAway ?? dto.oddsAway,
         phase: cached?.phase ?? dto.phase,
       };
     });
@@ -532,7 +535,7 @@ export class WcOddsBetService {
     return this.toPublicDtos(events);
   }
 
-  private async findEventByRef(ref: string): Promise<WcOddsEvent | null> {
+  async findEventByRef(ref: string): Promise<WcOddsEvent | null> {
     const decoded = resolveEventRef(ref);
 
     if (isWcEventId(decoded)) {
@@ -962,6 +965,44 @@ export class WcOddsBetService {
   }
 
   async listUserBets(userId: number) {
+    return this.listUserBetsGrouped(userId);
+  }
+
+  async listUserBetsGrouped(userId: number) {
+    this.assertEnabled();
+    const ordinarRows = await this.prisma.wcOddsBet.findMany({
+      where: { userId, isProbe: false, wcExpressBetId: null },
+      include: { event: true },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    const expressRows = await this.prisma.wcOddsExpressBet.findMany({
+      where: { userId },
+      include: { legs: { include: { event: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const ordinar = await this.mapBetsToPublicDtos(ordinarRows);
+    const express = await Promise.all(
+      expressRows.map(async (parent) => ({
+        id: parent.id,
+        stake: Number(parent.stake).toFixed(2),
+        combinedOdds: Number(parent.combinedOdds).toFixed(2),
+        potentialPayout: Number(parent.potentialPayout).toFixed(2),
+        status: parent.status,
+        currencyCode: parent.currencyCode,
+        createdAt: parent.createdAt.toISOString(),
+        legs: await this.mapBetsToPublicDtos(parent.legs),
+      })),
+    );
+
+    return { ordinar, express };
+  }
+
+  /** @deprecated use listUserBetsGrouped */
+  async listUserBetsFlat(userId: number) {
     this.assertEnabled();
     const rows = await this.prisma.wcOddsBet.findMany({
       where: { userId, isProbe: false },
@@ -1024,6 +1065,7 @@ export class WcOddsBetService {
         odds: Number(bet.odds).toFixed(2),
         stake: Number(bet.stake).toFixed(2),
         potentialPayout: Number(bet.potentialPayout).toFixed(2),
+        cashoutAmount: bet.cashoutAmount != null ? Number(bet.cashoutAmount).toFixed(2) : null,
         status: bet.status,
         currencyCode: bet.currencyCode,
         createdAt: bet.createdAt.toISOString(),

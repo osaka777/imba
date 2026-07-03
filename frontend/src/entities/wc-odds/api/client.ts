@@ -121,7 +121,8 @@ export type WcBet = {
   odds: string;
   stake: string;
   potentialPayout: string;
-  status: 'PENDING' | 'WIN' | 'LOSE' | 'VOID';
+  cashoutAmount?: string | null;
+  status: 'PENDING' | 'WIN' | 'LOSE' | 'VOID' | 'CASHED_OUT';
   currencyCode: string;
   createdAt: string;
   event: {
@@ -140,6 +141,22 @@ export type WcBet = {
     homeTeamIcon?: string | null;
     awayTeamIcon?: string | null;
   };
+};
+
+export type WcExpressBet = {
+  id: number;
+  stake: string;
+  combinedOdds: string;
+  potentialPayout: string;
+  status: WcBet['status'];
+  currencyCode: string;
+  createdAt: string;
+  legs: WcBet[];
+};
+
+export type WcBetsGrouped = {
+  ordinar: WcBet[];
+  express: WcExpressBet[];
 };
 
 export async function fetchWcStatus() {
@@ -278,13 +295,89 @@ export async function fetchWcEventBroadcast(ref: string): Promise<WcEventBroadca
   return res.json() as Promise<WcEventBroadcast>;
 }
 
-export async function fetchMyWcBets(token: string) {
+export async function fetchMyWcBets(token: string): Promise<WcBetsGrouped> {
   const res = await fetch(`${API()}/api/feed/bets/my`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
-  if (!res.ok) return [] as WcBet[];
-  return res.json() as Promise<WcBet[]>;
+  if (!res.ok) return { ordinar: [], express: [] };
+  const data = await res.json() as WcBetsGrouped | WcBet[];
+  if (Array.isArray(data)) {
+    return { ordinar: data, express: [] };
+  }
+  return {
+    ordinar: Array.isArray(data.ordinar) ? data.ordinar : [],
+    express: Array.isArray(data.express) ? data.express : [],
+  };
+}
+
+export type PlaceWcExpressLegBody = {
+  eventId: string;
+  pick?: 'HOME' | 'DRAW' | 'AWAY';
+  marketKey?: string;
+  groupKey?: string;
+  outcomeKey?: string;
+  line?: string;
+  outcomeName?: string;
+  clientOdds?: number;
+};
+
+export type PlaceWcExpressBetBody = {
+  stake: number;
+  currencyCode: string;
+  acceptOddsChange?: boolean;
+  legs: PlaceWcExpressLegBody[];
+};
+
+export async function placeWcExpressBet(token: string, body: PlaceWcExpressBetBody) {
+  const res = await fetch(`${API()}/api/feed/bets/express`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as {
+      statusCode?: number;
+      message?: string | {
+        message?: string;
+        coefficientChanged?: boolean;
+        actualCoefficient?: number;
+        originalCoefficient?: number;
+      };
+      coefficientChanged?: boolean;
+      actualCoefficient?: number;
+      originalCoefficient?: number;
+    };
+    const nested =
+      typeof err?.message === 'object' && err.message !== null ? err.message : null;
+    const payload = nested ?? err;
+    const rawMessage =
+      typeof err?.message === 'string'
+        ? err.message
+        : nested?.message || payload?.message || '';
+    const message = formatWcBetErrorMessage(rawMessage || 'Не удалось принять ставку');
+    const coefficientChanged =
+      payload?.coefficientChanged === true
+      || rawMessage === 'Odds have changed';
+    const actualCoefficient = payload?.actualCoefficient;
+    const error = new Error(message) as Error & {
+      coefficientChanged?: boolean;
+      actualCoefficient?: number;
+      statusCode?: number;
+      rawMessage?: string;
+    };
+    error.statusCode = err.statusCode;
+    error.rawMessage = rawMessage;
+    if (coefficientChanged) {
+      error.coefficientChanged = true;
+      error.actualCoefficient = actualCoefficient;
+    }
+    throw error;
+  }
+  return res.json();
 }
 
 export type PlaceWcBetBody = {
@@ -432,4 +525,50 @@ export async function unsubscribeWcEvent(token: string, eventRef: string): Promi
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Не удалось отписаться');
+}
+
+export type WcCashoutQuote =
+  | { available: false; reason: string; code: string }
+  | {
+      available: true;
+      amount: string;
+      currentOdds: string;
+      placedOdds: string;
+      mode: 'determinate_win' | 'determinate_void' | 'live_odds';
+      expiresAt: string;
+    };
+
+export async function fetchWcCashoutQuote(token: string, betId: number): Promise<WcCashoutQuote> {
+  const res = await fetch(`${API()}/api/feed/bets/${betId}/cashout-quote`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(err.message || 'Не удалось получить котировку');
+  }
+  return res.json() as Promise<WcCashoutQuote>;
+}
+
+export async function executeWcCashout(
+  token: string,
+  betId: number,
+  expectedAmount?: string,
+): Promise<{ ok: true; amount: string; betId: number }> {
+  const res = await fetch(`${API()}/api/feed/bets/${betId}/cashout`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(
+      expectedAmount != null ? { expectedAmount: Number(expectedAmount) } : {},
+    ),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string | string[] };
+    const msg = Array.isArray(err.message) ? err.message[0] : err.message;
+    throw new Error(msg || 'Не удалось продать ставку');
+  }
+  return res.json() as Promise<{ ok: true; amount: string; betId: number }>;
 }

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useReadLocalStorage } from "usehooks-ts";
 
 import { getBets } from "~/entities/bet/api";
-import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { countPendingWcBets, getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { CouponIcon } from "~/shared/assets";
 import { Button } from "~/shared/ui";
 
@@ -63,13 +63,13 @@ export const CouponWrapper: React.FC<CouponWrapper> = ({ className }) => {
     queryKey: ["bets", "pending"],
   });
 
-  const { data: wcPending = [] } = useQuery({
-    queryFn: () => getMyWcBets("PENDING"),
+  const { data: wcGrouped = { ordinar: [], express: [] } } = useQuery({
+    queryFn: () => getMyWcBetsGrouped("PENDING"),
     queryKey: ["wc-bets", "pending"],
   });
 
   const counter =
-    (data?.ordinar?.length ?? 0) + (data?.express?.length ?? 0) + wcPending.length;
+    (data?.ordinar?.length ?? 0) + (data?.express?.length ?? 0) + countPendingWcBets(wcGrouped);
 
   const triggerOnClickHandler = () => setIsOpen((prev) => !prev);
 

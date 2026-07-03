@@ -19,6 +19,8 @@ import { AuthenticationGuard } from '~/main/user/authentication/authentication.g
 import { SuperuserGuard } from '~/main/user/authentication/superuser.guard';
 
 import { WcBroadcastProxyService } from './wc-broadcast-proxy.service';
+import { WcOddsCashoutService } from './wc-odds-cashout.service';
+import { WcOddsExpressService } from './wc-odds-express.service';
 import { WcOddsBetService } from './wc-odds-bet.service';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
 import { WcOddsSyncService } from './wc-odds-sync.service';
@@ -38,12 +40,36 @@ class PlaceWcBetDto {
   acceptOddsChange?: boolean;
 }
 
+class ExecuteWcCashoutDto {
+  expectedAmount?: number;
+}
+
+class PlaceWcExpressLegDto {
+  eventId!: string;
+  pick?: WcOddsPick;
+  marketKey?: string;
+  groupKey?: string;
+  outcomeKey?: string;
+  line?: string;
+  outcomeName?: string;
+  clientOdds?: number;
+}
+
+class PlaceWcExpressBetDto {
+  stake!: number;
+  currencyCode?: string;
+  acceptOddsChange?: boolean;
+  legs!: PlaceWcExpressLegDto[];
+}
+
 @Controller('feed')
 export class WcOddsController {
   constructor(
     private readonly betService: WcOddsBetService,
     private readonly syncService: WcOddsSyncService,
     private readonly settlementService: WcOddsSettlementService,
+    private readonly cashoutService: WcOddsCashoutService,
+    private readonly expressService: WcOddsExpressService,
     private readonly olimpbet: OlimpbetWcService,
     private readonly broadcastProxy: WcBroadcastProxyService,
   ) {}
@@ -191,6 +217,30 @@ export class WcOddsController {
   }
 
   @UseGuards(AuthenticationGuard)
+  @Post('bets/express')
+  placeExpressBet(
+    @Req() req: { user: { id: number } },
+    @Body() dto: PlaceWcExpressBetDto,
+  ) {
+    return this.expressService.placeExpressBet({
+      userId: req.user.id,
+      stake: Number(dto.stake),
+      currencyCode: dto.currencyCode || 'KZT',
+      acceptOddsChange: dto.acceptOddsChange === true,
+      legs: dto.legs.map((leg) => ({
+        eventId: leg.eventId,
+        pick: leg.pick,
+        marketKey: leg.marketKey,
+        groupKey: leg.groupKey,
+        outcomeKey: leg.outcomeKey,
+        line: leg.line,
+        outcomeName: leg.outcomeName,
+        clientOdds: leg.clientOdds != null ? Number(leg.clientOdds) : undefined,
+      })),
+    });
+  }
+
+  @UseGuards(AuthenticationGuard)
   @Post('bets')
   placeBet(
     @Req() req: { user: { id: number } },
@@ -230,6 +280,26 @@ export class WcOddsController {
   @Get('bets/my')
   myBets(@Req() req: { user: { id: number } }) {
     return this.betService.listUserBets(req.user.id);
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Get('bets/:id/cashout-quote')
+  cashoutQuote(@Req() req: { user: { id: number } }, @Param('id') id: string) {
+    return this.cashoutService.getCashoutQuote(req.user.id, Number(id));
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Post('bets/:id/cashout')
+  executeCashout(
+    @Req() req: { user: { id: number } },
+    @Param('id') id: string,
+    @Body() dto: ExecuteWcCashoutDto,
+  ) {
+    return this.cashoutService.executeCashout(
+      req.user.id,
+      Number(id),
+      dto.expectedAmount != null ? Number(dto.expectedAmount) : undefined,
+    );
   }
 
   @UseGuards(AuthenticationGuard)

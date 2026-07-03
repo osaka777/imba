@@ -10,8 +10,9 @@ import styles from "./BetsHistoryStyles.module.css";
 import { api } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { createTitleForBet } from "~/entities/bet/lib";
-import { getMyWcBets } from "~/entities/wc-odds/api/getMyWcBets";
+import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { mapWcBetsForHistory } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
+import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 
 type BetStatus = "PENDING" | "WIN" | "LOSE" | "RETURN";
 type TabType = "all" | "express" | "ordinar";
@@ -85,16 +86,16 @@ export const BetsHistoryModal = ({
         refetchIntervalInBackground: true,
     });
 
-    const { data: wcBets = [], isLoading: wcLoading } = useQuery({
+    const { data: wcGrouped = { ordinar: [], express: [] }, isLoading: wcLoading } = useQuery({
         queryKey: ["wc-bets", "all"],
-        queryFn: () => getMyWcBets(),
+        queryFn: () => getMyWcBetsGrouped(),
         refetchInterval: 30000,
         refetchIntervalInBackground: true,
     });
 
     const mergedBets: BetsResponse = {
-        express: bets?.express || [],
-        ordinar: [...(bets?.ordinar || []), ...mapWcBetsForHistory(wcBets)],
+        express: [...(bets?.express || []), ...mapWcExpressForHistory(wcGrouped.express)],
+        ordinar: [...(bets?.ordinar || []), ...mapWcBetsForHistory(wcGrouped.ordinar)],
     };
 
     const filteredBets = (mergedBets
