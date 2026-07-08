@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 
 import { changePassword as changePasswordApi } from "~/entities/user/api/changePassword";
@@ -40,9 +39,17 @@ const SWATCH_SHORT_LABELS: Record<string, string> = {
   slate: "Серый",
 };
 
-export const UserSettings = ({ userData }: { userData: UserData | null }) => {
-  const searchParams = useSearchParams();
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
+type UserSettingsProps = {
+  userData: UserData | null;
+  connectTelegram?: boolean;
+  telegramJustLinked?: boolean;
+};
+
+export const UserSettings = ({
+  userData,
+  connectTelegram = false,
+  telegramJustLinked = false,
+}: UserSettingsProps) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,7 +60,7 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
   const [avatarPreset, setAvatarPreset] = useState(userData?.avatarPreset || "");
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [heroAvatarSize, setHeroAvatarSize] = useState(56);
-  const connectTelegram = searchParams.get("connectTelegram") === "1";
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   useEffect(() => {
     setTelegramLinked(Boolean(userData?.telegramLinked));
@@ -62,12 +69,10 @@ export const UserSettings = ({ userData }: { userData: UserData | null }) => {
   }, [userData?.telegramLinked, userData?.telegramUsername, userData?.avatarPreset]);
 
   useEffect(() => {
-    if (searchParams.get("telegram") === "linked" || connectTelegram) {
-      if (searchParams.get("telegram") === "linked") {
-        toast.success("Telegram успешно привязан");
-      }
+    if (telegramJustLinked) {
+      toast.success("Telegram успешно привязан");
     }
-  }, [searchParams, connectTelegram]);
+  }, [telegramJustLinked]);
 
   useEffect(() => {
     if (!connectTelegram || telegramLinked) return;

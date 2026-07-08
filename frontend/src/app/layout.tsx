@@ -22,6 +22,9 @@ import { AuthProvider } from "~/app/providers/AuthProvider";
 import { RealtimeProviders } from "~/app/providers/RealtimeProviders";
 import { languageService } from "~/shared/services/language.service";
 import { AppToastContainer } from "~/shared/ui/Toast";
+import { LiveSupportChat } from "~/widgets/LiveSupportChat";
+import { SupportChatModalHost } from "~/widgets/SupportChatModalHost";
+import { AppPushProvider } from "~/entities/push/providers/AppPushProvider";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -32,8 +35,21 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  description: "Лучшие ставки на спорт онлайн — высокие коэффициенты и бонусы!",
-  title: "Лучшие ставки на спорт онлайн — высокие коэффициенты и бонусы!",
+  description:
+    "Imba.bet — ставки на спорт: live и линия на футбол, теннис и киберспорт. Пополнение Kaspi и USDT.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_HOST || "https://imba.bet"),
+  openGraph: {
+    locale: "ru_RU",
+    siteName: "Imba.bet",
+    type: "website",
+  },
+  title: {
+    default: "Imba.bet — ставки на спорт онлайн",
+    template: "%s — Imba.bet",
+  },
+  verification: {
+    yandex: "9c1017629c3a6211",
+  },
 };
 
 export const viewport: Viewport = {
@@ -54,9 +70,10 @@ export default function RootLayout({
   return (
     <html className="dark" lang={defaultLanguage} data-scroll-behavior="smooth">
       <head>
-        <meta property="og:title" content="Лучшие ставки на спорт онлайн — высокие коэффициенты и бонусы!" />
-        <meta property="og:description" content="Делайте ставки на спорт с лучшими коэффициентами и быстрыми выплатами. Получите бонус за регистрацию!" />
         {/* Предзагрузка критичных ресурсов */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/app-icon-192.png" />
+        <meta name="theme-color" content="#090F1E" />
         <link rel="dns-prefetch" href="//cdn.incub.space" />
         <link rel="dns-prefetch" href="//upload.wikimedia.org" />
         <link rel="dns-prefetch" href="//flagcdn.com" />
@@ -96,7 +113,8 @@ export default function RootLayout({
           <CurrencyProvider>
             <Provider>
               <AuthProvider>
-                <RealtimeProviders>
+                <AppPushProvider>
+                  <RealtimeProviders>
                   <div className={shellStyles.siteShell}>
                     <div className={`${shellStyles.fullBleed} ${shellStyles.topBar}`}>
                       <HeaderLineTop />
@@ -110,7 +128,10 @@ export default function RootLayout({
                   <QueryDevtoolsGate />
                   <PreloadData />
                   <FontsExtendedLoader />
-                </RealtimeProviders>
+                  </RealtimeProviders>
+                </AppPushProvider>
+                <LiveSupportChat />
+                <SupportChatModalHost />
               </AuthProvider>
             </Provider>
           </CurrencyProvider>

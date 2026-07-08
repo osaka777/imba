@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Imba.bet</string>
+    <string name="notification_channel_name">Уведомления Imba.bet</string>
+    <string name="notification_channel_desc">Расчёт ставок, пополнения и акции</string>
+</resources>

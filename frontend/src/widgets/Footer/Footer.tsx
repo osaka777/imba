@@ -82,9 +82,9 @@ export const Footer = () => {
                   <div className={styles.NavigationSection_contactsCell}>
                     <a
                       className={styles.NavigationSection_link}
-                      href="mailto:support@imba.xyz"
+                      href="mailto:support@imbalance.click"
                     >
-                      support@imba.xyz
+                      support@imbalance.click
                     </a>
                   </div>
                 </div>
@@ -99,9 +99,9 @@ export const Footer = () => {
                   <div className={styles.NavigationSection_contactsCell}>
                     <a
                       className={styles.NavigationSection_link}
-                      href="mailto:security@imba.xyz"
+                      href="mailto:security@imbalance.click"
                     >
-                      security@imba.xyz
+                      security@imbalance.click
                     </a>
                   </div>
                 </div>
@@ -116,9 +116,9 @@ export const Footer = () => {
                   <div className={styles.NavigationSection_contactsCell}>
                     <a
                       className={styles.NavigationSection_link}
-                      href="mailto:business@imba.xyz"
+                      href="mailto:business@imbalance.click"
                     >
-                      business@imba.xyz
+                      business@imbalance.click
                     </a>
                   </div>
                 </div>
@@ -133,9 +133,9 @@ export const Footer = () => {
                   <div className={styles.NavigationSection_contactsCell}>
                     <a
                       className={styles.NavigationSection_link}
-                      href="mailto:partners@imba.xyz"
+                      href="mailto:partners@imbalance.click"
                     >
-                      partners@imba.xyz
+                      partners@imbalance.click
                     </a>
                   </div>
                 </div> */}
@@ -155,6 +155,11 @@ export const Footer = () => {
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
+                  <Link className={styles.NavigationSection_link} href="/guides">
+                    Помощь
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
                   <Link
                     className={styles.NavigationSection_link}
                     href="/info"
@@ -165,13 +170,9 @@ export const Footer = () => {
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
-                  <a
-                    className={styles.NavigationSection_link}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Мобильная версия
-                  </a>
+                  <Link className={styles.NavigationSection_link} href="/app">
+                    Скачать приложение
+                  </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
                   <a
