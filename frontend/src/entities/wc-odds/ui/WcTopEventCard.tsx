@@ -162,7 +162,8 @@ export const WcTopEventCard = memo(function WcTopEventCard({
       return {
         count: pulse.betCount,
         noun: pulse.betCount === 1 ? "bet" : "bets",
-        chance: "Chance",
+        title: "Match pulse",
+        chance: "line",
       };
     }
     const mod10 = pulse.betCount % 10;
@@ -173,26 +174,30 @@ export const WcTopEventCard = memo(function WcTopEventCard({
         : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
           ? "ставки"
           : "ставок";
-    return { count: pulse.betCount, noun, chance: "Шанс" };
+    return { count: pulse.betCount, noun, title: "Пульс матча", chance: "по линии" };
   }, [locale, pulse, pulseProbability]);
 
   return (
     <article className={cn(styles.card, pulseCopy && styles.card_pulse)}>
       {pulseCopy ? (
         <div
-          aria-label={`${pulseCopy.count} ${pulseCopy.noun}, ${pulseCopy.chance} ${pulseProbability}%`}
+          aria-label={`${pulseCopy.title}: ${pulseCopy.count} ${pulseCopy.noun}, ${pulseProbability}% ${pulseCopy.chance}`}
           className={styles.pulseBadge}
         >
-          <span className={styles.pulseCount}>
-            <span aria-hidden className={styles.pulseIcon}>⚡</span>
-            <span className={styles.pulseCountText}>
-              <strong>{pulseCopy.count}</strong>
-              <small>{pulseCopy.noun}</small>
+          <span aria-hidden className={styles.pulseSignal}>
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className={styles.pulseInfo}>
+            <small>{pulseCopy.title}</small>
+            <span>
+              <strong>{pulseCopy.count}</strong> {pulseCopy.noun}
             </span>
           </span>
-          <span className={styles.pulseChance}>
-            <small>{pulseCopy.chance}</small>
+          <span className={styles.pulseProbability}>
             <strong>{pulseProbability}%</strong>
+            <small>{pulseCopy.chance}</small>
           </span>
         </div>
       ) : meta.badge ? (
