@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { memo, useMemo } from "react";
+import { useLocale } from "~/shared/model/useLocale";
 import { useRouter } from "next/navigation";
+import { FiZap } from "react-icons/fi";
 
+import type { SocialPulseItem } from "~/entities/social-pulse/api/client";
 import type { WcEvent } from "~/entities/wc-odds/api/client";
 import { formatWcCompactOdd, formatWcCompactTime } from "~/entities/wc-odds/lib/wcCompactFormat";
 import {
@@ -13,6 +16,7 @@ import {
   sportIsTwoWay,
 } from "~/entities/wc-odds/lib/wcLiveScore";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
+import { isWcFeedPaused, wcFeedPausedLabel } from "~/entities/wc-odds/lib/wcFeedStatus";
 import { isWcPriorityEvent } from "~/entities/wc-odds/lib/wcPriority";
 import { wcEventHasStats } from "~/entities/wc-odds/lib/wcEventStats";
 import { WcCompactTeamsBlock } from "~/entities/wc-odds/ui/WcCompactTeamsBlock";
@@ -26,6 +30,7 @@ type WcHomeMatchRowProps = {
   rowIndex: number;
   variant: "live" | "prematch";
   gridColumns: string;
+  pulse?: SocialPulseItem;
 };
 
 export const WcHomeMatchRow = memo(function WcHomeMatchRow({
@@ -33,26 +38,49 @@ export const WcHomeMatchRow = memo(function WcHomeMatchRow({
   rowIndex,
   variant,
   gridColumns,
+  pulse,
 }: WcHomeMatchRowProps) {
   const router = useRouter();
   const gameHref = buildWcGameHref(event);
   const isLive = variant === "live" && event.phase === "live";
+  const { locale } = useLocale();
   const isTwoWay = sportIsTwoWay(event.sport);
   const marketsCount = event.marketsCount ?? 0;
+  const favoriteProbability = useMemo(() => {
+    const prices = [event.oddsHome, event.oddsDraw, event.oddsAway]
+      .filter((price): price is number => typeof price === "number" && price > 1);
+    if (prices.length === 0) return null;
+    return Math.min(99, Math.round(100 / Math.min(...prices)));
+  }, [event.oddsAway, event.oddsDraw, event.oddsHome]);
+
+  const betsLabel = useMemo(() => {
+    if (!pulse) return "";
+    if (locale === "en") return `${pulse.betCount} ${pulse.betCount === 1 ? "bet" : "bets"}`;
+    const mod10 = pulse.betCount % 10;
+    const mod100 = pulse.betCount % 100;
+    const word =
+      mod10 === 1 && mod100 !== 11
+        ? "ставка"
+        : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+          ? "ставки"
+          : "ставок";
+    return `${pulse.betCount} ${word}`;
+  }, [locale, pulse]);
 
   const { main: scoreMain, periods: scorePeriods } = useMemo(() => {
     if (isLive) return formatWcListLiveScore(event);
     return formatWcRowScore(event);
   }, [event, isLive]);
 
-  const liveTimeLabel = useMemo(
-    () => (isLive ? formatWcRowLiveTime(event.parsedScore, event.sport) : null),
-    [isLive, event.parsedScore, event.sport],
-  );
+  const liveTimeLabel = useMemo(() => {
+    if (!isLive) return null;
+    if (isWcFeedPaused(event.feedStatus)) return wcFeedPausedLabel("ru");
+    return formatWcRowLiveTime(event.parsedScore, event.sport);
+  }, [isLive, event.feedStatus, event.parsedScore, event.sport]);
 
   const { date, time } = useMemo(
-    () => formatWcCompactTime(event.commenceTime),
-    [event.commenceTime],
+    () => formatWcCompactTime(event.commenceTime, locale),
+    [event.commenceTime, locale],
   );
 
   const openGame = () => router.push(gameHref);
@@ -100,6 +128,18 @@ export const WcHomeMatchRow = memo(function WcHomeMatchRow({
               scoreMain={scoreMain}
               scorePeriods={scorePeriods}
             />
+            {pulse && favoriteProbability !== null ? (
+              <div className={styles.pulseBadges}>
+                <span className={styles.betsBadge}>
+                  <FiZap aria-hidden />
+                  {betsLabel}
+                </span>
+                <span className={styles.probabilityBadge}>
+                  {locale === "en" ? "Probability" : "Вероятность"}{" "}
+                  <strong>{favoriteProbability}%</strong>
+                </span>
+              </div>
+            ) : null}
           </div>
         </div>
 

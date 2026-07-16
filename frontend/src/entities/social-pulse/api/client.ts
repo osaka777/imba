@@ -10,6 +10,9 @@ export type SocialPulseItem = {
     awayTeam: string;
     commenceTime: string;
     phase: "prematch" | "live" | "finished";
+    oddsHome?: number | null;
+    oddsDraw?: number | null;
+    oddsAway?: number | null;
   };
   betCount: number;
   bettorCount?: number;

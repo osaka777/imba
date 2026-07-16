@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import type { SocialPulseItem } from "~/entities/social-pulse/api/client";
+import { useSocialPulse } from "~/entities/social-pulse/lib/useSocialPulse";
 import {
   fetchWcLiveCounts,
   fetchWcLiveEvents,
@@ -38,6 +40,8 @@ import {
 import { resolveHomeSportMeta } from "~/entities/wc-odds/ui/homeSportFilters";
 import { cn } from "~/shared/lib";
 import { FireIcon } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
+import { translateSportLabel } from "~/shared/i18n/messages";
 
 import styles from "~/entities/wc-odds/ui/WcHomeSection.module.css";
 
@@ -71,11 +75,13 @@ type HomePanelProps = {
   className?: string;
   isMobile: boolean;
   onMobilePanelToggle?: () => void;
+  pulseByEventId: ReadonlyMap<string, SocialPulseItem>;
 };
 
 function HomeTableHead({ sport, isMobile }: { sport: string; isMobile: boolean }) {
   const isTwoWay = isHomeSportTwoWay(sport);
   const gridColumns = getHomeTableColumnsForSport(sport);
+  const { t } = useLocale();
 
   if (isMobile) {
     return (
@@ -85,8 +91,8 @@ function HomeTableHead({ sport, isMobile }: { sport: string; isMobile: boolean }
           isTwoWay && styles.tableHeadMobile_twoWay,
         )}
       >
-        <span className={styles.colTime}>Время</span>
-        <span className={styles.colTeams}>Команды</span>
+        <span className={styles.colTime}>{t("home.colTime")}</span>
+        <span className={styles.colTeams}>{t("home.colTeams")}</span>
         <span className={styles.colOdd}>1</span>
         {!isTwoWay && <span className={styles.colOdd}>X</span>}
         <span className={styles.colOdd}>2</span>
@@ -96,8 +102,8 @@ function HomeTableHead({ sport, isMobile }: { sport: string; isMobile: boolean }
 
   return (
     <div className={styles.tableHead} style={{ gridTemplateColumns: gridColumns }}>
-      <span className={styles.colTime}>Время</span>
-      <span className={styles.colTeams}>Команды</span>
+      <span className={styles.colTime}>{t("home.colTime")}</span>
+      <span className={styles.colTeams}>{t("home.colTeams")}</span>
       <span className={styles.colOdd}>1</span>
       {!isTwoWay && <span className={styles.colOdd}>X</span>}
       <span className={styles.colOdd}>2</span>
@@ -117,17 +123,19 @@ function HomeEmptyState({
   const sports = getHomeSports(variant);
   const meta = resolveHomeSportMeta(sports, sport);
   const isLive = variant === "live";
+  const { t, locale } = useLocale();
+  const sportLabel = translateSportLabel(locale, meta.name, meta.label).toLowerCase();
 
   return (
     <div className={styles.emptyState}>
       <p className={styles.emptyTitle}>
         {isLive
-          ? `Сейчас нет live по ${meta.label.toLowerCase()}`
-          : `Нет матчей в линии по ${meta.label.toLowerCase()}`}
+          ? t("home.emptyLive", { sport: sportLabel })
+          : t("home.emptyLine", { sport: sportLabel })}
       </p>
-      <p className={styles.emptyHint}>Попробуйте другой вид спорта или откройте полный список</p>
+      <p className={styles.emptyHint}>{t("home.emptyHint")}</p>
       <Link className={styles.emptyCta} href={href}>
-        {isLive ? "Смотреть все live" : "Перейти в линию"}
+        {isLive ? t("home.viewAllLive") : t("home.goToLine")}
       </Link>
     </div>
   );
@@ -143,9 +151,11 @@ function HomePanel({
   className,
   isMobile,
   onMobilePanelToggle,
+  pulseByEventId,
 }: HomePanelProps) {
   const isLive = variant === "live";
   const gridColumns = getHomeTableColumnsForSport(sport);
+  const { t } = useLocale();
 
   const tabPrimaryContent = isLive ? (
     <>
@@ -178,7 +188,7 @@ function HomePanel({
             )}
 
             <Link className={styles.tabSecondary} href={href}>
-              Все
+              {t("common.all")}
             </Link>
           </div>
 
@@ -205,6 +215,7 @@ function HomePanel({
                 event={event}
                 gridColumns={gridColumns}
                 key={event.id}
+                pulse={pulseByEventId.get(event.id)}
                 rowIndex={index}
                 variant={variant}
               />
@@ -218,6 +229,7 @@ function HomePanel({
 
 export function WcHomeSection() {
   const isMobile = useMobileHomeLayout();
+  const pulseByEventId = useSocialPulse();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("live");
   const [liveSport, setLiveSport] = useState("soccer");
@@ -364,6 +376,7 @@ export function WcHomeSection() {
               : undefined
           }
           onSportChange={handleLiveSportChange}
+          pulseByEventId={pulseByEventId}
           sport={liveSport}
           variant="live"
         />
@@ -385,6 +398,7 @@ export function WcHomeSection() {
               : undefined
           }
           onSportChange={handleLineSportChange}
+          pulseByEventId={pulseByEventId}
           sport={lineSport}
           variant="prematch"
         />
