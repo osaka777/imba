@@ -22,11 +22,13 @@ import { WcOddsGateway } from './wc-odds.gateway';
 import { WcOddsRealtimeService } from './wc-odds-realtime.service';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
 import { WcOddsSyncService } from './wc-odds-sync.service';
+import { WcSocialPulseController } from './wc-social-pulse.controller';
+import { WcSocialPulseService } from './wc-social-pulse.service';
 import { WcTelegramPulseService } from './wc-telegram-pulse.service';
 
 @Module({
   imports: [PrismaModule, OperationModule, PartnersModule, AuthenticationModule, CybersportModule, EventModule, TelegramModule, PushModule],
-  controllers: [WcOddsController],
+  controllers: [WcOddsController, WcSocialPulseController],
   providers: [
     OlimpbetAuthService,
     OlimpbetWcService,
@@ -39,6 +41,7 @@ import { WcTelegramPulseService } from './wc-telegram-pulse.service';
     WcOddsExpressService,
     WcOddsGateway,
     WcOddsRealtimeService,
+    WcSocialPulseService,
     WcTelegramPulseService,
   ],
   exports: [OlimpbetWcService, WcOddsRealtimeService, WcOddsBetService],
