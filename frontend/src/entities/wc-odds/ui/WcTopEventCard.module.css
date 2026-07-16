@@ -14,6 +14,10 @@
   box-shadow: 0 4px 16px rgb(16 24 40 / 0.06);
 }
 
+.card_pulse {
+  margin-top: 16px;
+}
+
 .topCap {
   position: absolute;
   top: 0;
@@ -44,10 +48,6 @@
   border-radius: 8px 999px 999px 8px;
 }
 
-.topCapLine_pulse {
-  background: linear-gradient(180deg, #ff6a00 0%, #ff3d00 100%);
-}
-
 .topBadge {
   position: relative;
   z-index: 1;
@@ -66,12 +66,99 @@
     0 2px 8px rgb(0 133 255 / 0.28);
 }
 
-.topBadge_pulse {
-  background: linear-gradient(180deg, #ff6a00 0%, #ff3d00 100%);
-  border-color: #ffffff;
+.pulseBadge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  align-items: stretch;
+  width: calc(100% - 22px);
+  height: 32px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #ffffff;
+  border-radius: 10px;
+  background: #101828;
   box-shadow:
-    0 0 0 1px #ff4d00,
-    0 2px 8px rgb(255 77 0 / 0.3);
+    0 0 0 1px rgb(16 24 40 / 0.16),
+    0 5px 14px rgb(16 24 40 / 0.2);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pulseCount,
+.pulseChance {
+  display: flex;
+  align-items: center;
+}
+
+.pulseCount {
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 7px 0 5px;
+  color: #ffffff;
+}
+
+.pulseIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #ff7a00, #ff3d00);
+  font-size: 11px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgb(255 77 0 / 0.3);
+}
+
+.pulseCountText {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.pulseCountText strong {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pulseCountText small {
+  color: rgb(255 255 255 / 0.72);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pulseChance {
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 0 8px;
+  border-left: 1px solid #d1e9ff;
+  color: #175cd3;
+  background: linear-gradient(180deg, #f5fbff, #eaf5ff);
+  white-space: nowrap;
+}
+
+.pulseChance small {
+  color: #475467;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pulseChance strong {
+  color: #006edb;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .cardHead {
@@ -334,6 +421,48 @@
   .topBadge {
     font-size: 8px;
     padding: 2px 9px;
+  }
+
+  .card_pulse {
+    margin-top: 15px;
+  }
+
+  .pulseBadge {
+    width: calc(100% - 18px);
+    height: 30px;
+  }
+
+  .pulseCount {
+    gap: 5px;
+    padding-right: 5px;
+  }
+
+  .pulseIcon {
+    flex-basis: 18px;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  .pulseCountText strong {
+    font-size: 12px;
+  }
+
+  .pulseCountText small {
+    font-size: 8px;
+  }
+
+  .pulseChance {
+    gap: 3px;
+    padding: 0 6px;
+  }
+
+  .pulseChance small {
+    font-size: 7px;
+  }
+
+  .pulseChance strong {
+    font-size: 11px;
   }
 
   .avatarWrap {

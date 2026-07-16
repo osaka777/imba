@@ -156,44 +156,50 @@ export const WcTopEventCard = memo(function WcTopEventCard({
     if (prices.length === 0) return null;
     return Math.min(99, Math.round(100 / Math.min(...prices)));
   }, [meta.oddsAway, meta.oddsDraw, meta.oddsHome]);
-  const pulseLabel = useMemo(() => {
+  const pulseCopy = useMemo(() => {
     if (!pulse || pulseProbability === null) return null;
     if (locale === "en") {
-      return `⚡ ${pulse.betCount} ${pulse.betCount === 1 ? "bet" : "bets"} · ${pulseProbability}%`;
+      return {
+        count: pulse.betCount,
+        noun: pulse.betCount === 1 ? "bet" : "bets",
+        chance: "Chance",
+      };
     }
     const mod10 = pulse.betCount % 10;
     const mod100 = pulse.betCount % 100;
-    const word =
+    const noun =
       mod10 === 1 && mod100 !== 11
         ? "ставка"
         : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
           ? "ставки"
           : "ставок";
-    return `⚡ ${pulse.betCount} ${word} · ${pulseProbability}%`;
+    return { count: pulse.betCount, noun, chance: "Шанс" };
   }, [locale, pulse, pulseProbability]);
-  const capLabel = pulseLabel ?? (meta.badge ? "Имба" : null);
 
   return (
-    <article className={styles.card}>
-      {capLabel ? (
-        <div aria-hidden className={styles.topCap}>
-          <span
-            className={cn(
-              styles.topCapLine,
-              styles.topCapLine_left,
-              pulseLabel && styles.topCapLine_pulse,
-            )}
-          />
-          <span className={cn(styles.topBadge, pulseLabel && styles.topBadge_pulse)}>
-            {capLabel}
+    <article className={cn(styles.card, pulseCopy && styles.card_pulse)}>
+      {pulseCopy ? (
+        <div
+          aria-label={`${pulseCopy.count} ${pulseCopy.noun}, ${pulseCopy.chance} ${pulseProbability}%`}
+          className={styles.pulseBadge}
+        >
+          <span className={styles.pulseCount}>
+            <span aria-hidden className={styles.pulseIcon}>⚡</span>
+            <span className={styles.pulseCountText}>
+              <strong>{pulseCopy.count}</strong>
+              <small>{pulseCopy.noun}</small>
+            </span>
           </span>
-          <span
-            className={cn(
-              styles.topCapLine,
-              styles.topCapLine_right,
-              pulseLabel && styles.topCapLine_pulse,
-            )}
-          />
+          <span className={styles.pulseChance}>
+            <small>{pulseCopy.chance}</small>
+            <strong>{pulseProbability}%</strong>
+          </span>
+        </div>
+      ) : meta.badge ? (
+        <div aria-hidden className={styles.topCap}>
+          <span className={`${styles.topCapLine} ${styles.topCapLine_left}`} />
+          <span className={styles.topBadge}>Имба</span>
+          <span className={`${styles.topCapLine} ${styles.topCapLine_right}`} />
         </div>
       ) : null}
 
