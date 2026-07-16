@@ -26,6 +26,8 @@ const copy = {
     bets: (count: number) => `${count} ${count % 10 === 1 && count % 100 !== 11 ? "ставка" : "ставок"}`,
     draw: "Ничья",
     open: "Открыть матч",
+    emptyTitle: "Собираем пульс игроков",
+    emptyHint: "Здесь появится выбор игроков, когда по матчу будет достаточно ставок.",
   },
   en: {
     title: "Imba Pulse",
@@ -34,6 +36,8 @@ const copy = {
     bets: (count: number) => `${count} ${count === 1 ? "bet" : "bets"}`,
     draw: "Draw",
     open: "Open match",
+    emptyTitle: "Building the player pulse",
+    emptyHint: "Players' picks will appear once a match has enough bets.",
   },
 } as const;
 
@@ -62,7 +66,7 @@ export function SocialPulseSection() {
     };
   }, [load]);
 
-  if (!data?.enabled || data.items.length === 0) return null;
+  if (!data?.enabled) return null;
 
   return (
     <section aria-labelledby="social-pulse-title" className={styles.section}>
@@ -85,11 +89,26 @@ export function SocialPulseSection() {
         </span>
       </header>
 
-      <div className={styles.track}>
-        {data.items.map((item) => (
-          <PulseCard item={item} key={item.event.id} locale={locale} />
-        ))}
-      </div>
+      {data.items.length > 0 ? (
+        <div className={styles.track}>
+          {data.items.map((item) => (
+            <PulseCard item={item} key={item.event.id} locale={locale} />
+          ))}
+        </div>
+      ) : (
+        <div className={styles.empty}>
+          <span aria-hidden className={styles.emptyPulse}>
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          <div>
+            <strong>{text.emptyTitle}</strong>
+            <p>{text.emptyHint}</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
