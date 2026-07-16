@@ -12,6 +12,7 @@ export type SocialPulseItem = {
     phase: "prematch" | "live" | "finished";
   };
   betCount: number;
+  bettorCount?: number;
   outcomes: Array<{
     pick: SocialPulsePick;
     betCount: number;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { WcOddsPick } from '@prisma/client';
+import { WcOddsBetStatus, WcOddsPick } from '@prisma/client';
 
 import { PrismaService } from '~/prisma/prisma.service';
 
@@ -48,16 +48,20 @@ export class WcSocialPulseService {
     const windowHours = this.readPositiveInt('SOCIAL_PULSE_WINDOW_HOURS', DEFAULT_WINDOW_HOURS);
     const minBets = this.readPositiveInt('SOCIAL_PULSE_MIN_BETS', DEFAULT_MIN_BETS);
     const since = new Date(now - windowHours * 60 * 60 * 1000);
+    const baseWhere = {
+      isProbe: false,
+      // Express legs store stake=0 on WcOddsBet; count only standalone ordinar tickets.
+      wcExpressBetId: null,
+      status: { not: WcOddsBetStatus.VOID },
+      marketKey: 'h2h',
+      pick: { not: null },
+      createdAt: { gte: since },
+      event: { completed: false },
+    } as const;
 
     const grouped = await this.prisma.wcOddsBet.groupBy({
       by: ['eventId', 'pick'],
-      where: {
-        isProbe: false,
-        marketKey: 'h2h',
-        pick: { not: null },
-        createdAt: { gte: since },
-        event: { completed: false },
-      },
+      where: baseWhere,
       _count: { _all: true },
     });
 
@@ -74,9 +78,32 @@ export class WcSocialPulseService {
       byEvent.set(row.eventId, current);
     }
 
-    const leaders = [...byEvent.values()]
+    const candidates = [...byEvent.values()]
       .filter((item) => item.betCount >= minBets)
       .sort((a, b) => b.betCount - a.betCount)
+      .slice(0, MAX_EVENTS * 3);
+
+    if (candidates.length === 0) {
+      const payload = { enabled: true, windowHours, items: [] };
+      this.cache = { expiresAt: now + CACHE_MS, payload };
+      return payload;
+    }
+
+    // Prefer k-anonymity by distinct bettors, not just ticket volume.
+    const bettorRows = await this.prisma.wcOddsBet.groupBy({
+      by: ['eventId', 'userId'],
+      where: {
+        ...baseWhere,
+        eventId: { in: candidates.map((item) => item.eventId) },
+      },
+    });
+    const bettorsByEvent = new Map<string, number>();
+    for (const row of bettorRows) {
+      bettorsByEvent.set(row.eventId, (bettorsByEvent.get(row.eventId) ?? 0) + 1);
+    }
+
+    const leaders = candidates
+      .filter((item) => (bettorsByEvent.get(item.eventId) ?? 0) >= minBets)
       .slice(0, MAX_EVENTS);
 
     if (leaders.length === 0) {
@@ -104,6 +131,7 @@ export class WcSocialPulseService {
       return [{
         event: eventDto,
         betCount: leader.betCount,
+        bettorCount: bettorsByEvent.get(leader.eventId) ?? 0,
         outcomes,
       }];
     });
