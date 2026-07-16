@@ -88,7 +88,11 @@ function resolveCardMeta(item: TopEventItem, locale: "ru" | "en" = "ru") {
   };
 }
 
-function resolveScoreBlock(item: TopEventItem, isLive: boolean) {
+function resolveScoreBlock(
+  item: TopEventItem,
+  isLive: boolean,
+  locale: "ru" | "en" = "ru",
+) {
   if (item.kind === "wc") {
     const event = item.event;
     if (isLive) {
@@ -142,8 +146,8 @@ export const WcTopEventCard = memo(function WcTopEventCard({
   const meta = useMemo(() => resolveCardMeta(item, locale), [item, locale]);
   const isTwoWay = topEventIsTwoWay(item);
   const scoreBlock = useMemo(
-    () => resolveScoreBlock(item, meta.isLive),
-    [item, meta.isLive],
+    () => resolveScoreBlock(item, meta.isLive, locale),
+    [item, locale, meta.isLive],
   );
   const { SportIcon } = meta;
   const pulseProbability = useMemo(() => {
