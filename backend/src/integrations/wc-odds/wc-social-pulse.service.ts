@@ -8,7 +8,8 @@ import { buildWcOddsEventDto } from './wc-event-dto.util';
 import { sanitizePublicEventDto } from './wc-public.util';
 
 const DEFAULT_WINDOW_HOURS = 24;
-const DEFAULT_MIN_BETS = 5;
+/** Minimum standalone tickets on an event before it appears in Pulse. */
+const DEFAULT_MIN_BETS = 2;
 const MAX_EVENTS = 6;
 const CACHE_MS = 15_000;
 
@@ -78,38 +79,29 @@ export class WcSocialPulseService {
       byEvent.set(row.eventId, current);
     }
 
-    const candidates = [...byEvent.values()]
+    // Early bookmaker traffic: gate by ticket volume, not distinct bettors.
+    // Identity is never exposed — only anonymous outcome percentages.
+    const leaders = [...byEvent.values()]
       .filter((item) => item.betCount >= minBets)
       .sort((a, b) => b.betCount - a.betCount)
-      .slice(0, MAX_EVENTS * 3);
-
-    if (candidates.length === 0) {
-      const payload = { enabled: true, windowHours, items: [] };
-      this.cache = { expiresAt: now + CACHE_MS, payload };
-      return payload;
-    }
-
-    // Prefer k-anonymity by distinct bettors, not just ticket volume.
-    const bettorRows = await this.prisma.wcOddsBet.groupBy({
-      by: ['eventId', 'userId'],
-      where: {
-        ...baseWhere,
-        eventId: { in: candidates.map((item) => item.eventId) },
-      },
-    });
-    const bettorsByEvent = new Map<string, number>();
-    for (const row of bettorRows) {
-      bettorsByEvent.set(row.eventId, (bettorsByEvent.get(row.eventId) ?? 0) + 1);
-    }
-
-    const leaders = candidates
-      .filter((item) => (bettorsByEvent.get(item.eventId) ?? 0) >= minBets)
       .slice(0, MAX_EVENTS);
 
     if (leaders.length === 0) {
       const payload = { enabled: true, windowHours, items: [] };
       this.cache = { expiresAt: now + CACHE_MS, payload };
       return payload;
+    }
+
+    const bettorRows = await this.prisma.wcOddsBet.groupBy({
+      by: ['eventId', 'userId'],
+      where: {
+        ...baseWhere,
+        eventId: { in: leaders.map((item) => item.eventId) },
+      },
+    });
+    const bettorsByEvent = new Map<string, number>();
+    for (const row of bettorRows) {
+      bettorsByEvent.set(row.eventId, (bettorsByEvent.get(row.eventId) ?? 0) + 1);
     }
 
     const events = await this.prisma.wcOddsEvent.findMany({
