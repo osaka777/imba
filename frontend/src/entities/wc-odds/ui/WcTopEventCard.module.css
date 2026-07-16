@@ -44,6 +44,10 @@
   border-radius: 8px 999px 999px 8px;
 }
 
+.topCapLine_pulse {
+  background: linear-gradient(180deg, #ff6a00 0%, #ff3d00 100%);
+}
+
 .topBadge {
   position: relative;
   z-index: 1;
@@ -60,6 +64,14 @@
   box-shadow:
     0 0 0 1px #0085ff,
     0 2px 8px rgb(0 133 255 / 0.28);
+}
+
+.topBadge_pulse {
+  background: linear-gradient(180deg, #ff6a00 0%, #ff3d00 100%);
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 1px #ff4d00,
+    0 2px 8px rgb(255 77 0 / 0.3);
 }
 
 .cardHead {

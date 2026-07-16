@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import type { SocialPulseItem } from "~/entities/social-pulse/api/client";
-import { useSocialPulse } from "~/entities/social-pulse/lib/useSocialPulse";
 import {
   fetchWcLiveCounts,
   fetchWcLiveEvents,
@@ -75,7 +73,6 @@ type HomePanelProps = {
   className?: string;
   isMobile: boolean;
   onMobilePanelToggle?: () => void;
-  pulseByEventId: ReadonlyMap<string, SocialPulseItem>;
 };
 
 function HomeTableHead({ sport, isMobile }: { sport: string; isMobile: boolean }) {
@@ -151,7 +148,6 @@ function HomePanel({
   className,
   isMobile,
   onMobilePanelToggle,
-  pulseByEventId,
 }: HomePanelProps) {
   const isLive = variant === "live";
   const gridColumns = getHomeTableColumnsForSport(sport);
@@ -215,7 +211,6 @@ function HomePanel({
                 event={event}
                 gridColumns={gridColumns}
                 key={event.id}
-                pulse={pulseByEventId.get(event.id)}
                 rowIndex={index}
                 variant={variant}
               />
@@ -229,7 +224,6 @@ function HomePanel({
 
 export function WcHomeSection() {
   const isMobile = useMobileHomeLayout();
-  const pulseByEventId = useSocialPulse();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("live");
   const [liveSport, setLiveSport] = useState("soccer");
@@ -376,7 +370,6 @@ export function WcHomeSection() {
               : undefined
           }
           onSportChange={handleLiveSportChange}
-          pulseByEventId={pulseByEventId}
           sport={liveSport}
           variant="live"
         />
@@ -398,7 +391,6 @@ export function WcHomeSection() {
               : undefined
           }
           onSportChange={handleLineSportChange}
-          pulseByEventId={pulseByEventId}
           sport={lineSport}
           variant="prematch"
         />

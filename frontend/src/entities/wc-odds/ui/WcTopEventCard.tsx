@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { memo, useMemo } from "react";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { gamesList } from "~/entities/game/lib/gamesList";
+import type { SocialPulseItem } from "~/entities/social-pulse/api/client";
 import type { WcEvent } from "~/entities/wc-odds/api/client";
 import { formatWcCompactOdd, formatWcCompactTime } from "~/entities/wc-odds/lib/wcCompactFormat";
 import {
@@ -30,9 +32,10 @@ const AVATAR_SIZE = 48;
 
 type WcTopEventCardProps = {
   item: TopEventItem;
+  pulse?: SocialPulseItem;
 };
 
-function resolveCardMeta(item: TopEventItem) {
+function resolveCardMeta(item: TopEventItem, locale: "ru" | "en" = "ru") {
   if (item.kind === "wc") {
     const event = item.event;
     const isLive = event.phase === "live";
@@ -72,7 +75,10 @@ function resolveCardMeta(item: TopEventItem) {
     awayIcon: event.team2Icon ?? null,
     isLive: item.isLive,
     hasStats: false,
-    hasBroadcast: false,
+    hasBroadcast: Boolean(
+      (event.meta as { hasBroadcast?: boolean; wcHasBroadcast?: boolean } | undefined)?.hasBroadcast
+      || (event.meta as { wcHasBroadcast?: boolean } | undefined)?.wcHasBroadcast,
+    ),
     oddsHome: odds.home,
     oddsDraw: odds.draw,
     oddsAway: odds.away,
@@ -96,7 +102,7 @@ function resolveScoreBlock(item: TopEventItem, isLive: boolean) {
       };
     }
 
-    const { date, time } = formatWcCompactTime(event.commenceTime);
+    const { date, time } = formatWcCompactTime(event.commenceTime, locale);
     return {
       score: time,
       liveTime: null,
@@ -128,22 +134,62 @@ function resolveScoreBlock(item: TopEventItem, isLive: boolean) {
   };
 }
 
-export const WcTopEventCard = memo(function WcTopEventCard({ item }: WcTopEventCardProps) {
-  const meta = useMemo(() => resolveCardMeta(item), [item]);
+export const WcTopEventCard = memo(function WcTopEventCard({
+  item,
+  pulse,
+}: WcTopEventCardProps) {
+  const { locale } = useLocale();
+  const meta = useMemo(() => resolveCardMeta(item, locale), [item, locale]);
   const isTwoWay = topEventIsTwoWay(item);
   const scoreBlock = useMemo(
     () => resolveScoreBlock(item, meta.isLive),
     [item, meta.isLive],
   );
   const { SportIcon } = meta;
+  const pulseProbability = useMemo(() => {
+    const prices = [meta.oddsHome, meta.oddsDraw, meta.oddsAway]
+      .filter((price): price is number => typeof price === "number" && price > 1);
+    if (prices.length === 0) return null;
+    return Math.min(99, Math.round(100 / Math.min(...prices)));
+  }, [meta.oddsAway, meta.oddsDraw, meta.oddsHome]);
+  const pulseLabel = useMemo(() => {
+    if (!pulse || pulseProbability === null) return null;
+    if (locale === "en") {
+      return `⚡ ${pulse.betCount} ${pulse.betCount === 1 ? "bet" : "bets"} · ${pulseProbability}%`;
+    }
+    const mod10 = pulse.betCount % 10;
+    const mod100 = pulse.betCount % 100;
+    const word =
+      mod10 === 1 && mod100 !== 11
+        ? "ставка"
+        : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+          ? "ставки"
+          : "ставок";
+    return `⚡ ${pulse.betCount} ${word} · ${pulseProbability}%`;
+  }, [locale, pulse, pulseProbability]);
+  const capLabel = pulseLabel ?? (meta.badge ? "Имба" : null);
 
   return (
     <article className={styles.card}>
-      {meta.badge ? (
+      {capLabel ? (
         <div aria-hidden className={styles.topCap}>
-          <span className={`${styles.topCapLine} ${styles.topCapLine_left}`} />
-          <span className={styles.topBadge}>Имба</span>
-          <span className={`${styles.topCapLine} ${styles.topCapLine_right}`} />
+          <span
+            className={cn(
+              styles.topCapLine,
+              styles.topCapLine_left,
+              pulseLabel && styles.topCapLine_pulse,
+            )}
+          />
+          <span className={cn(styles.topBadge, pulseLabel && styles.topBadge_pulse)}>
+            {capLabel}
+          </span>
+          <span
+            className={cn(
+              styles.topCapLine,
+              styles.topCapLine_right,
+              pulseLabel && styles.topCapLine_pulse,
+            )}
+          />
         </div>
       ) : null}
 

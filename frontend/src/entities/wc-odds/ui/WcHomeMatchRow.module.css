@@ -77,56 +77,6 @@
   width: 100%;
 }
 
-.pulseBadges {
-  display: flex;
-  align-items: center;
-  width: fit-content;
-  max-width: 100%;
-  margin-top: 5px;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 1px 2px rgb(16 24 40 / 0.08);
-}
-
-.betsBadge,
-.probabilityBadge {
-  display: inline-flex;
-  align-items: center;
-  height: 21px;
-  white-space: nowrap;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.betsBadge {
-  gap: 3px;
-  padding: 0 7px 0 5px;
-  color: #ffffff;
-  background: linear-gradient(135deg, #ff6a00, #ff3d00);
-}
-
-.betsBadge svg {
-  width: 11px;
-  height: 11px;
-  fill: currentColor;
-  stroke-width: 2.5;
-}
-
-.probabilityBadge {
-  padding: 0 7px;
-  color: #344054;
-  background: #f2f4f7;
-  border: 1px solid #e4e7ec;
-  border-left: 0;
-}
-
-.probabilityBadge strong {
-  margin-left: 3px;
-  color: #101828;
-  font-size: 10px;
-}
-
 @media screen and (min-width: 1025px) {
   .oddsBar {
     display: contents;
@@ -173,16 +123,6 @@
     min-width: 0;
     padding-left: 8px;
     border-left-width: 2px;
-  }
-
-  .pulseBadges {
-    margin-top: 4px;
-  }
-
-  .betsBadge,
-  .probabilityBadge {
-    height: 20px;
-    font-size: 9px;
   }
 
   .oddsBar {
