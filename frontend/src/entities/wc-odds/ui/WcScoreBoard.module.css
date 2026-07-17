@@ -5,7 +5,7 @@
   display: grid;
   gap: 0;
   margin-bottom: 0.875rem;
-  border-radius: 0.625rem;
+  border-radius: var(--arena-radius-lg);
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
@@ -13,6 +13,8 @@
   position: relative;
   z-index: 0;
   isolation: isolate;
+  border: 1px solid var(--arena-border);
+  box-shadow: var(--arena-shadow);
 }
 
 /* ═══════════════════════════════════════════════════

@@ -3,33 +3,33 @@
   align-items: center;
   min-height: 48px;
   padding: 5px 14px;
-  background: #ffffff;
-  border-bottom: 1px solid #e7ebf1;
+  background: var(--arena-surface);
+  border-bottom: 1px solid var(--arena-border);
   transition: background-color 0.12s ease;
   font-family: inherit;
   letter-spacing: 0;
-  color: #101828;
+  color: var(--arena-text);
 }
 
 .row_alt {
-  background: #f5f7fa;
+  background: var(--arena-surface-2);
 }
 
 @media (hover: hover) {
   .row:hover {
-    background: #eef4ff;
+    background: rgb(59 130 246 / 0.12);
   }
 
   .row:hover :global([data-markets-pill]),
   .row:hover :global([data-markets-pill]:hover) {
-    color: #fff !important;
+    color: #ffffff !important;
     filter: brightness(0.92);
     opacity: 0.92;
   }
 }
 
 .row:active {
-  background: #eef4ff;
+  background: rgb(59 130 246 / 0.12);
 }
 
 .rowMain {
@@ -51,14 +51,14 @@
 .date {
   font-size: 12px;
   font-weight: 500;
-  color: #8b93a1;
+  color: var(--arena-text-dim);
   white-space: nowrap;
 }
 
 .clock {
   font-size: 13px;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--arena-text-muted);
   white-space: nowrap;
 }
 
@@ -67,7 +67,7 @@
   align-items: center;
   min-width: 0;
   cursor: pointer;
-  border-left: 2px solid #0085ff;
+  border-left: 2px solid var(--arena-accent);
   padding-left: 10px;
 }
 
@@ -115,7 +115,7 @@
   .clock {
     font-size: 11px;
     font-weight: 700;
-    color: #101828;
+    color: var(--arena-text);
   }
 
   .mainCell {

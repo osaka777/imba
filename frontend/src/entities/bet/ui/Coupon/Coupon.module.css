@@ -1,9 +1,10 @@
 .Coupon {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--arena-radius);
   padding: 12px;
-  background-image: linear-gradient(135deg, #233358, rgba(20, 27, 46, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(160deg, var(--arena-surface-2) 0%, var(--arena-bg-elevated) 100%);
+  border: 1px solid var(--arena-border);
+  box-shadow: var(--arena-shadow);
   display: flex;
   flex-direction: column;
   gap: 12px;

@@ -271,7 +271,7 @@
   background: rgb(37 99 235 / 0.12);
   font-weight: 600;
   font-size: 11px;
-  color: #2563eb;
+  color: var(--arena-accent);
   border: 1px solid rgb(37 99 235 / 0.2);
 }
 
@@ -482,7 +482,7 @@
 
   100% {
     background-color: transparent;
-    color: #0f172a;
+    color: var(--arena-text);
   }
 }
 
@@ -495,7 +495,7 @@
 
   100% {
     background-color: transparent;
-    color: #0f172a;
+    color: var(--arena-text);
   }
 }
 
@@ -505,7 +505,7 @@
     color: #1a9b47;
   }
   100% {
-    color: #0f172a;
+    color: var(--arena-text);
   }
 }
 
@@ -515,7 +515,7 @@
     color: #d64545;
   }
   100% {
-    color: #0f172a;
+    color: var(--arena-text);
   }
 }
 
@@ -530,19 +530,19 @@
 }
 @media screen and (max-width: 768px) {
   .oddCell_added {
-    background: #dbeafe;
+    background: rgb(59 130 246 / 0.22);
   }
 }
 
 .oddCoefficient_added {
-  background: #dbeafe;
-  color: #2563eb !important;
-  border: 1px solid #93c5fd;
+  background: rgb(59 130 246 / 0.22);
+  color: var(--arena-accent) !important;
+  border: 1px solid rgb(96 165 250 / 0.55);
   border-radius: 8px;
 }
 
 .oddCell_added .oddCoefficient {
-  color: #2563eb !important;
+  color: var(--arena-accent) !important;
 }
 
 @media screen and (max-width: 768px) {
@@ -555,7 +555,7 @@
   display: none;
 }
 .oddCell_added > .addedGameName {
-  color: #2563eb;
+  color: var(--arena-accent);
 }
 @media screen and (max-width: 768px) {
   .addedGameName {

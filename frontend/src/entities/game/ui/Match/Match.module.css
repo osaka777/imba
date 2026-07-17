@@ -135,15 +135,24 @@
 
 .oddMenuList button {
   flex-shrink: 0;
-  height: 30px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 14px;
   font-size: 12px;
-  background: var(--blue-gray);
+  font-weight: 700;
+  background: var(--arena-surface-2);
+  border: 1px solid var(--arena-border);
   border-radius: 999px;
   min-width: max-content;
   display: flex;
   align-items: center;
   gap: 6px;
+  color: var(--arena-text-muted);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.oddMenuList button:hover {
+  background: var(--arena-surface-3);
+  color: var(--arena-text);
 }
 
 .fireIcon {
@@ -153,7 +162,9 @@
 }
 
 .oddMenuList .activeButton {
-  background: var(--light-blue-gradient);
+  background: linear-gradient(145deg, var(--arena-accent-hot), var(--arena-accent-deep));
+  border-color: transparent;
+  color: #fff;
 }
 
 .oddsTables {

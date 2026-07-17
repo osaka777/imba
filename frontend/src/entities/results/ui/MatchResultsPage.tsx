@@ -8,6 +8,7 @@ import { gamesList } from "~/entities/game";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 import { cn } from "~/shared/lib";
 import { LoadingSpinner } from "~/shared/ui";
+import { SportsbookPageShell } from "~/shared/ui/sportsbook";
 
 import {
   fetchMatchResults,
@@ -263,7 +264,7 @@ export function MatchResultsPage({ className }: { className?: string }) {
       : `${formatDisplayDate(date)} · ${sportLabel(sport).toLowerCase()}`;
 
   return (
-    <div className={cn(styles.page, className)}>
+    <SportsbookPageShell className={cn(styles.page, className)}>
       <div className={styles.pageTop}>
         <div className={styles.tabGroup}>
           <h1 className={styles.tabPrimary}>Результаты</h1>
@@ -389,6 +390,6 @@ export function MatchResultsPage({ className }: { className?: string }) {
           ))}
         </div>
       )}
-    </div>
+    </SportsbookPageShell>
   );
 }

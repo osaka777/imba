@@ -123,15 +123,15 @@
 .couponBetCloseIcon {
   width: 12px;
   height: 12px;
-  fill: #fff;
+  fill: #ffffff;
 }
 
 .couponWinLineHero {
   margin: 10px 0 0;
   padding: 6px 8px;
   border-radius: 8px;
-  background: #f0fdf4;
-  color: #15803d !important;
+  background: rgb(34 197 94 / 0.12);
+  color: var(--arena-money) !important;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
@@ -141,7 +141,7 @@
   margin: 8px 0 0;
   font-size: 10px;
   font-weight: 600;
-  color: #64748b !important;
+  color: var(--arena-text-muted) !important;
 }
 
 .couponTypeRadiogroup {
@@ -274,7 +274,7 @@
 }
 
 .couponStakeField input::placeholder {
-  color: #6b7280 !important;
+  color: var(--arena-text-muted) !important;
   opacity: 1;
 }
 
@@ -336,7 +336,7 @@
   border-radius: 8px;
   border: 1px solid rgb(255 255 255 / 0.2);
   background: rgb(255 255 255 / 0.08);
-  color: #fff;
+  color: #ffffff;
   font-size: 11px;
   font-weight: 600;
   padding: 0 4px;
@@ -345,7 +345,7 @@
 .stakeChipActive {
   border-color: #60a5fa;
   background: rgb(37 99 235 / 0.35);
-  color: #dbeafe;
+  color: rgb(59 130 246 / 0.22);
 }
 
 .agree {
@@ -423,7 +423,7 @@
 }
 
 .baseCouponSubmit:disabled {
-  background: #4b5563 !important;
+  background: var(--arena-text-muted) !important;
   color: #e5e7eb !important;
   box-shadow: none;
   opacity: 1;
@@ -445,7 +445,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 7px;
-  background-color: #fff;
+  background-color: #ffffff;
   border-radius: 10px;
   padding: 11px 10px 10px;
   position: relative;
@@ -503,21 +503,21 @@
 }
 
 .coupon_phaseLine {
-  color: #2563eb;
+  color: var(--arena-accent);
   background: rgb(37 99 235 / 0.1);
 }
 
 .coupon_timeLine {
   font-size: 10px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--arena-text-muted);
   line-height: 1.25;
 }
 
 .coupon_league {
   margin: 0;
   font-size: 10px;
-  color: #64748b;
+  color: var(--arena-text-muted);
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -537,7 +537,7 @@
   margin: 0;
   font-size: 10px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--arena-text-muted);
 }
 
 @media screen and (max-width: 480px) {
@@ -564,7 +564,7 @@
 
 .coupon_name {
   margin: 0;
-  color: #0f172a;
+  color: var(--arena-text);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.3;
@@ -588,7 +588,7 @@
   background: linear-gradient(143.56deg, #0095ff -58.98%, #0855c4 95.86%);
   border-radius: 8px;
   box-shadow: 0 6px 22px #056dda33;
-  color: #fff;
+  color: #ffffff;
   display: flex;
   flex-shrink: 0;
   justify-content: center;

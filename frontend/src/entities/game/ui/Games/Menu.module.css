@@ -1,10 +1,12 @@
 /* ── Horizontal (mobile / tablet) ── */
 .Menu {
   overflow-x: auto;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: var(--arena-radius);
+  padding: 10px;
   max-width: 100%;
-  background-color: var(--blue-20);
+  background: var(--arena-surface);
+  border: 1px solid var(--arena-border);
+  box-shadow: var(--arena-shadow-soft);
 }
 
 .wrapper {

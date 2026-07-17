@@ -61,7 +61,7 @@
 .teamName {
   font-size: 13px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--arena-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -80,8 +80,8 @@
 .statsIcon {
   width: 12px;
   height: 12px;
-  fill: #0085ff;
-  color: #0085ff;
+  fill: var(--arena-accent);
+  color: var(--arena-accent);
   opacity: 0.85;
 }
 
@@ -105,7 +105,7 @@
   border-radius: 8px;
   border: 1px solid rgb(16 141 231 / 0.35);
   background: var(--light-blue-gradient);
-  color: #fff !important;
+  color: #ffffff !important;
   font-size: 10px;
   font-weight: 500;
   line-height: 1;
@@ -118,7 +118,7 @@
 .marketsPill:focus-visible,
 .marketsPill:active,
 .marketsPill:visited {
-  color: #fff !important;
+  color: #ffffff !important;
   text-decoration: none;
 }
 
@@ -160,7 +160,7 @@
 .scoreMain {
   font-size: 11px;
   font-weight: 600;
-  color: #101828;
+  color: var(--arena-text);
   line-height: 1.1;
   white-space: nowrap;
 }
@@ -168,7 +168,7 @@
 .scoreTimeMobile {
   font-size: 9px;
   font-weight: 600;
-  color: #0085ff;
+  color: var(--arena-accent);
   line-height: 1.1;
   white-space: nowrap;
 }
@@ -235,7 +235,7 @@
 .teamBroadcastIcon {
   width: 11px;
   height: 11px;
-  fill: #0085ff;
+  fill: var(--arena-accent);
   flex-shrink: 0;
   opacity: 0.85;
 }
@@ -277,5 +277,5 @@
 
 .card_red {
   background: #ef4444;
-  color: #fff;
+  color: #ffffff;
 }
