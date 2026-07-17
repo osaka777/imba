@@ -6,7 +6,73 @@
   box-sizing: border-box;
 }
 
-@media screen and (max-width: 1080px) {
+.marketsSyncing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 4px 8px;
+}
+
+.marketsSyncingBar {
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: marketsShimmer 1.1s ease-in-out infinite;
+}
+
+.marketsSyncingBar:nth-child(2) {
+  width: 92%;
+}
+
+.marketsSyncingBar:nth-child(3) {
+  width: 84%;
+}
+
+.finishedState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  text-align: center;
+}
+
+.finishedState strong {
+  font-size: 15px;
+}
+
+.finishedState span {
+  max-width: 420px;
+  color: rgb(255 255 255 / 0.62);
+  font-size: 13px;
+}
+
+.finishedState a {
+  margin-top: 4px;
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@keyframes marketsShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media screen and (max-width: 600px) {
   .wcMatchPage {
     padding: 0 4px 80px;
   }
@@ -50,6 +116,33 @@
     gap: 8px;
   }
 
+  .wcMatchPage :global(.oddsHandicapRow .handicapPivotLabelLeft),
+  .wcMatchPage :global(.oddsHandicapRow .handicapPivotLabelRight) {
+    display: none;
+  }
+
+  .wcMatchPage :global(.oddsHandicapRow > .oddsItem:first-child .oddHandicap) {
+    padding-right: 22px;
+  }
+
+  .wcMatchPage :global(.oddsHandicapRow > .oddsItem:last-child .oddHandicap) {
+    padding-left: 22px;
+  }
+
+  .wcMatchPage :global(.oddsHandicapRow .handicapPivotWrap) {
+    gap: 0;
+  }
+
+  .wcMatchPage :global(.oddsTotalsRow .pairSideLabel_start),
+  .wcMatchPage :global(.oddsTotalsRow .pairSideLabel_end) {
+    width: auto;
+    min-width: 0;
+    max-width: 55%;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151 !important;
+  }
+
   .wcMatchPage :global(.oddsTable) {
     border-radius: 8px;
     gap: 2px;
@@ -62,6 +155,32 @@
 
   .wcMatchPage :global(.oddsBlockPair) {
     flex-wrap: nowrap;
+  }
+
+  .wcMatchPage :global(.oddsBlockPX) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    width: 100%;
+  }
+
+  .wcMatchPage :global(.oddsBlockPX_2way),
+  .wcMatchPage :global(.oddsBlockPX:has(> [class*="oddsItem"]:nth-child(2):last-child)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wcMatchPage :global(.oddsBlockPX) > :global([class*="oddsItem"]) {
+    flex-basis: auto;
+    max-width: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .wcMatchPage :global(.oddsBlock:not([class*="oddsBlockPair"]):not([class*="oddsBlockPX"]):not([class*="oddsHandicapRow"]):not([class*="oddsTotalsRow"]):has(> [class*="oddsItem"]:nth-child(2):last-child)) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    width: 100%;
   }
 
   .wcMatchPage :global(.oddsItem) {
@@ -113,13 +232,6 @@
     justify-content: flex-start;
   }
 
-  .wcMatchPage :global(.oddsTotalsRow .pairSideLabel_start),
-  .wcMatchPage :global(.oddsTotalsRow .pairSideLabel_end) {
-    width: auto;
-    font-size: 10px;
-    color: #374151 !important;
-  }
-
   .wcMatchPage :global(.totalsScopeCaption),
   .wcMatchPage :global(.oddsGroupSubLabel) {
     color: #4b5563 !important;
@@ -167,28 +279,9 @@
     font-size: 10px;
   }
 
-  .wcMatchPage :global(.oddsHandicapRow .handicapPivotWrap) {
-    gap: 5px;
-  }
-
-  .wcMatchPage :global(.oddsHandicapRow .handicapPivotLabelLeft),
-  .wcMatchPage :global(.oddsHandicapRow .handicapPivotLabelRight) {
-    font-size: 10px;
-    font-weight: 500;
-    color: #374151;
-  }
-
   .wcMatchPage :global(.oddsHandicapRow .oddHandicap) {
     min-height: 40px;
     padding: 8px 10px;
-  }
-
-  .wcMatchPage :global(.oddsHandicapRow > .oddsItem:first-child .oddHandicap) {
-    padding-right: 38px;
-  }
-
-  .wcMatchPage :global(.oddsHandicapRow > .oddsItem:last-child .oddHandicap) {
-    padding-left: 38px;
   }
 
   .wcMatchPage :global(.oddsHandicapRow .oddCoef) {
@@ -201,15 +294,17 @@
     font-size: 10px;
     font-weight: 400;
   }
-}
 
-@media screen and (max-width: 630px) {
   .wcMatchPage :global(.oddsTables) {
     grid-template-columns: 1fr;
   }
+
+  .wcMatchPage :global(.oddsTableBalancedColumns) {
+    column-count: 1;
+  }
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 479px) {
   .wcMatchPage {
     padding: 0 4px 72px;
   }

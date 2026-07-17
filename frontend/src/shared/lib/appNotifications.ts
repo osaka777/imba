@@ -346,9 +346,14 @@ export type DepositResultPayload = {
 };
 
 const DEPOSIT_RESULT_EVENT = 'deposit-result';
+const processedDepositResults = new Set<string>();
 
 export const emitDepositResult = (payload: DepositResultPayload) => {
   if (typeof window === 'undefined') return;
+  const key = `${payload.orderId}:${payload.status}`;
+  if (processedDepositResults.has(key)) return;
+  processedDepositResults.add(key);
+  window.setTimeout(() => processedDepositResults.delete(key), 60_000);
   window.dispatchEvent(new CustomEvent(DEPOSIT_RESULT_EVENT, { detail: payload }));
 };
 

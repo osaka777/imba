@@ -64,6 +64,7 @@ import QiwiIcon from "./qiwi.svg?component";
 import QuestionIcon from "./question.svg?component";
 // import RubIcon from "./rub.svg?component";
 import RuIcon from "./ru.svg?component";
+import EnIcon from "./en.svg?component";
 import BovaPaymentLogosIcon from "./sberpayLogo.svg?component";
 import SearchIcon from "./search.svg?component";
 import ShieldIcon from "./shield.svg?component";
@@ -163,6 +164,7 @@ export {
   QuestionIcon,
   // RubIcon,
   RuIcon,
+  EnIcon,
   SearchIcon,
   ShieldIcon,
   SettingsIcon,

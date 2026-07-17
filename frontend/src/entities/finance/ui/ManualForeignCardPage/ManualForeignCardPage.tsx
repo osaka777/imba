@@ -128,11 +128,14 @@ export const ManualForeignCardPage = ({
   const minAmount = config?.minAmount ?? fallbackMinAmount;
   const currencySymbol = getSymbolFromCurrency(currency) || currency;
   const isRubRfTransfer = method === "RUB_SBERBANK";
-  const appName = isRubRfTransfer
-    ? "приложении банка"
-    : currency === "KZT"
-      ? "Kaspi Bank"
-      : "приложении вашего банка";
+  const isYandexBank = method === "RUB_YANDEX_BANK";
+  const appName = isYandexBank
+    ? "Яндекс Банк"
+    : isRubRfTransfer
+      ? "приложении банка"
+      : currency === "KZT"
+        ? "Kaspi Bank"
+        : "приложении вашего банка";
   const displayPublicId = publicOrderId ?? order?.publicOrderId;
   const rubPerBrl = order?.rubPerBrl ?? config?.rubPerBrl ?? 0;
   const rubAmountNum = amount ? Number(amount) : 0;
@@ -235,7 +238,9 @@ export const ManualForeignCardPage = ({
         ? "KZT_KASPI"
         : method === "RUB_SBERBANK"
           ? "RUB_SBERBANK"
-          : currency;
+          : method === "RUB_YANDEX_BANK"
+            ? "RUB_YANDEX_BANK"
+            : currency;
     (async () => {
       setConfigLoading(true);
       try {
@@ -250,10 +255,12 @@ export const ManualForeignCardPage = ({
               method === "KZT_KASPI" || currency === "KZT"
                 ? "Kaspi Bank"
                 : method === "RUB_SBERBANK"
-                  ? "Inter"
-                  : "Kaspi",
+                  ? "Сбербанк"
+                  : method === "RUB_YANDEX_BANK"
+                    ? "Яндекс Банк"
+                    : "Kaspi",
             minAmount: fallbackMinAmount,
-            rubPerBrl: 183,
+            ...(method === "RUB_SBERBANK" ? { rubPerBrl: 183 } : {}),
           });
         }
       } finally {
@@ -484,7 +491,10 @@ export const ManualForeignCardPage = ({
         <div className={styles.qrSection}>
           <div className={styles.qrLeft}>
             <div className={styles.bankLogo}>
-              {isRubRfTransfer ? (
+              {isYandexBank ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" className={styles.bankLogoImg} src="/yandex-bank.png" />
+              ) : isRubRfTransfer ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img alt="" className={styles.bankLogoImg} src="/sberbank.png" />
               ) : (

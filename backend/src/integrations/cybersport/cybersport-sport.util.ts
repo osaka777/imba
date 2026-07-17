@@ -1,25 +1,30 @@
-export const CYBER_OLIMP_SPORT_ID_TO_SLUG: Record<number, string> = {
-  1040: 'esports.cs',
-  1041: 'esports.dota2',
-  1042: 'esports.valorant',
-};
+export {
+  CYBER_OLIMP_SPORT_ID_TO_SLUG,
+  CYBER_SLUG_TO_OLIMP_SPORT_ID,
+  CYBER_API_SPORT_TO_PATH_SLUG,
+  CYBER_PATH_SLUG_TO_API_SPORT,
+  CYBER_SPORT_LABELS,
+  DEFAULT_CYBER_OLIMP_SPORT_IDS,
+  CYBERSPORT_CATALOG,
+  catalogEntryByApiSport,
+  catalogEntryByOlimpbetId,
+  catalogEntryByPathSlug,
+} from './cybersport-catalog';
 
-export const CYBER_SLUG_TO_OLIMP_SPORT_ID: Record<string, number> = Object.fromEntries(
-  Object.entries(CYBER_OLIMP_SPORT_ID_TO_SLUG).map(([id, slug]) => [slug, Number(id)]),
-);
-
-export const DEFAULT_CYBER_OLIMP_SPORT_IDS = [1040, 1041, 1042];
+import {
+  CYBER_API_SPORT_TO_PATH_SLUG,
+  CYBER_OLIMP_SPORT_ID_TO_SLUG,
+  CYBER_SLUG_TO_OLIMP_SPORT_ID,
+} from './cybersport-catalog';
 
 export function cyberSlugFromOlimpbetSportId(sportId: number): string {
-  return CYBER_OLIMP_SPORT_ID_TO_SLUG[sportId] ?? 'esports.cs';
+  return CYBER_OLIMP_SPORT_ID_TO_SLUG[sportId] ?? `esports.${sportId}`;
 }
 
 export function cyberOlimpbetSportIdFromSlug(slug: string): number | null {
   return CYBER_SLUG_TO_OLIMP_SPORT_ID[slug] ?? null;
 }
 
-export const CYBER_SPORT_LABELS: Record<string, string> = {
-  'esports.cs': 'CS2',
-  'esports.dota2': 'Dota 2',
-  'esports.valorant': 'Valorant',
-};
+export function cyberPathSlugFromApiSport(apiSport: string): string | null {
+  return CYBER_API_SPORT_TO_PATH_SLUG[apiSport] ?? null;
+}

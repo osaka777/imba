@@ -5,7 +5,6 @@ import productStyles from "./product.module.css";
 import regStyles from "./reg.module.css";
 import faqStyles from "./faq.module.css";
 import Link from "next/link";
-import { StarIcon } from "@/shared/assets";
 import {
     IndicatorImg,
     MapImg,
@@ -16,6 +15,7 @@ import {
 import { MessageImgage, BallImgage, TabletImgage } from "@/shared/assets/images";
 import Image from "next/image";
 import { AuthForm } from "@/entities/user";
+import { KickPartnersScoreboard } from "@/widgets/KickPartnersScoreboard/KickPartnersScoreboard";
 
 export default function Home() {
     return (
@@ -52,31 +52,7 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div className={styles.statsBar}>
-                        <p className={styles.statsTitle}>
-                            Помогаем расти каждый день и зарабатывать больше
-                        </p>
-                        <div className={styles.statsGrid}>
-                            <div className={styles.statItem}>
-                                <span className={styles.statValue}>10&nbsp;000+</span>
-                                <span className={styles.statLabel}>Активных игроков</span>
-                            </div>
-                            <div className={styles.statDivider}>
-                                <StarIcon />
-                            </div>
-                            <div className={styles.statItem}>
-                                <span className={styles.statValue}>500+</span>
-                                <span className={styles.statLabel}>Партнёров</span>
-                            </div>
-                            <div className={styles.statDivider}>
-                                <StarIcon />
-                            </div>
-                            <div className={styles.statItem}>
-                                <span className={styles.statValue}>Еженедельно</span>
-                                <span className={styles.statLabel}>Стабильные выплаты партнёрам</span>
-                            </div>
-                        </div>
-                    </div>
+                    <KickPartnersScoreboard />
                 </div>
             </section>
 

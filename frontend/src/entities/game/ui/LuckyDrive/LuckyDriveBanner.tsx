@@ -18,6 +18,15 @@ import {
   USDT_PROMO_SUBTITLE,
   USDT_PROMO_TITLE,
 } from "./usdtPromoCopy";
+import {
+  WIMBLEDON_PROMO_GRADIENT_FROM,
+  WIMBLEDON_PROMO_GRADIENT_TO,
+  WIMBLEDON_PROMO_HIGHLIGHT,
+  WIMBLEDON_PROMO_HREF,
+  WIMBLEDON_PROMO_IMAGE,
+  WIMBLEDON_PROMO_SUBTITLE,
+  WIMBLEDON_PROMO_TITLE,
+} from "./wimbledonPromoCopy";
 import { PromoMiniBanner } from "./PromoMiniBanner";
 import styles from "./LuckyDriveBanner.module.css";
 
@@ -93,13 +102,15 @@ export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyD
             imageSrc={USDT_PROMO_IMAGE}
           />
           <PromoMiniBanner
-            title="Free Money"
-            subtitle="Бонусы и розыгрыши"
-            highlight="NEW"
-            href="/profile/promocodes"
-            gradientFrom="#C084FC"
-            gradientTo="#7C3AED"
-            imageSrc="/bonus.png"
+            title={WIMBLEDON_PROMO_TITLE}
+            subtitle={WIMBLEDON_PROMO_SUBTITLE}
+            highlight={WIMBLEDON_PROMO_HIGHLIGHT}
+            href={WIMBLEDON_PROMO_HREF}
+            gradientFrom={WIMBLEDON_PROMO_GRADIENT_FROM}
+            gradientTo={WIMBLEDON_PROMO_GRADIENT_TO}
+            imageSrc={WIMBLEDON_PROMO_IMAGE}
+            largeImage
+            showLiveBadge
           />
         </div>
       </div>

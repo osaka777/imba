@@ -26,64 +26,82 @@ import { getSessionClient } from "~/entities/user/lib";
 import { api } from "~/shared/api";
 import { useCurrency } from "~/shared/model/useCurrency";
 import { useAccountType } from "~/shared/model/useAccountType";
+import { useLocale } from "~/shared/model/useLocale";
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
 import { useProfileAutoRefresh } from "../../hooks/useProfileAutoRefresh";
 import { TelegramConnectBanner } from "~/entities/user/ui/TelegramConnectBanner/TelegramConnectBanner";
 import { languageService } from "~/shared/services/language.service";
 import { DEFAULT_SITE_CURRENCY, SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
 import { getCurrencyIconUrl } from "~/entities/user/lib/registrationCountries";
 
-export const PROFILE_CATEGORIES = [
-  {
-    id: 2,
-    name: 'Ваучер',
-    desc: 'Активируй ваучер и получай деньги на счет',
-    inputText: 'Ваучер',
-    icon: VoucherIcon,
-  },
-  {
-    id: 3,
-    name: 'Партнерская программа',
-    desc: 'Зарабатывайте 50% RevShare — кабинет партнёра',
-    icon: SupportIcon,
-    link: 'https://partners.imba.bet',
-    external: true,
-  },
-  {
-    id: 4,
-    name: 'История ставок',
-    desc: 'Все ваши ставки, которые вы совершили за последнее время',
-    icon: HistorysIcon,
-    link: '/profile/betHistory'
-  },
-  {
-    id: 7,
-    name: 'Мой ЧМ-2026',
-    desc: 'Статистика ставок на чемпионат мира',
-    icon: FavoritesIcon,
-    link: '/profile/wc'
-  },
-  {
-    id: 5,
-    name: 'Детализация',
-    desc: 'Все операции, что повлияли на изменение баланса',
-    icon: DetailsIcon,
-    link: '/profile/financeHistory'
-  },
-  {
-    id: 8,
-    name: 'Обращения в поддержку',
-    desc: 'История ваших чатов с операторами imba.bet',
-    icon: SupportIcon,
-    link: '/profile/support'
-  },
-  {
-    id: 6,
-    name: 'Настройки',
-    desc: 'Возможность скрыть баланс и отредактировать личные данные',
-    icon: SettingsIcon,
-    link: '/profile/settings'
-  }
-];
+export type ProfileCategory = {
+  id: number;
+  name: string;
+  desc: string;
+  inputText?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  link?: string;
+  external?: boolean;
+};
+
+function useProfileCategories(): ProfileCategory[] {
+  const { t } = useLocale();
+  return useMemo(
+    () => [
+      {
+        id: 2,
+        name: t("profile.catVoucher"),
+        desc: t("profile.catVoucherDesc"),
+        inputText: t("profile.catVoucherInput"),
+        icon: VoucherIcon,
+      },
+      {
+        id: 3,
+        name: t("profile.catPartner"),
+        desc: t("profile.catPartnerDesc"),
+        icon: SupportIcon,
+        link: "https://partners.imba.bet",
+        external: true,
+      },
+      {
+        id: 4,
+        name: t("profile.catBetHistory"),
+        desc: t("profile.catBetHistoryDesc"),
+        icon: HistorysIcon,
+        link: "/profile/betHistory",
+      },
+      {
+        id: 7,
+        name: t("profile.catWc"),
+        desc: t("profile.catWcDesc"),
+        icon: FavoritesIcon,
+        link: "/profile/wc",
+      },
+      {
+        id: 5,
+        name: t("profile.catFinance"),
+        desc: t("profile.catFinanceDesc"),
+        icon: DetailsIcon,
+        link: "/profile/financeHistory",
+      },
+      {
+        id: 8,
+        name: t("profile.catSupport"),
+        desc: t("profile.catSupportDesc"),
+        icon: SupportIcon,
+        link: "/profile/support",
+      },
+      {
+        id: 6,
+        name: t("profile.catSettings"),
+        desc: t("profile.catSettingsDesc"),
+        icon: SettingsIcon,
+        link: "/profile/settings",
+      },
+    ],
+    [t],
+  );
+}
 
 const currencyIcons: Record<string, StaticImageData> = {
   KZT: KztImage,
@@ -104,14 +122,17 @@ const currencySymbols: Record<string, string> = {
 
 const getCurrencySymbol = (code: string) => currencySymbols[code] || code;
 
-function formatBonusTimeLeft(expiresAt?: string | null): string | null {
+function formatBonusTimeLeft(
+  expiresAt: string | null | undefined,
+  t: (key: MessageKey, params?: TranslateParams) => string,
+): string | null {
   if (!expiresAt) return null;
   const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return 'истёк';
+  if (diff <= 0) return t("profile.bonusExpired");
   const hours = Math.floor(diff / (60 * 60 * 1000));
   const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
-  if (hours > 0) return `${hours} ч ${minutes} мин`;
-  return `${minutes} мин`;
+  if (hours > 0) return t("profile.bonusTimeHours", { hours, minutes });
+  return t("profile.bonusTimeMinutes", { minutes });
 }
 
 interface Currency {
@@ -157,6 +178,7 @@ interface User {
 }
 
 export const Profile = React.memo(() => {
+  const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currency, setCurrency } = useCurrency();
@@ -166,6 +188,7 @@ export const Profile = React.memo(() => {
   const [telegramBannerDismissed, setTelegramBannerDismissed] = useState(true);
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const { selectedAccountType, setSelectedAccountType, isClient } = useAccountType();
+  const categories = useProfileCategories();
 
   // Автоматическое обновление данных профиля
   const { forceRefresh } = useProfileAutoRefresh();
@@ -235,8 +258,8 @@ export const Profile = React.memo(() => {
   }, [bonusBalance?.expiresAt]);
 
   const bonusTimeLeft = useMemo(
-    () => formatBonusTimeLeft(bonusBalance?.expiresAt),
-    [bonusBalance?.expiresAt, bonusTick],
+    () => formatBonusTimeLeft(bonusBalance?.expiresAt, t),
+    [bonusBalance?.expiresAt, bonusTick, t],
   );
 
   const mergedCurrencies = useMemo(() => {
@@ -275,13 +298,13 @@ export const Profile = React.memo(() => {
   }, [mainBalance?.amount]);
 
   const voucherCategory = useMemo(
-    () => PROFILE_CATEGORIES.find((category) => category.inputText),
-    [],
+    () => categories.find((category) => category.inputText),
+    [categories],
   );
 
   const serviceLinkCategories = useMemo(
-    () => PROFILE_CATEGORIES.filter((category) => category.link && !category.inputText),
-    [],
+    () => categories.filter((category) => category.link && !category.inputText),
+    [categories],
   );
 
   // Оптимизированные обработчики
@@ -331,7 +354,7 @@ export const Profile = React.memo(() => {
   if (userLoading) {
     return (
       <div className={styles.profileContainer}>
-        <div className={styles.loadingMessage}>Загрузка профиля...</div>
+        <div className={styles.loadingMessage}>{t("profile.loading")}</div>
       </div>
     );
   }
@@ -340,10 +363,10 @@ export const Profile = React.memo(() => {
     return (
       <div className={styles.profileContainer}>
         <div className={styles.errorMessage}>
-          Не удалось загрузить данные профиля.
+          {t("profile.loadError")}
           <div className={styles.errorActions}>
-            <button type="button" onClick={() => window.location.reload()}>Перезагрузить страницу</button>
-            <button type="button" onClick={forceRefresh}>Обновить данные</button>
+            <button type="button" onClick={() => window.location.reload()}>{t("profile.reloadPage")}</button>
+            <button type="button" onClick={forceRefresh}>{t("profile.refreshData")}</button>
           </div>
         </div>
       </div>
@@ -354,7 +377,7 @@ export const Profile = React.memo(() => {
     <div className={styles.profileContainer}>
       <section className={styles.walletHero}>
         {isClient && (
-          <div className={styles.accountTabs} role="tablist" aria-label="Тип счёта">
+          <div className={styles.accountTabs} role="tablist" aria-label={t("profile.accountTypeLabel")}>
             <button
               type="button"
               role="tab"
@@ -362,7 +385,7 @@ export const Profile = React.memo(() => {
               className={`${styles.accountTab} ${selectedAccountType === 'main' ? styles.accountTabActive : ''}`}
               onClick={() => setSelectedAccountType('main')}
             >
-              Основной
+              {t("profile.mainAccount")}
             </button>
             <button
               type="button"
@@ -371,14 +394,14 @@ export const Profile = React.memo(() => {
               className={`${styles.accountTab} ${selectedAccountType === 'bonus' ? styles.accountTabActive : ''}`}
               onClick={() => setSelectedAccountType('bonus')}
             >
-              Бонусный
+              {t("profile.bonusAccount")}
             </button>
           </div>
         )}
 
         <div className={styles.heroBalance}>
           <span className={styles.heroLabel} suppressHydrationWarning>
-            {selectedAccountType === 'main' ? 'Баланс' : 'Бонусный баланс'}
+            {selectedAccountType === 'main' ? t("profile.balance") : t("profile.bonusBalance")}
           </span>
           <div className={styles.heroAmountRow} suppressHydrationWarning>
             <span className={styles.heroAmount}>
@@ -400,7 +423,7 @@ export const Profile = React.memo(() => {
                 openDepositModal();
               }}
             >
-              Пополнить
+              {t("deposit.topUp")}
             </button>
           </div>
         ) : (
@@ -408,42 +431,51 @@ export const Profile = React.memo(() => {
             {bonusBalance?.requiresDeposit && !bonusBalance?.depositActivated ? (
               <>
                 <small>
-                  🎁 Бонус до {formattedBonusBalance} {currency} ждёт активации
+                  {t("profile.bonusWaiting", { amount: formattedBonusBalance, currency })}
                 </small>
-                <small>Пополните счёт, чтобы начать играть с бонуса</small>
+                <small>{t("profile.bonusDepositToPlay")}</small>
                 {bonusTimeLeft && (
-                  <small>⏱ Сгорит через: {bonusTimeLeft}</small>
+                  <small>{t("profile.bonusExpiresIn", { time: bonusTimeLeft })}</small>
                 )}
               </>
             ) : bonusBalance?.isTokenBased ? (
               <>
                 <small>
-                  Жетоны: {bonusBalance.remainingTokens || 0} / {bonusBalance.totalTokens || 0}
+                  {t("profile.tokensCount", {
+                    left: bonusBalance.remainingTokens || 0,
+                    total: bonusBalance.totalTokens || 0,
+                  })}
                 </small>
                 <small>
-                  Победы подряд: {bonusBalance.consecutiveWins || 0} / {bonusBalance.requiredConsecutiveWins || 0}
+                  {t("profile.consecutiveWins", {
+                    current: bonusBalance.consecutiveWins || 0,
+                    required: bonusBalance.requiredConsecutiveWins || 0,
+                  })}
                 </small>
                 <small>
-                  Жетонов за ставку: {bonusBalance.tokensPerBet || 1}
+                  {t("profile.tokensPerBetLabel", { n: bonusBalance.tokensPerBet || 1 })}
                 </small>
               </>
             ) : (
               <>
                 <small>
-                  Отыграно: {bonusBalance?.totalWagered || 0} / {bonusBalance?.requiredWager || 0}
+                  {t("profile.wagered", {
+                    current: bonusBalance?.totalWagered || 0,
+                    required: bonusBalance?.requiredWager || 0,
+                  })}
                 </small>
                 {bonusBalance && (
                   <div className={styles.bonusDetails}>
-                    <small>Мин. кэф: {bonusBalance.minOdds}</small>
+                    <small>{t("profile.minOdds", { n: bonusBalance.minOdds })}</small>
                     <small>
-                      Прогресс:{' '}
-                      {Math.round(
-                        (Number(bonusBalance.totalWagered) / Number(bonusBalance.requiredWager)) * 100,
-                      )}
-                      %
+                      {t("profile.progressPct", {
+                        n: Math.round(
+                          (Number(bonusBalance.totalWagered) / Number(bonusBalance.requiredWager)) * 100,
+                        ),
+                      })}
                     </small>
                     {bonusTimeLeft && (
-                      <small>⏱ Сгорит через: {bonusTimeLeft}</small>
+                      <small>{t("profile.bonusExpiresIn", { time: bonusTimeLeft })}</small>
                     )}
                   </div>
                 )}
@@ -459,7 +491,7 @@ export const Profile = React.memo(() => {
 
       {selectedAccountType === 'main' && mergedCurrencies.length > 0 && (
         <section className={styles.currenciesSection}>
-          <h2 className={styles.sectionTitle}>Кошельки</h2>
+          <h2 className={styles.sectionTitle}>{t("profile.walletsSection")}</h2>
           <div className={styles.currencyGrid}>
             {mergedCurrencies.map((item) => {
               const isActive = item.currencyCode === currency;
@@ -496,7 +528,7 @@ export const Profile = React.memo(() => {
                     <button
                       type="button"
                       className={styles.currencyDepositBtn}
-                      aria-label={`Пополнить ${item.currencyCode}`}
+                      aria-label={t("profile.depositTopUpAria", { currency: item.currencyCode })}
                       onClick={(event) => {
                         event.stopPropagation();
                         handleDepositClick(item.currencyCode);
@@ -522,20 +554,20 @@ export const Profile = React.memo(() => {
           <span className={styles.quickLinkIconWrap}>
             <img src="/settings.svg" alt="" className={styles.quickLinkIcon} />
           </span>
-          <span className={styles.quickLinkLabel}>Управление счетами</span>
+          <span className={styles.quickLinkLabel}>{t("profile.walletManage")}</span>
           <span className={styles.quickLinkArrow}>›</span>
         </button>
         <button type="button" className={styles.quickLinkRow} onClick={() => router.push('/profile/promocodes')}>
           <span className={styles.quickLinkIconWrap}>
             <img src="/ticket.svg" alt="" className={styles.quickLinkIcon} />
           </span>
-          <span className={styles.quickLinkLabel}>Бонусы</span>
+          <span className={styles.quickLinkLabel}>{t("profile.bonusesSection")}</span>
           <span className={styles.quickLinkArrow}>›</span>
         </button>
       </section>
 
       <section className={styles.servicesSection}>
-        <h2 className={styles.sectionTitle}>Сервисы</h2>
+        <h2 className={styles.sectionTitle}>{t("profile.servicesSection")}</h2>
         <div className={styles.servicesList}>
           {voucherCategory && (
             <CategoryItem category={voucherCategory} variant="voucher" />
@@ -560,7 +592,7 @@ export const Profile = React.memo(() => {
       >
         <DialogContent
           className={styles.dialog}
-          title="Пополнение счета"
+          title={t("profile.depositModalTitle")}
           onInteractOutside={blockIfArmed}
           onPointerDownOutside={blockIfArmed}
         >

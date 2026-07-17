@@ -4,7 +4,7 @@ import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/w
 import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
-import { formatTotalsScopeLabel } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
+import { formatTotalsScopeLabel, isScopeCaptionRedundant, type TotalsScopeOptions } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
 import { usePrevious } from "~/shared/model";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
@@ -18,6 +18,8 @@ type WcTotalsPairProps = {
   bettingOpen: boolean;
   categoryName?: string;
   showScopeHeader?: boolean;
+  scopeOptions?: TotalsScopeOptions;
+  kickChip?: boolean;
 };
 
 export function WcTotalsPair({
@@ -29,6 +31,8 @@ export function WcTotalsPair({
   bettingOpen,
   categoryName,
   showScopeHeader = false,
+  scopeOptions,
+  kickChip = false,
 }: WcTotalsPairProps) {
   const { toggle, isSelected, isBettable } = useWcMarketPairToggle(event, group, bettingOpen);
 
@@ -39,41 +43,46 @@ export function WcTotalsPair({
   const underFlash = wcOddsFlashClasses(underValue, prevUnder, styles);
   const overFlash = wcOddsFlashClasses(overValue, prevOver, styles);
 
-  const scopeLabel = showScopeHeader ? formatTotalsScopeLabel(group, categoryName) : null;
+  const scopeLabel = showScopeHeader
+    ? formatTotalsScopeLabel(group, categoryName, scopeOptions)
+    : null;
 
   return (
     <div className={scopeLabel ? styles.totalsScopedRow : undefined}>
       {scopeLabel ? <p className={styles.totalsScopeCaption}>{scopeLabel}</p> : null}
       <MarketPairRow
+        chipStyle={kickChip ? "kick" : "classic"}
+        handicapLayout={!kickChip}
+        totalsLayout={kickChip}
         pivot={point}
-        totalsLayout
-      left={
-        under
-          ? {
-              label: "меньше",
-              value: underValue,
-              selected: isSelected(under),
-              bettable: isBettable(under),
-              flashCell: underFlash.cell,
-              flashCoef: underFlash.coef,
-              onClick: () => toggle(under),
-            }
-          : undefined
-      }
-      right={
-        over
-          ? {
-              label: "больше",
-              value: overValue,
-              selected: isSelected(over),
-              bettable: isBettable(over),
-              flashCell: overFlash.cell,
-              flashCoef: overFlash.coef,
-              onClick: () => toggle(over),
-            }
-          : undefined
-      }
-    />
+        showPivot={point !== ""}
+        left={
+          under
+            ? {
+                label: "М",
+                value: underValue,
+                selected: isSelected(under),
+                bettable: isBettable(under),
+                flashCell: underFlash.cell,
+                flashCoef: underFlash.coef,
+                onClick: () => toggle(under),
+              }
+            : undefined
+        }
+        right={
+          over
+            ? {
+                label: "Б",
+                value: overValue,
+                selected: isSelected(over),
+                bettable: isBettable(over),
+                flashCell: overFlash.cell,
+                flashCoef: overFlash.coef,
+                onClick: () => toggle(over),
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

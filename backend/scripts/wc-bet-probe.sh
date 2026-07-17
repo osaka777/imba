@@ -23,14 +23,8 @@ if [[ -z "${WC_BET_PROBE_TOKEN:-}" && "${WC_BET_PROBE_PLACE}" == "1" ]]; then
 fi
 
 notify_probe() {
-  local exit_code="$1"
-  local headline="$2"
-  local details="$3"
-  if [[ -z "$NOTIFY_URL" ]]; then
-    return 0
-  fi
-  PROBE_HEADLINE="$headline" PROBE_EXIT="$exit_code" \
-    node scripts/notify-wc-probe.js <<<"$details" || true
+  # Telegram alerts disabled — probe still logs to stdout/cron log.
+  return 0
 }
 
 set +e

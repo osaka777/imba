@@ -13,6 +13,8 @@ RUN corepack enable pnpm && pnpm i --frozen-lockfile;
 # Rebuild the source code only when needed
 FROM base AS builder
 
+ARG NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN=imbalance.click
+ENV NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN=$NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN
 ENV NEXT_PRIVATE_STANDALONE=true
 
 WORKDIR /app
@@ -23,6 +25,7 @@ COPY . .
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_DISABLE_WEBPACK_CACHE 1
 
 # Try to generate schema, but don't fail if it doesn't work
 RUN (npm run generate-schema || true) && npm run build

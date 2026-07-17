@@ -1,5 +1,6 @@
 import type { WcOddsEventDetailDto, WcOddsEventDto } from './wc-odds.types';
 import { isWcEventId, olimpbetIdFromWcEventId } from './wc-slug.util';
+import { stripJunkSpecialtyGroupedMarkets } from '../olimpbet-wc/olimpbet-wc-market-keys.util';
 
 /** XOR mask for public event ids (internal ol-{n} never leaves the server). */
 const ID_XOR = 0x5a3c9f12;
@@ -43,7 +44,11 @@ export function sanitizePublicEventDto<T extends WcOddsEventDto>(dto: T): T {
 }
 
 export function sanitizePublicEventDetail(dto: WcOddsEventDetailDto): WcOddsEventDetailDto {
-  return sanitizePublicEventDto(dto);
+  const out = sanitizePublicEventDto(dto);
+  if (out.groupedMarkets) {
+    out.groupedMarkets = stripJunkSpecialtyGroupedMarkets(out.groupedMarkets);
+  }
+  return out;
 }
 
 export function sanitizePublicEventList(dtos: WcOddsEventDto[]): WcOddsEventDto[] {

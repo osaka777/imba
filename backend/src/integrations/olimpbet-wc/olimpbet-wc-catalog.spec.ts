@@ -1,18 +1,24 @@
 import {
   formatBttsAndOutcomeCode,
+  formatEsportsMapTeamOutcome,
   formatFirstGoalAndWinnerCode,
   formatHalfWinYesNoLabel,
   formatNextGoalOutcome,
   formatOutcomeLabel,
+  formatResultingComparisonLabel,
   formatWinningMethodOutcome,
   humanizeCatalogMarketName,
   isTechnicalEnglishCatalogLabel,
   resolveNextGoalGroupLabel,
   resolveCleanWinTeamSideGroupLabel,
+  resolveComboDisplayGroupLabel,
   resolveNumberFinalScoreCategoryName,
   resolveNumberFinalScoreGroupLabel,
+  resolveResultingGroupLabel,
   resolveScoringEventsGroupLabel,
   resolveSpecialBetsGroupLabel,
+  resolveYesNoMarketLabel,
+  resolveYesNoMarketLabelFromCatalog,
   resolveVirtualCategoryName,
   type OlimpbetMarketCatalog,
 } from './olimpbet-wc-catalog';
@@ -405,5 +411,120 @@ describe('olimpbet-wc-catalog tennis labels', () => {
         ],
       }),
     ).toBe('П2');
+  });
+
+  it('humanizes WHICHS_EARLIER catalog names', () => {
+    expect(humanizeCatalogMarketName('WHICHS_EARLIER_GOAL_SUB')).toBe('Что раньше (гол/замена)');
+    expect(humanizeCatalogMarketName('WHICHS_EARLIER_YCARD_GOAL')).toBe('Что раньше (ЖК/гол)');
+    expect(humanizeCatalogMarketName('WHICHS_EARLIER_GOAL_SUB_YES_NO')).toBe('Гол раньше замены');
+    expect(humanizeCatalogMarketName('WHICHS_EARLIER_YCARD_GOAL_YES_NO')).toBe('ЖК раньше гола');
+    expect(humanizeCatalogMarketName('WHICHS_EARLIER_GOAL_KICK_CORNER_YES_NO')).toBe(
+      'Удар от ворот раньше углового',
+    );
+    expect(humanizeCatalogMarketName('WHICHS_EARLIER_CORNER_OFFSIDE_YES_NO')).toBe(
+      'Угловой раньше офсайда',
+    );
+  });
+
+  it('humanizes SERIESPENALTY and RESULTING catalog names', () => {
+    expect(humanizeCatalogMarketName('SERIESPENALTY_YES_NO')).toBe('Серия пенальти');
+    expect(humanizeCatalogMarketName('NO_GOALS_IN_BOTH_HALF_YES_NO')).toBe(
+      'Никто не забьет в обоих таймах',
+    );
+    expect(humanizeCatalogMarketName('1X_AND_TOTAL_UNDER_HALF_YES_NO')).toBe(
+      '1X + тотал (меньше)',
+    );
+    expect(resolveComboDisplayGroupLabel('1X_AND_TOTAL_UNDER_HALF_YES_NO')).toBe(
+      '1X · тотал меньше',
+    );
+    expect(resolveComboDisplayGroupLabel('12_AND_AT_LEAST_ONE_DOESNT_SCORE_HALF_YES_NO')).toBe(
+      '12',
+    );
+    expect(humanizeCatalogMarketName('TEAM1_RESULTING')).toBe('П1');
+    expect(humanizeCatalogMarketName('TEAM2_RESULTING')).toBe('П2');
+    expect(formatResultingComparisonLabel('РезK1_1>2', '1-й больше 2-го', '1>2', 'TEAM1_RESULTING')).toBe(
+      '1-й больше 2-го',
+    );
+    expect(formatResultingComparisonLabel('РезK1_1<2', '', '1<2', 'TEAM1_RESULTING')).toBe(
+      '1-й меньше 2-го',
+    );
+    expect(resolveResultingGroupLabel('TEAM1_RESULTING')).toBe('П1');
+    expect(resolveResultingGroupLabel('RESULTING_HALF')).toBe('');
+  });
+
+  it('humanizes football yes/no special markets', () => {
+    expect(humanizeCatalogMarketName('ALL_YELLOW_CARDS_IN_ONE_HALF_YES_NO')).toBe(
+      'Все жёлтые карты в одном тайме',
+    );
+    expect(humanizeCatalogMarketName('ANY_SUBSTITUTE_TO_HAVE_SHOT_ON_TARGET_YES_NO')).toBe(
+      'Вышедший на замену игрок совершит удар в створ',
+    );
+    expect(humanizeCatalogMarketName('HEADCOACH_OR_RESPLAYER_YC_YES_NO')).toBe(
+      'Главный тренер или запасной игрок получит ЖК',
+    );
+    expect(resolveSpecialBetsGroupLabel('GOAL_FROM_SIX_YARD_BOX_IN_MATCH_YES_NO', 'Специальные ставки')).toBe(
+      'Гол из вратарской площади в матче',
+    );
+
+    const yellowCardsCatalog: OlimpbetMarketCatalog = {
+      markets: new Map([
+        [
+          2140,
+          {
+            id: 2140,
+            name: 'ALL_YELLOW_CARDS_IN_ONE_HALF_YES_NO',
+            outcomes: new Map([
+              [1, { id: 1, code: 'Да', shortName: '', name: 'Все желтые карты в одном тайме' }],
+              [2, { id: 2, code: 'Нет', shortName: '', name: 'Все желтые карты в одном тайме' }],
+            ]),
+          },
+        ],
+      ]),
+      marketLabels: new Map(),
+      virtualCategoryRefs: new Map(),
+      loadedAtMs: Date.now(),
+    };
+    expect(resolveYesNoMarketLabelFromCatalog(yellowCardsCatalog, 2140)).toBe(
+      'Все жёлтые карты в одном тайме',
+    );
+  });
+
+  it('humanizes all-goals-one-side team yes/no markets', () => {
+    expect(resolveYesNoMarketLabel('ALLGOALS_SCORED_AGAINST_ONESIDE_OF_FIELD_YES_NO')).toBe(
+      'Все голы в ворота одной стороны поля',
+    );
+    expect(resolveYesNoMarketLabel('ALLGOALS_SCORED_AGAINST_ONESIDE_OF_FIELD_TEAM1_YES_NO')).toBe(
+      'Все голы в ворота одной стороны поля (команда 1)',
+    );
+    expect(resolveYesNoMarketLabel('ALLGOALS_SCORED_AGAINST_ONESIDE_OF_FIELD_TEAM2_YES_NO')).toBe(
+      'Все голы в ворота одной стороны поля (команда 2)',
+    );
+    expect(humanizeCatalogMarketName('ALLGOALS_SCORED_AGAINST_ONESIDE_OF_FIELD_TEAM1_YES_NO')).toBe(
+      'Все голы в ворота одной стороны поля (команда 1)',
+    );
+  });
+
+  it('humanizes esports map market catalog names', () => {
+    expect(humanizeCatalogMarketName('WINNER_MAP')).toBe('Победа на карте');
+    expect(humanizeCatalogMarketName('FIRST_BLOOD_MAP')).toBe('Первая кровь');
+    expect(humanizeCatalogMarketName('BARRACKS_MAP')).toBe('Разрушение барака');
+    expect(humanizeCatalogMarketName('ROSHAN_MAP')).toBe('Убийство Рошана');
+  });
+
+  it('maps esports map team outcome codes to П1/П2', () => {
+    expect(formatEsportsMapTeamOutcome('ПерКр_Карта1', 'FIRST_BLOOD_MAP')).toBe('П1');
+    expect(formatEsportsMapTeamOutcome('ПерКр_Карта2', 'FIRST_BLOOD_MAP')).toBe('П2');
+    expect(formatEsportsMapTeamOutcome('Барак_КартаП1', 'BARRACKS_MAP')).toBe('П1');
+    expect(formatEsportsMapTeamOutcome('Рош_КартаП2', 'ROSHAN_MAP')).toBe('П2');
+    expect(formatEsportsMapTeamOutcome('П1_Карта', 'WINNER_MAP')).toBe('П1');
+  });
+
+  it('formats esports map outcomes from Olimpbet templates', () => {
+    const catalog = buildCatalog(1188, 'FIRST_BLOOD_MAP', [
+      { id: 1, code: 'ПерКр_Карта1', name: '{$competitor1}', shortName: '{$competitor1}' },
+      { id: 2, code: 'ПерКр_Карта2', name: '{$competitor2}', shortName: '{$competitor2}' },
+    ]);
+    expect(formatOutcomeLabel(catalog, 1188, { outcomeTypeId: 1, odd: 1.9 })).toBe('П1');
+    expect(formatOutcomeLabel(catalog, 1188, { outcomeTypeId: 2, odd: 1.9 })).toBe('П2');
   });
 });

@@ -1,0 +1,61 @@
+.partnerCard {
+  margin-bottom: 12px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0f0e27;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(125deg, #181940, #6f48a7);
+  color: #fff;
+}
+
+.title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.liveBadge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #86efac;
+}
+
+.frameWrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cta {
+  color: #c4b5fd;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cta:hover {
+  text-decoration: underline;
+}

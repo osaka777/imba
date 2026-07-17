@@ -63,12 +63,12 @@ export const Deposit = ({ onOpenDeposit }: DepositProps) => {
     bonusBalanceData.remainingTokens > 0;
   const tokenCount = bonusBalanceData?.remainingTokens || 0;
   const currencySymbols: Record<string, string> = {
-    USD: '$',
     KZT: '₸',
     UAH: '₴',
     RUB: '₽',
     TRY: '₺',
     UZS: "so'm",
+    USDT: 'USDT',
   };
   const getCurrencySymbol = (code: string) => currencySymbols[code] || code;
 

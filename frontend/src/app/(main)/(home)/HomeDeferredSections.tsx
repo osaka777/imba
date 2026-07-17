@@ -2,7 +2,6 @@
 
 import { LuckyDriveBanner } from "~/entities/game/ui/LuckyDrive/LuckyDriveBanner";
 import { WcHomeSection } from "~/entities/wc-odds/ui/WcHomeSection";
-import { WcTopEventsSection } from "~/entities/wc-odds/ui/WcTopEventsSection";
 
 import styles from "./Home.module.css";
 
@@ -11,7 +10,6 @@ export function HomeDeferredSections() {
   return (
     <div className={styles.Home}>
       <LuckyDriveBanner placement="home" />
-      <WcTopEventsSection />
       <WcHomeSection />
     </div>
   );

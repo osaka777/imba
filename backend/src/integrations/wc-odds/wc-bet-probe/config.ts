@@ -42,7 +42,7 @@ export function loadWcBetProbeConfig(): WcBetProbeConfig {
     sport: process.env.WC_BET_PROBE_SPORT?.trim() || 'all',
     minMarkets: Number(process.env.WC_BET_PROBE_MIN_MARKETS || process.env.WC_SMOKE_MIN_MARKETS || '3'),
     maxEvents: Number(process.env.WC_BET_PROBE_MAX_EVENTS || '3'),
-    maxOutcomesPerEvent: Number(process.env.WC_BET_PROBE_MAX_OUTCOMES || '8'),
+    maxOutcomesPerEvent: Number(process.env.WC_BET_PROBE_MAX_OUTCOMES || '20'),
     maxBetsPerRun: Number(process.env.WC_BET_PROBE_MAX_BETS || '2'),
     stake: Number(process.env.WC_BET_PROBE_STAKE || '100'),
     currencyCode: process.env.WC_BET_PROBE_CURRENCY || 'KZT',

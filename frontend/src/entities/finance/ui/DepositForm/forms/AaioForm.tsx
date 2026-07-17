@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 
 import { components } from "~/shared/api";
 import { Button, Input, LoadingSpinner } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 
 import getSymbolFromCurrency from "currency-symbol-map";
 import { aaioDeposit } from "../../../api";
@@ -18,12 +19,13 @@ interface AaioFormProps {
 }
 
 export const AaioForm: React.FC<AaioFormProps> = ({ forceCurrency, isImbaMethod = false }) => {
+  const { t } = useLocale();
   const { error, isPending, mutateAsync } = useMutation({
     mutationFn: aaioDeposit,
   });
   
   const defaultCurrency = useReadLocalStorage<string>("currency");
-  const currency = forceCurrency || defaultCurrency || "USD";
+  const currency = forceCurrency || defaultCurrency || "UAH";
   
   const {
     formState: { errors },
@@ -45,10 +47,10 @@ export const AaioForm: React.FC<AaioFormProps> = ({ forceCurrency, isImbaMethod 
 
   const heading =
     currency === "RUB"
-      ? "Пополнение — Карты"
+      ? t("deposit.titleCards")
       : isImbaMethod
-        ? "Пополнение через IMBA"
-        : "Пополнение";
+        ? t("deposit.titleImba")
+        : t("deposit.heading");
 
   const onSubmit = async (dto: DepositDto) => {
     try {
@@ -56,13 +58,13 @@ export const AaioForm: React.FC<AaioFormProps> = ({ forceCurrency, isImbaMethod 
 
       const link = data?.link;
       if (!link) {
-        return toast.error("Не удалось получить ссылку на оплату. Попробуйте позже.", {
+        return toast.error(t("deposit.paymentLinkFailed"), {
           position: "top-right",
           autoClose: 5000,
         });
       }
 
-      toast.info("🔄 Перенаправление на страницу оплаты...", {
+      toast.info(t("deposit.redirecting"), {
         position: "top-right",
         autoClose: 3000,
       });
@@ -76,7 +78,7 @@ export const AaioForm: React.FC<AaioFormProps> = ({ forceCurrency, isImbaMethod 
         newWin.opener = null;
       }
     } catch (e: any) {
-      const message = e?.message || "Ошибка при создании платежа";
+      const message = e?.message || t("deposit.paymentCreateFailed");
       toast.error(message, {
         position: "top-right",
         autoClose: 5000,
@@ -102,8 +104,8 @@ export const AaioForm: React.FC<AaioFormProps> = ({ forceCurrency, isImbaMethod 
             validate: (value) => !!value && value >= minAmount,
           })}
           className={styles.input}
-          label="Сумма"
-          placeholder="Введите сумму депозита"
+          label={t("deposit.amount")}
+          placeholder={t("deposit.amountPlaceholder")}
           type="number"
         />
       </div>
@@ -121,20 +123,22 @@ export const AaioForm: React.FC<AaioFormProps> = ({ forceCurrency, isImbaMethod 
         ))}
       </div>
       {errors && errors.amount ? (
-        <p className={styles.error}>{`Минимальная сумма пополнения - ${minAmount}`}</p>
+        <p className={styles.error}>
+          {t("deposit.minAmount", { amount: String(minAmount) })}
+        </p>
       ) : null}
       
-      {/* Поле для промо-кода временно отключено */}
+      {/* Promo field temporarily disabled */}
       {/* <Input
         className={styles.input}
-        label={`Промо-код (необязательно)`}
-        placeholder={`Введите промо-код для получения бонуса`}
+        label={t("deposit.promoOptional")}
+        placeholder={t("deposit.promoPlaceholder")}
         type="text"
       /> */}
       
       {error ? <p className={styles.error}>{error.message}</p> : null}
       <Button className={styles.submit} disabled={isPending} type="submit">
-        {isImbaMethod ? "Пополнить через IMBA" : "Пополнить"}
+        {isImbaMethod ? t("deposit.topUpImba") : t("deposit.topUp")}
         {isPending && <LoadingSpinner className={styles.loader} />}
       </Button>
 

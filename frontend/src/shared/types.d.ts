@@ -30,6 +30,11 @@ export interface BonusBalance {
   remainingTokens: number;
   tokensPerBet: number;
   isTokenBased: boolean;
+  requiresDeposit?: boolean;
+  depositActivated?: boolean;
+  maxCashout?: string | null;
+  wagerMultiplier?: number;
+  expiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

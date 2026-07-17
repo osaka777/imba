@@ -1,25 +1,29 @@
+"use client";
+
 import React, { useState, useCallback } from "react";
 import styles from "./CategoryItem.module.css";
-import { PROFILE_CATEGORIES } from "./Profile";
+import type { ProfileCategory } from "./Profile";
 import { useRouter } from "next-nprogress-bar";
 import { api } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { toast } from "react-toastify";
+import { useLocale } from "~/shared/model/useLocale";
     
 export const CategoryItem = React.memo(({
   category,
   variant = 'card',
 }: {
-  category: typeof PROFILE_CATEGORIES[0];
+  category: ProfileCategory;
   variant?: 'card' | 'row' | 'voucher';
 }) => {
+    const { t } = useLocale();
     const router = useRouter();
     const [voucherCode, setVoucherCode] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     const activateVoucher = useCallback(async () => {
         if (!voucherCode.trim()) {
-            toast.error("Пожалуйста, введите код ваучера");
+            toast.error(t("profile.voucherEnterCode"));
             return;
         }
 
@@ -33,15 +37,15 @@ export const CategoryItem = React.memo(({
 
             if (error) throw error;
 
-            toast.success("Ваучер успешно активирован!");
+            toast.success(t("profile.voucherActivated"));
             setVoucherCode("");
         } catch (error) {
             console.error("Ошибка при активации ваучера:", error);
-            toast.error("Ошибка при активации ваучера");
+            toast.error(t("profile.voucherError"));
         } finally {
             setIsLoading(false);
         }
-    }, [voucherCode]);
+    }, [voucherCode, t]);
 
     const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
@@ -122,7 +126,7 @@ export const CategoryItem = React.memo(({
                             onClick={activateVoucher}
                             disabled={isLoading || !voucherCode.trim()}
                         >
-                            {isLoading ? "..." : "Активировать"}
+                            {isLoading ? "..." : t("profile.voucherActivate")}
                         </button>
                     </div>
                 </div>

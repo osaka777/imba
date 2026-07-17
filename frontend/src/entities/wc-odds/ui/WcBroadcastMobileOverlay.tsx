@@ -6,11 +6,11 @@ import { createPortal } from "react-dom";
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { WcBroadcastPlayer } from "~/entities/wc-odds/ui/WcBroadcastPlayer";
 
+import { MQ_DESKTOP } from "~/shared/lib/layoutBreakpoints";
+
 import styles from "~/entities/wc-odds/ui/WcBroadcastSidebar.module.css";
 
-const DESKTOP_MQ = "(min-width: 768px)";
-
-/** Full-screen mobile player — mounted at provider level (not inside coupon column). */
+/** Full-screen mobile/tablet player — mounted at provider level (not inside coupon column). */
 export function WcBroadcastMobileOverlay() {
   const broadcast = useWcBroadcast();
   const [isDesktop, setIsDesktop] = useState(false);
@@ -18,7 +18,7 @@ export function WcBroadcastMobileOverlay() {
 
   useEffect(() => {
     setMounted(true);
-    const mq = window.matchMedia(DESKTOP_MQ);
+    const mq = window.matchMedia(MQ_DESKTOP);
     const sync = () => setIsDesktop(mq.matches);
     sync();
     mq.addEventListener("change", sync);
@@ -53,6 +53,7 @@ export function WcBroadcastMobileOverlay() {
         onClick={(e) => e.stopPropagation()}
       >
         <WcBroadcastPlayer
+          compactModal
           eventRef={broadcast.eventRef}
           hasBroadcast
           meta={broadcast.meta}

@@ -5,6 +5,9 @@ const SPORT_BACKGROUND_FILES: Record<string, string> = {
 };
 
 export function getSportBackgroundUrl(sport: string): string {
+  if (sport.startsWith("esports.")) {
+    return "/esports.cs.jpg";
+  }
   const file = SPORT_BACKGROUND_FILES[sport] ?? `${sport}.jpg`;
   return `/${file}`;
 }

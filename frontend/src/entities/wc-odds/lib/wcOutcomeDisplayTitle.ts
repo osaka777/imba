@@ -1,4 +1,6 @@
 import type { WcMarketGroup } from "~/entities/wc-odds/api/client";
+import { humanizeWcCategoryName } from "~/entities/wc-odds/lib/wcOddsCategories";
+import { resolveComboVariantGroupLabel, resolveHalfMatchHtFtLabel } from "~/entities/wc-odds/lib/wcGroupSubLabel";
 import { buildTimeWindowYesNoTitle } from "~/entities/wc-odds/lib/wcYesNoTimeGroups";
 
 const OUTCOME_ALIASES: Record<string, string> = {
@@ -30,6 +32,8 @@ const MARKET_LABEL_RULES: Array<{ pattern: RegExp; replace: string }> = [
   { pattern: /тотал\s*\(\s*чет\s*\/\s*нечет[^)]*\)/gi, replace: "ТЧН" },
   { pattern: /тотал\s*\(\s*с\s*ОТ\s*\)/gi, replace: "Т(ОТ)" },
   { pattern: /фора\s*\(\s*с\s*ОТ\s*\)/gi, replace: "Ф(ОТ)" },
+  { pattern: /победа\s+map\s+without\s+ot/gi, replace: "Победа на карте (без ОТ)" },
+  { pattern: /победа\s+map/gi, replace: "Победа на карте" },
   { pattern: /тотал/gi, replace: "Т" },
   { pattern: /фора|гандикап/gi, replace: "Ф" },
   { pattern: /исход/gi, replace: "1X2" },
@@ -51,6 +55,11 @@ export function cleanWcOutcomeName(name: string): string {
   if (!trimmed) return "—";
   if (/^\d+:\d+$/.test(trimmed)) return trimmed;
   if (OUTCOME_ALIASES[trimmed]) return OUTCOME_ALIASES[trimmed]!;
+
+  const compact = trimmed.replace(/\s/g, "");
+  if (/ПерКр_?Карта1|ПерБаш_?Карта1|Барак_?КартаП1|Рош_?КартаП1/i.test(compact)) return "П1";
+  if (/ПерКр_?Карта2|ПерБаш_?Карта2|Барак_?КартаП2|Рош_?КартаП2/i.test(compact)) return "П2";
+
   if (/^DISPLAY_/i.test(trimmed)) return "—";
   if (/^PARAMETER_/i.test(trimmed)) return "—";
   if (/[\[\]{}]|ПерХГейм/i.test(trimmed)) {
@@ -107,6 +116,7 @@ export function abbreviateWcOutcomeName(name: string, outcomeKey?: string): stri
   if (/^нет$/i.test(normalized)) return "Нет";
   if (/^SCORE\s+AFTER/i.test(normalized) && /не\s*будет/i.test(normalized)) return "Не будет";
   if (/^П[12]\s*·\s*[ПP12XХ]$/i.test(normalized)) return normalized.replace(/\s+/g, " ").replace(/P/g, "П").replace(/Х/g, "X");
+  if (/^П[12]\s*,\s*П[12]$/i.test(normalized)) return normalized.replace(/\s+/g, " ");
   if (/^гола\s+не\s+будет$/i.test(normalized)) return "Гола не будет";
   if (/^к1пob1/i.test(normalized.replace(/\s/g, "")) || /^к1.*1.*сет/i.test(normalized.replace(/\s/g, ""))) {
     if (/нет/i.test(normalized)) return "Нет";
@@ -196,10 +206,37 @@ function formatSetCountValue(value: string): string {
   return `${n} сетов`;
 }
 
+function humanizedGroupLabel(group: WcMarketGroup): string {
+  const raw = group.label?.trim() ?? "";
+  if (!raw) return "";
+  return humanizeWcCategoryName(raw);
+}
+
+function categoryContainsLine(categoryName: string, line: string): boolean {
+  const token = line.replace(",", ".");
+  return categoryName.includes(token);
+}
+
 function labelsMatch(a: string, b: string): boolean {
   const left = abbreviateWcMarketLabel(a).toLowerCase();
   const right = abbreviateWcMarketLabel(b).toLowerCase();
   return left === right || a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+function stripRedundantScopePrefix(label: string, categoryName: string): string {
+  let result = label.trim();
+  const category = categoryName.trim();
+
+  for (const scope of category.match(/\d+-[йи]\s+тайм|\d+-[йи]\s+сет|\d+-[яи]\s+четверть/gi) ?? []) {
+    const escaped = scope.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    result = result.replace(new RegExp(escaped, "gi"), "").trim();
+  }
+
+  if (/^угловые/i.test(category)) {
+    result = result.replace(/^угловые\s*/i, "").trim();
+  }
+
+  return result.replace(/^[,·•\s]+|[,·•\s]+$/g, "").replace(/\s+/g, " ").trim();
 }
 
 /** Result leg for «Обе забьют и Исход» display markets (encoded in marketKey). */
@@ -230,6 +267,9 @@ function buildBttsResultComboTitle(
 }
 
 function extractResultLegFromMarketKey(marketKey: string): string | null {
+  const halfMatch = resolveHalfMatchHtFtLabel(marketKey);
+  if (halfMatch) return halfMatch;
+
   const key = marketKey.toUpperCase();
   if (/WIN1|TEAM1_WILL_WIN|_W1\b|W1W1|W1X|W1W2/.test(key) && !/WIN2|TEAM2/.test(key)) {
     if (/1X_AND|_1X_/.test(key)) return "1X";
@@ -357,7 +397,7 @@ export function buildWcOutcomeButtonTitle(
   if (/GOAL_RANGE/i.test(group.marketKey)) {
     const goalsRange = extractGoalsRangeFromOutcomeKey(outcome.outcomeKey);
     if (goalsRange) return goalsRange;
-    if (isGenericGoalRangeLabel(outcomeName)) return "—";
+    if (isGenericGoalRangeLabel(outcomeName) || /^П[12]$/i.test(outcomeName.trim())) return "—";
   }
 
   const exactGoalsFromKey = isBrokenExactGoalsLabel(outcomeName)
@@ -369,6 +409,10 @@ export function buildWcOutcomeButtonTitle(
   const shortOutcome = exactGoalsFromKey
     ?? (setCountFromKey ? formatSetCountValue(setCountFromKey) : null)
     ?? abbreviateWcOutcomeName(outcomeName, outcome.outcomeKey);
+
+  if (/^П[12]\s*,\s*П[12]$/i.test(shortOutcome) || /WINNER_2GAMES/i.test(group.marketKey)) {
+    if (/П[12]\s*,\s*П[12]/i.test(shortOutcome)) return shortOutcome;
+  }
 
   if (/NUMBER_OF_SETS/i.test(group.marketKey)) {
     const setCount = extractSetCountFromOutcomeKey(outcome.outcomeKey)
@@ -445,7 +489,55 @@ export function buildWcOutcomeButtonTitle(
     return shortOutcome;
   }
 
-  if (!group.label?.trim()) {
+  const plainMarketKey = group.marketKey.replace(/^display_/i, "");
+  if (/RESULTING/i.test(plainMarketKey)) {
+    const full = cleanWcOutcomeName(outcome.name);
+    if (/^\d+-[йи]\s+(больше|меньше|равен)/i.test(full)) {
+      if (/TEAM1_RESULTING/i.test(plainMarketKey)) return `П1: ${full}`;
+      if (/TEAM2_RESULTING/i.test(plainMarketKey)) return `П2: ${full}`;
+      return full;
+    }
+    const cryptic = /^(1[<>=]2|1[<>=]3|2[<>=]3)$/.exec(shortOutcome);
+    if (cryptic) {
+      const map: Record<string, string> = {
+        "1>2": "1-й больше 2-го",
+        "1=2": "1-й равен 2-му",
+        "1<2": "1-й меньше 2-го",
+        "1>3": "1-й больше 3-го",
+        "1=3": "1-й равен 3-му",
+        "1<3": "1-й меньше 3-го",
+        "2>3": "2-й больше 3-го",
+        "2=3": "2-й равен 3-му",
+        "2<3": "2-й меньше 3-го",
+      };
+      const readable = map[cryptic[1]!] ?? full;
+      if (/TEAM1_RESULTING/i.test(plainMarketKey)) return `П1: ${readable}`;
+      if (/TEAM2_RESULTING/i.test(plainMarketKey)) return `П2: ${readable}`;
+      return readable;
+    }
+  }
+
+  const groupLabel = humanizedGroupLabel(group);
+  const comboVariant = resolveComboVariantGroupLabel(group.marketKey);
+  const comboLine = extractComboTotalLine(group);
+
+  if (
+    (shortOutcome === "Да" || shortOutcome === "Нет")
+    && (comboVariant || /SERIESPENALTY/i.test(group.marketKey))
+  ) {
+    return shortOutcome;
+  }
+
+  if (
+    (shortOutcome === "Да" || shortOutcome === "Нет")
+    && comboLine
+    && categoryContainsLine(categoryName, comboLine)
+    && /тотал/i.test(categoryName)
+  ) {
+    return shortOutcome;
+  }
+
+  if (!groupLabel) {
     return shortOutcome;
   }
 
@@ -453,7 +545,16 @@ export function buildWcOutcomeButtonTitle(
   if (bttsCombo) return bttsCombo;
 
   const displayCombo = buildDisplayComboTitle(group, outcome);
-  if (displayCombo) return displayCombo;
+  if (displayCombo) {
+    if (
+      (shortOutcome === "Да" || shortOutcome === "Нет")
+      && comboVariant
+      && categoryContainsLine(categoryName, comboLine ?? "")
+    ) {
+      return shortOutcome;
+    }
+    return displayCombo;
+  }
 
   if (/^т[бм]$/i.test(shortOutcome) && group.outcomes.length === 2) {
     const line = extractComboTotalLine(group);
@@ -465,15 +566,18 @@ export function buildWcOutcomeButtonTitle(
     if (["П1", "X", "П2", "1X", "12", "X2"].includes(shortOutcome)) {
       return shortOutcome;
     }
+    if ((shortOutcome === "Да" || shortOutcome === "Нет") && comboVariant) {
+      return shortOutcome;
+    }
   }
 
-  const shortGroup = abbreviateWcMarketLabel(group.label);
-  const fullTitle = `${group.label}: ${outcomeName}`;
+  const shortGroup = abbreviateWcMarketLabel(groupLabel);
+  const fullTitle = `${groupLabel}: ${outcomeName}`;
 
-  if (labelsMatch(group.label, categoryName)) {
+  if (labelsMatch(groupLabel, categoryName) || labelsMatch(group.label ?? "", categoryName)) {
     if (shortOutcome === "Да" || shortOutcome === "Нет") {
       const inferred = buildDisplayComboTitle(group, outcome);
-      if (inferred) return inferred;
+      if (inferred && !comboVariant) return inferred;
     }
     if (/^\d+\+?\s*гол/i.test(shortOutcome) || /^\d+\+?\s*голов/i.test(shortOutcome)) {
       return shortOutcome;
@@ -484,12 +588,44 @@ export function buildWcOutcomeButtonTitle(
     return shortOutcome;
   }
 
-  if (fullTitle.length <= 12 && !/обе\s+заб/i.test(group.label)) {
+  if (fullTitle.length <= 12 && !/обе\s+заб/i.test(groupLabel)) {
     return fullTitle;
   }
 
   if (shortGroup && shortGroup !== shortOutcome) {
-    return `${shortGroup}·${shortOutcome}`;
+    if ((shortOutcome === "Да" || shortOutcome === "Нет") && /SERIESPENALTY/i.test(shortGroup)) {
+      return shortOutcome;
+    }
+    if (
+      (shortOutcome === "Да" || shortOutcome === "Нет")
+      && group.outcomes.length === 2
+      && group.outcomes.every((item) =>
+        /^(Да|Нет)$/i.test(item.name.trim())
+        || item.outcomeKey === "YES"
+        || item.outcomeKey === "NO",
+      )
+      && !buildDisplayComboTitle(group, outcome)
+    ) {
+      return shortOutcome;
+    }
+
+    const scopedGroup = stripRedundantScopePrefix(shortGroup, categoryName);
+    if (
+      scopedGroup
+      && scopedGroup !== shortOutcome
+      && !labelsMatch(scopedGroup, categoryName)
+      && !categoryName.toLowerCase().includes(scopedGroup.toLowerCase())
+    ) {
+      if (/WINNER_AND_GOALS_BOTH|DOUBLECHANCE_AND_GOALS_BOTH|BOTH_TEAM_TO_SCORE/i.test(group.marketKey)) {
+        if (shortOutcome === "Да" || shortOutcome === "Нет") {
+          const leg = extractResultLegFromMarketKey(group.marketKey);
+          if (leg) return `${leg} · ${shortOutcome}`;
+        }
+        if (/^(П1|П2|X|1X|12|X2)$/.test(shortOutcome)) return shortOutcome;
+      }
+      return `${scopedGroup}·${shortOutcome}`;
+    }
+    return shortOutcome;
   }
 
   return shortOutcome;

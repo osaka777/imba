@@ -2,6 +2,8 @@
 
 import { getHomeSports } from "~/entities/wc-odds/ui/homeSectionUtils";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
+import { translateSportLabel } from "~/shared/i18n/messages";
 
 import styles from "~/entities/wc-odds/ui/WcHomeSportFilter.module.css";
 import type { HomeSportFilterItem } from "~/entities/wc-odds/ui/homeSportFilters";
@@ -21,17 +23,19 @@ function SportIconButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const { Icon, label } = item;
+  const { locale } = useLocale();
+  const { Icon, label, name } = item;
+  const displayLabel = translateSportLabel(locale, name, label);
 
   return (
     <button
       className={cn(styles.item, active ? styles.item_pill : styles.item_circle)}
       onClick={onClick}
-      title={label}
+      title={displayLabel}
       type="button"
     >
       <Icon className={styles.icon} />
-      {active && <span className={styles.label}>{label}</span>}
+      {active && <span className={styles.label}>{displayLabel}</span>}
     </button>
   );
 }

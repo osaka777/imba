@@ -18,6 +18,7 @@ type PromoMiniBannerProps = {
   gradientFrom: string;
   gradientTo: string;
   imageSrc?: string;
+  largeImage?: boolean;
   showLiveBadge?: boolean;
   className?: string;
 };
@@ -31,6 +32,7 @@ export function PromoMiniBanner({
   gradientFrom,
   gradientTo,
   imageSrc,
+  largeImage = false,
   showLiveBadge = false,
   className,
 }: PromoMiniBannerProps) {
@@ -40,7 +42,7 @@ export function PromoMiniBanner({
 
   const content = (
     <>
-      <div className={styles.miniContent}>
+      <div className={cn(styles.miniContent, largeImage && styles.miniContentLarge)}>
         <div className={styles.miniTitleRow}>
           <p className={styles.miniTitle}>{title}</p>
           {showLiveBadge ? (
@@ -55,14 +57,14 @@ export function PromoMiniBanner({
         </div>
       </div>
       {imageSrc ? (
-        <div className={styles.miniImageWrap}>
+        <div className={cn(styles.miniImageWrap, largeImage && styles.miniImageWrapLarge)}>
           <Image
             src={imageSrc}
             alt=""
-            className={styles.miniImage}
+            className={cn(styles.miniImage, largeImage && styles.miniImageLarge)}
             loading="lazy"
-            width={107}
-            height={40}
+            width={largeImage ? 184 : 107}
+            height={largeImage ? 84 : 40}
           />
         </div>
       ) : null}

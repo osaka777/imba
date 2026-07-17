@@ -8,19 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/shared/ui/Select";
+import { SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
 
 import style from "./CurrencySelector.module.css";
 
 export const CurrencySelector = ({ currency, setCurrency }: { currency: string, setCurrency: (currency: string) => void }) => {
-  const currencies = [
-    { label: 'USD', value: 'USD' },
-    { label: 'KZT', value: 'KZT' },
-    { label: 'UAH', value: 'UAH' },
-    { label: 'RUB', value: 'RUB' },
-    { label: 'TRY', value: 'TRY' },
-    { label: 'UZS', value: 'UZS' },
-    { label: 'USDT', value: 'USDT' }
-  ];
+  const currencies = SITE_CURRENCY_CODES.map((value) => ({ label: value, value }));
 
   return (
     <Select onValueChange={(e) => setCurrency(e)} value={currency} >

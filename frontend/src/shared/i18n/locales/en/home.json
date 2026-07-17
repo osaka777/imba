@@ -1,0 +1,13 @@
+{
+  "colTime": "Time",
+  "colTeams": "Teams",
+  "topEvents": "Popular right now",
+  "topEventsLive": "Player activity",
+  "topEventsSubtitle": "Trending matches and the crowd's pick in real time",
+  "topEventsLegend": "Higher percentage means a more popular pick",
+  "emptyLive": "No live events for {sport}",
+  "emptyLine": "No line events for {sport}",
+  "emptyHint": "Try another sport or open the full section",
+  "viewAllLive": "View all live",
+  "goToLine": "Go to line"
+}

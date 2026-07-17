@@ -1,0 +1,15 @@
+{
+  "all": "All",
+  "line": "Line",
+  "live": "Live",
+  "back": "Back",
+  "today": "Today",
+  "gamesLoadError": "Failed to load games. Please try again later.",
+  "gamesNotFound": "No games found",
+  "gameNotFound": "Game not found",
+  "matchNotFound": "Match not found",
+  "matchLoadError": "Failed to load match",
+  "backToLine": "Back to line",
+  "loadingLeagues": "Loading leagues...",
+  "tournaments": "Tournaments"
+}

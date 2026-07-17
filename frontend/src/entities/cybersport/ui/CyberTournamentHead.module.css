@@ -1,0 +1,113 @@
+.head {
+  --cy-accent: var(--kick-green, #53fc18);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: rgb(0 0 0 / 0.2);
+}
+
+.head[data-sport="esports.cs"],
+.head[data-sport="esports.csgo"] {
+  --cy-accent: #f97316;
+}
+
+.head[data-sport="esports.dota2"] {
+  --cy-accent: #ef4444;
+}
+
+.head[data-sport="esports.valorant"] {
+  --cy-accent: #ff4655;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  fill: var(--cy-accent);
+  flex-shrink: 0;
+}
+
+.text {
+  min-width: 0;
+}
+
+.league {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--kick-text, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sportTag {
+  margin: 2px 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kick-text-muted, #666);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.liveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--kick-live-dim, rgb(255 70 70 / 0.14));
+  border: 1px solid var(--kick-live-border, rgb(255 70 70 / 0.42));
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.liveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--kick-live, #ff4646);
+  box-shadow: 0 0 6px var(--kick-live, #ff4646);
+  animation: livePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.countTag {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--kick-bg-elevated, #1e1e20);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--kick-text-secondary, #a8a8a8);
+  white-space: nowrap;
+}

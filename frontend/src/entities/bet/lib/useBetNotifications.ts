@@ -4,6 +4,7 @@ import { useWebSocketContext } from '~/entities/game/lib/WebSocketContext';
 import { useGamesBettingContext } from '~/app/providers/GamesBetting.provider';
 import { getUser } from '~/entities/user/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { shouldDeferToNativePush } from '~/entities/push/lib/nativeApp';
 
 export const useBetNotifications = () => {
   const { isAuth } = useGamesBettingContext();
@@ -57,10 +58,12 @@ export const useBetNotifications = () => {
       console.log('✅ Received bet notification:', message.type, message.payload);
 
       if (message.type === 'bet_created') {
-        toast.success('Ставка принята', {
-          position: 'top-right',
-          autoClose: 3000,
-        });
+        if (!shouldDeferToNativePush()) {
+          toast.success('Ставка принята', {
+            position: 'top-right',
+            autoClose: 3000,
+          });
+        }
       } else if (message.type === 'bet_status_changed') {
         const { status, amount, currencyCode } = message.payload;
         
@@ -93,10 +96,12 @@ export const useBetNotifications = () => {
             toastType = 'info';
         }
         
-        toast[toastType](statusText, {
-          position: 'top-right',
-          autoClose: 5000,
-        });
+        if (!shouldDeferToNativePush()) {
+          toast[toastType](statusText, {
+            position: 'top-right',
+            autoClose: 5000,
+          });
+        }
 
         queryClient.invalidateQueries({ queryKey: ['user'] });
         queryClient.invalidateQueries({ queryKey: ['wc-bets'] });

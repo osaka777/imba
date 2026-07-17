@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { memo, useMemo } from "react";
+import { useLocale } from "~/shared/model/useLocale";
 import { useRouter } from "next/navigation";
 
 import type { WcEvent } from "~/entities/wc-odds/api/client";
@@ -15,6 +16,7 @@ import {
   sportIsTwoWay,
 } from "~/entities/wc-odds/lib/wcLiveScore";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
+import { isWcFeedPaused, wcFeedPausedLabel } from "~/entities/wc-odds/lib/wcFeedStatus";
 import { isWcPriorityEvent } from "~/entities/wc-odds/lib/wcPriority";
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { WcMatchDcCell } from "~/entities/wc-odds/ui/WcMatchDcCell";
@@ -47,6 +49,7 @@ export const WcMatchRow = memo(function WcMatchRow({
 }: WcMatchRowProps) {
   const router = useRouter();
   const broadcast = useWcBroadcast();
+  const { locale } = useLocale();
   const gameHref = buildWcGameHref(event);
   const isLive = event.phase === "live";
   const isTwoWay = sportIsTwoWay(event.sport);
@@ -58,14 +61,15 @@ export const WcMatchRow = memo(function WcMatchRow({
     [event, isLive],
   );
 
-  const liveTimeLabel = useMemo(
-    () => (isLive ? formatWcRowLiveTime(event.parsedScore, event.sport) : null),
-    [isLive, event.parsedScore, event.sport],
-  );
+  const liveTimeLabel = useMemo(() => {
+    if (!isLive) return null;
+    if (isWcFeedPaused(event.feedStatus)) return wcFeedPausedLabel("ru");
+    return formatWcRowLiveTime(event.parsedScore, event.sport);
+  }, [isLive, event.feedStatus, event.parsedScore, event.sport]);
 
   const { date, time } = useMemo(
-    () => formatWcCompactTime(event.commenceTime),
-    [event.commenceTime],
+    () => formatWcCompactTime(event.commenceTime, locale),
+    [event.commenceTime, locale],
   );
 
   const cardCounts = useMemo(

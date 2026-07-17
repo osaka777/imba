@@ -1,4 +1,8 @@
-import { CSIcon, DotaIcon } from "~/shared/assets";
+import {
+  CYBERSPORT_CATALOG,
+  CYBER_SPORT_LABELS,
+  cyberIconForApiSport,
+} from "~/entities/cybersport/lib/cyberDisciplineCatalog";
 
 export type CyberSportItem = {
   Icon: React.FC<{ className?: string }>;
@@ -6,26 +10,14 @@ export type CyberSportItem = {
   name: string;
 };
 
-export const CYBER_SPORTS: CyberSportItem[] = [
-  {
-    Icon: CSIcon,
-    label: "CS2",
-    name: "esports.cs",
-  },
-  {
-    Icon: DotaIcon,
-    label: "Dota 2",
-    name: "esports.dota2",
-  },
-  {
-    Icon: CSIcon,
-    label: "Valorant",
-    name: "esports.valorant",
-  },
-];
+export const CYBER_SPORTS: CyberSportItem[] = CYBERSPORT_CATALOG.map((entry) => ({
+  Icon: cyberIconForApiSport(entry.apiSport),
+  label: entry.label,
+  name: entry.apiSport,
+}));
 
-export const DEFAULT_CYBER_SPORT = CYBER_SPORTS[0]?.name ?? "esports.cs";
+export const DEFAULT_CYBER_SPORT = "esports.cs";
 
 export function resolveCyberSportLabel(sport: string): string {
-  return CYBER_SPORTS.find((item) => item.name === sport)?.label ?? sport;
+  return CYBER_SPORT_LABELS[sport] ?? sport;
 }

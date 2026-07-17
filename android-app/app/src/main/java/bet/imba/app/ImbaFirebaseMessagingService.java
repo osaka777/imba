@@ -21,19 +21,30 @@ public class ImbaFirebaseMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage message) {
         ensureChannel();
 
-        String title = message.getNotification() != null
-                ? message.getNotification().getTitle()
-                : getString(R.string.app_name);
-        String body = message.getNotification() != null
-                ? message.getNotification().getBody()
-                : "";
-
+        String title = null;
+        String body = "";
         String url = HOST;
-        if (message.getData() != null && message.getData().containsKey("url")) {
-            String path = message.getData().get("url");
-            if (path != null && !path.isEmpty()) {
-                url = path.startsWith("http") ? path : HOST + path;
+
+        if (message.getData() != null && !message.getData().isEmpty()) {
+            title = message.getData().get("title");
+            body = message.getData().get("body");
+            if (message.getData().containsKey("url")) {
+                String path = message.getData().get("url");
+                if (path != null && !path.isEmpty()) {
+                    url = path.startsWith("http") ? path : HOST + path;
+                }
             }
+        }
+
+        if (title == null || title.isEmpty()) {
+            title = message.getNotification() != null
+                    ? message.getNotification().getTitle()
+                    : getString(R.string.app_name);
+        }
+        if (body == null) {
+            body = message.getNotification() != null
+                    ? message.getNotification().getBody()
+                    : "";
         }
 
         Intent intent = new Intent(this, MainActivity.class);

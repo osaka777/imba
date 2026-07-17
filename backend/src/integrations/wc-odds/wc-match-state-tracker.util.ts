@@ -349,8 +349,8 @@ function mapTradingStatusToSnapshot(
   if (/LOST|LOSER|\bLOSE\b/.test(upper)) return 'LOSE';
   if (/VOID|CANCEL|REFUND/.test(upper)) return 'VOID';
   if (upper.includes('RESULTED') || upper.includes('SETTLED') || upper.includes('CLOSED')) {
-    if (odd >= 1 && odd < 1.01) return 'WIN';
-    if (odd <= 1) return 'LOSE';
+    if (odd >= 1 && odd < 1.01) return 'VOID';
+    if (odd < 1) return 'LOSE';
   }
   return null;
 }
@@ -387,6 +387,14 @@ export function advanceMatchState(
   sportSlug: string | null | undefined,
 ): WcMatchState {
   const base = parseMatchState(prev) ?? emptyMatchState();
+  const periodScores = parsePeriodScoreList(detail);
+  if (periodScores.length > 0) {
+    base.result = {
+      ...base.result,
+      periodScores,
+      capturedAt: new Date().toISOString(),
+    };
+  }
 
   if (sportSlug === 'tennis' || sportSlug === 'table-tennis') {
     advanceTennisMatchState(base, detail);

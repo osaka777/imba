@@ -2,8 +2,6 @@
 
 import { usePathname } from "next/navigation";
 
-import { Header } from "~/widgets/Header";
-
 import styles from "./CybersportLayout.module.css";
 import gameLayoutStyles from "../line/layout.module.css";
 
@@ -12,15 +10,25 @@ export function CybersportLayoutChrome({ children }: { children: React.ReactNode
   const isGamePage = pathname?.startsWith("/cybersport/game/");
 
   if (isGamePage) {
-    return <div className={gameLayoutStyles.gameContainer}>{children}</div>;
+    return (
+      <div
+        className={gameLayoutStyles.gameContainer}
+        data-cybersport-game="true"
+        data-cybersport-odds="true"
+      >
+        {children}
+      </div>
+    );
   }
 
   return (
-    <>
-      <Header className={styles.header} />
-      <div className={styles.shell} data-cybersport-content="true">
-        <div className={styles.page}>{children}</div>
-      </div>
-    </>
+    <div
+      className={styles.shell}
+      data-cybersport-content="true"
+      data-cybersport-odds="true"
+      data-cybersport-shell="true"
+    >
+      <div className={styles.page}>{children}</div>
+    </div>
   );
 }

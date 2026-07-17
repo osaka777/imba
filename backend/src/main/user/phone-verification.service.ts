@@ -123,18 +123,16 @@ export class PhoneVerificationService {
   }
 
   getWithdrawalLimits(phoneVerifiedAt: Date | null | undefined, currencyCode: string) {
-    const verifiedDaily = Number(
-      this.config.get(`KYC_VERIFIED_DAILY_WITHDRAW_${currencyCode}`)
-      ?? this.config.get('KYC_VERIFIED_DAILY_WITHDRAW_KZT', '500000'),
-    );
     const unverifiedDaily = Number(
       this.config.get(`KYC_UNVERIFIED_DAILY_WITHDRAW_${currencyCode}`)
       ?? this.config.get('KYC_UNVERIFIED_DAILY_WITHDRAW_KZT', '50000'),
     );
+    const phoneVerified = Boolean(phoneVerifiedAt);
 
     return {
-      phoneVerified: Boolean(phoneVerifiedAt),
-      dailyLimit: phoneVerifiedAt ? verifiedDaily : unverifiedDaily,
+      phoneVerified,
+      /** null = без дневного лимита (после верификации через Telegram) */
+      dailyLimit: phoneVerified ? null : unverifiedDaily,
       currencyCode,
     };
   }
@@ -149,6 +147,11 @@ export class PhoneVerificationService {
       select: { phoneVerifiedAt: true },
     });
     const limits = this.getWithdrawalLimits(user?.phoneVerifiedAt, currencyCode);
+
+    // После верификации телефона через Telegram — без дневного лимита
+    if (limits.phoneVerified || limits.dailyLimit == null) {
+      return;
+    }
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -166,14 +169,9 @@ export class PhoneVerificationService {
     const spent = Number(todayTotal._sum.amount ?? 0);
     if (spent + amount > limits.dailyLimit) {
       const remaining = Math.max(0, limits.dailyLimit - spent);
-      if (!limits.phoneVerified) {
-        throw new BadRequestException(
-          `Лимит вывода без верификации: ${limits.dailyLimit} ${currencyCode}/день. `
-          + `Осталось ${remaining.toFixed(0)}. Подтвердите телефон в настройках.`,
-        );
-      }
       throw new BadRequestException(
-        `Дневной лимит вывода: ${limits.dailyLimit} ${currencyCode}. Осталось ${remaining.toFixed(0)}.`,
+        `Лимит вывода без верификации: ${limits.dailyLimit} ${currencyCode}/день. `
+        + `Осталось ${remaining.toFixed(0)}. Подтвердите телефон через Telegram в настройках — после этого вывод безлимитный.`,
       );
     }
   }

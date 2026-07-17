@@ -1,0 +1,267 @@
+.section {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: var(--kick-radius-lg, 14px);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: var(--kick-bg-surface, #0f0f10);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kick-text, #fff);
+}
+
+.sectionMeta {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--kick-green, #53fc18);
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.12));
+  border: 1px solid var(--kick-green-border, rgb(83 252 24 / 0.3));
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.cards_muted {
+  margin-top: 8px;
+}
+
+@media (min-width: 640px) {
+  .cards {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 10px;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: var(--kick-radius, 10px);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: var(--kick-bg-card, #161617);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
+  background: var(--kick-bg-elevated, #1e1e20);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4), 0 0 16px rgb(83 252 24 / 0.1);
+}
+
+.card_inactive {
+  opacity: 0.45;
+}
+
+.card_inactive:hover {
+  opacity: 0.65;
+}
+
+.cardIconWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+.cardIcon {
+  width: 22px;
+  height: 22px;
+  fill: var(--kick-text, #fff);
+}
+
+.cardCount {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--kick-green, #53fc18);
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 18px;
+  text-align: center;
+}
+
+.cardTitle {
+  width: 100%;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--kick-text, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyHint {
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--kick-radius, 10px);
+  border: 1px dashed var(--kick-border-strong, rgb(255 255 255 / 0.12));
+  color: var(--kick-text-secondary, #a8a8a8);
+  font-size: 13px;
+  text-align: center;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.footerBtn {
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: var(--kick-bg-card, #161617);
+  color: var(--kick-text-secondary, #a8a8a8);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.footerBtn:hover {
+  color: var(--kick-green, #53fc18);
+  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.1));
+}
+
+.inactiveLabel {
+  width: 100%;
+  margin: 8px 0 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kick-text-muted, #666);
+}
+
+.breadcrumbLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.breadcrumbLink:hover {
+  color: var(--kick-green, #53fc18);
+}
+
+.heroIcon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin: 0 0.2em;
+  vertical-align: -0.15em;
+}
+
+.countBadge {
+  margin-top: 0.75rem;
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.12));
+  border: 1px solid var(--kick-green-border, rgb(83 252 24 / 0.3));
+}
+
+.tournamentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tournamentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--kick-radius, 10px);
+  border: 1px solid transparent;
+  background: var(--kick-bg-card, #161617);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.tournamentRow:hover {
+  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
+  background: var(--kick-bg-elevated, #1e1e20);
+}
+
+.tournamentName {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--kick-text, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournamentCounts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--kick-text-secondary, #a8a8a8);
+}
+
+.tournamentLive {
+  color: var(--kick-green, #53fc18);
+}
+
+.tournamentTotal {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+.cardMeta {
+  display: none;
+}

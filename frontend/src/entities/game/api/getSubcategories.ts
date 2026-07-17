@@ -1,6 +1,6 @@
+import { CYBERSPORT_CATALOG } from "~/entities/cybersport/lib/cyberDisciplineCatalog";
 import { api } from "~/shared/api";
 import type { Subcategory } from "../types";
-import type { paths } from "~/shared/api";
 
 interface SubcategoryResponse {
   id: number;
@@ -18,8 +18,7 @@ const ALL_SPORTS = [
   "tennis",
   "volleyball",
   "table-tennis",
-  "esports.cs",
-  "esports.dota2",
+  ...CYBERSPORT_CATALOG.map((entry) => entry.apiSport),
 ] as const;
 
 function mapSubcategoryResponse(data: SubcategoryResponse[] | undefined): Subcategory[] {

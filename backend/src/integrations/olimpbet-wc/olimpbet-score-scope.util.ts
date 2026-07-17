@@ -55,12 +55,32 @@ export function parsePeriodScoreList(
   detail?: OlimpbetEventDetail,
 ): Array<{ home: number; away: number }> {
   const raw = statValue(detail ?? { statistics: null }, 'scores_by_periods');
-  if (!raw) return [];
+  if (raw) {
+    const fromStats = raw
+      .split(',')
+      .map((chunk) => chunk.trim())
+      .map((chunk) => parseScorePair(chunk.replace(/\s/g, '')))
+      .filter((pair): pair is { home: number; away: number } => pair != null);
+    if (fromStats.length > 0) return fromStats;
+  }
 
-  return raw
-    .split(',')
-    .map((chunk) => chunk.trim())
-    .map((chunk) => parseScorePair(chunk.replace(/\s/g, '')))
+  const homePeriods = detail?.fullStatistics?.homeStatistics?.periodScores ?? [];
+  if (!homePeriods.length) return [];
+
+  const awayByPeriod = new Map<number, number>();
+  for (const period of detail?.fullStatistics?.awayStatistics?.periodScores ?? []) {
+    const value = Number(period.score);
+    if (Number.isFinite(value)) awayByPeriod.set(period.periodNumber, value);
+  }
+
+  return [...homePeriods]
+    .sort((a, b) => a.periodNumber - b.periodNumber)
+    .map((period) => {
+      const home = Number(period.score);
+      const away = awayByPeriod.get(period.periodNumber) ?? 0;
+      if (!Number.isFinite(home)) return null;
+      return { home, away };
+    })
     .filter((pair): pair is { home: number; away: number } => pair != null);
 }
 

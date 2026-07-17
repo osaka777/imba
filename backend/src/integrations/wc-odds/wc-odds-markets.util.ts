@@ -1,3 +1,8 @@
+import {
+  isWcBetPlacementBlockedMarket,
+  isWcBetPlacementBlockedOutcome,
+} from './wc-bet-placement-blocklist.util';
+
 export type WcMarketOutcome = {
   name: string;
   price: number;
@@ -168,6 +173,8 @@ const BETTABLE_MARKET_KEYS = new Set([
   'double_chance',
   'handicap',
   'goals_both_min',
+  'goals_both_half',
+  'goals_both_teams_both_halves',
   'handicap_3way',
 ]);
 
@@ -177,7 +184,7 @@ export function isTotalsMarketKey(marketKey: string): boolean {
 }
 
 export function stripOvertimeMarketSuffix(marketKey: string): string {
-  return marketKey.replace(/_ot$/i, '');
+  return marketKey.replace(/_WITH_?OT$/i, '').replace(/_ot$/i, '');
 }
 
 export function isOvertimeMarketKey(marketKey: string): boolean {
@@ -192,19 +199,37 @@ export function normalizeWcMarketKey(marketKey: string): string {
   if (/^display_GOALS_TEAM1/i.test(baseKey)) return 'btts';
   if (/^display_GOALS_TEAM2/i.test(baseKey)) return 'btts';
   if (baseKey.startsWith('display_DOUBLE_CHANCE')) return 'double_chance';
-  if (/display_INDIVIDUAL_TOTAL_TEAM1/i.test(baseKey) || /display_TEAM_TOTAL_1/i.test(baseKey)) {
+  if (
+    /display_INDIVIDUAL_TOTAL(?:_ASIAN)?_TEAM1/i.test(baseKey)
+    || /display_TEAM_TOTAL_1/i.test(baseKey)
+  ) {
     return 'totals_home';
   }
-  if (/display_INDIVIDUAL_TOTAL_TEAM2/i.test(baseKey) || /display_TEAM_TOTAL_2/i.test(baseKey)) {
+  if (
+    /display_INDIVIDUAL_TOTAL(?:_ASIAN)?_TEAM2/i.test(baseKey)
+    || /display_TEAM_TOTAL_2/i.test(baseKey)
+  ) {
     return 'totals_away';
   }
-  if (baseKey.startsWith('display_TOTAL') || /display_INDIVIDUAL_TOTAL/i.test(baseKey)) return 'totals';
+  // Match totals only — not specialty display_TOTAL_GOALS_MINUTES / TOTAL_FOULS_* etc.
+  // Team totals (any suffix) must not collapse into match totals.
+  if (/display_INDIVIDUAL_TOTAL(?:_ASIAN)?_TEAM\d/i.test(baseKey)) {
+    return 'totals';
+  }
+  if (
+    /^display_TOTAL(_ASIAN)?(_HALF)?(_3WAY)?$/i.test(baseKey)
+    || /^display_TOTAL_(MAP|ROUNDS|SET|ADD_TIME(_HALF)?)$/i.test(baseKey)
+  ) {
+    return 'totals';
+  }
   if (baseKey.startsWith('display_EVEN_ODD') || /display_EVEN_ODD/i.test(baseKey)) return 'even_odd';
+  if (baseKey.startsWith('display_GOALS_BOTH_BOTHHALF')) return 'goals_both_teams_both_halves';
+  if (baseKey.startsWith('display_GOALS_BOTHHALF')) return 'goals_both_half';
+  if (baseKey.startsWith('display_GOALS_BOTH_HALF')) return 'goals_both_half';
   if (baseKey === 'display_GOALS_BOTH' || baseKey.startsWith('display_GOALS_BOTH_')) {
     if (/GOALS_BOTH_MIN/i.test(baseKey)) return 'goals_both_min';
     return 'btts';
   }
-  if (baseKey.startsWith('display_GOALS_BOTHHALF')) return 'btts';
   if (baseKey.startsWith('display_HANDICAP')) return 'handicap';
   return baseKey;
 }
@@ -223,6 +248,8 @@ export function isWcBetPlacementAllowed(
   marketKey: string,
   outcomeKey?: string | null,
 ): boolean {
+  if (isWcBetPlacementBlockedMarket(marketKey)) return false;
+  if (isWcBetPlacementBlockedOutcome(marketKey, outcomeKey)) return false;
   if (isWcBettableMarketKey(marketKey)) return true;
   if (!marketKey.startsWith('display_') || !outcomeKey) return false;
   if (outcomeKey.startsWith('DISPLAY_')) return true;
@@ -231,7 +258,16 @@ export function isWcBetPlacementAllowed(
   return CANONICAL_OUTCOME_PREFIXES.some((prefix) => outcomeKey.startsWith(prefix) || outcomeKey === prefix);
 }
 
-const PREFERRED_TOTAL_LINE = 2.5;
+/** Main match-goal totals only — never halves / corners / team / asian buckets. */
+const MAIN_TOTAL_CATEGORIES = new Set([
+  'Тотал',
+  'Тотал (с ОТ)',
+  'Total',
+  'Total (incl. OT)',
+]);
+
+const NON_MAIN_TOTAL_SCOPE_RE =
+  /тайм|половин|сет|карта|четверть|период|угл|фол|карт|азиат|3\s*исход|индивид|half|quarter|period|set\b|map\b|corner|card|asian|3-?way|individual|team\s*total/i;
 
 export type WcLineMarketExtras = {
   marketsCount: number;
@@ -239,6 +275,30 @@ export type WcLineMarketExtras = {
   odds12: number | null;
   oddsX2: number | null;
 };
+
+function readTotalsOverUnder(group: WcMarketGroup): {
+  over: WcMarketOutcome | undefined;
+  under: WcMarketOutcome | undefined;
+} {
+  const under = group.outcomes.find((outcome) =>
+    outcome.outcomeKey.startsWith('UNDER'),
+  ) ?? group.outcomes.find((outcome) => isLikelyUnderOutcome(outcome));
+  const over = group.outcomes.find((outcome) =>
+    outcome.outcomeKey.startsWith('OVER'),
+  ) ?? group.outcomes.find((outcome) => isLikelyOverOutcome(outcome));
+  return { over, under };
+}
+
+/** Whether this group is the main match total (Olimpbet TOTAL), not a scoped/stat total. */
+export function isMainMatchTotalsGroup(category: string, group: WcMarketGroup): boolean {
+  if (normalizeWcMarketKey(group.marketKey) !== 'totals') return false;
+  if (group.outcomes.length < 2) return false;
+  if (!MAIN_TOTAL_CATEGORIES.has(category)) return false;
+  const scopeText = `${category} ${group.label}`;
+  if (NON_MAIN_TOTAL_SCOPE_RE.test(scopeText)) return false;
+  const { over, under } = readTotalsOverUnder(group);
+  return over != null && under != null && over.point != null && under.point != null;
+}
 
 function isLikelyUnderOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey.startsWith('UNDER')) return true;
@@ -321,9 +381,9 @@ export function extractMainTotalLine(grouped: WcGroupedMarkets): {
 } {
   const totalsGroups: WcMarketGroup[] = [];
 
-  for (const items of Object.values(grouped)) {
+  for (const [category, items] of Object.entries(grouped ?? {})) {
     for (const group of items) {
-      if (group.marketKey === 'totals' && group.outcomes.length >= 2) {
+      if (isMainMatchTotalsGroup(category, group)) {
         totalsGroups.push(group);
       }
     }
@@ -333,17 +393,21 @@ export function extractMainTotalLine(grouped: WcGroupedMarkets): {
     return { totalLine: null, oddsOver: null, oddsUnder: null };
   }
 
-  const preferred =
-    totalsGroups.find((group) =>
-      group.outcomes.some((outcome) => outcome.point === PREFERRED_TOTAL_LINE),
-    ) ?? totalsGroups[0];
+  // Prefer the most balanced OVER/UNDER pair — matches Olimpbet list main total
+  // (e.g. ТБ 2 / ТМ 2), not a hardcoded 2.5 from any totals* market.
+  let preferred = totalsGroups[0]!;
+  let bestBalance = Number.POSITIVE_INFINITY;
+  for (const group of totalsGroups) {
+    const { over, under } = readTotalsOverUnder(group);
+    if (!over || !under || !(over.price > 1) || !(under.price > 1)) continue;
+    const balance = Math.abs(Math.log(over.price) - Math.log(under.price));
+    if (balance < bestBalance) {
+      bestBalance = balance;
+      preferred = group;
+    }
+  }
 
-  const under = preferred.outcomes.find((outcome) =>
-    outcome.outcomeKey.startsWith('UNDER'),
-  ) ?? preferred.outcomes.find((outcome) => isLikelyUnderOutcome(outcome));
-  const over = preferred.outcomes.find((outcome) =>
-    outcome.outcomeKey.startsWith('OVER'),
-  ) ?? preferred.outcomes.find((outcome) => isLikelyOverOutcome(outcome));
+  const { over, under } = readTotalsOverUnder(preferred);
   const line = under?.point ?? over?.point ?? null;
 
   return {
@@ -436,12 +500,46 @@ export function finalizeGroupedMarkets(grouped: WcGroupedMarkets): WcGroupedMark
   return dedupeIdenticalMarketGroups(dedupeMainH2hGroups(grouped));
 }
 
-/** Keep fresher cached prices when merging a full (possibly stale) snapshot. */
+/**
+ * Merge a full Olimpbet snapshot with cached markets.
+ * Structure/labels come from `full` (handles renamed categories).
+ * Prices always prefer `full` — cached prices must not overwrite a fresher feed
+ * (that caused live odds to flash between old and new values).
+ * Outcomes present only in cache are kept when the group still exists in full.
+ */
 export function mergeFullGroupedMarketsPreservingOdds(
   full: WcGroupedMarkets,
   cached: WcGroupedMarkets,
 ): WcGroupedMarkets {
-  return patchGroupedMarketsOdds(full, cached);
+  if (!cached || Object.keys(cached).length === 0) return finalizeGroupedMarkets(full);
+
+  const cachedByGroupKey = new Map<string, WcMarketGroup>();
+  for (const groups of Object.values(cached)) {
+    for (const group of groups) {
+      cachedByGroupKey.set(group.key, group);
+    }
+  }
+
+  const next: WcGroupedMarkets = {};
+  for (const [category, groups] of Object.entries(full)) {
+    next[category] = groups.map((group) => {
+      const cachedGroup = cachedByGroupKey.get(group.key);
+      if (!cachedGroup) return group;
+
+      const fullOutcomeKeys = new Set(group.outcomes.map((outcome) => outcome.outcomeKey));
+      const cachedOnlyOutcomes = cachedGroup.outcomes.filter(
+        (outcome) => !fullOutcomeKeys.has(outcome.outcomeKey),
+      );
+
+      return {
+        ...group,
+        // Full snapshot prices win; keep any cache-only outcomes on the same group.
+        outcomes: [...group.outcomes, ...cachedOnlyOutcomes],
+      };
+    });
+  }
+
+  return finalizeGroupedMarkets(next);
 }
 
 /** Mark every cached outcome suspended when the Olimpbet feed closed trading. */
@@ -454,6 +552,90 @@ export function markGroupedMarketsSuspended(grouped: WcGroupedMarkets): WcGroupe
     }));
   }
   return next;
+}
+
+type ListScalarOdds = {
+  oddsHome?: number | null;
+  oddsDraw?: number | null;
+  oddsAway?: number | null;
+  oddsOver?: number | null;
+  oddsUnder?: number | null;
+  totalLine?: number | null;
+  odds1X?: number | null;
+  odds12?: number | null;
+  oddsX2?: number | null;
+};
+
+function patchOutcomePrice(
+  outcomes: WcMarketOutcome[],
+  outcomeKey: string,
+  price: number | null | undefined,
+): WcMarketOutcome[] {
+  if (price == null || !Number.isFinite(price) || price <= 1) return outcomes;
+  let changed = false;
+  const next = outcomes.map((outcome) => {
+    if (outcome.outcomeKey !== outcomeKey || outcome.price === price) return outcome;
+    changed = true;
+    return { ...outcome, price };
+  });
+  return changed ? next : outcomes;
+}
+
+/**
+ * Apply fresher list-card scalars onto a stale detail `groupedMarkets` blob.
+ * Covers main 1X2 / DC / totals only — full refresh still needed for the rest.
+ */
+export function patchGroupedMarketsFromListScalars(
+  grouped: WcGroupedMarkets,
+  list: ListScalarOdds,
+): WcGroupedMarkets {
+  if (!grouped || Object.keys(grouped).length === 0) return grouped;
+
+  let changed = false;
+  const next: WcGroupedMarkets = {};
+
+  for (const [category, groups] of Object.entries(grouped)) {
+    next[category] = groups.map((group) => {
+      const mk = normalizeWcMarketKey(group.marketKey);
+      let outcomes = group.outcomes;
+
+      if (mk === 'h2h') {
+        const before = outcomes;
+        outcomes = patchOutcomePrice(outcomes, 'HOME', list.oddsHome);
+        outcomes = patchOutcomePrice(outcomes, 'DRAW', list.oddsDraw);
+        outcomes = patchOutcomePrice(outcomes, 'AWAY', list.oddsAway);
+        if (outcomes !== before) changed = true;
+      } else if (mk === 'double_chance' || mk === 'dc') {
+        const before = outcomes;
+        outcomes = patchOutcomePrice(outcomes, '1X', list.odds1X);
+        outcomes = patchOutcomePrice(outcomes, '12', list.odds12);
+        outcomes = patchOutcomePrice(outcomes, 'X2', list.oddsX2);
+        if (outcomes !== before) changed = true;
+      } else if (
+        mk === 'totals'
+        && list.totalLine != null
+        && isMainMatchTotalsGroup(category, group)
+      ) {
+        const line = String(list.totalLine);
+        const before = outcomes;
+        let patched = outcomes;
+        for (const outcome of outcomes) {
+          if (outcome.point == null || String(outcome.point) !== line) continue;
+          if (outcome.outcomeKey.startsWith('OVER') && list.oddsOver != null) {
+            patched = patchOutcomePrice(patched, outcome.outcomeKey, list.oddsOver);
+          } else if (outcome.outcomeKey.startsWith('UNDER') && list.oddsUnder != null) {
+            patched = patchOutcomePrice(patched, outcome.outcomeKey, list.oddsUnder);
+          }
+        }
+        outcomes = patched;
+        if (outcomes !== before) changed = true;
+      }
+
+      return outcomes === group.outcomes ? group : { ...group, outcomes };
+    });
+  }
+
+  return changed ? next : grouped;
 }
 
 /** Patch prices from a partial (main-event) snapshot without dropping linked-only categories. */

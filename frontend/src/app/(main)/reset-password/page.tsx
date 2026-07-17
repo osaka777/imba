@@ -24,8 +24,8 @@ function ResetPasswordForm() {
       safeToast.error("Ссылка недействительна");
       return;
     }
-    if (password.length < 8) {
-      safeToast.error("Пароль должен быть не короче 8 символов");
+    if (!password) {
+      safeToast.error("Введите пароль");
       return;
     }
     if (password !== confirm) {

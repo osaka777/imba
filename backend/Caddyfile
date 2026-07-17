@@ -99,6 +99,88 @@ partners.imba.bet {
   tls /etc/caddy/certs/imba.bet.pem /etc/caddy/certs/imba.bet.key
 }
 
+kick.imba.bet {
+  @api {
+    path /api/*
+  }
+  @scanner {
+    not path /api/*
+    path_regexp scan (?i)(?:^/\.git|^/\.github|^/\.gitlab|\.env|\.php$|wp-admin|wp-login\.php|xmlrpc\.php|phpinfo|docker-compose\.yml|web\.config|/config/(?:application\.yml|parameters\.yml)|configuration\.php|settings\.(?:py|php)|database\.php|db\.php|functions\.php|test\.php|index\.php)
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  handle @api {
+    reverse_proxy backend:3000
+  }
+  handle @scanner {
+    respond "Not Found" 404
+  }
+  handle {
+    reverse_proxy partners:8001
+  }
+  tls /etc/caddy/certs/imba.bet.pem /etc/caddy/certs/imba.bet.key
+}
+
+imbalance.click, www.imbalance.click {
+  @scanner {
+    path_regexp scan (?i)(?:^/\.git|^/\.github|^/\.gitlab|\.env|\.php$|wp-admin|wp-login\.php|xmlrpc\.php|phpinfo|docker-compose\.yml|web\.config|/config/(?:application\.yml|parameters\.yml)|configuration\.php|settings\.(?:py|php)|database\.php|db\.php|functions\.php|test\.php|index\.php)
+  }
+
+  @www host www.imbalance.click
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  handle @scanner {
+    respond "Not Found" 404
+  }
+
+  handle @www {
+    redir https://imbalance.click{uri} permanent
+  }
+
+  handle /api/* {
+    reverse_proxy backend:3000
+  }
+
+  handle /_next/* {
+    reverse_proxy partners:8001
+  }
+
+  handle /click/* {
+    reverse_proxy partners:8001
+  }
+
+  handle /favicon.ico {
+    reverse_proxy partners:8001
+  }
+
+  handle / {
+    redir https://kick.imba.bet 302
+  }
+
+  @partner_slug path_regexp partner_slug ^/[A-Za-z0-9_-]+/?$
+  handle @partner_slug {
+    rewrite * /click{uri}
+    reverse_proxy partners:8001
+  }
+
+  handle {
+    reverse_proxy partners:8001
+  }
+
+  tls /etc/caddy/certs/imbalance.click.pem /etc/caddy/certs/imbalance.click.key
+}
+
 kendall.bot, www.kendall.bot {
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"

@@ -15,10 +15,10 @@ type WebSocketContextType = {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 const wsLog = (...args: unknown[]) => {
-  if (process.env.NODE_ENV === "development") wsLog(...args);
+  if (process.env.NODE_ENV === "development") console.log("[WS]", ...args);
 };
 const wsWarn = (...args: unknown[]) => {
-  if (process.env.NODE_ENV === "development") wsWarn(...args);
+  if (process.env.NODE_ENV === "development") console.warn("[WS]", ...args);
 };
 
 // Get WebSocket URL from environment or fallback to default
@@ -85,7 +85,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                     heartbeatTimeout.current = setTimeout(() => {
                         wsWarn('❌ [WebSocket] Heartbeat timeout - no pong received');
                         if (ws.current) {
-                            ws.current.close(1000, 'Heartbeat timeout');
+                            ws.current.close(4000, 'Heartbeat timeout');
                         }
                     }, HEARTBEAT_TIMEOUT);
                 } catch (error) {

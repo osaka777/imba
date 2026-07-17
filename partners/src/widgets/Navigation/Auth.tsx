@@ -27,8 +27,13 @@ export const Auth = () => {
                 </span>
                 {`Регистрация`}
             </Button>
-            <Modal isOpen={authModalType !== "closed"} onClose={closeModal}>
-                <AuthForm authVariant={authModalType as "login" | "register"} />
+            <Modal
+                isOpen={authModalType !== "closed"}
+                onClose={closeModal}
+                size={authModalType === "register" ? "lg" : "sm"}
+                labelledBy="auth-modal-title"
+            >
+                <AuthForm authVariant={authModalType as "login" | "register"} inModal />
             </Modal>
         </div>
     );

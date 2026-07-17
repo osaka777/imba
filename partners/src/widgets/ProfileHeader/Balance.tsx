@@ -5,6 +5,7 @@ import { IStats } from "@/entities/user/interface/IStats";
 import { getStats } from "@/entities/user/api/getStats";
 import { IBalances } from "@/entities/user/interface/IBalances";
 import { getBalances } from "@/entities/user/api/getBalances";
+import { formatMoney } from "@/shared/lib/formatCurrencySymbol";
 
 export const Balance = () => {
     const [isOpen, setOpen] = useState(false)
@@ -27,7 +28,7 @@ export const Balance = () => {
             }
             {
                 stats.length > 0 && (
-                    `${stats[0].amount} ${stats[0].currencyCode}`
+                    `${formatMoney(Number(stats[0].amount), stats[0].currencyCode)}`
                 )
             }
             {
@@ -37,7 +38,7 @@ export const Balance = () => {
                             stats.map((e, index) => {
                                 if(index !== 0) {
                                     return <div key={e.id} className={header.data_item}>
-                                        {e.amount} {e.currencyCode}
+                                        {formatMoney(Number(e.amount), e.currencyCode)}
                                     </div>;
                                 }
                                 }

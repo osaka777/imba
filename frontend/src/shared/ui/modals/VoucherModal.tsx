@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 
 import { getSessionClient } from "~/entities/user/lib";
 import { api } from "~/shared/api";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./VoucherStyles.module.css";
 
@@ -15,13 +16,14 @@ type VoucherModalProps = {
 };
 
 export const VoucherModal = ({ onClose }: VoucherModalProps) => {
+  const { t } = useLocale();
   const [voucherCode, setVoucherCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const activateVoucher = useCallback(async () => {
     const code = voucherCode.trim();
     if (!code) {
-      toast.error("Пожалуйста, введите код ваучера");
+      toast.error(t("profile.voucherEnterCode"));
       return;
     }
 
@@ -35,20 +37,20 @@ export const VoucherModal = ({ onClose }: VoucherModalProps) => {
 
       if (error) throw error;
 
-      toast.success("Ваучер успешно активирован!");
+      toast.success(t("profile.voucherActivated"));
       setVoucherCode("");
       onClose();
     } catch (error: unknown) {
-      console.error("Ошибка при активации ваучера:", error);
+      console.error("Voucher activation error:", error);
       const message =
         error && typeof error === "object" && "message" in error && typeof error.message === "string"
           ? error.message
-          : "Ошибка при активации ваучера";
+          : t("profile.voucherError");
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  }, [onClose, voucherCode]);
+  }, [onClose, t, voucherCode]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -68,10 +70,10 @@ export const VoucherModal = ({ onClose }: VoucherModalProps) => {
       <div className={styles.topBar}>
         <button className={styles.backButton} onClick={onClose} type="button">
           <FiChevronLeft aria-hidden className={styles.backIcon} />
-          Назад
+          {t("common.back")}
         </button>
         <button
-          aria-label="Закрыть"
+          aria-label={t("profile.closeAria")}
           className={styles.closeButton}
           onClick={onClose}
           type="button"
@@ -82,13 +84,13 @@ export const VoucherModal = ({ onClose }: VoucherModalProps) => {
 
       <div className={styles.body}>
         <h2 className={styles.title} id="voucher-modal-title">
-          Активация ваучера
+          {t("profile.voucherModalTitle")}
         </h2>
 
         <p className={styles.description}>
-          Бонус зачисляется на бонусный счёт.{" "}
+          {t("profile.voucherModalDesc")}{" "}
           <Link className={styles.rulesLink} href="/info" onClick={onClose}>
-            Правила и условия
+            {t("profile.voucherRulesLink")}
           </Link>
         </p>
 
@@ -99,7 +101,7 @@ export const VoucherModal = ({ onClose }: VoucherModalProps) => {
             disabled={isLoading}
             onChange={(event) => setVoucherCode(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Код"
+            placeholder={t("profile.voucherCodePlaceholder")}
             value={voucherCode}
           />
 
@@ -109,7 +111,7 @@ export const VoucherModal = ({ onClose }: VoucherModalProps) => {
             onClick={() => void activateVoucher()}
             type="button"
           >
-            {isLoading ? "Активация..." : "Активировать"}
+            {isLoading ? t("profile.voucherActivating") : t("profile.voucherActivate")}
           </button>
         </div>
       </div>

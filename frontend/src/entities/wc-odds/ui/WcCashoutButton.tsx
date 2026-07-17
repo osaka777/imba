@@ -1,94 +1,172 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { toast } from "react-toastify";
 
 import { formatCouponMoney } from "~/entities/bet/lib/formatCouponMoney";
 import { getSessionClient } from "~/entities/user/lib/getSessionClient";
 import {
   executeWcCashout,
-  fetchWcCashoutQuote,
   type WcBet,
+  type WcCashoutQuote,
 } from "~/entities/wc-odds/api/client";
 import { cn } from "~/shared/lib";
-import { useFlashOnChange } from "~/shared/lib/useFlashOnChange";
 
 import styles from "~/entities/bet/ui/Coupon/OpenTab.module.css";
 
+type AvailableQuote = Extract<WcCashoutQuote, { available: true }>;
+
 type WcCashoutButtonProps = {
   bet: WcBet;
+  quote?: WcCashoutQuote;
+  quotesLoading?: boolean;
 };
 
-export function WcCashoutButton({ bet }: WcCashoutButtonProps) {
-  const queryClient = useQueryClient();
+function isAvailableQuote(quote?: WcCashoutQuote): quote is AvailableQuote {
+  return Boolean(quote?.available);
+}
 
-  const { data: quote, isLoading } = useQuery({
-    queryKey: ["wc-cashout-quote", bet.id],
-    queryFn: async () => {
-      const token = getSessionClient();
-      if (!token) throw new Error("Unauthorized");
-      return fetchWcCashoutQuote(token, bet.id);
-    },
-    enabled: bet.status === "PENDING",
-    refetchInterval: 4_000,
-    staleTime: 0,
-    placeholderData: (prev) => prev,
-  });
+function amountsDiffer(a: string, b: string): boolean {
+  return Math.abs(Number(a) - Number(b)) > 0.009;
+}
+
+export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonProps) {
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const [snapshotQuote, setSnapshotQuote] = useState<AvailableQuote | null>(null);
+
+  const liveQuote = quote;
+
+  const closeConfirm = useCallback(() => {
+    setConfirming(false);
+    setSnapshotQuote(null);
+  }, []);
 
   const cashoutMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (expectedAmount: string) => {
       const token = getSessionClient();
       if (!token) throw new Error("Unauthorized");
-      const expectedAmount =
-        quote && quote.available ? quote.amount : undefined;
       return executeWcCashout(token, bet.id, expectedAmount);
     },
     onSuccess: (result) => {
+      closeConfirm();
       toast.success(`Ставка продана: +${formatCouponMoney(result.amount, bet.currencyCode)}`, {
         autoClose: 5000,
       });
       void queryClient.invalidateQueries({ queryKey: ["wc-bets"] });
+      void queryClient.invalidateQueries({ queryKey: ["wc-cashout-quotes"] });
       void queryClient.invalidateQueries({ queryKey: ["user"] });
       void queryClient.invalidateQueries({ queryKey: ["bets", "open"] });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Не удалось продать ставку");
-      void queryClient.invalidateQueries({ queryKey: ["wc-cashout-quote", bet.id] });
+      void queryClient.invalidateQueries({ queryKey: ["wc-cashout-quotes"] });
     },
   });
 
-  const quoteAmount = quote && quote.available ? quote.amount : null;
-  const amountFlash = useFlashOnChange(quoteAmount);
+  const openConfirm = () => {
+    if (!isAvailableQuote(quote)) return;
+    setSnapshotQuote(quote);
+    setConfirming(true);
+  };
 
   if (bet.status !== "PENDING") return null;
 
-  if (isLoading && !quote) return null;
-
-  if (!quote?.available) {
-    if (!quote || quote.code === "odds_unavailable") return null;
+  if (!quote && quotesLoading) {
     return (
-      <div className={styles.openBetCashoutWrap}>
-        <span className={styles.openBetCashoutUnavailable}>{quote.reason}</span>
+      <div className={styles.cashoutBlock}>
+        <button className={cn(styles.cashoutBtn, styles.cashoutBtnLoading)} disabled type="button">
+          <span className={styles.cashoutBtnLabel}>Продажа</span>
+          <span className={styles.cashoutBtnAmount}>…</span>
+        </button>
       </div>
     );
   }
 
-  const amountLabel = formatCouponMoney(quote.amount, bet.currencyCode);
+  if (!quote?.available) {
+    if (!quote || quote.code === "odds_unavailable") return null;
+    return (
+      <div className={styles.cashoutBlock}>
+        <p className={styles.cashoutMuted}>{quote.reason}</p>
+      </div>
+    );
+  }
+
   const selling = cashoutMutation.isPending;
+  const amountLabel = formatCouponMoney(quote.amount, bet.currencyCode);
+  const priceChanged = confirming
+    && snapshotQuote
+    && isAvailableQuote(liveQuote)
+    && (amountsDiffer(snapshotQuote.amount, liveQuote.amount)
+      || snapshotQuote.currentOdds !== liveQuote.currentOdds);
+
+  if (confirming) {
+    if (!isAvailableQuote(liveQuote)) {
+      return (
+        <div className={styles.cashoutBlock}>
+          <p className={styles.cashoutConfirmLead}>
+            {liveQuote && !liveQuote.available
+              ? liveQuote.reason
+              : "Котировка недоступна"}
+          </p>
+          <button className={styles.cashoutGhostBtn} onClick={closeConfirm} type="button">
+            Закрыть
+          </button>
+        </div>
+      );
+    }
+
+    const confirmAmountLabel = formatCouponMoney(liveQuote.amount, bet.currencyCode);
+
+    return (
+      <div className={styles.cashoutBlock}>
+        <p className={cn(styles.cashoutConfirmLead, priceChanged && styles.cashoutConfirmLeadWarn)}>
+          {priceChanged
+            ? "Сумма изменилась — подтвердите продажу"
+            : `Продать за ${confirmAmountLabel}?`}
+        </p>
+        <p className={styles.cashoutConfirmMeta}>
+          Кф. {liveQuote.currentOdds} · при приёме {liveQuote.placedOdds}
+        </p>
+        <div className={styles.cashoutConfirmRow}>
+          <button
+            className={styles.cashoutGhostBtn}
+            disabled={selling}
+            onClick={closeConfirm}
+            type="button"
+          >
+            Отмена
+          </button>
+          <button
+            className={cn(styles.cashoutBtn, styles.cashoutBtnConfirm)}
+            disabled={selling}
+            onClick={() => cashoutMutation.mutate(liveQuote.amount)}
+            type="button"
+          >
+            <span className={styles.cashoutBtnLabel}>
+              {selling ? "Обработка…" : "Подтвердить"}
+            </span>
+            <span className={styles.cashoutBtnAmount}>{confirmAmountLabel}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.openBetCashoutWrap}>
+    <div className={styles.cashoutBlock}>
       <button
-        className={cn(
-          styles.openBetCashoutBtn,
-          amountFlash === "up" && styles.openBetCashoutBtnUp,
-          amountFlash === "down" && styles.openBetCashoutBtnDown,
-        )}
+        className={styles.cashoutBtn}
         disabled={selling}
-        onClick={() => cashoutMutation.mutate()}
+        onClick={openConfirm}
         type="button"
       >
-        {selling ? "Обработка…" : `Продать за ${amountLabel}`}
+        <span className={styles.cashoutBtnText}>
+          <span className={styles.cashoutBtnLabel}>Продать</span>
+          <span className={styles.cashoutBtnHint}>кф. {quote.currentOdds}</span>
+        </span>
+        <span className={styles.cashoutBtnAmount}>{amountLabel}</span>
       </button>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import {
   ApiBearerAuth,
@@ -89,6 +89,23 @@ export class UserController {
     @Body() body: VerifyPhoneCodeDto,
   ) {
     return this.phoneVerification.verifyCode(req.user.id, body.code);
+  }
+
+  @Get('settings')
+  async settings(@Req() req: { user: { id: number } }) {
+    const user = await this.usersService.findSettingsProfile(req.user.id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      phoneVerified: Boolean(user.phoneVerifiedAt),
+      telegramLinked: Boolean(user.telegramLinkedAt),
+      telegramUsername: user.telegramUsername,
+      avatarPreset: user.avatarPreset,
+    };
   }
 
   @Get('')

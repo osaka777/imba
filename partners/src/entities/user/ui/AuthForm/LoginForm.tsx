@@ -2,7 +2,7 @@
 
 import { Button, Input, LoadingSpiner } from "@/shared/UI";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLogin } from "../../model/useLogin";
 import styles from "./AuthForm.module.css";
 import * as Yup from "yup";
@@ -18,11 +18,11 @@ const initialValues: AuthFormState = {
     password: "",
 };
 
-export const LoginForm = () => {
-    const { clearError, error, login, pending, errorCode } = useLogin();
+export const LoginForm = ({ redirectTo = "/profile/dashboard" }: { redirectTo?: string }) => {
+    const { error, login, pending, errorCode } = useLogin();
     const [success, setSuccess] = useState(false);
     const router = useRouter();
-    const [formError, setFormError] = useState<string>("")
+    const [formError, setFormError] = useState<string>("");
 
     const validateSchema = Yup.object().shape({
         email: Yup.string().required("Введите почту").email("Неверный формат почты"),
@@ -35,32 +35,30 @@ export const LoginForm = () => {
         validateOnChange: false,
         validateOnMount: false,
         validateOnBlur: false,
-        onSubmit: async (values, { resetForm }) => {
-            setFormError('')
+        onSubmit: async (values) => {
+            setFormError("");
             const res = await login({
                 email: values.email,
-                password: values.password
+                password: values.password,
             });
             if (res) {
                 setSuccess(true);
-                router.push("/profile/dashboard");
+                router.push(redirectTo);
             }
         },
     });
 
     useEffect(() => {
-        if(formik.errors) {
-            for(let key in formik.errors) {
-                const value = formik.errors[key as keyof typeof formik.errors]
-                if(value) {
-                    setFormError(value.toString())
+        if (formik.errors) {
+            for (const key in formik.errors) {
+                const value = formik.errors[key as keyof typeof formik.errors];
+                if (value) {
+                    setFormError(value.toString());
                     break;
                 }
             }
         }
     }, [formik]);
-
-
 
     return (
         <form className={styles.form} onSubmit={formik.handleSubmit}>
@@ -69,10 +67,11 @@ export const LoginForm = () => {
                 onChange={formik.handleChange}
                 value={formik.values.email}
                 className={styles.input}
-                type="text"
+                type="email"
                 name="email"
-                id="email"
+                id="login-email"
                 placeholder="Введите почту"
+                autoComplete="email"
             />
             <Input
                 label="Пароль"
@@ -81,21 +80,22 @@ export const LoginForm = () => {
                 className={styles.input}
                 type="password"
                 name="password"
-                id="password"
+                id="login-password"
                 placeholder="Введите пароль"
+                autoComplete="current-password"
             />
 
             <Button
                 type="submit"
                 disabled={pending}
-                className={`${styles.authButton} ${success ? styles.authButton_succes : null}`}
+                className={`${styles.authButton} ${success ? styles.authButton_succes : ""}`}
             >
                 Вход
                 {pending || success ? <LoadingSpiner className={styles.loading} /> : null}
             </Button>
-            {formError !== '' ? <p className={styles.error}>{formError}</p> : null}
+            {formError !== "" ? <p className={styles.error}>{formError}</p> : null}
             {error && errorCode !== 401 ? <p className={styles.error}>{error}</p> : null}
-            {errorCode === 401 ? <p className={styles.error}>{`Логин или пароль введены не верно`}</p> : null}
+            {errorCode === 401 ? <p className={styles.error}>Логин или пароль введены неверно</p> : null}
         </form>
     );
 };

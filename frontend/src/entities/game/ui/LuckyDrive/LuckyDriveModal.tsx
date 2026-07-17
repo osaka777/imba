@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation';
 
 import { DepositForm } from '~/entities/finance';
-import { AuthForm } from '~/entities/user';
 import { verifyUser } from '~/entities/user/api';
 import { getSessionClient } from '~/entities/user/lib/getSessionClient';
 import {
@@ -16,8 +15,8 @@ import {
 } from '~/entities/promo-modal/api/client';
 import { CheckIcon } from '~/shared/assets';
 import { cn } from '~/shared/lib';
-import { Dialog, DialogContent } from '~/shared/ui';
 
+import { ModalInlineAuth } from './ModalInlineAuth';
 import styles from './LuckyDriveModal.module.css';
 
 type WizardStep = 'intro' | 'deposit' | 'waiting' | 'claim' | 'success';
@@ -102,7 +101,10 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setAuthModalType('closed');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setStep('intro');
@@ -194,14 +196,22 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
               ? settings?.successSubtitle
               : null;
 
+  const showAuth = authModalType !== 'closed';
+
   return (
-    <>
-      <div className={styles.modalOverlay} onClick={onClose}>
-        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
-            ×
-          </button>
-          <main className={styles.modalBody}>
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={cn(styles.modalContent, showAuth && styles.modalContentAuth)} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
+          ×
+        </button>
+        <main className={styles.modalBody}>
+          {showAuth ? (
+            <ModalInlineAuth
+              variant={authModalType}
+              onBack={() => setAuthModalType('closed')}
+              backLabel="← Назад к акции"
+            />
+          ) : (
             <div className={cn(styles.base, step === 'deposit' && styles.baseDeposit)} style={gradientStyle}>
               {step !== 'success' ? (
                 <nav
@@ -411,20 +421,9 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                 )}
               </div>
             </div>
-          </main>
-        </div>
+          )}
+        </main>
       </div>
-
-      {authModalType !== 'closed' && (
-        <Dialog open onOpenChange={() => setAuthModalType('closed')}>
-          <DialogContent
-            className={styles.authDialog}
-            title={authModalType === 'login' ? 'Вход в систему' : 'Регистрация'}
-          >
-            <AuthForm authVariant={authModalType} className={styles.authForm} />
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+    </div>
   );
 };

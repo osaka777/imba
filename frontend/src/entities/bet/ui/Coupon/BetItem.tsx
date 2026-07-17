@@ -9,6 +9,7 @@ import { AccessIcon, CloseIcon } from "~/shared/assets";
 import { Button } from "~/shared/ui";
 import { cn } from "~/shared/lib";
 import { useFlashOnChange } from "~/shared/lib/useFlashOnChange";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { createTitleForBet } from "../../lib";
 import {
@@ -40,13 +41,14 @@ export const BetItem: React.FC<BetItemProps> = ({
   stakeAmount = 0,
   currencyCode,
 }) => {
+  const { t } = useLocale();
   const coefNotANumber = rate.coef === `--`;
   const locked = !rate.isOpen || coefNotANumber;
   const outcomeTitle =
     rate.title
     || (rate.groupedMarket ? createTitleForBet(rate.groupedMarket, rate.market) : null)
     || rate.market
-    || "Ставка";
+    || t("coupon.betLabel");
 
   const sportMeta = rate.sport ? gamesList[rate.sport] : undefined;
   const SportIcon = sportMeta?.Icon;
@@ -69,8 +71,6 @@ export const BetItem: React.FC<BetItemProps> = ({
       ? formatCouponWinLine(stakeAmount, coefNum, currencySymbol)
       : null;
 
-  const headerLeft = [phaseBadge.label, matchTimeLine].filter(Boolean).join(" · ");
-
   return (
     <div
       className={cn(
@@ -83,23 +83,40 @@ export const BetItem: React.FC<BetItemProps> = ({
       {locked ? <AccessIcon className={styles.couponBetLock} /> : null}
 
       <div className={openStyles.openBetHeaderBar}>
-        <span className={openStyles.openBetHeaderDate}>{headerLeft || "Купон"}</span>
-        {variant === "ordinar" ? (
-          <span className={openStyles.openBetHeaderBrandLogo}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className={openStyles.openBetHeaderLeft}>
+          {phaseBadge.label ? (
+            <span
+              className={cn(
+                openStyles.openBetHeaderPhase,
+                isLive && openStyles.openBetHeaderPhase_live,
+              )}
+            >
+              {phaseBadge.label}
+            </span>
+          ) : null}
+          {matchTimeLine ? (
+            <span className={openStyles.openBetHeaderScore}>{matchTimeLine}</span>
+          ) : null}
+          {!phaseBadge.label && !matchTimeLine ? (
+            <span className={openStyles.openBetHeaderDate}>Купон</span>
+          ) : null}
+        </div>
+        <div className={openStyles.openBetHeaderCenter}>
+          {variant === "ordinar" ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               alt="Imba.bet"
-              className={openStyles.openBetHeaderBrandLogoImg}
+              className={openStyles.openBetHeaderBrandLogo}
               height={18}
               src={ORDINAR_BRAND_LOGO}
               width={72}
             />
-          </span>
-        ) : (
-          <span className={openStyles.openBetHeaderBrand}>Экспресс</span>
-        )}
+          ) : (
+            <span className={openStyles.openBetHeaderBrand}>Экспресс</span>
+          )}
+        </div>
         <Button
-          aria-label="Удалить из купона"
+          aria-label={t("coupon.removeFromSlip")}
           className={styles.couponBetCloseBtn}
           onClick={() => deleteButtonOnClickHandler(rate)}
           type="button"

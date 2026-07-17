@@ -1,22 +1,28 @@
-import { CybersportGamesFeed } from "~/entities/cybersport/ui/CybersportGamesFeed";
-import { CybersportMenu } from "~/entities/cybersport/ui/CybersportMenu";
-import { DEFAULT_CYBER_SPORT } from "~/entities/cybersport/lib/cyberSportsList";
+import { notFound, redirect } from "next/navigation";
 
-import styles from "../../CybersportLayout.module.css";
+import {
+  apiSportFromPathSlug,
+  lineSportQueryUrl,
+} from "~/entities/cybersport/lib/cyberSportPaths";
 
-type LineSportPageProps = {
+type PageProps = {
   params: Promise<{ sport?: string }>;
 };
 
-export default async function CybersportLineSportPage({ params }: LineSportPageProps) {
+/** Legacy: /cybersport/line/esports.cs → /line?sport=esports.cs */
+export default async function CybersportLegacyLineSportPage({ params }: PageProps) {
   const { sport: rawSport } = await params;
-  const sport = rawSport ?? DEFAULT_CYBER_SPORT;
+  if (!rawSport) {
+    redirect(lineSportQueryUrl("esports.cs"));
+  }
 
-  return (
-    <div className={styles.subPage}>
-      <h2 className={styles.subTitle}>Линия</h2>
-      <CybersportMenu mode="line" sport={sport} />
-      <CybersportGamesFeed sport={sport} variant="prematch" />
-    </div>
-  );
+  const apiSport = rawSport.startsWith("esports.")
+    ? rawSport
+    : apiSportFromPathSlug(rawSport);
+
+  if (!apiSport) {
+    notFound();
+  }
+
+  redirect(lineSportQueryUrl(apiSport));
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { WcBet } from "~/entities/wc-odds/api/client";
+import type { WcBet, WcCashoutQuote } from "~/entities/wc-odds/api/client";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
 import { getWcBetLabel } from "~/entities/wc-odds/lib/wcRate";
 import { gamesList } from "~/entities/game";
@@ -22,14 +22,20 @@ import { getWcOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDisplay
 
 import { OpenBetSlipCard } from "~/entities/bet/ui/Coupon/OpenBetSlipCard";
 import { WcCashoutButton } from "~/entities/wc-odds/ui/WcCashoutButton";
-import { WcBetShareButton } from "~/entities/wc-odds/ui/WcBetShareButton";
 
 type WcOpenBetCardProps = {
   bet: WcBet;
   highlight?: boolean;
+  cashoutQuote?: WcCashoutQuote;
+  quotesLoading?: boolean;
 };
 
-export function WcOpenBetCard({ bet, highlight }: WcOpenBetCardProps) {
+export function WcOpenBetCard({
+  bet,
+  highlight,
+  cashoutQuote,
+  quotesLoading,
+}: WcOpenBetCardProps) {
   const cf = Number(bet.odds).toFixed(2);
   const placedAt = formatCouponPlacedAt(bet.createdAt);
   const headerDate = formatOpenBetHeaderDate(bet.createdAt);
@@ -65,8 +71,15 @@ export function WcOpenBetCard({ bet, highlight }: WcOpenBetCardProps) {
       kickoffLabel={kickoffLabel}
       league={bet.event.leagueName ? truncateLeagueName(bet.event.leagueName) : null}
       matchHref={href}
-      outcome={getWcBetLabel(bet)}
+      outcome={getWcBetLabel({ ...bet, sport: bet.event.sport })}
       placedAt={placedAt}
+      postFooter={(
+        <WcCashoutButton
+          bet={bet}
+          quote={cashoutQuote}
+          quotesLoading={quotesLoading}
+        />
+      )}
       scoreDetail={scoreDetail}
       scoreMain={scoreMain}
       sportIcon={SportIcon}
@@ -74,11 +87,6 @@ export function WcOpenBetCard({ bet, highlight }: WcOpenBetCardProps) {
       teamsLabel={teamsLabel}
       ticketId={ticketId}
       winLabel={formatCouponMoney(bet.potentialPayout, bet.currencyCode)}
-    >
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <WcCashoutButton bet={bet} />
-        <WcBetShareButton betId={bet.id} />
-      </div>
-    </OpenBetSlipCard>
+    />
   );
 }

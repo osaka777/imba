@@ -1,0 +1,1219 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 24px;
+}
+
+.matchRoot {
+  width: 100%;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.breadcrumbLink {
+  color: var(--cy-text-secondary, #909090);
+  text-decoration: none;
+  transition: color 0.12s ease;
+  white-space: nowrap;
+}
+
+.breadcrumbLink:hover {
+  color: var(--kick-green, #53fc18);
+}
+
+.breadcrumbSep {
+  color: var(--cy-text-muted, #6b6b6f);
+  user-select: none;
+}
+
+.breadcrumbCurrent {
+  color: var(--cy-text-primary, #e8e8ea);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.mobileBack {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cy-text-primary, #e8e8ea);
+  text-decoration: none;
+  transition: color 0.12s ease;
+}
+
+.mobileBack:hover {
+  color: var(--kick-green, #53fc18);
+}
+
+.mobileBackArrow {
+  flex-shrink: 0;
+  color: var(--kick-green, #53fc18);
+  font-weight: 800;
+}
+
+.mobileBackText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.mobileBackDot {
+  color: var(--cy-text-muted, #6b6b6f);
+  font-weight: 500;
+}
+
+.oddsSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.oddsSkeletonPinned {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.oddsSkeletonChip {
+  height: 38px;
+  border-radius: var(--kick-radius, 10px);
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(83 252 24 / 0.08) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: oddsShimmer 1.4s ease-in-out infinite;
+}
+
+.oddsSkeletonBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oddsSkeletonHead {
+  height: 12px;
+  width: 40%;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(83 252 24 / 0.08) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: oddsShimmer 1.4s ease-in-out infinite;
+}
+
+.oddsSkeletonRow {
+  height: 36px;
+  border-radius: var(--kick-radius, 10px);
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.03) 0%,
+    rgb(83 252 24 / 0.06) 50%,
+    rgb(255 255 255 / 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: oddsShimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes oddsShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.matchShell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.streamCol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  position: sticky;
+  top: var(--layout-sticky-top, 12px);
+}
+
+.scoreStrip {
+  border-radius: var(--kick-radius-lg, 14px);
+  overflow: hidden;
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+.streamFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--kick-radius-lg, 14px);
+  overflow: hidden;
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: #000;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+  container-type: size;
+  container-name: cyber-stream;
+}
+
+.streamFrame :global([class*="broadcastWrap"]) {
+  margin: 0;
+  max-width: none;
+  border-radius: 0;
+  border: none;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  position: relative;
+}
+
+.streamFrame :global([class*="videoShell"]) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: unset;
+  border-radius: 0;
+}
+
+.streamFrame :global([class*="broadcastVideo"]) {
+  border-radius: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: unset;
+}
+
+.streamFrame :global([class*="videoShell"] iframe.broadcastVideo) {
+  position: absolute;
+  inset: 0;
+}
+
+.streamFrame :global([class*="broadcastPlaceholder"]) {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  min-height: 0;
+  border-radius: 0;
+}
+
+/* Auth gate — flat full-bleed overlay (no nested card/modal) */
+/* Score overlay clashes with auth gate — hide it when gate is shown */
+.streamFrame:has(:global([class*="authGate"])) :global([class*="CyberStreamScoreOverlay_overlay"]) {
+  display: none;
+}
+
+/* Auth gate виден целиком: рамка растёт по контенту, не режет кнопки */
+.streamFrame:has(:global([class*="authGate"])) {
+  aspect-ratio: auto;
+  height: auto;
+  min-height: 200px;
+  container-type: normal;
+}
+
+.streamFrame:has(:global([class*="authGate"])) :global([class*="broadcastWrap"]),
+.streamFrame:has(:global([class*="authGate"])) :global([class*="authGate__"]),
+.streamFrame:has(:global([class*="authGate"])) :global([class*="authGateCard"]) {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.streamFrame:has(:global([class*="authGate"])) :global([class*="authGate__"]) {
+  padding: 20px 16px;
+}
+
+.streamFrame:has(:global([class*="authGate"])) :global([class*="authGateCard"]) {
+  gap: 10px;
+}
+
+.streamFrame:has(:global([class*="authGate"])) :global([class*="authGateHint"]) {
+  display: block;
+}
+
+.streamFrame :global([class*="authGate__"]) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  padding: clamp(10px, 3.5cqw, 22px) clamp(12px, 4.5cqw, 28px);
+  border-radius: 0 !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.streamFrame :global([class*="authGateBackdrop"]) {
+  aspect-ratio: auto !important;
+  background:
+    radial-gradient(ellipse 85% 70% at 50% 42%, rgb(83 252 24 / 0.16), transparent 62%),
+    linear-gradient(180deg, rgb(8 8 10 / 0.88) 0%, rgb(0 0 0 / 0.96) 100%) !important;
+}
+
+.streamFrame :global([class*="authGateBackdrop"])::before {
+  opacity: 0.18 !important;
+}
+
+.streamFrame :global([class*="authGateBackdrop"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 80px rgb(0 0 0 / 0.55);
+}
+
+.streamFrame :global([class*="authGateCard"]) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: min(100%, 400px);
+  max-height: 100%;
+  padding: 0;
+  gap: clamp(6px, 2.2cqh, 11px);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  text-align: center;
+  overflow: hidden;
+  aspect-ratio: auto !important;
+}
+
+.streamFrame :global([class*="authGateBadge"]) {
+  flex-shrink: 0;
+  aspect-ratio: auto !important;
+}
+
+.streamFrame :global([class*="authGateIconWrap"]) {
+  width: clamp(40px, 11cqw, 48px);
+  height: clamp(40px, 11cqw, 48px);
+  margin-top: 0;
+  border-color: rgb(83 252 24 / 0.35);
+  background: rgb(83 252 24 / 0.1);
+  flex-shrink: 0;
+  aspect-ratio: auto !important;
+}
+
+.streamFrame :global([class*="authGateIcon"]) {
+  width: clamp(18px, 5cqw, 22px);
+  height: clamp(18px, 5cqw, 22px);
+}
+
+.streamFrame :global([class*="authGatePreview"]) {
+  width: 100%;
+  padding: clamp(8px, 2cqh, 12px) clamp(8px, 2.5cqw, 10px);
+  border-radius: 10px;
+  background: rgb(83 252 24 / 0.06) !important;
+  border: 1px solid rgb(83 252 24 / 0.14) !important;
+}
+
+.streamFrame :global([class*="authGateLeague"]) {
+  font-size: clamp(9px, 2.5cqw, 11px);
+  color: rgb(255 255 255 / 0.52) !important;
+}
+
+.streamFrame :global([class*="authGateTitle"]),
+.streamFrame :global([class*="authGateMatch"]),
+.streamFrame :global([class*="authGateHint"]),
+.streamFrame :global([class*="authGateActions"]) {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: auto !important;
+  min-height: auto;
+}
+
+.streamFrame :global([class*="authGateTitle"]) {
+  margin: 0;
+  font-size: clamp(13px, 3.8cqw, 16px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.streamFrame :global([class*="authGateMatch"]) {
+  margin: 0;
+  font-size: clamp(12px, 3.4cqw, 14px);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--kick-green, #53fc18);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.streamFrame :global([class*="authGateHint"]) {
+  margin: 0;
+  max-width: 100%;
+  font-size: clamp(10px, 2.8cqw, 12px);
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.52);
+}
+
+.streamFrame :global([class*="authGateActions"]) {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.8cqh, 10px);
+  width: 100%;
+  margin-top: clamp(2px, 1cqh, 8px);
+  flex-shrink: 0;
+}
+
+.streamFrame :global([class*="authGatePrimary"]),
+.streamFrame :global([class*="authGateSecondary"]) {
+  min-height: clamp(38px, 10cqh, 44px);
+  padding: clamp(8px, 2cqh, 11px) clamp(12px, 3cqw, 16px);
+  font-size: clamp(12px, 3.2cqw, 14px);
+  border-radius: 10px;
+  aspect-ratio: auto !important;
+}
+
+@container cyber-stream (min-width: 380px) {
+  .streamFrame :global([class*="authGateActions"]) {
+    flex-direction: row;
+  }
+
+  .streamFrame :global([class*="authGatePrimary"]),
+  .streamFrame :global([class*="authGateSecondary"]) {
+    flex: 1 1 0;
+  }
+}
+
+@container cyber-stream (max-height: 230px) {
+  .streamFrame :global([class*="authGateHint"]) {
+    display: none;
+  }
+
+  .streamFrame :global([class*="authGateIconWrap"]) {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@container cyber-stream (max-height: 190px) {
+  .streamFrame :global([class*="authGateIconWrap"]) {
+    display: none;
+  }
+
+  .streamFrame :global([class*="authGateMatch"]) {
+    -webkit-line-clamp: 1;
+  }
+}
+
+@container cyber-stream (max-height: 160px) {
+  .streamFrame :global([class*="authGateBadge"]) {
+    display: none;
+  }
+
+  .streamFrame :global([class*="authGateTitle"]) {
+    font-size: 12px;
+  }
+}
+
+
+.oddsCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.oddsHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px;
+}
+
+.oddsHeadPill {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--kick-green, #53fc18);
+  color: #000;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.oddsHeadPill_muted {
+  background: var(--kick-bg-elevated, #1e1e20);
+  color: var(--kick-text-secondary, #a8a8a8);
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
+}
+
+.oddsHeadTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kick-text, #fff);
+}
+
+.oddsSection {
+  border-radius: var(--kick-radius-lg, 14px);
+  overflow: visible;
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: var(--kick-bg-card, #161617);
+  min-height: 0;
+  min-width: 0;
+}
+
+.oddsSection :global([class*="TournamentOdds"]) {
+  background: transparent !important;
+  padding: 8px 10px !important;
+  gap: 8px !important;
+}
+
+.oddsSection :global(h3),
+.oddsSection :global([class*="sectionTitle"]) {
+  color: var(--kick-text, #fff) !important;
+}
+
+/* ── Cybersport odds column: compact Kick-style market cards ── */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="TournamentOddsHeader"]) {
+  gap: 6px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-items: center;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddMenuList"]) {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(83 252 24 / 0.35) transparent;
+  padding: 6px 0 10px !important;
+  gap: 6px !important;
+  mask-image: none;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddMenuList"]::-webkit-scrollbar) {
+  height: 3px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddMenuList"]::-webkit-scrollbar-thumb) {
+  border-radius: 999px;
+  background: rgb(83 252 24 / 0.35);
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddMenuList"] button) {
+  flex-shrink: 0;
+  max-width: none;
+  height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="TournamentOddsHeaderButton"]) {
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--kick-bg-elevated, #1e1e20);
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"]) {
+  gap: 6px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTable"]) {
+  gap: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTable"] > div) {
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  margin-bottom: 4px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddFold"]) {
+  min-height: 32px;
+  padding: 6px 8px;
+  border: none !important;
+  border-radius: 6px !important;
+  border-left: none !important;
+  background: rgb(255 255 255 / 0.04) !important;
+  margin-bottom: 0;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsList"]) {
+  padding: 4px 0 2px;
+  border-top: none;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlockCategory"]) {
+  gap: 4px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlockScoped"]) {
+  margin-bottom: 2px;
+}
+
+/* Flat chip — в stack flex вместо contents, иначе вложенные grid дублируют сетку */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsItem"]) {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsRow"] > [class*="oddsItem"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] > [class*="oddsItem"]) {
+  display: flex !important;
+  flex: 1 1 0;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsRow"] > [class*="oddsItem"] [class*="odd"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] > [class*="oddsItem"] [class*="odd"]) {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem_lock"] [class*="odd"]) {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlockPX"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlock"]:has([class*="oddsItem_1x2"])) {
+  display: grid !important;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+/* Пары Да/Нет, Чёт/Нечёт — 2 колонки */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlock"]:has(> [class*="oddsItem"]:nth-child(2):last-child)) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem"] button[class*="odd"]) {
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  width: 100%;
+  min-height: 38px !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgb(255 255 255 / 0.14) !important;
+  background: #252528 !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global(button[class*="odd"]:active:not([disabled])) {
+  transform: scale(0.97);
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="odd_added"]) {
+  background: rgb(83 252 24 / 0.12) !important;
+  border-color: rgb(83 252 24 / 0.55) !important;
+  box-shadow:
+    inset 3px 0 0 var(--kick-green, #53fc18),
+    0 0 12px rgb(83 252 24 / 0.15) !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlockPX"] [class*="oddName"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem_1x2"] [class*="oddName"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItemPX"] [class*="oddName"]) {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  text-align: left;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlockPX"] [class*="oddCoef"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem_1x2"] [class*="oddCoef"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItemPX"] [class*="oddCoef"]) {
+  font-size: 13px !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem"] button[class*="odd"]:hover) {
+  background: #2f2f33 !important;
+  border-color: rgb(83 252 24 / 0.55) !important;
+  box-shadow: 0 0 14px rgb(83 252 24 / 0.12);
+}
+
+/* Одиночные исходы — компактная строка label | coef */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddName"]) {
+  width: auto !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global(button[class*="odd"]:not([class*="oddHandicap"])) {
+  min-height: 36px;
+  padding: 3px 8px !important;
+  gap: 6px;
+  border-radius: 6px !important;
+}
+
+/* Коэф — plain text внутри чипа, без вложенной рамки/pill */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddCoef"]) {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  display: block !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem"]:hover [class*="oddCoef"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global(button[class*="odd"]:hover [class*="oddCoef"]) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="odd_added"] [class*="oddCoef"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddCoef_added"]) {
+  background: transparent !important;
+  border: none !important;
+  color: var(--kick-green, #53fc18) !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="odd_added"]) {
+  background: rgb(83 252 24 / 0.12) !important;
+  border-color: rgb(83 252 24 / 0.55) !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem"]:hover button[class*="odd"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global(button[class*="odd"]:hover) {
+  background: #2f2f33 !important;
+  border-color: rgb(83 252 24 / 0.55) !important;
+  box-shadow: 0 0 14px rgb(83 252 24 / 0.12);
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlock"]:not([class*="oddsBlockPair"]):not([class*="oddsBlockPX"]):not([class*="oddsBlockCorrectScore"]) [class*="oddsItem"]:not([class*="oddsItem_1x2"]):not([class*="oddsItemPX"])) {
+  flex-basis: 100% !important;
+  max-width: 100%;
+  border-bottom: none !important;
+  margin-bottom: 3px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlock"]:not([class*="oddsBlockPair"]):not([class*="oddsBlockPX"]):not([class*="oddsBlockCorrectScore"])) {
+  gap: 3px;
+}
+
+/* Тоталы — каждая линия отдельной строкой на всю ширину (М | Б) */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"]) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] > *) {
+  min-width: 0;
+  width: 100%;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] [class*="oddsTotalsRow"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] [class*="oddsHandicapRow"]) {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  width: 100%;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] [class*="oddsBlock"]:not([class*="oddsTotalsRow"]):not([class*="oddsHandicapRow"])) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] [class*="oddsItem"]) {
+  flex-basis: auto !important;
+  max-width: none !important;
+  margin-bottom: 0 !important;
+  min-width: 0;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] button[class*="odd"]) {
+  min-height: 36px !important;
+  padding: 5px 10px !important;
+  justify-content: space-between !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] [class*="oddName"]) {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: #b0b0b5 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="totalsScopedRow"] [class*="totalsScopeCaption"]) {
+  margin-bottom: 2px;
+}
+
+/* Закреплённый 1X2 — flat, без второй рамки */
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-cyber-odds-sticky-head]) {
+  margin: 0 -2px;
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-cyber-odds-pinned]) {
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-cyber-odds-pinned] [class*="oddsPinnedBlock"]) {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-cyber-odds-pinned] [class*="oddsPinnedLabel"]) {
+  margin-bottom: 4px;
+  color: var(--kick-text-secondary, #a8a8a8);
+  font-size: 9px;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddGroupName"]) {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsRow"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"]) {
+  gap: 6px;
+  column-gap: 6px;
+  border-radius: 0;
+  overflow: visible;
+  min-height: 0;
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsGroup"] > [class*="oddsTotalsRow"]:nth-child(even)),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsGroup"] > [class*="oddsHandicapRow"]:nth-child(even)) {
+  background: transparent !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] > [class*="oddsItem"]:first-child),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] > [class*="oddsItem"]:last-child) {
+  background: transparent !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="totalsPivot"]) {
+  min-width: 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid rgb(255 255 255 / 0.14) !important;
+  background: #1a1a1d !important;
+  color: #d4d4d8 !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="handicapPivotLabelLeft"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="handicapPivotLabelRight"]) {
+  color: #b0b0b5 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsRow"] [class*="odd"]:hover),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] [class*="odd"]:hover) {
+  background: #2f2f33 !important;
+  border-color: rgb(83 252 24 / 0.55) !important;
+  box-shadow: 0 0 14px rgb(83 252 24 / 0.12);
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-chip-style="kick"] button[class*="odd"]) {
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  width: 100%;
+  min-height: 40px !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgb(255 255 255 / 0.14) !important;
+  background: #252528 !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-chip-style="kick"] [class*="oddName"]) {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-chip-style="kick"] [class*="oddCoef"]) {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  margin-left: auto !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-chip-style="kick"] [class*="oddCoef"][class*="oddCoefficient_up"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([data-chip-style="kick"] [class*="oddCoef"][class*="oddCoefficient_down"]) {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsRow"] > [class*="oddsItem"]:first-child [class*="odd"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTotalsRow"] > [class*="oddsItem"]:last-child [class*="odd"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] > [class*="oddsItem"]:first-child [class*="odd"]),
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsHandicapRow"] > [class*="oddsItem"]:last-child [class*="odd"]) {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="totalsScopeCaption"]) {
+  padding: 4px 2px 0;
+  font-size: 10px !important;
+  line-height: 1.2;
+  color: #888 !important;
+}
+
+.oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsTables"]:not([data-odds-layout="stack"])) {
+  grid-template-columns: 1fr !important;
+}
+
+.emptyState {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--kick-text-secondary, #a8a8a8);
+}
+
+.emptyTitle {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--kick-text, #fff);
+}
+
+.emptyHint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kick-text-muted, #666);
+}
+
+.closedTitle {
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--kick-text-secondary, #a8a8a8);
+}
+
+.prematchNote {
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--kick-green, #53fc18);
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.08));
+  border-bottom: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+@media screen and (max-width: 960px) {
+  .breadcrumbs {
+    display: none;
+  }
+
+  .mobileBack {
+    display: flex;
+  }
+
+  .matchShell {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .streamCol {
+    position: static;
+  }
+
+  /* Mobile: компактный score в overlay; детальный scoreboard только desktop */
+  .scoreStrip {
+    display: none;
+  }
+
+  .page {
+    padding-bottom: 100px;
+  }
+
+  /* Odds: full width под стримом, touch-friendly */
+  .oddsCol[data-cyber-odds-col] {
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection {
+    border-radius: var(--kick-radius-lg, 14px);
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([class*="TournamentOddsHeader"]) {
+    position: static;
+    padding-top: 0;
+    background: transparent;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-cyber-odds-sticky-head]) {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--kick-bg-card, #161617);
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsItem"] button[class*="odd"]) {
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddMenuList"] button) {
+    height: 36px !important;
+    padding: 0 14px !important;
+  }
+}
+
+/* Планшет landscape — stream + odds рядом */
+@media screen and (min-width: 768px) and (max-width: 960px) and (orientation: landscape) {
+  .matchShell {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .scoreStrip {
+    display: block;
+  }
+}
+
+/* Бок о бок: прокрутка рынков внутри колонки ставок */
+@media screen and (min-width: 961px),
+  screen and (min-width: 768px) and (max-width: 960px) and (orientation: landscape) {
+  .oddsCol[data-cyber-odds-col] {
+    max-height: calc(100dvh - var(--layout-sticky-top, 12px) - 28px);
+    overflow: hidden;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsHead {
+    flex-shrink: 0;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-cyber-odds-sticky-head]) {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-shrink: 0;
+    background: var(--kick-bg-card, #161617);
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"]) {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(83 252 24 / 0.35) transparent;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"]::-webkit-scrollbar) {
+    width: 4px;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"]::-webkit-scrollbar-thumb) {
+    border-radius: 999px;
+    background: rgb(83 252 24 / 0.35);
+  }
+}
+
+@media screen and (min-width: 961px) and (max-width: 1140px) {
+  .matchShell {
+    grid-template-columns: minmax(400px, 1fr) minmax(240px, 300px);
+    gap: 10px;
+  }
+}
+
+/* Мобила узкая — тоталы в одну колонку, 1X2 остаётся в ряд */
+@media screen and (max-width: 400px) {
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"]) {
+    grid-template-columns: 1fr;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([data-odds-layout="stack"] [class*="oddsTotalsGroup"] [class*="oddsBlock"]:not([class*="oddsTotalsRow"]):not([class*="oddsHandicapRow"])) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlockPX"]),
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddsBlock"]:has([class*="oddsItem_1x2"])) {
+    gap: 4px;
+  }
+
+  .oddsCol[data-cyber-odds-col] .oddsSection :global([class*="oddCoef"]) {
+    font-size: 12px !important;
+  }
+}
+
+@media screen and (min-width: 961px) {
+  .matchShell {
+    grid-template-columns: minmax(400px, 1.15fr) minmax(280px, 0.85fr);
+    align-items: stretch;
+  }
+}
+
+/* Сброс mobile-стилей WcMatchPage внутри кибер-матча — один чип как у 1x2 */
+.matchRoot :global(.wcMatchPage .oddsTotalsRow .odd),
+.matchRoot :global(.wcMatchPage .oddsHandicapRow .odd),
+.matchRoot :global(.wcMatchPage .oddsTotalsRow .oddTotals) {
+  justify-content: space-between !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.matchRoot :global(.wcMatchPage .oddCoef),
+.matchRoot :global(.wcMatchPage .oddsTotalsRow .oddCoef),
+.matchRoot :global(.wcMatchPage .oddsBlockPairOU .oddCoef) {
+  min-width: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.matchRoot :global(.wcMatchPage .oddsTotalsRow .oddName),
+.matchRoot :global(.wcMatchPage .oddsTotalsRow .pairSideLabel),
+.matchRoot :global(.wcMatchPage .oddsHandicapRow .oddName),
+.matchRoot :global(.wcMatchPage .oddsHandicapRow .pairSideLabel) {
+  width: auto !important;
+  max-width: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  color: #888 !important;
+}

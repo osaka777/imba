@@ -7,11 +7,12 @@ import { DialogContent } from "~/shared/ui/Dialog";
 import { Withdraw } from "../Profile/Withdraw";
 import { Dialog } from "~/shared/ui/Dialog";
 import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
-import { KztImage, RubImage, UahImage, UsdImage, TryImage, UzsImage } from "~/shared/assets/images";
+import { KztImage, RubImage, UahImage, TryImage, UzsImage } from "~/shared/assets/images";
+import { getCurrencyIconUrl } from "~/entities/user/lib/registrationCountries";
+import { ALL_SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
 
 const getCurrencyIcon = (currencyCode: string) => {
   switch (currencyCode) {
-    case 'USD': return UsdImage;
     case 'RUB': return RubImage;
     case 'KZT': return KztImage;
     case 'UAH': return UahImage;
@@ -22,7 +23,6 @@ const getCurrencyIcon = (currencyCode: string) => {
 };
 
 const currencySymbols: Record<string, string> = {
-  USD: '$',
   KZT: '₸',
   UAH: '₴',
   RUB: '₽',
@@ -89,20 +89,27 @@ export const Wallets = ({
       <section className={styles.section}>
         <ul className={styles.walletList}>
           {wallets
-            .filter(wallet => ['USD', 'KZT', 'UAH', 'RUB', 'TRY', 'UZS', 'USDT'].includes(wallet.currencyCode))
+            .filter(wallet => ALL_SITE_CURRENCY_CODES.includes(wallet.currencyCode as typeof ALL_SITE_CURRENCY_CODES[number]))
             .map((wallet) => (
               <li key={wallet.currencyCode} className={`${styles.walletItem} ${styles.lightBlackBlueGradient}`}>
                 <div className={styles.walletInfo}>
-                  {getCurrencyIcon(wallet.currencyCode) && (
-                    <div className={styles.currencyIcon}>
-                      <Image 
-                        src={getCurrencyIcon(wallet.currencyCode)!} 
-                        alt={wallet.currencyCode} 
-                        width={32} 
-                        height={32} 
+                  <div className={styles.currencyIcon}>
+                    {getCurrencyIcon(wallet.currencyCode) ? (
+                      <Image
+                        src={getCurrencyIcon(wallet.currencyCode)!}
+                        alt={wallet.currencyCode}
+                        width={32}
+                        height={32}
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <img
+                        src={getCurrencyIconUrl(wallet.currencyCode)}
+                        alt={wallet.currencyCode}
+                        width={32}
+                        height={32}
+                      />
+                    )}
+                  </div>
                   <div>
                     <div className={styles.walletName}>{wallet.currencyName}</div>
                     <div className={styles.walletValue}>

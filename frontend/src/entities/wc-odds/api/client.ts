@@ -1,4 +1,6 @@
 import { formatWcBetErrorMessage } from "~/entities/wc-odds/lib/wcBetErrorMessage";
+import { broadcastAuthHeaders } from "~/entities/wc-odds/lib/wcBroadcastAuth";
+import { getClientLocale } from "~/shared/i18n/get-client-locale";
 
 const API = () => {
   if (typeof window !== "undefined") {
@@ -6,6 +8,22 @@ const API = () => {
   }
   return process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
 };
+
+function localeHeaders(extra?: HeadersInit): HeadersInit {
+  const locale = getClientLocale();
+  return {
+    ...(extra ?? {}),
+    "Accept-Language": locale,
+    "X-Locale": locale,
+  };
+}
+
+async function wcFetch(path: string, init?: RequestInit) {
+  return fetch(`${API()}${path}`, {
+    ...init,
+    headers: localeHeaders(init?.headers),
+  });
+}
 
 export type WcTournament = {
   tournamentId: number | null;
@@ -72,6 +90,7 @@ export type WcParsedScore = {
   penaltyRisk?: boolean | null;
   /** Special phase: extra_time_1 | extra_time_2 | penalties | break */
   gamePhase?: 'extra_time_1' | 'extra_time_2' | 'penalties' | 'break' | null;
+  matchPhaseRaw?: string | null;
   details?: [string | number, string | number][];
   currentScore?: [string | number, string | number];
   liveScore?: {
@@ -160,19 +179,19 @@ export type WcBetsGrouped = {
 };
 
 export async function fetchWcStatus() {
-  const res = await fetch(`${API()}/api/feed/status`, { cache: 'no-store' });
+  const res = await wcFetch('/api/feed/status', { cache: 'no-store' });
   return res.json() as Promise<{ enabled: boolean }>;
 }
 
 export async function fetchHomepageWidgets(): Promise<{ items: HomepageWidgetItem[] }> {
-  const res = await fetch(`${API()}/api/feed/home/widgets`, { cache: "no-store" });
+  const res = await wcFetch('/api/feed/home/widgets', { cache: 'no-store' });
   if (!res.ok) return { items: [] };
   const data = (await res.json()) as { items?: HomepageWidgetItem[] };
   return { items: Array.isArray(data.items) ? data.items : [] };
 }
 
 export async function fetchWcDates() {
-  const res = await fetch(`${API()}/api/feed/dates`, { cache: 'no-store' });
+  const res = await wcFetch('/api/feed/dates', { cache: 'no-store' });
   if (!res.ok) return [] as string[];
   return res.json() as Promise<string[]>;
 }
@@ -181,7 +200,7 @@ export async function fetchWcSearchEvents(q: string, sport?: string) {
   const params = new URLSearchParams();
   params.set("q", q);
   if (sport) params.set("sport", sport);
-  const res = await fetch(`${API()}/api/feed/search?${params.toString()}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/search?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) return [] as WcEvent[];
   return res.json() as Promise<WcEvent[]>;
 }
@@ -204,34 +223,34 @@ export async function fetchWcLineEvents(
   if (tournament) params.set("tournament", tournament);
   if (league) params.set("league", league);
   const q = params.toString() ? `?${params.toString()}` : "";
-  const res = await fetch(`${API()}/api/feed/line/events${q}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/line/events${q}`, { cache: "no-store" });
   if (!res.ok) return [] as WcEvent[];
   return res.json() as Promise<WcEvent[]>;
 }
 
 export async function fetchWcLineTimeCounts(sport?: string) {
   const q = sport ? `?sport=${encodeURIComponent(sport)}` : "";
-  const res = await fetch(`${API()}/api/feed/line/time-counts${q}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/line/time-counts${q}`, { cache: "no-store" });
   if (!res.ok) return { all: 0 } as Record<string, number>;
   return res.json() as Promise<Record<string, number>>;
 }
 
 export async function fetchWcLineCounts() {
-  const res = await fetch(`${API()}/api/feed/line/counts`, { cache: 'no-store' });
+  const res = await wcFetch('/api/feed/line/counts', { cache: 'no-store' });
   if (!res.ok) return {} as Record<string, number>;
   return res.json() as Promise<Record<string, number>>;
 }
 
 export async function fetchWcLineTournaments(sport?: string) {
   const q = sport ? `?sport=${encodeURIComponent(sport)}` : "";
-  const res = await fetch(`${API()}/api/feed/line/tournaments${q}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/line/tournaments${q}`, { cache: "no-store" });
   if (!res.ok) return [] as WcTournament[];
   return res.json() as Promise<WcTournament[]>;
 }
 
 export async function fetchWcLiveTournaments(sport?: string) {
   const q = sport ? `?sport=${encodeURIComponent(sport)}` : "";
-  const res = await fetch(`${API()}/api/feed/live/tournaments${q}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/live/tournaments${q}`, { cache: "no-store" });
   if (!res.ok) return [] as WcTournament[];
   return res.json() as Promise<WcTournament[]>;
 }
@@ -252,43 +271,68 @@ export async function fetchWcLiveEvents(
   if (league) params.set("league", league);
   if (broadcastOnly) params.set("broadcast", "1");
   const q = params.toString() ? `?${params.toString()}` : "";
-  const res = await fetch(`${API()}/api/feed/live/events${q}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/live/events${q}`, { cache: "no-store" });
   if (!res.ok) return [] as WcEvent[];
   return res.json() as Promise<WcEvent[]>;
 }
 
 export async function fetchWcLiveCounts(broadcastOnly?: boolean) {
   const q = broadcastOnly ? "?broadcast=1" : "";
-  const res = await fetch(`${API()}/api/feed/live/counts${q}`, { cache: "no-store" });
+  const res = await wcFetch(`/api/feed/live/counts${q}`, { cache: "no-store" });
   if (!res.ok) return {} as Record<string, number>;
   return res.json() as Promise<Record<string, number>>;
 }
 
 export async function fetchWcEvents(date?: string) {
   const q = date ? `?date=${encodeURIComponent(date)}` : '';
-  const res = await fetch(`${API()}/api/feed/events${q}`, { cache: 'no-store' });
+  const res = await wcFetch(`/api/feed/events${q}`, { cache: 'no-store' });
   if (!res.ok) return [] as WcEvent[];
   return res.json() as Promise<WcEvent[]>;
 }
 
-export async function fetchWcEventDetail(ref: string) {
-  const res = await fetch(`${API()}/api/feed/events/${encodeURIComponent(ref)}`, {
+export async function fetchWcEventDetail(
+  ref: string,
+  options?: { sync?: boolean },
+): Promise<(WcEventDetail & { syncOk?: boolean }) | null> {
+  const q = options?.sync ? '?sync=1' : '';
+  const res = await wcFetch(`/api/feed/events/${encodeURIComponent(ref)}${q}`, {
     cache: 'no-store',
   });
   if (!res.ok) return null;
-  return res.json() as Promise<WcEventDetail>;
+  const data = await res.json() as WcEventDetail;
+  if (!options?.sync) return data;
+  const synced = res.headers.get('X-WC-Synced');
+  return {
+    ...data,
+    syncOk: synced !== '0',
+  };
 }
 
 export type WcEventBroadcast = {
   available: boolean;
   streamUrl: string | null;
   streamType: string | null;
+  provider?: string | null;
+  kickChannel?: string | null;
+  twitchChannel?: string | null;
+  streamFallback?: boolean;
+  requiresAuth?: boolean;
 };
 
 export async function fetchWcEventBroadcast(ref: string): Promise<WcEventBroadcast> {
   const res = await fetch(`${API()}/api/feed/events/${encodeURIComponent(ref)}/play`, {
-    cache: 'no-store',
+    cache: "no-store",
+    credentials: "include",
+    headers: broadcastAuthHeaders(),
   });
+  if (res.status === 401) {
+    return {
+      available: false,
+      streamUrl: null,
+      streamType: null,
+      requiresAuth: true,
+    };
+  }
   if (!res.ok) {
     return { available: false, streamUrl: null, streamType: null };
   }
@@ -358,7 +402,7 @@ export async function placeWcExpressBet(token: string, body: PlaceWcExpressBetBo
       typeof err?.message === 'string'
         ? err.message
         : nested?.message || payload?.message || '';
-    const message = formatWcBetErrorMessage(rawMessage || 'Не удалось принять ставку');
+    const message = formatWcBetErrorMessage(rawMessage || '', getClientLocale());
     const coefficientChanged =
       payload?.coefficientChanged === true
       || rawMessage === 'Odds have changed';
@@ -423,7 +467,7 @@ export async function placeWcBet(token: string, body: PlaceWcBetBody) {
       typeof err?.message === 'string'
         ? err.message
         : nested?.message || payload?.message || '';
-    const message = formatWcBetErrorMessage(rawMessage || 'Не удалось принять ставку');
+    const message = formatWcBetErrorMessage(rawMessage || '', getClientLocale());
     const coefficientChanged =
       payload?.coefficientChanged === true
       || rawMessage === 'Odds have changed';
@@ -537,6 +581,24 @@ export type WcCashoutQuote =
       mode: 'determinate_win' | 'determinate_void' | 'live_odds';
       expiresAt: string;
     };
+
+export async function fetchWcCashoutQuotes(
+  token: string,
+  betIds?: number[],
+): Promise<Record<number, WcCashoutQuote>> {
+  const params = betIds?.length
+    ? `?ids=${betIds.join(",")}`
+    : "";
+  const res = await fetch(`${API()}/api/feed/bets/cashout-quotes${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(err.message || "Не удалось получить котировки");
+  }
+  return res.json() as Promise<Record<number, WcCashoutQuote>>;
+}
 
 export async function fetchWcCashoutQuote(token: string, betId: number): Promise<WcCashoutQuote> {
   const res = await fetch(`${API()}/api/feed/bets/${betId}/cashout-quote`, {

@@ -3,6 +3,8 @@
 import { CSIcon, CloudIcon } from "~/shared/assets";
 import { visibleGamesList } from "~/entities/game";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
+import { translateSportLabel } from "~/shared/i18n/messages";
 
 import type { TopEventsSportFilter } from "~/entities/wc-odds/ui/topEventsUtils";
 
@@ -46,6 +48,7 @@ function FilterButton({
 
 export function WcTopEventsSportFilter({ sport, onChange }: WcTopEventsSportFilterProps) {
   const sports = visibleGamesList();
+  const { t, locale } = useLocale();
 
   return (
     <div className={styles.filter}>
@@ -53,7 +56,7 @@ export function WcTopEventsSportFilter({ sport, onChange }: WcTopEventsSportFilt
         <FilterButton
           active={sport === "all"}
           Icon={CloudIcon}
-          label="Все"
+          label={t("common.all")}
           onClick={() => onChange("all")}
         />
         {sports.map((item) => (
@@ -61,14 +64,14 @@ export function WcTopEventsSportFilter({ sport, onChange }: WcTopEventsSportFilt
             active={sport === item.name}
             Icon={item.Icon}
             key={item.name}
-            label={item.label}
+            label={translateSportLabel(locale, item.name, item.label)}
             onClick={() => onChange(item.name)}
           />
         ))}
         <FilterButton
           active={sport === "cybersport"}
           Icon={CSIcon}
-          label="Киберспорт"
+          label={t("nav.cybersport")}
           onClick={() => onChange("cybersport")}
           showNewBadge
         />

@@ -2,6 +2,8 @@
 
 import { createContext, useEffect, useState } from "react";
 
+import { DEFAULT_SITE_CURRENCY, normalizeSiteCurrency } from "~/shared/lib/siteCurrencies";
+
 type CurrencyContextType = {
   currency: string;
   setCurrency: (currency: string) => void;
@@ -10,16 +12,20 @@ type CurrencyContextType = {
 export const CurrencyContext = createContext<CurrencyContextType | null>(null);
 
 export const CurrencyProvider = ({ children }: { children: React.ReactNode }) => {
-  const [currency, setCurrencyState] = useState("KZT");
+  const [currency, setCurrencyState] = useState(DEFAULT_SITE_CURRENCY);
 
   useEffect(() => {
     const saved = localStorage.getItem("currency");
-    if (saved) setCurrencyState(JSON.parse(saved));
+    if (saved) {
+      const parsed = JSON.parse(saved) as string;
+      setCurrencyState(normalizeSiteCurrency(parsed));
+    }
   }, []);
 
   const setCurrency = (newCurrency: string) => {
-    localStorage.setItem("currency", JSON.stringify(newCurrency));
-    setCurrencyState(newCurrency);
+    const normalized = normalizeSiteCurrency(newCurrency);
+    localStorage.setItem("currency", JSON.stringify(normalized));
+    setCurrencyState(normalized);
     window.dispatchEvent(new Event("currencyChanged")); 
   };
 

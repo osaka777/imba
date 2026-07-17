@@ -73,7 +73,7 @@ describe('resolveOlimpbetProbabilityResult', () => {
         PARAMETER_SET_NUMBER: '3',
         PARAMETER_GAME_NUMBER: '8',
       }),
-    ).toBe('WIN');
+    ).toBe('VOID');
 
     expect(
       resolveOlimpbetProbabilityResult(detail, 1164, 1382, {

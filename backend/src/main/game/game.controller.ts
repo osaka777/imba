@@ -32,8 +32,14 @@ import {
 import { CreateGameDto } from './dto/available-games.dto';
 import { GameNotFoundException } from './exception/game-not-found.exception';
 import { GameService } from './game.service';
+
+function formatAlmatyDate(date: Date): string {
+  const shifted = new Date(date.getTime() + 5 * 60 * 60 * 1000);
+  return shifted.toISOString().slice(0, 10);
+}
 import { GameMarketsService } from './game-markets.service';
 import { EventMarketsService } from './event-markets.service';
+import { MatchResultsService } from './match-results.service';
 
 @ApiTags('Game')
 @Controller('')
@@ -44,6 +50,7 @@ export class GameController {
     private readonly gameService: GameService,
     private readonly gameMarketsService: GameMarketsService,
     private readonly eventMarketsService: EventMarketsService,
+    private readonly matchResultsService: MatchResultsService,
     private readonly prismaService: PrismaService,
     private readonly betApiService: BetApiService,
   ) {}
@@ -88,6 +95,18 @@ export class GameController {
       ...game,
       groupedMarkets: (game.meta as any)?.groupedMarkets || this.gameService.groupMarkets(Object.values(markets || {})),
     }));
+  }
+
+  @Get('/games/results')
+  @ApiOperation({ summary: 'Match results or live scores by sport and date (Almaty day)' })
+  async getMatchResults(
+    @Query('sport') sport = 'soccer',
+    @Query('date') date?: string,
+    @Query('mode') mode: 'finished' | 'live' = 'finished',
+  ) {
+    const resolvedDate = date?.trim() || formatAlmatyDate(new Date());
+    const resolvedMode = mode === 'live' ? 'live' : 'finished';
+    return this.matchResultsService.getResults(sport, resolvedDate, resolvedMode);
   }
 
   @Get('/games/prematch')

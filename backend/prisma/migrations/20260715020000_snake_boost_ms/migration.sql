@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "SnakeRound" ADD COLUMN IF NOT EXISTS "boostMs" INTEGER;

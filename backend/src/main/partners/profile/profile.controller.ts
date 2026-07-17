@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Delete,
+  Param,
   Patch,
   Post,
   Req,
@@ -18,14 +20,20 @@ import {
 import { PartnerGuard } from '~/main/partners/authentication/partner.guard';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { CreatePartnerPromoDto } from './dto/create-partner-promo.dto';
+import { CreatePartnerLandingDto } from './dto/create-partner-landing.dto';
+import { UpdatePartnerLandingDto } from './dto/update-partner-landing.dto';
 import { ProfileService } from './profile.service';
+import { PartnerLandingService } from './partner-landing.service';
 
 @Controller('affiliate-program/user')
 @ApiTags('Partners')
 @ApiBearerAuth()
 @ApiUnauthorizedResponse({ status: 401 })
 export class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly landingService: PartnerLandingService,
+  ) {}
 
   @Get('')
   @UseGuards(PartnerGuard)
@@ -196,5 +204,39 @@ export class ProfileController {
   @UseGuards(PartnerGuard)
   async accountStatus(@Req() req: { user: { id: number } }) {
     return await this.profileService.getPartnerAccountStatus(req.user.id);
+  }
+
+  @Get('landings')
+  @UseGuards(PartnerGuard)
+  async listLandings(@Req() req: { user: { id: number } }) {
+    return this.landingService.listForPartner(req.user.id);
+  }
+
+  @Post('landings')
+  @UseGuards(PartnerGuard)
+  async createLanding(
+    @Req() req: { user: { id: number } },
+    @Body() body: CreatePartnerLandingDto,
+  ) {
+    return this.landingService.createForPartner(req.user.id, body);
+  }
+
+  @Patch('landings/:id')
+  @UseGuards(PartnerGuard)
+  async updateLanding(
+    @Req() req: { user: { id: number } },
+    @Param('id') id: string,
+    @Body() body: UpdatePartnerLandingDto,
+  ) {
+    return this.landingService.updateForPartner(req.user.id, id, body);
+  }
+
+  @Delete('landings/:id')
+  @UseGuards(PartnerGuard)
+  async deleteLanding(
+    @Req() req: { user: { id: number } },
+    @Param('id') id: string,
+  ) {
+    return this.landingService.deleteForPartner(req.user.id, id);
   }
 }

@@ -7,6 +7,7 @@ export type PublicPaymentSettings = {
     KZT_KASPI: { enabled: boolean; minAmount: number };
     RUB: { enabled: boolean; minAmount: number };
     RUB_SBERBANK: { enabled: boolean; minAmount: number };
+    RUB_YANDEX_BANK: { enabled: boolean; minAmount: number };
     USDT: { enabled: boolean; minAmount: number };
   };
   paymentMethods: Record<string, { enabled: boolean; label: string }>;

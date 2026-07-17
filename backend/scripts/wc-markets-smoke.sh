@@ -11,25 +11,8 @@ NOTIFY_URL="${TELEGRAM_NOTIFY_SMOKE_URL:-http://imba-bot:8088/notify-smoke}"
 NOTIFY_SECRET="${NOTIFY_SECRET:-}"
 
 notify_failure() {
-  local exit_code="$1"
-  local details="$2"
-  if [[ -z "$NOTIFY_URL" ]]; then
-    return 0
-  fi
-  local payload
-  payload="$(python3 -c '
-import json, os, sys
-print(json.dumps({
-    "message": "WC markets smoke check failed",
-    "details": sys.stdin.read()[:3500],
-    "exitCode": int(os.environ.get("SMOKE_EXIT", "1")),
-}))
-' <<<"$details")"
-  local headers=(-H "Content-Type: application/json")
-  if [[ -n "$NOTIFY_SECRET" ]]; then
-    headers+=(-H "X-Notify-Secret: $NOTIFY_SECRET")
-  fi
-  curl -sf -X POST "$NOTIFY_URL" "${headers[@]}" -d "$payload" >/dev/null 2>&1 || true
+  # Telegram alerts disabled — smoke output stays in cron log only.
+  return 0
 }
 
 set +e

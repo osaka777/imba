@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CompleteTelegramLinkDto {
   @IsString()
@@ -22,6 +22,6 @@ export class ResetPasswordDto {
   token: string;
 
   @IsString()
-  @MinLength(8)
+  @IsNotEmpty()
   newPassword: string;
 }

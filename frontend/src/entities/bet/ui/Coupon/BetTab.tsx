@@ -12,6 +12,7 @@ import { TrashIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
 import { Button, Checkbox, Input } from "~/shared/ui";
 import { useAccountType } from "~/shared/model/useAccountType";
+import { useLocale } from "~/shared/model/useLocale";
 import type { User } from "~/shared/types";
 
 import { hapticBetAccepted } from "~/shared/lib/haptic";
@@ -63,6 +64,7 @@ export const BetTab: React.FC<BetTabProps> = ({
   const { currency } = useCurrency();
   const { isAuth } = useGamesBettingContext();
   const { selectedAccountType } = useAccountType();
+  const { t, format } = useLocale();
   const queryClient = useQueryClient();
   const [rates, setRates] = useLocalStorage<Rates>("rates", [], {
     initializeWithValue: false,
@@ -112,7 +114,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
         if (currentSum > maxTokens) {
           setSum(maxTokens.toString());
-          toast(`⚠️ Сумма скорректирована до ${maxTokens} жетона`, { position: "top-right" });
+          toast(t("coupon.stakeAdjusted", { n: maxTokens }), { position: "top-right" });
         }
       }
     }
@@ -195,7 +197,7 @@ export const BetTab: React.FC<BetTabProps> = ({
               });
 
               if (filtered.length !== prev.length) {
-                toast.info("Приём ставок на матч закрыт");
+                toast.info(t("coupon.bettingClosedMatch"));
                 return filtered;
               }
 
@@ -263,7 +265,7 @@ export const BetTab: React.FC<BetTabProps> = ({
           const nextRates = mappedRates.filter((rate): rate is Rates[number] => rate != null);
 
           if (removedUnavailable) {
-            toast.info("Недоступные исходы удалены из купона");
+            toast.info(t("coupon.unavailableOutcomesRemoved"));
           }
 
           if (updated || removedUnavailable) {
@@ -355,7 +357,7 @@ export const BetTab: React.FC<BetTabProps> = ({
               (rate) => isWcOddsRate(rate) || validEventIds.includes(rate.eventId),
             ),
           );
-          toast.info("Некоторые ставки были удалены, так как игры больше не существуют");
+          toast.info(t("coupon.staleGamesRemoved"));
         }
 
         if (outdatedRates.length > 0) {
@@ -385,7 +387,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
         if (numValue > maxTokens) {
           setSum(maxTokens.toString());
-          toast(`⚠️ Максимальная сумма для жетонного бонуса: ${maxTokens} жетон`, { position: "top-right" });
+          toast(t("coupon.maxTokenBonusStake", { n: maxTokens }), { position: "top-right" });
           return;
         }
       }
@@ -417,17 +419,17 @@ export const BetTab: React.FC<BetTabProps> = ({
 
     if (!rates.length) return;
     if (!isAllOpen) {
-      return toast("⚠️ Нельзя поставить на закрытое событие", {
+      return toast(t("coupon.closedEvent"), {
         position: "top-right",
       });
     }
     if (!isAuth) {
-      return toast("⚠️ Войдите или зарегистрируйтесь для создания ставки", {
+      return toast(t("coupon.loginOrRegister"), {
         position: "top-right",
       });
     }
     if (!agree) {
-      return toast("⚠️ Подтвердите соглашение для создания ставки", {
+      return toast(t("coupon.confirmAgreement"), {
         position: "top-right",
       });
     }
@@ -437,20 +439,20 @@ export const BetTab: React.FC<BetTabProps> = ({
     const betApiRates = rates.filter((r) => !isWcOddsRate(r));
 
     if (wcRates.length > 0 && betApiRates.length > 0) {
-      return toast("⚠️ Нельзя смешивать разные типы ставок в одном купоне", {
+      return toast(t("coupon.mixedBetTypes"), {
         position: "top-right",
       });
     }
 
     if (wcRates.length > 0) {
       if (selectedAccountType !== "main") {
-        return toast("⚠️ Эта ставка доступна только с основного счёта", {
+        return toast(t("coupon.mainAccountOnly"), {
           position: "top-right",
         });
       }
 
       if (wcRates.length > 1 && variant === "ordinar") {
-        return toast("⚠️ Для ординара выберите одно событие", {
+        return toast(t("coupon.ordinarOneEvent"), {
           position: "top-right",
         });
       }
@@ -462,29 +464,29 @@ export const BetTab: React.FC<BetTabProps> = ({
         const wcPick = getWcPickFromRate(wcRate);
 
         if (!wcRate.eventId) {
-          return toast("⚠️ Некорректная ставка", { position: "top-right" });
+          return toast(t("coupon.invalidBet"), { position: "top-right" });
         }
         if (normalizedMarketKey === "h2h" && !wcPick) {
-          return toast("⚠️ Некорректная ставка", { position: "top-right" });
+          return toast(t("coupon.invalidBet"), { position: "top-right" });
         }
         if (normalizedMarketKey !== "h2h" && !outcomeKey) {
-          return toast("⚠️ Некорректная ставка", { position: "top-right" });
+          return toast(t("coupon.invalidBet"), { position: "top-right" });
         }
       }
 
       setIsCreatingBet(true);
-      const toastId = toast.loading("Создание ставки...");
+      const toastId = toast.loading(t("coupon.creatingBet"));
 
       const token = getSessionClient();
       if (!token) {
         toast.dismiss(toastId);
-        toast.error("Войдите в аккаунт");
+        toast.error(t("coupon.loginRequired"));
         setIsCreatingBet(false);
         return;
       }
 
-      const finishWcBetSuccess = async () => {
-        await finishAcceptedBet(toastId);
+      const finishWcBetSuccess = () => {
+        finishAcceptedBet(toastId);
       };
 
       const buildWcLeg = (wcRate: typeof wcRates[number]) => ({
@@ -521,7 +523,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
           if (oddsChanged) {
             toast.dismiss(toastId);
-            toast.info("Коэффициенты обновлены", { toastId: "wc-bet-odds-updated" });
+            toast.info(t("coupon.oddsUpdated"), { toastId: "wc-bet-odds-updated" });
             if (agree) {
               try {
                 await placeWcExpressBet(token, {
@@ -534,12 +536,12 @@ export const BetTab: React.FC<BetTabProps> = ({
                 return;
               } catch (retryErr: unknown) {
                 const retry = retryErr as Error;
-                toast.error(retry instanceof Error ? retry.message : "Ошибка ставки");
+                toast.error(retry instanceof Error ? retry.message : t("coupon.betError"));
               }
             }
           } else {
             toast.update(toastId, {
-              render: err instanceof Error ? err.message : "Ошибка ставки",
+              render: err instanceof Error ? err.message : t("coupon.betError"),
               type: "error",
               isLoading: false,
               autoClose: 5000,
@@ -586,7 +588,7 @@ export const BetTab: React.FC<BetTabProps> = ({
           }
 
           toast.dismiss(toastId);
-          toast.info("Коэффициенты обновлены", { toastId: "wc-bet-odds-updated" });
+          toast.info(t("coupon.oddsUpdated"), { toastId: "wc-bet-odds-updated" });
 
           if (agree) {
             try {
@@ -600,7 +602,7 @@ export const BetTab: React.FC<BetTabProps> = ({
               if (isWcBetOutcomeClosedError(retryRaw)) {
                 setRates((prev) => prev.filter((rate) => rate !== wcRate));
               }
-              toast.error(retry instanceof Error ? retry.message : "Ошибка ставки");
+              toast.error(retry instanceof Error ? retry.message : t("coupon.betError"));
               setIsCreatingBet(false);
               return;
             }
@@ -615,7 +617,7 @@ export const BetTab: React.FC<BetTabProps> = ({
           setRates((prev) => prev.filter((rate) => rate !== wcRate));
         }
 
-        const displayMessage = err instanceof Error ? err.message : "Ошибка ставки";
+        const displayMessage = err instanceof Error ? err.message : t("coupon.betError");
         toast.update(toastId, {
           render: displayMessage,
           type: "error",
@@ -633,7 +635,7 @@ export const BetTab: React.FC<BetTabProps> = ({
         ({ currencyCode }) => currencyCode === currency,
       )?.amount;
       if (userBalance == null || Number(userBalance) < Number(sum)) {
-        toast("⚠️ На вашем основном счету недостаточно средств", { position: "top-right" });
+        toast(t("coupon.insufficientMain"), { position: "top-right" });
         refetch();
         return;
       }
@@ -643,13 +645,13 @@ export const BetTab: React.FC<BetTabProps> = ({
       );
 
       if (!bonusBalance) {
-        toast("⚠️ У вас нет активного бонусного счета", { position: "top-right" });
+        toast(t("coupon.noBonusAccount"), { position: "top-right" });
         refetch();
         return;
       }
 
       if (rates.length > 1) {
-        toast("⚠️ С бонусного счёта — только одиночные ставки на исход или тотал", { position: "top-right" });
+        toast(t("coupon.bonusSinglesOnly"), { position: "top-right" });
         return;
       }
 
@@ -657,7 +659,7 @@ export const BetTab: React.FC<BetTabProps> = ({
       const bonusMarketKey = normalizeWcMarketKey(getWcMarketKeyFromRate(selectedRate));
       const allowedBonusMarkets = new Set(['h2h', 'totals', 'totals_home', 'totals_away']);
       if (!allowedBonusMarkets.has(bonusMarketKey)) {
-        toast("⚠️ С бонуса можно ставить только на исход (П1/X/П2) или тотал", { position: "top-right" });
+        toast(t("coupon.bonusH2hOrTotal"), { position: "top-right" });
         return;
       }
 
@@ -668,23 +670,23 @@ export const BetTab: React.FC<BetTabProps> = ({
       const hasHighOdds = rates.some(rate => Number(rate.coef) > maxOdds);
 
       if (hasLowOdds) {
-        toast(`⚠️ Для бонусных ставок минимальный коэффициент: ${minOdds}`, { position: "top-right" });
+        toast(t("coupon.bonusMinOdds", { n: minOdds }), { position: "top-right" });
         return;
       }
 
       if (hasHighOdds) {
-        toast(`⚠️ Для бонусных ставок максимальный коэффициент: ${maxOdds}`, { position: "top-right" });
+        toast(t("coupon.bonusMaxOdds", { n: maxOdds }), { position: "top-right" });
         return;
       }
 
       if (bonusBalance.isTokenBased) {
         if (bonusBalance.remainingTokens < bonusBalance.tokensPerBet) {
-          toast("⚠️ Недостаточно жетонов для ставки", { position: "top-right" });
+          toast(t("coupon.insufficientTokens"), { position: "top-right" });
           refetch();
           return;
         }
         if (Number(sum) !== Number(bonusBalance.tokensPerBet)) {
-          toast(`⚠️ Для бонусного счета нужно ставить всю сумму: ${bonusBalance.tokensPerBet} жетонов`, { position: "top-right" });
+          toast(t("coupon.bonusMustStakeAll", { n: bonusBalance.tokensPerBet }), { position: "top-right" });
           return;
         }
       } else {
@@ -692,13 +694,13 @@ export const BetTab: React.FC<BetTabProps> = ({
         const maxStake = (Number(bonusBalance.amount) * maxBetPct) / 100;
         if (Number(sum) > maxStake) {
           toast(
-            `⚠️ Максимальная ставка с бонуса — ${maxBetPct}% от баланса (${maxStake.toFixed(2)})`,
+            t("coupon.bonusMaxPct", { pct: maxBetPct, amount: maxStake.toFixed(2) }),
             { position: "top-right" },
           );
           return;
         }
         if (Number(bonusBalance.amount) < Number(sum)) {
-          toast("⚠️ На вашем бонусном счету недостаточно средств", { position: "top-right" });
+          toast(t("coupon.insufficientBonus"), { position: "top-right" });
           refetch();
           return;
         }
@@ -706,11 +708,11 @@ export const BetTab: React.FC<BetTabProps> = ({
     }
 
     setIsCreatingBet(true);
-    const toastId = toast.loading("Создание ставки...");
+    const toastId = toast.loading(t("coupon.creatingBet"));
 
     try {
       if (rates.length === 0) {
-        toast("⚠️ Добавьте исход для ставки", { position: "top-right" });
+        toast(t("coupon.addOutcome"), { position: "top-right" });
         setIsCreatingBet(false);
         return;
       }
@@ -796,7 +798,7 @@ export const BetTab: React.FC<BetTabProps> = ({
         );
         
         if (hasInvalidBet || !createBetDto.stake) {
-          toast("⚠️ Некорректные данные ставки. Обновите страницу и попробуйте снова", { position: "top-right" });
+          toast(t("coupon.invalidBetData"), { position: "top-right" });
           setIsCreatingBet(false);
           return;
         }
@@ -879,7 +881,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
         // Валидация перед отправкой
         if (!createBetDto.eventId || !createBetDto.marketId || !createBetDto.outcomeId || !createBetDto.odds || !createBetDto.stake) {
-          toast("⚠️ Некорректные данные ставки. Обновите страницу и попробуйте снова", { position: "top-right" });
+          toast(t("coupon.invalidBetData"), { position: "top-right" });
           setIsCreatingBet(false);
           return;
         }
@@ -915,7 +917,7 @@ export const BetTab: React.FC<BetTabProps> = ({
       await finishAcceptedBet(toastId);
 
     } catch (e: any) {
-      let errorMessage = "Произошла ошибка при создании ставки";
+      let errorMessage = t("coupon.createBetFailed");
       let toastType: "error" | "warning" = "error";
 
       // Check if this is a structured error response from our backend
@@ -925,11 +927,11 @@ export const BetTab: React.FC<BetTabProps> = ({
         // Handle structured error responses with errorCode
         switch (errorData.errorCode) {
           case 1:
-            errorMessage = "Недостаточно средств на счету или превышен лимит ставки";
+            errorMessage = t("coupon.insufficientOrLimit");
             break;
           case 3:
             if (errorData.coefficientChanged && errorData.originalCoefficient && errorData.actualCoefficient) {
-              errorMessage = `Коэффициент изменился с ${errorData.originalCoefficient} на ${errorData.actualCoefficient}. Попробуйте снова с новым коэффициентом`;
+              errorMessage = t("coupon.oddsChangedFromTo", { from: errorData.originalCoefficient, to: errorData.actualCoefficient });
               toastType = "warning";
               // Update the coefficient in the UI
               if (rates.length === 1) {
@@ -939,24 +941,24 @@ export const BetTab: React.FC<BetTabProps> = ({
                 })));
               }
             } else {
-              errorMessage = "Коэффициент изменился. Обновите страницу и попробуйте снова";
+              errorMessage = t("coupon.oddsChangedRetry");
               setRates([]);
             }
             break;
           case 4:
-            errorMessage = "Ставка недоступна. Маркет закрыт";
+            errorMessage = t("coupon.marketClosed");
             setRates([]);
             break;
           case 5:
-            errorMessage = "Событие недоступно или завершено";
+            errorMessage = t("coupon.eventUnavailable");
             setRates([]);
             break;
           case 'error_repeat_bet_data':
-            errorMessage = errorData.message || "Нельзя создать экспресс-ставку из разных событий одного матча";
+            errorMessage = errorData.message || t("coupon.expressSameMatch");
             toastType = "warning";
             break;
           default:
-            errorMessage = errorData.details || `Ошибка ${errorData.errorCode}: Ставка отклонена`;
+            errorMessage = errorData.details || t("coupon.betRejected", { code: errorData.errorCode });
         }
       } else {
         // Fallback to legacy error handling
@@ -974,25 +976,25 @@ export const BetTab: React.FC<BetTabProps> = ({
             if (constraints.length) {
               msgs.push(...constraints);
             } else if (ve.property) {
-              msgs.push(`Поле ${ve.property} не прошло валидацию`);
+              msgs.push(t("coupon.fieldInvalid", { field: ve.property }));
             }
           }
           if (msgs.length) {
             errorMessage = msgs.join("; ");
           }
         } else if (e?.message?.includes("market with provided betName not found")) {
-          errorMessage = "Ставка устарела. Коэффициенты изменились, обновите страницу";
+          errorMessage = t("coupon.betStale");
           setRates([]);
         } else if (e?.message?.includes("insufficient funds")) {
-          errorMessage = "Недостаточно средств на счету";
+          errorMessage = t("coupon.insufficientFunds");
         } else if (e?.message?.includes("game not found")) {
-          errorMessage = "Игра не найдена или завершена";
+          errorMessage = t("coupon.gameNotFound");
           setRates([]);
         } else if (e?.message?.includes("market is closed")) {
-          errorMessage = "Ставка недоступна. Маркет закрыт";
+          errorMessage = t("coupon.marketClosed");
           setRates([]);
         } else if (e?.message?.includes("coefficient changed")) {
-          errorMessage = "Коэффициент изменился. Ставка обновлена автоматически";
+          errorMessage = t("coupon.oddsChangedAuto");
         } else if (e?.message) {
           errorMessage = e.message;
         }
@@ -1040,14 +1042,14 @@ export const BetTab: React.FC<BetTabProps> = ({
     return stake * coef;
   }, [sum, kf, totalCoefficient, rates.length]);
 
-  const finishAcceptedBet = async (toastId?: string | number) => {
+  const finishAcceptedBet = (toastId?: string | number) => {
     if (toastId != null) toast.dismiss(toastId);
     hapticBetAccepted();
-    toast.success("Ставка принята");
+    toast.success(t("coupon.betAccepted"));
     setRates([]);
     setSum("");
     onBetAccepted?.();
-    await Promise.all([
+    void Promise.all([
       refetch(),
       queryClient.invalidateQueries({ queryKey: ["bets", "pending"] }),
       queryClient.invalidateQueries({ queryKey: ["bets", "open"] }),
@@ -1065,10 +1067,10 @@ export const BetTab: React.FC<BetTabProps> = ({
         ({ currencyCode }) => currencyCode === currency,
       );
       if (bonusBalance?.isTokenBased) {
-        return "Возможный выигрыш (на основной счёт)";
+        return t("coupon.potentialWinMain");
       }
     }
-    return "Возможный выигрыш";
+    return t("coupon.potentialWin");
   };
 
   const renderPotentialWinValue = () => {
@@ -1077,7 +1079,7 @@ export const BetTab: React.FC<BetTabProps> = ({
         ({ currencyCode }) => currencyCode === currency,
       );
       if (bonusBalance?.isTokenBased) {
-        return `${totalSum.toFixed(0)} жетонов`;
+        return t("coupon.tokensAmount", { n: totalSum.toFixed(0) });
       }
     }
     return formatCouponAmount(potentialWin, currency);
@@ -1089,7 +1091,7 @@ export const BetTab: React.FC<BetTabProps> = ({
         ({ currencyCode }) => currencyCode === currency,
       );
       if (bonusBalance?.isTokenBased) {
-        return `${totalSum.toFixed(0)} жетонов`;
+        return t("coupon.tokensAmount", { n: totalSum.toFixed(0) });
       }
     }
     return formatCouponAmount(Number(sum) || 0, currency);
@@ -1113,7 +1115,7 @@ export const BetTab: React.FC<BetTabProps> = ({
             disabled={rates.length > 1}
             onChange={checkBoxOnChangeHandler}
             value="ordinar"
-          >{`Ординар`}</Checkbox>
+          >{t("coupon.ordinar")}</Checkbox>
           <Checkbox
             checked={variant === "express"}
             classNames={{
@@ -1125,7 +1127,7 @@ export const BetTab: React.FC<BetTabProps> = ({
             disabled={rates.length < 2}
             onChange={checkBoxOnChangeHandler}
             value="express"
-          >{`Экспресс`}</Checkbox>
+          >{t("coupon.express")}</Checkbox>
         </div>
 
         <BetList
@@ -1144,7 +1146,7 @@ export const BetTab: React.FC<BetTabProps> = ({
               text: styles.agreeText,
             }}
             onChange={agreeOnChangeHandler}
-          >{`Всегда соглашаться с изменением коэффициента`}</Checkbox>
+          >{t("coupon.acceptOddsChange")}</Checkbox>
           <Button className={styles.remove} onClick={trashButtonOnClickHandler}>
             <TrashIcon className={styles.removeIcon} />
           </Button>
@@ -1160,7 +1162,7 @@ export const BetTab: React.FC<BetTabProps> = ({
             })()}`}
           >
             <span className={styles.accountTypeLabel}>
-              🎁 Бонусный счет
+              {t("coupon.bonusAccount")}
               {(() => {
                 const bonusBalance = userData?.bonusBalances?.find(
                   ({ currencyCode }) => currencyCode === currency,
@@ -1168,7 +1170,7 @@ export const BetTab: React.FC<BetTabProps> = ({
                 if (bonusBalance?.isTokenBased) {
                   return (
                     <span className={styles.tokenInfo}>
-                      {" "}({bonusBalance.remainingTokens} жетонов осталось)
+                      {" "}({t("coupon.tokensLeft", { n: bonusBalance.remainingTokens })})
                     </span>
                   );
                 }
@@ -1185,9 +1187,9 @@ export const BetTab: React.FC<BetTabProps> = ({
           if (bonusBalance?.isTokenBased) {
             return (
               <div className={styles.tokenHint}>
-                <small>💡 Жетоны - это не деньги! Вы ставите жетоны, а выигрыш получаете в реальных деньгах на основной счет</small>
+                <small>{t("coupon.tokenHint")}</small>
                 <br />
-                <small>🎯 Можно ставить только {bonusBalance.tokensPerBet} жетон за раз</small>
+                <small>{t("coupon.tokenLimit", { n: bonusBalance.tokensPerBet })}</small>
               </div>
             );
           }
@@ -1199,13 +1201,13 @@ export const BetTab: React.FC<BetTabProps> = ({
         {rates.length === 0 && (
           <>
             <div className={styles.potentialWinHero}>
-              <p className={styles.potentialWinHeroLabel}>Возможный выигрыш</p>
+              <p className={styles.potentialWinHeroLabel}>{t("coupon.potentialWin")}</p>
               <p className={styles.potentialWinHeroValue}>
                 {formatCouponAmount(0, currency)}
               </p>
             </div>
             <div className={styles.totalSumRow}>
-              <p className={styles.totalSumLabel}>Сумма всех ставок:</p>
+              <p className={styles.totalSumLabel}>{t("coupon.totalStake")}</p>
               <p className={styles.totalSumValue}>
                 {formatCouponAmount(totalSum, currency)}
               </p>
@@ -1214,11 +1216,11 @@ export const BetTab: React.FC<BetTabProps> = ({
               <div className={styles.couponStakeField}>
                 <Input
                   disabled
-                  placeholder="Сумма ставки"
+                  placeholder={t("coupon.stakeAmount")}
                 />
               </div>
               <Button className={cn(styles.allInButton, styles.allIn)} disabled>
-                Поставить все
+                {t("coupon.betAll")}
               </Button>
             </div>
           </>
@@ -1231,7 +1233,7 @@ export const BetTab: React.FC<BetTabProps> = ({
               <p className={styles.potentialWinHeroValue}>{renderPotentialWinValue()}</p>
             </div>
             <div className={styles.totalSumRow}>
-              <p className={styles.totalSumLabel}>Сумма всех ставок:</p>
+              <p className={styles.totalSumLabel}>{t("coupon.totalStake")}</p>
               <p className={styles.totalSumValue}>{renderStakeSumValue()}</p>
             </div>
             <div className={styles.baseCouponBetForm}>
@@ -1255,10 +1257,10 @@ export const BetTab: React.FC<BetTabProps> = ({
                         ({ currencyCode }) => currencyCode === currency,
                       );
                       if (bonusBalance?.isTokenBased) {
-                        return `Макс: ${bonusBalance.tokensPerBet} жетон`;
+                        return t("coupon.maxTokens", { n: bonusBalance.tokensPerBet });
                       }
                     }
-                    return `Сумма ставки`;
+                    return t("coupon.stakeAmount");
                   })()}
                   type="number"
                   value={(() => {
@@ -1283,10 +1285,10 @@ export const BetTab: React.FC<BetTabProps> = ({
                     ({ currencyCode }) => currencyCode === currency,
                   );
                   if (bonusBalance?.isTokenBased) {
-                    return `Поставить ${bonusBalance.tokensPerBet} жетон`;
+                    return t("coupon.placeToken", { n: bonusBalance.tokensPerBet });
                   }
-                  return 'Поставить все';
-                })() || 'Поставить все'}
+                  return t("coupon.betAll");
+                })() || t("coupon.betAll")}
               </Button>
             </div>
             {selectedAccountType === "main" ? (
@@ -1301,7 +1303,7 @@ export const BetTab: React.FC<BetTabProps> = ({
                     onClick={() => setSum(String(chip))}
                     type="button"
                   >
-                    {chip.toLocaleString("ru-RU")}
+                    {format.number(chip)}
                   </Button>
                 ))}
               </div>
@@ -1315,19 +1317,19 @@ export const BetTab: React.FC<BetTabProps> = ({
           onClick={createBetOnClick}
           type="submit"
         >
-          {isCreatingBet ? "Создание..." :
-            rates.length === 0 ? "Поставить" :
+          {isCreatingBet ? t("coupon.creating") :
+            rates.length === 0 ? t("coupon.place") :
             selectedAccountType === 'bonus' ?
               (() => {
                 const bonusBalance = userData?.bonusBalances?.find(
                   ({ currencyCode }) => currencyCode === currency,
                 );
                 if (bonusBalance?.isTokenBased) {
-                  return `Поставить ${bonusBalance.tokensPerBet} жетон`;
+                  return t("coupon.placeToken", { n: bonusBalance.tokensPerBet });
                 }
-                return 'Поставить бонус';
+                return t("coupon.placeBonus");
               })() :
-              'Поставить'
+              t("coupon.place")
           }
         </Button>
         </div>

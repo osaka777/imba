@@ -3,7 +3,21 @@
   flex-direction: column;
   gap: 0;
   min-height: 0;
-  max-height: calc(85vh - 56px);
+  max-height: calc(72dvh - 56px);
+}
+
+@media screen and (max-width: 1080px) {
+  .BetTab {
+    flex: 1;
+    min-height: 0;
+    max-height: min(78dvh, calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px) - 120px));
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .BetTab {
+    max-height: none;
+  }
 }
 
 .betTabScroll {
@@ -14,6 +28,22 @@
   min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media screen and (max-width: 480px) {
+  .betTabScroll {
+    gap: 10px;
+    padding-right: 0;
+  }
+
+  .betListItems {
+    gap: 10px;
+  }
+
+  .couponBetCard {
+    flex-shrink: 0;
+  }
 }
 
 .betTabStickyFooter {
@@ -23,6 +53,7 @@
   gap: 8px;
   margin-top: 10px;
   padding-top: 12px;
+  padding-bottom: max(2px, env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgb(255 255 255 / 0.08);
   background: transparent;
 }
@@ -76,6 +107,7 @@
 
 .couponBetCloseBtn {
   justify-self: end;
+  flex-shrink: 0;
   width: 24px;
   height: 24px;
   min-width: 24px;
@@ -85,6 +117,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
 
 .couponBetCloseIcon {
@@ -318,11 +351,14 @@
 .agree {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
 .agreeCheckbox {
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .agreeText {
@@ -339,6 +375,8 @@
 
   height: 35px;
   width: 35px;
+  margin-left: auto;
+  flex-shrink: 0;
 
   display: flex;
   align-items: center;

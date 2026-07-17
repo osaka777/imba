@@ -70,7 +70,7 @@ export function WcExpressOpenBetCard({ bet, highlight }: WcExpressOpenBetCardPro
               coef={Number(leg.odds).toFixed(2)}
               key={leg.id}
               matchHref={href}
-              outcome={getWcBetLabel(leg)}
+              outcome={getWcBetLabel({ ...leg, sport: leg.event.sport })}
               scoreDetail={scoreDetail}
               sportLabel={sportMeta?.label ?? leg.event.sport}
               teamsLabel={`${leg.event.homeTeam} — ${leg.event.awayTeam}`}

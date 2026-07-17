@@ -121,6 +121,139 @@
 .videoShell {
   position: relative;
   width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.videoShell iframe.broadcastVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: unset;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.fallbackBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.68);
+  border: 1px solid rgb(83 252 24 / 0.42);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.fallbackDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #53fc18;
+  box-shadow: 0 0 7px rgb(83 252 24 / 0.9);
+  animation: wcFallbackPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes wcFallbackPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.soundToggle,
+.fullscreenToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 7px 11px;
+  border: 1px solid rgb(255 255 255 / 0.24);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.72);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.38);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.soundToggle:hover,
+.fullscreenToggle:hover {
+  transform: translateY(-1px);
+  background: rgb(0 0 0 / 0.86);
+  border-color: rgb(83 252 24 / 0.55);
+}
+
+.videoControls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.videoControlsMobile {
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  justify-content: flex-end;
+}
+
+.tapCatcher {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.videoShellMobile .videoControls {
+  animation: wcControlsFadeIn 0.18s ease;
+}
+
+@keyframes wcControlsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.soundToggle {
+  position: static;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
 }
 
 .tapPlayBtn {
@@ -164,6 +297,291 @@
   letter-spacing: 0.04em;
 }
 
+.authGate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: auto;
+  padding: 20px 12px;
+  overflow: visible;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.authGateBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgb(37 99 235 / 0.22), transparent 55%),
+    linear-gradient(180deg, rgb(15 23 42 / 0.92), rgb(0 0 0 / 0.96));
+}
+
+.authGateBackdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.35;
+}
+
+.authGateCard {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 320px);
+  padding: 0 4px;
+  text-align: center;
+}
+
+.authGatePreview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.authGatePreviewTeams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.authGatePreviewVs {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.45);
+}
+
+.authGateLeague {
+  margin: 0;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.52);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authGateMatch {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.authGateBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.authGateIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  flex-shrink: 0;
+}
+
+.authGateIcon {
+  width: 22px;
+  height: 22px;
+  fill: rgb(255 255 255 / 0.88);
+}
+
+.authGateTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #fff;
+}
+
+.authGateHint {
+  margin: 0;
+  max-width: 260px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.52);
+}
+
+.authGateActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.authGatePrimary,
+.authGateSecondary {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.authGatePrimary:hover,
+.authGateSecondary:hover {
+  transform: translateY(-1px);
+}
+
+.authGatePrimary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #fff;
+  box-shadow: 0 8px 20px rgb(37 99 235 / 0.35);
+}
+
+.authGateSecondary {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.14);
+}
+
+.broadcastCardSidebar .broadcastBody {
+  padding: 8px;
+}
+
+.authGateSidebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 148px;
+  padding: 12px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.authGateSidebarInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.authGateSidebarHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.authGateSidebarIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  flex-shrink: 0;
+}
+
+.authGateSidebarIcon {
+  width: 17px;
+  height: 17px;
+  fill: rgb(255 255 255 / 0.92);
+}
+
+.authGateSidebarTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.92);
+  text-align: center;
+  max-width: 220px;
+}
+
+.authGateSidebarActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.authGateSidebarPrimary,
+.authGateSidebarSecondary {
+  min-width: 0;
+  border-radius: 8px;
+  padding: 9px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.authGateSidebarPrimary:hover,
+.authGateSidebarSecondary:hover {
+  transform: translateY(-1px);
+}
+
+.authGateSidebarPrimary {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+}
+
+.authGateSidebarSecondary {
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
+
 .closeBtn {
   position: absolute;
   top: 8px;
@@ -193,47 +611,54 @@
   fill: #fff;
 }
 
-@media screen and (max-width: 1080px) {
-  .broadcastCard {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: calc(100dvh - 24px);
-    border-radius: 14px;
+@media screen and (min-width: 480px) {
+  .authGateActions {
+    flex-direction: row;
   }
 
-  .broadcastHeader {
+  .authGatePrimary,
+  .authGateSecondary {
+    flex: 1 1 0;
+  }
+}
+
+@media screen and (max-width: 1080px) {
+  .broadcastCardMobileModal {
+    width: 100%;
+    max-height: min(85dvh, 560px);
+    height: auto;
+    border-radius: 16px;
+  }
+
+  .broadcastCardMobileModal .broadcastHeader {
     flex-shrink: 0;
     padding: 14px 14px 12px;
   }
 
-  .broadcastBody {
-    flex: 1;
+  .broadcastCardMobileModal .broadcastBody {
+    flex: 0 1 auto;
     min-height: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    padding: 8px;
+    display: block;
   }
 
-  .broadcastVideo {
-    aspect-ratio: auto;
-    flex: 1;
-    min-height: 180px;
-    max-height: calc(100dvh - 120px);
-    border-radius: 0;
+  .broadcastCardMobileModal .broadcastVideo {
+    aspect-ratio: 16 / 9;
+    flex: none;
+    min-height: 0;
+    max-height: none;
+    border-radius: 8px;
   }
 
-  .videoShell {
-    flex: 1;
-    min-height: 180px;
-    display: flex;
-    flex-direction: column;
+  .broadcastCardMobileModal .videoShell {
+    flex: none;
+    min-height: 0;
+    display: block;
   }
 
-  .broadcastPlaceholder {
-    flex: 1;
-    min-height: 180px;
-    border-radius: 0;
+  .broadcastCardMobileModal .broadcastPlaceholder,
+  .broadcastCardMobileModal .authGate {
+    min-height: 200px;
+    border-radius: 8px;
   }
 }

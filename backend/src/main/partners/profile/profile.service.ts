@@ -541,7 +541,39 @@ export class ProfileService {
     }
 
     const baseUrl = this.config.get<string>('AFFILIATE_BASE_URL') || 'https://imba.bet/';
-    const referralLink = `${baseUrl}?tag=${affiliator.uid}`;
+    const url = new URL(baseUrl);
+    url.searchParams.set('tag', affiliator.uid);
+
+    const meta =
+      affiliator.meta && typeof affiliator.meta === 'object' && !Array.isArray(affiliator.meta)
+        ? (affiliator.meta as Record<string, unknown>)
+        : {};
+    const kickMeta =
+      meta.kick && typeof meta.kick === 'object' && !Array.isArray(meta.kick)
+        ? (meta.kick as Record<string, unknown>)
+        : {};
+
+    const channelSlug =
+      affiliator.kickChannelSlug?.trim()
+      || (typeof meta.kickChannel === 'string'
+        ? String(meta.kickChannel).trim().replace(/^@/, '')
+        : typeof kickMeta.channelSlug === 'string'
+          ? kickMeta.channelSlug.trim().replace(/^@/, '')
+          : '');
+
+    if (channelSlug) {
+      url.searchParams.set('sub1', 'kick');
+      url.searchParams.set('sub2', channelSlug.slice(0, 64));
+      const sessionId =
+        typeof kickMeta.activeSessionId === 'string'
+          ? kickMeta.activeSessionId.trim().slice(0, 64)
+          : '';
+      if (sessionId) {
+        url.searchParams.set('sub3', sessionId);
+      }
+    }
+
+    const referralLink = url.toString();
     const promoCodes = await this.partnersService.getPartnerPromoCodes(userId);
 
     return {

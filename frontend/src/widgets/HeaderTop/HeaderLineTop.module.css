@@ -106,6 +106,19 @@
   font-size: 14px;
 }
 
+.androidIcon {
+  color: #61da84;
+}
+
+.appDownloadBtn {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.appDownloadBtn:hover {
+  background: rgba(78, 93, 134, 0.5);
+}
+
 .miniIcon {
   fill: white;
   background: rgba(78, 93, 134, 0.3);

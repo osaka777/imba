@@ -14,9 +14,10 @@ type WcEvenOddPairProps = {
   even?: WcMarketOutcome;
   odd?: WcMarketOutcome;
   bettingOpen: boolean;
+  kickChip?: boolean;
 };
 
-export function WcEvenOddPair({ event, group, even, odd, bettingOpen }: WcEvenOddPairProps) {
+export function WcEvenOddPair({ event, group, even, odd, bettingOpen, kickChip = false }: WcEvenOddPairProps) {
   const { toggle, isSelected, isBettable } = useWcMarketPairToggle(event, group, bettingOpen);
 
   const evenValue = even ? even.price.toFixed(2) : "0";
@@ -28,12 +29,15 @@ export function WcEvenOddPair({ event, group, even, odd, bettingOpen }: WcEvenOd
 
   return (
     <MarketPairRow
+      chipStyle={kickChip ? "kick" : "classic"}
+      handicapLayout={!kickChip}
+      totalsLayout={kickChip}
       pivot=""
       showPivot={false}
       left={
         even
           ? {
-              label: "Чет",
+              label: "Ч",
               value: evenValue,
               selected: isSelected(even),
               bettable: isBettable(even),
@@ -46,7 +50,7 @@ export function WcEvenOddPair({ event, group, even, odd, bettingOpen }: WcEvenOd
       right={
         odd
           ? {
-              label: "Нечет",
+              label: "Н",
               value: oddValue,
               selected: isSelected(odd),
               bettable: isBettable(odd),

@@ -78,7 +78,7 @@ export const WithdrawalCard = () => {
             </div>
             <div className={styles.card_actions_wrapper}>
                 <div className={styles.card_actions}>
-                    <input type={"number"} min={0} placeholder={"Сумма"} value={amount} onChange={e => setAmount(Number(e.target.value))} className={styles.card_input} />
+                    <input type={"number"} min={0} placeholder={"Сумма"} value={amount} onChange={e => setAmount(Number(e.target.value))} className={`${styles.card_input} withdrawal_card_input`} />
                     <Select onValueChange={(e) => setCurrency(e)} value={currency}>
                         <SelectTrigger className="h-7 w-20">
                             <SelectValue suppressHydrationWarning>{currency}</SelectValue>

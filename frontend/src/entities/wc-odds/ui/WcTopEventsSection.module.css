@@ -1,20 +1,107 @@
 .section {
+  position: relative;
   width: 100%;
   min-width: 0;
   margin-bottom: 18px;
+  background: transparent;
+}
+
+.section::before {
+  display: none;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.heading {
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: #087ee8;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.eyebrow i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #21d07a;
+  box-shadow: 0 0 0 4px rgb(33 208 122 / 0.12);
+}
+
+.heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.heading p {
+  margin: 4px 0 0;
+  color: #98a2b3;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.legend {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 9px;
+  color: #98a2b3;
+  background: rgb(255 255 255 / 0.04);
+  font-size: 9.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.legend svg {
+  width: 12px;
+  height: 12px;
+  color: #087ee8;
+  stroke-width: 2.5;
 }
 
 .track {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  padding: 0;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.track > * {
+  width: 100%;
 }
 
 .skeleton {
-  width: 100%;
-  min-height: 148px;
-  border-radius: 16px;
-  background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 50%, #eef2f7 100%);
+  min-height: 120px;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f2f4f7 0%, #fafbfc 50%, #f2f4f7 100%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease infinite;
 }
@@ -34,12 +121,34 @@
     margin-bottom: 12px;
   }
 
+  .header {
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .heading h2 {
+    font-size: 17px;
+  }
+
+  .heading p {
+    max-width: 280px;
+    font-size: 10px;
+  }
+
+  .legend {
+    display: none;
+  }
+
   .track {
-    gap: 9px;
+    gap: 8px;
+  }
+
+  .track > * {
+    width: 100%;
   }
 
   .skeleton {
-    min-height: 218px;
-    border-radius: 13px;
+    min-height: 170px;
+    border-radius: 12px;
   }
 }

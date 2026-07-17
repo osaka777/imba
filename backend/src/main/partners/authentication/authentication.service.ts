@@ -9,6 +9,7 @@ import type { Request } from 'express';
 import { extractClientIp } from '~/common/utils/client-ip.util';
 
 import { PartnersService } from '~/main/partners/partners.service';
+import { TelegramNotifyService } from '~/main/telegram/telegram-notify.service';
 import { UserDto } from '~/main/user/dto/user.dto';
 import { UserService } from '~/main/user/user.service';
 import { PrismaService } from '~/prisma/prisma.service';
@@ -24,6 +25,7 @@ export class AuthenticationService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly partnersService: PartnersService,
+    private readonly telegram: TelegramNotifyService,
   ) {}
 
   authenticateUser(user: User): Promise<string> {
@@ -107,7 +109,7 @@ export class AuthenticationService {
         uid: crypto.randomUUID(), // Генерируем уникальный ID
         percent: dto.type === 'REVSHARE' ? 50 : 0, // Процент для REVSHARE (50% по умолчанию)
         affilatorsPercent: dto.type === 'REVSHARE' ? 10 : 0, // Процент для рефералов
-        status: AffilatorStatus.PENDING,
+        status: AffilatorStatus.ACTIVE,
       },
     });
 
@@ -135,6 +137,26 @@ export class AuthenticationService {
 
     return user;
     });
+
+    const meta = (dto.meta ?? {}) as Record<string, unknown>;
+    if (meta.source === 'kick.imba.bet') {
+      const kickChannel =
+        typeof meta.kickChannel === 'string' ? meta.kickChannel : null;
+      const telegramHandle =
+        typeof meta.telegram === 'string' ? meta.telegram.trim() : null;
+      void this.telegram.sendSupportMessage(
+        [
+          '🆕 Новая регистрация с kick.imba.bet',
+          `Email: ${dto.email}`,
+          kickChannel ? `Kick: @${kickChannel}` : null,
+          telegramHandle ? `Telegram: ${telegramHandle}` : null,
+          '',
+          'Напишите в течение 24ч — помочь подключить OAuth и провести тест-эфир.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      );
+    }
 
     return result;
     } catch (error) {

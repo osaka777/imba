@@ -210,12 +210,21 @@ public class MainActivity extends AppCompatActivity {
         }
         String token = latestFcmToken == null ? "" : latestFcmToken.replace("'", "\\'");
         boolean granted = hasNotificationPermission();
+        int statusBarHeight = getStatusBarHeightPx();
         String script = "(function(){"
-                + "window.__IMBA_APP__={native:true,notifications:" + granted + ",fcmToken:'" + token + "'};"
+                + "window.__IMBA_APP__={native:true,notifications:" + granted + ",fcmToken:'" + token + "',statusBarHeight:" + statusBarHeight + "};"
                 + "window.dispatchEvent(new CustomEvent('imba:app-ready',{detail:window.__IMBA_APP__}));"
                 + (token.isEmpty() ? "" : "window.dispatchEvent(new CustomEvent('imba:fcm-token',{detail:{token:'" + token + "'}}));")
                 + "})();";
         webView.evaluateJavascript(script, null);
+    }
+
+    private int getStatusBarHeightPx() {
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            return getResources().getDimensionPixelSize(resourceId);
+        }
+        return 28;
     }
 
     private void dispatchPermissionState() {

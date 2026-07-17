@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { changePassword as changePasswordApi } from "~/entities/user/api/changePassword";
 import { TelegramModal } from "./TelegramModal";
 import { useAccountType } from "~/shared/model/useAccountType";
+import { useLocale } from "~/shared/model/useLocale";
 
 interface ApiResponse<T> {
   data: T;
@@ -45,6 +46,7 @@ interface UserData {
 }
 
 export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
+  const { t } = useLocale();
   const [userData, setUserData] = useState<UserData | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,7 +78,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
         setIsLoading(false);
       } catch (error) {
         console.error("Ошибка при загрузке данных пользователя:", error);
-        toast.error("Не удалось загрузить данные пользователя");
+        toast.error(t("profile.settingsLoadFailed"));
         setIsLoading(false);
       }
     };
@@ -94,12 +96,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
 
   const changePasswordFunc = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("Пароли не совпадают");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      toast.error("Новый пароль должен содержать не менее 6 символов");
+      toast.error(t("profile.passwordMismatch"));
       return;
     }
 
@@ -110,39 +107,39 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
         oldPassword: currentPassword,
       });
 
-      toast.success("Пароль успешно изменен");
+      toast.success(t("profile.passwordChanged"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPasswordChange(false);
     } catch (error) {
       console.error("Ошибка при смене пароля:", error);
-      toast.error("Не удалось изменить пароль");
+      toast.error(t("profile.passwordChangeFailed"));
     } finally {
       setIsSaving(false);
     }
   };
 
   const saveSettings = () => {
-    toast.success("Настройки сохранены");
+    toast.success(t("profile.settingsSaved"));
   };
 
   if (isLoading) {
     return (
       <div className={styles.settingsModal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <div className={styles.headerTitle}>Настройки</div>
+          <div className={styles.headerTitle}>{t("profile.settingsTitle")}</div>
           <div className={styles.accountInfo}>
-            <div className={styles.accountNumber}>Счет #{userData?.id}</div>
+            <div className={styles.accountNumber}>{t("profile.accountId", { id: String(userData?.id ?? "") })}</div>
             <button className={styles.closeButton} onClick={onClose}>
               &#x2715;
             </button>
           </div>
         </div>
-        <div className={styles.headerSubtitle}>Личные данные</div>
+        <div className={styles.headerSubtitle}>{t("profile.settingsSubtitle")}</div>
         <div className={styles.modalContent}>
           <div className={styles.modalBody}>
-            <p>Загрузка настроек...</p>
+            <p>{t("profile.settingsLoading")}</p>
           </div>
         </div>
       </div>
@@ -175,7 +172,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
           </button>
         </div>
       </div>
-      <div className={styles.headerSubtitle}>Личные данные</div>
+      <div className={styles.headerSubtitle}>{t("profile.settingsSubtitle")}</div>
       <div className={styles.modalContent}>
         <form className={styles.form}>
           <div className={styles.formRow}>
@@ -194,7 +191,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
             <div className={styles.passwordRowLeft}>
               {!showPasswordChange ? (
                 <div className={styles.controlInputWrapperPassword}>
-                  <div className={styles.insideInputPlaceholder}>Пароль</div>
+                  <div className={styles.insideInputPlaceholder}>{t("profile.passwordLabel")}</div>
                   <input
                     className={`${styles.inputPassword} ${styles.readonly}`}
                     type="password"
@@ -205,7 +202,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
               ) : (
                 <div className={styles.controlInputWrapper}>
-                  <div className={styles.insideInputPlaceholder}>Изменение пароля</div>
+                  <div className={styles.insideInputPlaceholder}>{t("profile.passwordChangeTitle")}</div>
                 </div>
               )}
             </div>
@@ -215,7 +212,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                 type="button"
                 onClick={() => setShowPasswordChange(!showPasswordChange)}
               >
-                <span>Изменить</span>
+                <span>{t("profile.changePassword")}</span>
               </button>
             </div>
           </div>
@@ -227,7 +224,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                   <input
                     className={styles.input}
                     type="password"
-                    placeholder="Текущий пароль"
+                    placeholder={t("profile.currentPassword")}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                   />
@@ -238,7 +235,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                   <input
                     className={styles.input}
                     type="password"
-                    placeholder="Новый пароль"
+                    placeholder={t("profile.newPassword")}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
@@ -249,7 +246,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                   <input
                     className={styles.input}
                     type="password"
-                    placeholder="Подтвердите пароль"
+                    placeholder={t("profile.confirmPassword")}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
@@ -262,20 +259,20 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                   onClick={changePasswordFunc}
                   disabled={isSaving}
                 >
-                  {isSaving ? "Сохранение..." : "Сохранить пароль"}
+                  {isSaving ? t("profile.saving") : t("profile.savePassword")}
                 </button>
                 <button
                   className={styles.cancelButton}
                   type="button"
                   onClick={() => setShowPasswordChange(false)}
                 >
-                  Отмена
+                  {t("profile.cancel")}
                 </button>
               </div>
             </div>
           )}
 
-          <div className={styles.otherSettingsTitle}>Остальные настройки</div>
+          <div className={styles.otherSettingsTitle}>{t("profile.otherSettings")}</div>
 
           <div className={styles.otherSettings}>
             <div className={styles.otherSettingsRow}>
@@ -290,8 +287,10 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
                   </div>
                   <div className={styles.settingDescription}>
                     {userData?.telegramLinked
-                      ? `Привязан${userData.telegramUsername ? `: @${userData.telegramUsername}` : ""}. Уведомления и 2FA.`
-                      : "Привяжите бота для уведомлений и сброса пароля"}
+                      ? userData.telegramUsername
+                        ? t("profile.tgSettingLinkedUser", { username: userData.telegramUsername })
+                        : t("profile.tgSettingLinked")
+                      : t("profile.tgSettingUnlinked")}
                   </div>
                 </div>
                 <div className={styles.rightContent}>
@@ -304,10 +303,10 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
               <label className={styles.settingBlock}>
                 <div className={styles.leftContent}>
                   <div className={styles.settingHeader}>
-                    <div className={styles.settingTitle}>Баланс</div>
+                    <div className={styles.settingTitle}>{t("profile.balanceSettingTitle")}</div>
                   </div>
                   <div className={styles.settingDescription}>
-                    Отключите отображение баланса в хедере
+                    {t("profile.balanceSettingDesc")}
                   </div>
                 </div>
                 <div className={styles.rightContent}>
@@ -328,10 +327,10 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
               <div className={styles.settingBlock}>
                 <div className={styles.leftContent}>
                   <div className={styles.settingHeader}>
-                    <div className={styles.settingTitle}>Тип счета</div>
+                    <div className={styles.settingTitle}>{t("profile.accountTypeTitle")}</div>
                   </div>
                   <div className={styles.settingDescription} suppressHydrationWarning>
-                    {selectedAccountType === 'main' ? '💰 Основной счет' : '🎁 Бонусный счет'}
+                    {selectedAccountType === 'main' ? t("profile.mainAccountFull") : t("profile.bonusAccountFull")}
                   </div>
                 </div>
                 <div className={styles.rightContent}>
@@ -360,7 +359,7 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
               }}
               disabled={isSaving}
             >
-              {isSaving ? "Сохранение..." : "Сохранить"}
+              {isSaving ? t("profile.saving") : t("profile.save")}
             </button>
           </div>
         </form>

@@ -1,8 +1,12 @@
-import { buildHomepageWidgets } from './wc-home-widgets.util';
+import { buildHomepageWidgets, isWorldCupLeague } from './wc-home-widgets.util';
 import type { WcOddsEventDto } from './wc-odds.types';
 
 describe('buildHomepageWidgets', () => {
-  const base = (id: string, sport: string, priorityLevel = 0): WcOddsEventDto => ({
+  const base = (
+    id: string,
+    sport: string,
+    opts: Partial<WcOddsEventDto> = {},
+  ): WcOddsEventDto => ({
     id,
     slug: id,
     sport,
@@ -28,17 +32,37 @@ describe('buildHomepageWidgets', () => {
     odds1X: null,
     odds12: null,
     oddsX2: null,
-    priorityLevel,
-    isPriority: priorityLevel > 0,
+    priorityLevel: 0,
+    isPriority: false,
+    ...opts,
   });
 
-  it('picks 2 soccer, 1 tennis and optional cs2', () => {
+  it('detects world cup leagues', () => {
+    expect(isWorldCupLeague('Чемпионат мира 2026. США-Канада-Мексика. 1/8 финала')).toBe(true);
+    expect(isWorldCupLeague('Wimbledon')).toBe(false);
+  });
+
+  it('puts prematch line first, then mixed wc soccer and cs2', () => {
     const pool = [
-      base('s1', 'soccer', 2),
-      base('s2', 'soccer', 1),
-      base('s3', 'soccer'),
-      base('t1', 'tennis', 2),
-      base('t2', 'tennis'),
+      base('wc-live', 'soccer', {
+        leagueName: 'Чемпионат мира 2026',
+        phase: 'live',
+        priorityLevel: 2,
+        isPriority: true,
+      }),
+      base('wc-line', 'soccer', {
+        leagueName: 'Чемпионат мира 2026. 1/8 финала',
+        phase: 'prematch',
+        priorityLevel: 2,
+        isPriority: true,
+      }),
+      base('wc-next', 'soccer', {
+        leagueName: 'Чемпионат мира 2026. 1/4 финала',
+        phase: 'prematch',
+        priorityLevel: 1,
+        isPriority: true,
+      }),
+      base('tennis', 'tennis', { phase: 'prematch', priorityLevel: 2, isPriority: true }),
     ];
 
     const items = buildHomepageWidgets(pool, {
@@ -62,8 +86,12 @@ describe('buildHomepageWidgets', () => {
     });
 
     expect(items).toHaveLength(4);
-    expect(items.filter((item) => item.kind === 'wc' && item.event.sport === 'soccer')).toHaveLength(2);
-    expect(items.filter((item) => item.kind === 'wc' && item.event.sport === 'tennis')).toHaveLength(1);
+    expect(items[0]?.kind).toBe('wc');
+    if (items[0]?.kind === 'wc') {
+      expect(items[0].event.id).toBe('wc-line');
+      expect(items[0].event.phase).toBe('prematch');
+    }
+    expect(items.filter((item) => item.kind === 'wc' && item.event.sport === 'tennis')).toHaveLength(0);
     expect(items[3]?.kind).toBe('cyber');
   });
 });

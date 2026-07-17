@@ -4,10 +4,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 
 const CLOSED_KEY_PREFIX = "wc-broadcast-closed:";
 
@@ -15,6 +17,8 @@ export type WcBroadcastMeta = {
   homeTeam: string;
   awayTeam: string;
   leagueName?: string | null;
+  homeTeamIcon?: string | null;
+  awayTeamIcon?: string | null;
 };
 
 function wasBroadcastClosed(ref: string) {
@@ -39,6 +43,8 @@ type WcBroadcastContextValue = {
   visible: boolean;
   register: (eventRef: string, hasBroadcast: boolean, meta?: WcBroadcastMeta) => void;
   unregister: () => void;
+  /** Force-clear broadcast state when leaving a match page. */
+  release: () => void;
   open: () => void;
   /** Atomically bind event + show player (mobile-safe). */
   openBroadcast: (
@@ -52,22 +58,37 @@ type WcBroadcastContextValue = {
 const WcBroadcastContext = createContext<WcBroadcastContextValue | null>(null);
 
 export function WcBroadcastProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [eventRef, setEventRef] = useState<string | null>(null);
   const [meta, setMeta] = useState<WcBroadcastMeta | null>(null);
   const [hasBroadcast, setHasBroadcast] = useState(false);
   const [visible, setVisible] = useState(false);
   const [userClosed, setUserClosed] = useState(false);
+  const userOpenedRef = useRef(false);
+
+  useLayoutEffect(() => {
+    userOpenedRef.current = false;
+    setVisible(false);
+    setEventRef(null);
+    setMeta(null);
+    setHasBroadcast(false);
+    setUserClosed(false);
+  }, [pathname]);
 
   const register = useCallback(
     (ref: string, broadcast: boolean, nextMeta?: WcBroadcastMeta) => {
-      const closed = wasBroadcastClosed(ref);
+      const closed = wasBroadcastClosed(ref) && !userOpenedRef.current;
       setEventRef(ref);
       setMeta(nextMeta ?? null);
       setHasBroadcast(broadcast);
       setUserClosed(closed);
       setVisible((current) => {
-        if (!broadcast || closed) return false;
-        // Open only via explicit user action (scoreboard / list icon), not on page load.
+        if (!broadcast) {
+          if (!userOpenedRef.current) return false;
+          return current;
+        }
+        if (closed) return false;
+        if (userOpenedRef.current) return true;
         return current;
       });
     },
@@ -75,15 +96,26 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
   );
 
   const unregister = useCallback(() => {
+    if (userOpenedRef.current) return;
     setEventRef(null);
     setMeta(null);
     setHasBroadcast(false);
-    setVisible(false);
     setUserClosed(false);
+    setVisible(false);
+  }, []);
+
+  const release = useCallback(() => {
+    userOpenedRef.current = false;
+    setEventRef(null);
+    setMeta(null);
+    setHasBroadcast(false);
+    setUserClosed(false);
+    setVisible(false);
   }, []);
 
   const open = useCallback(() => {
     if (eventRef) clearBroadcastClosed(eventRef);
+    userOpenedRef.current = true;
     setUserClosed(false);
     setVisible(true);
   }, [eventRef]);
@@ -92,6 +124,7 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
     (ref: string, broadcast: boolean, nextMeta?: WcBroadcastMeta) => {
       if (!broadcast) return;
       clearBroadcastClosed(ref);
+      userOpenedRef.current = true;
       setEventRef(ref);
       setMeta(nextMeta ?? null);
       setHasBroadcast(true);
@@ -102,6 +135,7 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
   );
 
   const close = useCallback(() => {
+    userOpenedRef.current = false;
     if (eventRef) markBroadcastClosed(eventRef);
     setUserClosed(true);
     setVisible(false);
@@ -115,11 +149,12 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
       visible,
       register,
       unregister,
+      release,
       open,
       openBroadcast,
       close,
     }),
-    [eventRef, meta, hasBroadcast, visible, register, unregister, open, openBroadcast, close],
+    [eventRef, meta, hasBroadcast, visible, register, unregister, release, open, openBroadcast, close],
   );
 
   return (

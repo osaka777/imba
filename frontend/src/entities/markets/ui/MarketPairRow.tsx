@@ -9,6 +9,8 @@ import { Button } from "~/shared/ui";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
 
+export type MarketPairChipStyle = "classic" | "kick";
+
 export type MarketPairSide = {
   label: string;
   value: string;
@@ -26,6 +28,9 @@ type MarketPairRowProps = {
   showPivot?: boolean;
   totalsLayout?: boolean;
   handicapLayout?: boolean;
+  widePivot?: boolean;
+  /** Kick/cyber flat chip (label + coef inside one button). Default: classic sportsbook. */
+  chipStyle?: MarketPairChipStyle;
 };
 
 export function MarketPairButton({
@@ -33,19 +38,30 @@ export function MarketPairButton({
   labelAlign,
   totalsLayout = false,
   handicapLayout = false,
+  chipStyle = "classic",
 }: {
   side: MarketPairSide;
   labelAlign: "start" | "end";
   totalsLayout?: boolean;
   handicapLayout?: boolean;
+  chipStyle?: MarketPairChipStyle;
 }) {
   const showLock = !side.bettable;
-  const labelClass = cn(
-    styles.pairSideLabel,
-    labelAlign === "start" ? styles.pairSideLabel_start : styles.pairSideLabel_end,
+  const useKickChip = chipStyle === "kick" && (totalsLayout || handicapLayout);
+
+  const labelNode = useKickChip ? (
+    <p className={styles.oddName}>{side.label}</p>
+  ) : (
+    <p
+      className={cn(
+        styles.pairSideLabel,
+        labelAlign === "start" ? styles.pairSideLabel_start : styles.pairSideLabel_end,
+      )}
+    >
+      {side.label}
+    </p>
   );
 
-  const labelNode = <p className={labelClass}>{side.label}</p>;
   const coefNode = (
     <p className={cn(styles.oddCoef, side.flashCoef)}>
       {convertToFixed(side.value)}
@@ -61,15 +77,15 @@ export function MarketPairButton({
         className={cn(
           styles.odd,
           useTotalsStyle && styles.oddTotals,
-          handicapLayout && styles.oddHandicap,
+          handicapLayout && !useKickChip && styles.oddHandicap,
           side.selected && styles.odd_added,
         )}
         disabled={!side.bettable}
         onClick={() => side.bettable && side.onClick()}
       >
-        {handicapLayout ? (
+        {handicapLayout && !useKickChip ? (
           coefNode
-        ) : totalsLayout ? (
+        ) : useTotalsStyle ? (
           <>
             {labelNode}
             {coefNode}
@@ -97,6 +113,8 @@ export function MarketPairRow({
   showPivot = true,
   totalsLayout = false,
   handicapLayout = false,
+  widePivot = false,
+  chipStyle = "classic",
 }: MarketPairRowProps) {
   return (
     <div
@@ -107,30 +125,45 @@ export function MarketPairRow({
         totalsLayout && styles.oddsTotalsRow,
         handicapLayout && styles.oddsHandicapRow,
       )}
+      data-chip-style={chipStyle === "kick" ? "kick" : undefined}
     >
       {left ? (
         <MarketPairButton
+          chipStyle={chipStyle}
           handicapLayout={handicapLayout}
           labelAlign="start"
           side={left}
           totalsLayout={totalsLayout}
         />
       ) : null}
-      {showPivot && handicapLayout ? (
+      {handicapLayout && chipStyle !== "kick" && (showPivot || left?.label || right?.label) ? (
         <div className={styles.handicapPivotWrap}>
           {left?.label ? (
             <span className={styles.handicapPivotLabelLeft}>{left.label}</span>
           ) : null}
-          <div className={styles.totalsPivot}>{pivot}</div>
+          {showPivot ? (
+            <div
+              className={cn(styles.totalsPivot, widePivot && styles.totalsPivotWide)}
+              title={typeof pivot === "string" ? pivot : undefined}
+            >
+              {pivot}
+            </div>
+          ) : null}
           {right?.label ? (
             <span className={styles.handicapPivotLabelRight}>{right.label}</span>
           ) : null}
         </div>
       ) : showPivot ? (
-        <div className={styles.totalsPivot}>{pivot}</div>
+        <div
+          className={cn(styles.totalsPivot, widePivot && styles.totalsPivotWide)}
+          title={typeof pivot === "string" ? pivot : undefined}
+        >
+          {pivot}
+        </div>
       ) : null}
       {right ? (
         <MarketPairButton
+          chipStyle={chipStyle}
           handicapLayout={handicapLayout}
           labelAlign="end"
           side={right}

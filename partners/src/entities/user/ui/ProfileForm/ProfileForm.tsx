@@ -112,7 +112,7 @@ export const ProfileForm: FC<{onClose: () => void}> = ({onClose}) => {
     }, [formik]);
 
     return (
-        <div className={`${styles.AuthForm}`}>
+        <div className={`${styles.AuthForm} ${styles.AuthForm_modal}`} id="profile-modal-title">
             <h2 className={styles.heading}>{`Информация об аккаунте`}</h2>
             <form className={styles.form} onSubmit={formik.handleSubmit}>
                 <Input

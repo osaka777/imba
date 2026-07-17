@@ -124,10 +124,38 @@
   align-items: center;
 }
 
+.broadcastIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.broadcastIcon {
+  width: 14px;
+  height: 14px;
+  fill: var(--blue-60);
+}
+
 .team {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.teamWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.teamIcon {
+  display: inline-flex;
+  flex-shrink: 0;
 }
 .teamName {
   font-size: 12px;
@@ -246,6 +274,19 @@
   color: #2563eb;
   border: 1px solid rgb(37 99 235 / 0.2);
 }
+
+.prematchBadge {
+  margin: 0 4px;
+  border-radius: 20px;
+  padding: 3px 8px;
+  background: rgb(255 255 255 / 6%);
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--gray-60);
+  border: 1px solid var(--gray-10-transparent);
+  white-space: nowrap;
+}
+
 .cells {
   height: 100%;
 

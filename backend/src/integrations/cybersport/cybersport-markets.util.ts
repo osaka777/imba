@@ -11,12 +11,18 @@ import {
   type OlimpbetMarketCatalog,
 } from '../olimpbet-wc/olimpbet-wc-catalog';
 import {
+  isOlimpbetBroadcastAvailable,
   resolveOlimpbetCompetitorIds,
 } from '../olimpbet-wc/olimpbet-competitor.util';
 import {
   fetchOlimpbetCompetitorLogos,
   resolveOlimpbetCompetitorLogo,
 } from '../olimpbet-wc/olimpbet-logos.util';
+import { buildOlimpbetSportKey } from '../olimpbet-wc/olimpbet-sport.util';
+import { hasKickEsportsBroadcast } from '../wc-odds/kick-broadcast.util';
+import {
+  resolveOlimpbetPriorityLevel,
+} from '../olimpbet-wc/olimpbet-priority.util';
 
 import { cyberGameRefFromOlimpbetId, maskCybersportLabel, maskCybersportTeamName } from './cybersport-mask.util';
 import { cyberSlugFromOlimpbetSportId } from './cybersport-sport.util';
@@ -40,7 +46,7 @@ function outcomeToWinKey(code: string): string | null {
 
 function buildWinnerMarkets(
   catalog: OlimpbetMarketCatalog,
-  detail: OlimpbetCyberEventDetail,
+  detail: Pick<OlimpbetCyberEventDetail, 'probabilities'>,
 ): MarketDto[] {
   const winners: MarketDto[] = [];
 
@@ -85,10 +91,29 @@ function inlineStat(
   return row?.value?.trim() || null;
 }
 
+function parseMapRoundDetails(raw: string | null): [number, number][] | undefined {
+  if (!raw?.trim()) return undefined;
+
+  const details: [number, number][] = [];
+  for (const part of raw.split(',')) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const [homeRaw, awayRaw] = trimmed.split(':');
+    const home = Number(homeRaw?.trim());
+    const away = Number(awayRaw?.trim());
+    if (Number.isFinite(home) && Number.isFinite(away)) {
+      details.push([home, away]);
+    }
+  }
+
+  return details.length > 0 ? details : undefined;
+}
+
 function buildParsedScore(detail: OlimpbetCyberEventDetail): ParsedScoreDto {
   const scoreRaw = inlineStat(detail, 'score');
   const periodsRaw = inlineStat(detail, 'scores_by_periods');
   const phase = inlineStat(detail, 'match_phase');
+  const mapDetails = parseMapRoundDetails(periodsRaw);
 
   const parsed: ParsedScoreDto = {
     currentScore: scoreRaw ? scoreRaw.split(':').map(Number) : [0, 0],
@@ -103,7 +128,15 @@ function buildParsedScore(detail: OlimpbetCyberEventDetail): ParsedScoreDto {
     parsed.currentScore = [Number(home) || 0, Number(away) || 0];
   }
 
-  if (phase) parsed.period = Number(phase) || undefined;
+  if (mapDetails) {
+    parsed.details = mapDetails;
+    parsed.period = mapDetails.length;
+  } else if (phase) {
+    const phaseNum = Number(phase);
+    if (Number.isFinite(phaseNum) && phaseNum > 0) {
+      parsed.period = phaseNum > 9 ? 1 : phaseNum;
+    }
+  }
 
   return parsed;
 }
@@ -123,13 +156,14 @@ function resolveTeams(detail: OlimpbetCyberEventDetail): { team1: string; team2:
 export async function mapOlimpbetCyberEventToGameDto(
   detail: OlimpbetCyberEventDetail,
   fallbackSportId?: number,
+  catalog?: OlimpbetMarketCatalog,
 ): Promise<GameDtoWithGroupedMarkets> {
-  const catalog = await loadOlimpbetMarketCatalog();
+  const resolvedCatalog = catalog ?? await loadOlimpbetMarketCatalog();
   const sportId = detail.tournament?.sportId ?? fallbackSportId ?? 1040;
   const sport = cyberSlugFromOlimpbetSportId(sportId);
   const { team1, team2 } = resolveTeams(detail);
   const leagueName = maskCybersportLabel(detail.tournament?.name?.trim() || 'Киберспорт');
-  const winnerMarkets = buildWinnerMarkets(catalog, detail);
+  const winnerMarkets = buildWinnerMarkets(resolvedCatalog, detail);
   const scoreRaw = inlineStat(detail, 'score') ?? '';
 
   const { homeId, awayId } = resolveOlimpbetCompetitorIds({
@@ -141,6 +175,17 @@ export async function mapOlimpbetCyberEventToGameDto(
   );
   const team1Icon = resolveOlimpbetCompetitorLogo(homeId, logoMap);
   const team2Icon = resolveOlimpbetCompetitorLogo(awayId, logoMap);
+
+  const olimpbetBroadcast = isOlimpbetBroadcastAvailable(detail);
+  const hasBroadcast = hasKickEsportsBroadcast({
+    sportKey: buildOlimpbetSportKey(sportId),
+    leagueName,
+    tournamentId: detail.tournament?.id ?? null,
+    homeTeam: team1,
+    awayTeam: team2,
+    olimpbetBroadcastAvailable: olimpbetBroadcast,
+    isLive: Boolean(detail.live),
+  });
 
   const now = new Date();
   const kickoff = Date.parse(detail.eventDate);
@@ -162,14 +207,16 @@ export async function mapOlimpbetCyberEventToGameDto(
     score: scoreRaw,
     parsedScore: buildParsedScore(detail),
     status,
-    priority: detail.live ? 1 : 0,
+    priority: resolveOlimpbetPriorityLevel(detail.tags, detail.tournament?.tags),
     createdAt: now,
     updatedAt: now,
     groupedMarkets: winnerMarkets.length > 0 ? { WIN: winnerMarkets } : {},
     meta: {
       source: 'cybersport',
       olimpbetEventId: detail.id,
+      tournamentId: detail.tournament?.id ?? null,
       commenceTime: detail.eventDate,
+      hasBroadcast,
     },
   });
 }
@@ -192,4 +239,29 @@ export function cyberGameHasWinnerOdds(dto: GameDtoWithGroupedMarkets): boolean 
     const cf = Number(market.cf);
     return market.market?.startsWith('WIN__P') && Number.isFinite(cf) && cf > 1;
   });
+}
+
+export function winnerMarketsFromSnapshot(
+  catalog: OlimpbetMarketCatalog,
+  snapshot: Pick<OlimpbetCyberEventDetail, 'probabilities'>,
+): MarketDto[] {
+  return buildWinnerMarkets(catalog, snapshot);
+}
+
+export function listSnapshotNeedsDetailFetch(
+  item: Pick<
+    OlimpbetCyberEventDetail,
+    'competitors' | 'probabilities' | 'statistics'
+  >,
+  mode: 'live' | 'line',
+  catalog: OlimpbetMarketCatalog,
+): boolean {
+  if (!item.competitors?.length) return true;
+
+  const winnerCount = buildWinnerMarkets(catalog, item).length;
+  if (winnerCount >= 2) return false;
+  if (mode === 'line') return true;
+
+  const hasScore = Boolean(inlineStat(item as OlimpbetCyberEventDetail, 'score'));
+  return !hasScore && winnerCount === 0;
 }

@@ -93,7 +93,7 @@ export class WcOddsExpressService {
     const minLegs = Number(this.config.get<string>('WC_EXPRESS_MIN_LEGS', '2'));
     const maxLegs = Number(this.config.get<string>('WC_EXPRESS_MAX_LEGS', '5'));
     const minStake = Number(this.config.get<string>('WC_ODDS_MIN_STAKE', '100'));
-    const maxStake = Number(this.config.get<string>('WC_ODDS_MAX_STAKE', '500000'));
+    const maxStake = Number(this.config.get<string>('WC_ODDS_MAX_STAKE', '1000000'));
 
     if (params.legs.length < minLegs || params.legs.length > maxLegs) {
       throw new BadRequestException(`Express must have ${minLegs}–${maxLegs} events`);
@@ -108,12 +108,9 @@ export class WcOddsExpressService {
       throw new BadRequestException(`Stake must be between ${minStake} and ${maxStake}`);
     }
 
-    const resolved: ResolvedLeg[] = [];
-    for (const leg of params.legs) {
-      resolved.push(
-        await this.resolveLeg(leg, params.acceptOddsChange === true),
-      );
-    }
+    const resolved = await Promise.all(
+      params.legs.map((leg) => this.resolveLeg(leg, params.acceptOddsChange === true)),
+    );
 
     let combinedOdds = 1;
     for (const leg of resolved) {
@@ -200,26 +197,33 @@ export class WcOddsExpressService {
     if (!event) throw new NotFoundException('Event not found');
 
     const publicRef = event.slug?.trim() || toPublicEventId(event.id);
-    const refreshed = await this.realtime.refreshEvent(publicRef, true, {
-      fullMarkets: true,
-      persistOdds: true,
-    });
-    if (refreshed) {
-      event = await this.betService.findEventByRef(params.eventId);
-      if (!event) throw new NotFoundException('Event not found');
+    const rawMarketKey = params.marketKey || 'h2h';
+
+    const placementSnapshot = await this.realtime.resolveBetPlacementSnapshot(
+      publicRef,
+      event,
+      {
+        marketKey: rawMarketKey,
+        outcomeKey: params.outcomeKey ?? null,
+        line: params.line ?? null,
+        groupKey: params.groupKey ?? null,
+      },
+    );
+    if (!placementSnapshot) {
+      throw new NotFoundException('Event not found');
     }
 
-    if (refreshed?.bettingOpen === false || !isWcBettingOpen(event.completed, event.commenceTime)) {
+    const { groupedMarkets, bettingOpen, main: placementDetail } = placementSnapshot;
+
+    if (bettingOpen === false || !isWcBettingOpen(event.completed, event.commenceTime)) {
       throw new BadRequestException('Betting closed for this match');
     }
 
-    const rawMarketKey = params.marketKey || 'h2h';
     if (!isWcBetPlacementAllowed(rawMarketKey, params.outcomeKey)) {
       throw new BadRequestException('This market is not available for betting');
     }
 
     const marketKey = normalizeWcMarketKey(rawMarketKey);
-    const groupedMarkets = (refreshed?.groupedMarkets ?? event.marketsJson ?? {}) as WcGroupedMarkets;
     let pick: WcOddsPick | null = params.pick ?? null;
     let outcomeKey = params.outcomeKey ?? null;
     let line = params.line ?? null;
@@ -298,35 +302,32 @@ export class WcOddsExpressService {
     });
 
     const olimpbetId = olimpbetIdFromWcEventId(event.id);
-    if (olimpbetId) {
-      const placementDetail = await this.olimpbet.fetchEventDetail(olimpbetId);
-      if (placementDetail) {
-        const scope = resolveBetPlacementScope({
-          marketKey: rawMarketKey,
-          outcomeKey,
-          outcomeName,
-          groupKey,
-          totalsGroupLabel,
-        });
-        if (scope && isMarketScopeFinalized(placementDetail, scope)) {
-          throw new BadRequestException('Betting closed for this period');
-        }
-        const score = this.olimpbet.extractScore(placementDetail);
-        const matchState = advanceMatchState(
-          event.matchStateJson,
-          placementDetail,
-          olimpbetSportKeyToSlug(event.sportKey),
-        );
-        placementContext = buildBetPlacementContext({
-          marketKey: rawMarketKey,
-          outcomeKey,
-          homeScore: score.homeScore ?? homeScore,
-          awayScore: score.awayScore ?? awayScore,
-          detail: placementDetail,
-          matchState,
-          totalsGroupLabel,
-        });
+    if (placementDetail && olimpbetId) {
+      const scope = resolveBetPlacementScope({
+        marketKey: rawMarketKey,
+        outcomeKey,
+        outcomeName,
+        groupKey,
+        totalsGroupLabel,
+      });
+      if (scope && isMarketScopeFinalized(placementDetail, scope)) {
+        throw new BadRequestException('Betting closed for this period');
       }
+      const score = this.olimpbet.extractScore(placementDetail);
+      const matchState = advanceMatchState(
+        event.matchStateJson,
+        placementDetail,
+        olimpbetSportKeyToSlug(event.sportKey),
+      );
+      placementContext = buildBetPlacementContext({
+        marketKey: rawMarketKey,
+        outcomeKey,
+        homeScore: score.homeScore ?? homeScore,
+        awayScore: score.awayScore ?? awayScore,
+        detail: placementDetail,
+        matchState,
+        totalsGroupLabel,
+      });
     }
 
     if (isTotalsMarketKey(marketKey) && outcomeKey) {

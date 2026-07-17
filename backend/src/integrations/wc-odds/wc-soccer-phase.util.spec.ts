@@ -18,4 +18,22 @@ describe('refineSoccerGamePhase', () => {
       refineSoccerGamePhase('50', 121 * 60, 'penalties'),
     ).toBe('penalties');
   });
+
+  it('clears stale halftime when 2nd half is playing', () => {
+    expect(
+      refineSoccerGamePhase('31', 52 * 60, 'break'),
+    ).toBeNull();
+  });
+
+  it('clears break when match_phase is second half', () => {
+    expect(
+      refineSoccerGamePhase('7', 55 * 60, 'break'),
+    ).toBeNull();
+  });
+
+  it('keeps real halftime at 45 min', () => {
+    expect(
+      refineSoccerGamePhase('31', 45 * 60, 'break'),
+    ).toBe('break');
+  });
 });

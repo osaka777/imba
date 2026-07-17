@@ -4,23 +4,11 @@ import { compareOlimpbetPriority } from '../olimpbet-wc/olimpbet-priority.util';
 
 import type { WcOddsEventDto } from './wc-odds.types';
 
-export const HOMEPAGE_WIDGETS_TOTAL = 4;
+export const HOMEPAGE_WIDGETS_TOTAL = 8;
 
 export type HomepageWidgetItem =
   | { kind: 'wc'; event: WcOddsEventDto }
   | { kind: 'cyber'; event: GameDtoWithGroupedMarkets; isLive: boolean };
-
-export type HomepageWidgetSlots = {
-  soccer: number;
-  tennis: number;
-  cs2: number;
-};
-
-export const DEFAULT_HOMEPAGE_WIDGET_SLOTS: HomepageWidgetSlots = {
-  soccer: 2,
-  tennis: 1,
-  cs2: 1,
-};
 
 function wcPriorityLevel(event: Pick<WcOddsEventDto, 'priorityLevel' | 'isPriority'>): number {
   if (event.priorityLevel != null) return event.priorityLevel;
@@ -48,55 +36,104 @@ function mergeWcPool(...lists: WcOddsEventDto[][]): WcOddsEventDto[] {
   return [...byId.values()];
 }
 
-function pickWcBySport(pool: WcOddsEventDto[], sport: string, limit: number): WcOddsEventDto[] {
-  const filtered = pool.filter((event) => event.sport === sport);
-  const priority = filtered.filter(isWcPriority).sort(compareWcEvents);
-  if (priority.length >= limit) return priority.slice(0, limit);
+export function isWorldCupLeague(leagueName: string): boolean {
+  return /чемпионат мира|world cup/i.test(leagueName);
+}
 
-  const rest = filtered
-    .filter((event) => !isWcPriority(event))
-    .sort((a, b) => {
-      if (a.phase === 'live' && b.phase !== 'live') return -1;
-      if (b.phase === 'live' && a.phase !== 'live') return 1;
-      return compareWcEvents(a, b);
-    });
+function hasBettableOdds(event: WcOddsEventDto): boolean {
+  return event.oddsHome != null || event.oddsAway != null;
+}
 
-  const merged: WcOddsEventDto[] = [];
-  const seen = new Set<string>();
-  for (const event of [...priority, ...rest]) {
-    if (seen.has(event.id)) continue;
-    seen.add(event.id);
-    merged.push(event);
-    if (merged.length >= limit) break;
+function isPrematchLine(event: WcOddsEventDto): boolean {
+  return event.phase === 'prematch' && !event.completed;
+}
+
+function isLiveEvent(event: WcOddsEventDto): boolean {
+  return event.phase === 'live' && !event.completed;
+}
+
+function sortCandidates(events: WcOddsEventDto[]): WcOddsEventDto[] {
+  return [...events].sort(compareWcEvents);
+}
+
+function pickFirst(
+  pool: WcOddsEventDto[],
+  used: Set<string>,
+  predicate: (event: WcOddsEventDto) => boolean,
+): WcOddsEventDto | null {
+  const candidates = sortCandidates(pool.filter((event) => !used.has(event.id) && predicate(event)));
+  return candidates[0] ?? null;
+}
+
+/** Card 1: upcoming prematch from line (World Cup football preferred). */
+function pickLeadLineEvent(pool: WcOddsEventDto[], used: Set<string>): WcOddsEventDto | null {
+  const prematch = (event: WcOddsEventDto) =>
+    isPrematchLine(event) && hasBettableOdds(event);
+
+  return (
+    pickFirst(pool, used, (event) => prematch(event) && event.sport === 'soccer' && isWorldCupLeague(event.leagueName))
+    ?? pickFirst(pool, used, (event) => prematch(event) && event.sport === 'soccer' && isWcPriority(event))
+    ?? pickFirst(pool, used, (event) => prematch(event) && isWcPriority(event))
+    ?? pickFirst(pool, used, prematch)
+  );
+}
+
+/** Cards 2–3: mix World Cup, live tops and other priority prematch. */
+function pickMixedTopEvents(pool: WcOddsEventDto[], used: Set<string>, count: number): WcOddsEventDto[] {
+  const picked: WcOddsEventDto[] = [];
+  const tiers: Array<(event: WcOddsEventDto) => boolean> = [
+    (event) => event.sport === 'soccer' && isWorldCupLeague(event.leagueName) && isLiveEvent(event),
+    (event) => event.sport === 'soccer' && isWorldCupLeague(event.leagueName) && isPrematchLine(event),
+    (event) => event.sport === 'soccer' && isLiveEvent(event) && isWcPriority(event),
+    (event) => event.sport === 'soccer' && isPrematchLine(event) && isWcPriority(event),
+    (event) => isLiveEvent(event) && isWcPriority(event),
+    (event) => isPrematchLine(event) && isWcPriority(event) && hasBettableOdds(event),
+    (event) => isLiveEvent(event) && hasBettableOdds(event),
+    (event) => isPrematchLine(event) && hasBettableOdds(event),
+  ];
+
+  for (const tier of tiers) {
+    if (picked.length >= count) break;
+    const next = pickFirst(pool, used, tier);
+    if (!next) continue;
+    used.add(next.id);
+    picked.push(next);
   }
 
-  return merged;
+  return picked;
 }
 
 export function buildHomepageWidgets(
   wcPool: WcOddsEventDto[],
   cs2: { game: GameDtoWithGroupedMarkets; isLive: boolean } | null,
-  slots: HomepageWidgetSlots = DEFAULT_HOMEPAGE_WIDGET_SLOTS,
 ): HomepageWidgetItem[] {
+  const pool = mergeWcPool(wcPool);
   const used = new Set<string>();
   const items: HomepageWidgetItem[] = [];
 
-  for (const event of pickWcBySport(wcPool, 'soccer', slots.soccer)) {
-    used.add(event.id);
+  const lead = pickLeadLineEvent(pool, used);
+  if (lead) {
+    used.add(lead.id);
+    items.push({ kind: 'wc', event: lead });
+  }
+
+  for (const event of pickMixedTopEvents(pool, used, 2)) {
     items.push({ kind: 'wc', event });
   }
 
-  for (const event of pickWcBySport(
-    wcPool.filter((row) => !used.has(row.id)),
-    'tennis',
-    slots.tennis,
-  )) {
-    used.add(event.id);
-    items.push({ kind: 'wc', event });
-  }
-
-  if (slots.cs2 > 0 && cs2) {
+  if (cs2 && items.length < HOMEPAGE_WIDGETS_TOTAL) {
     items.push({ kind: 'cyber', event: cs2.game, isLive: cs2.isLive });
+  }
+
+  while (items.length < HOMEPAGE_WIDGETS_TOTAL) {
+    const filler = pickFirst(
+      pool,
+      used,
+      (event) => event.sport === 'soccer' && hasBettableOdds(event),
+    );
+    if (!filler) break;
+    used.add(filler.id);
+    items.push({ kind: 'wc', event: filler });
   }
 
   return items.slice(0, HOMEPAGE_WIDGETS_TOTAL);

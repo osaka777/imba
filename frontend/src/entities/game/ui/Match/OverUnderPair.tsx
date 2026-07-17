@@ -91,8 +91,9 @@ export const OverUnderPair: React.FC<OverUnderPairProps> = ({
 
   return (
     <MarketPairRow
+      handicapLayout
       pivot={size}
-      totalsLayout
+      showPivot
       left={
         underMarket
           ? {

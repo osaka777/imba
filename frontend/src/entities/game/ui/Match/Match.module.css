@@ -134,6 +134,7 @@
 }
 
 .oddMenuList button {
+  flex-shrink: 0;
   height: 30px;
   padding: 0 12px;
   font-size: 12px;
@@ -164,6 +165,91 @@
   grid-auto-rows: min-content;
 }
 
+.oddsTables_stack {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.oddsPinnedBar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.oddsPinnedBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oddsPinnedLabel {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #53fc18;
+}
+
+.oddsStickyHead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  background: var(--kick-bg-card, #161617);
+}
+
+.oddsCyberSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.oddsCyberSection:last-child {
+  margin-bottom: 0;
+}
+
+.oddsCyberSectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px 2px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.oddsCyberSectionHead[data-active] {
+  border-bottom-color: rgb(83 252 24 / 0.35);
+}
+
+.oddsCyberSectionLabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.oddsCyberSectionHead[data-active] .oddsCyberSectionLabel {
+  color: #fff;
+}
+
+.oddsCyberSectionLive {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--kick-green, #53fc18);
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
 /* WC / imba: one container, categories flow into balanced columns (no tall empty half-column). */
 .oddsTablesBalanced {
   display: block;
@@ -177,9 +263,15 @@
   column-fill: balance;
 }
 
-@media screen and (min-width: 631px) {
+@media screen and (min-width: 480px) {
   .oddsTableBalancedColumns {
     column-count: 2;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .oddsTableBalancedColumns {
+    column-count: 1;
   }
 }
 
@@ -187,6 +279,12 @@
   break-inside: avoid;
   width: 100%;
   margin-bottom: 10px;
+}
+
+.oddsCategorySlot > .oddsTable {
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
 }
 
 .oddsCategorySlot:last-child {
@@ -240,11 +338,13 @@
     font-size: 12px;
   }
 
-  .oddsHandicapRow .handicapPivotWrap .totalsPivot {
+  .oddsHandicapRow .totalsPivot {
     width: 32px;
     height: 32px;
     min-width: 32px;
     max-width: 32px;
+    min-height: 32px;
+    max-height: 32px;
     font-size: 10px;
   }
 
@@ -310,7 +410,7 @@
   }
 }
 
-@media screen and (max-width: 630px) {
+@media screen and (max-width: 479px) {
   .oddsTables {
     grid-template-columns: 1fr;
   }
@@ -360,6 +460,53 @@
   display: flex;
   flex-wrap: wrap;
   column-gap: 1px;
+}
+
+/* 1X2 / double chance — три колонки в одну строку (как 1win) */
+.oddsBlockPX {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 1px;
+  row-gap: 1px;
+  width: 100%;
+}
+
+/* П1/П2 без ничьей — две колонки на всю ширину */
+.oddsBlockPX_2way,
+.oddsBlockPX:has(> .oddsItem:nth-child(2):last-child),
+.oddsBlockPX:has(> .oddsItemPX:nth-child(2):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.oddsBlockPX_1way,
+.oddsBlockPX:has(> .oddsItem:only-child),
+.oddsBlockPX:has(> .oddsItemPX:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.oddsBlockPX > .oddsItem,
+.oddsBlockPX > .oddsItemPX {
+  flex-basis: auto;
+  flex-grow: 0;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Да/Нет и другие пары из двух исходов */
+.oddsBlock:not(.oddsBlockPair):not(.oddsBlockPairOU):not(.oddsBlockPX):not(.oddsHandicapRow):not(.oddsTotalsRow):not(.oddsHandicap3Row):not(.oddsBlockCorrectScore):has(> .oddsItem:nth-child(2):last-child) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1px;
+  row-gap: 1px;
+  width: 100%;
+}
+
+.oddsBlock:not(.oddsBlockPair):not(.oddsBlockPairOU):not(.oddsBlockPX):not(.oddsHandicapRow):not(.oddsTotalsRow):not(.oddsHandicap3Row):not(.oddsBlockCorrectScore):has(> .oddsItem:nth-child(2):last-child)
+  > .oddsItem {
+  flex-basis: auto;
+  max-width: none;
+  min-width: 0;
 }
 
 .oddsBlockPair {
@@ -496,6 +643,22 @@
   margin: 0 4px;
 }
 
+.oddsTotalsRow .totalsPivotWide {
+  width: auto;
+  min-width: 4.5rem;
+  max-width: min(42%, 9.5rem);
+  height: auto;
+  min-height: 32px;
+  max-height: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .oddsHandicap3Row {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
 }
@@ -506,9 +669,11 @@
 }
 
 .oddsHandicapRow {
-  column-gap: 1px;
+  position: relative;
+  column-gap: 0;
   align-items: stretch;
-  background-color: var(--black);
+  overflow: hidden;
+  background-color: #e4ebff;
   border-bottom: 1px solid var(--black);
 }
 
@@ -518,6 +683,10 @@
   flex: 1 1 0;
   min-width: 0;
   background: #e4ebff;
+}
+
+.oddsTotalsGroup > *:nth-child(even) .oddsHandicapRow {
+  background-color: #edf1ff;
 }
 
 .oddsTotalsGroup > *:nth-child(even) .oddsHandicapRow > .oddsItem {
@@ -547,15 +716,13 @@
 }
 
 .handicapPivotWrap {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: static;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  z-index: 1;
+  z-index: 2;
+  flex: 0 0 auto;
   pointer-events: none;
   white-space: nowrap;
 }
@@ -580,15 +747,6 @@
   padding-left: 2px;
 }
 
-.oddsHandicapRow .handicapPivotWrap .totalsPivot {
-  position: relative;
-  top: auto;
-  left: auto;
-  transform: none;
-  z-index: 2;
-  flex-shrink: 0;
-}
-
 .oddsHandicapRow .pairSideLabel_start,
 .oddsHandicapRow .pairSideLabel_end {
   width: auto;
@@ -607,6 +765,18 @@
   padding-left: 44px;
 }
 
+.oddsHandicapRow:not(:has(.totalsPivot)) > .oddsItem:first-child .oddHandicap {
+  padding-right: 28px;
+}
+
+.oddsHandicapRow:not(:has(.totalsPivot)) > .oddsItem:last-child .oddHandicap {
+  padding-left: 28px;
+}
+
+.oddsHandicapRow:not(:has(.totalsPivot)) .handicapPivotWrap {
+  gap: 10px;
+}
+
 .oddsHandicapRow .oddCoef {
   min-width: 0;
   flex: 0 0 auto;
@@ -620,19 +790,6 @@
 .oddsHandicapRow .oddCoef.oddCoefficient_down {
   padding: 2px 6px;
   border-radius: 6px;
-}
-
-.oddsHandicapRow .handicapPivotWrap .totalsPivot {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  max-width: 36px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 11px;
-  line-height: 1;
-  align-self: center;
-  margin: 0;
 }
 
 .oddsBlockPairOU > .oddsItem {
@@ -685,6 +842,25 @@
 
 .oddsBlockScoped {
   width: 100%;
+}
+
+.oddsScopedTeamCard {
+  background: #e4ebff;
+  border-bottom: 1px solid #eef3ff;
+}
+
+.oddsScopedTeamCard .oddsTotalsRow {
+  background: transparent;
+  border-bottom: none;
+}
+
+.oddsScopedTeamLabel {
+  width: 100%;
+  padding: 8px 12px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f2937 !important;
+  line-height: 1.2;
 }
 
 .oddsGroupSubLabel {
@@ -775,6 +951,28 @@
   border-radius: 20px;
   border-bottom: 1px solid var(--black);
   z-index: 1;
+}
+
+.oddsHandicapRow .totalsPivot {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  flex: 0 0 auto;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border-bottom: none;
+  font-size: 11px;
+  line-height: 1;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .odd {
@@ -948,7 +1146,8 @@
 }
 
 .oddsItemPX {
-  flex: 1;
+  flex: unset;
+  min-width: 0;
 }
 
 .underCoefClass {
@@ -978,40 +1177,6 @@
 
 }
 
-.oddMenuList {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  padding: 0 0 6px 0;
-}
-
-/* Webkit (Chrome, Safari, Edge) */
-.oddMenuList::-webkit-scrollbar {
-  height: 0;
-  display: none;
-}
-
-.oddMenuList button {
-  flex-shrink: 0;
-  height: 30px;
-  padding: 0 10px;
-  font-size: 12px;
-  background: var(--blue-gray);
-  border-radius: 6px;
-  border: none;
-  color: white;
-  cursor: pointer;
-}
-
-.oddMenuList .activeButton {
-  background: var(--light-blue-gradient);
-}
-
 .loadingDot {
   margin-left: 4px;
   font-size: 10px;
@@ -1036,4 +1201,112 @@
   padding: 20px;
   color: #dc2626;
   font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────
+   Мобильная адаптация Match / TournamentOdds
+   ───────────────────────────────────────────── */
+@media screen and (max-width: 600px) {
+  .TournamentOdds {
+    padding: 8px;
+    gap: 12px;
+    border-radius: 10px;
+  }
+
+  .TournamentOddsHeader {
+    gap: 8px;
+    align-items: center;
+  }
+
+  .TournamentOddsHeaderButton {
+    padding: 8px;
+    align-self: center;
+  }
+
+  /* Каждый рынок на всю ширину — коэффициенты читаемы */
+  .oddsTables {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .oddsTable {
+    gap: 2px;
+  }
+
+  /* Заголовок группы рынков */
+  .oddFold {
+    padding: 10px 12px;
+    border-radius: 8px;
+    min-height: 42px;
+  }
+
+  .oddGroupName {
+    font-size: 13px;
+  }
+
+  /* Название исхода не должно выталкивать коэффициент за экран */
+  .oddName {
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Кнопки исходов — крупнее для тапа */
+  .odd {
+    min-height: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
+    gap: 6px;
+  }
+
+  .odd > p:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .oddCoef {
+    min-width: 40px;
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  /* 1X2 / двойной шанс — компактнее в три колонки */
+  .oddsBlockPX .odd {
+    padding-left: 6px;
+    padding-right: 6px;
+    gap: 3px;
+  }
+
+  .oddsBlockPX .odd > p:first-child {
+    font-size: 11px;
+  }
+
+  .oddsItem_1x2 .oddCoef {
+    min-width: 28px;
+  }
+}
+
+/* Очень узкие экраны */
+@media screen and (max-width: 380px) {
+  .TournamentOdds {
+    padding: 6px;
+  }
+
+  .oddCoef {
+    min-width: 34px;
+    font-size: 13px;
+  }
+
+  .oddsTotalsRow .totalsPivot {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    font-size: 9px;
+  }
 }

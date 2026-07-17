@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
+import { DepositStatus } from '@prisma/client';
 
+import { BonusBalanceService } from '~/main/bonus-balance/bonus-balance.service';
 import { PartnersService } from '~/main/partners/partners.service';
 import { PrismaService } from '~/prisma/prisma.service';
 import { DepositUserNotifyService } from './deposit-user-notify.service';
@@ -12,6 +14,7 @@ export class DepositCreditService {
     private readonly prisma: PrismaService,
     private readonly depositUserNotify: DepositUserNotifyService,
     private readonly partnersService: PartnersService,
+    private readonly bonusBalanceService: BonusBalanceService,
   ) {}
 
   async creditDeposit(depositId: number, extraMeta?: Record<string, unknown>) {
@@ -55,6 +58,21 @@ export class DepositCreditService {
           meta: { ...oldMeta, ...extraMeta, creditedAt: new Date().toISOString() } as any,
           updatedAt: new Date(),
         },
+      });
+
+      const priorSuccess = await tx.deposit.count({
+        where: { userId: depo.userId, status: DepositStatus.SUCCESS },
+      });
+
+      await this.bonusBalanceService.afterDepositCredited({
+        userId: depo.userId,
+        currencyCode: depo.currencyCode,
+        depositAmount: Number(depo.amount),
+        paymentSystem: depo.paymentSystem,
+        externalId: depo.externalId,
+        meta: { ...oldMeta, ...extraMeta },
+        depositOrdinal: priorSuccess,
+        tx,
       });
     });
 

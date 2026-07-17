@@ -22,9 +22,13 @@ type WcHomeOddCellProps = {
   event: WcEvent;
   pick: WcPick;
   value: string;
+  /** Kick / cybersport dark chip styling, or the premium top-event card CTA */
+  tone?: "default" | "kick" | "topcard";
 };
 
-export function WcHomeOddCell({ event, pick, value }: WcHomeOddCellProps) {
+export function WcHomeOddCell({ event, pick, value, tone = "default" }: WcHomeOddCellProps) {
+  const isKick = tone === "kick";
+  const isTopCard = tone === "topcard";
   const market = WC_MARKET[pick];
   const bettingOpen = useWcBettingOpen(event);
   const { prevState } = usePrevious(value);
@@ -101,12 +105,20 @@ export function WcHomeOddCell({ event, pick, value }: WcHomeOddCellProps) {
   );
 
   if (!isAvailable) {
-    return <span className={styles.empty}>—</span>;
+    return (
+      <span
+        className={`${styles.empty} ${isKick ? styles.empty_kick : ""} ${isTopCard ? styles.empty_topcard : ""}`}
+      >
+        —
+      </span>
+    );
   }
 
   return (
     <button
-      className={`${styles.cell} ${flash.cell ?? ""} ${isRateAdded ? styles.cell_added : ""}`}
+      aria-label={`${WC_PICK_LABEL[pick]} ${value}`}
+      aria-pressed={isRateAdded}
+      className={`${styles.cell} ${isKick ? styles.cell_kick : ""} ${isTopCard ? styles.cell_topcard : ""} ${flash.cell ?? ""} ${isRateAdded ? styles.cell_added : ""}`}
       data-market={market}
       onClick={toggleRate}
       type="button"

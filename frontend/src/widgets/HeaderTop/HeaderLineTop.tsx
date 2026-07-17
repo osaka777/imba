@@ -3,13 +3,14 @@
 import { usePathname } from "next/navigation";
 import {
   AccessIcon,
-  IconMobileIcon,
-  RuIcon,
+  AndroidIcon,
   LiveIcon,
   TicketIcon,
 } from "~/shared/assets/icons";
 import { usePromoModalSettings } from "~/entities/promo-modal/lib/usePromoModalSettings";
 import { Button } from "~/shared/ui";
+import { LanguageSelector } from "~/widgets/Navigation/LanguageSelector";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./HeaderLineTop.module.css";
 import { LazyLuckyDriveModal } from "~/shared/lib/lazyModals";
@@ -19,6 +20,7 @@ import { cn } from "~/shared/lib";
 export const HeaderLineTop = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { settings, enabled } = usePromoModalSettings();
+  const { t } = useLocale();
   const pathname = usePathname();
   const isCybersport = pathname?.startsWith("/cybersport");
   const showHeaderPromo = enabled && settings?.showInHeader !== false;
@@ -38,12 +40,15 @@ export const HeaderLineTop = () => {
           >
             <AccessIcon className={`${styles.icon} ${styles.mobileIcon}`}/>
           </Button>
-          <Button
-            className={`${styles.Button} ${styles.dfAicJcc} ${styles.miniIcon} ${styles.themeDefault} ${styles.ttn} ${styles.headerButton}`}
-            disabled
+          <a
+            href="/imba-bet.apk"
+            download
+            title={t("header.downloadApk")}
+            aria-label={t("header.downloadApk")}
+            className={`${styles.Button} ${styles.dfAicJcc} ${styles.miniIcon} ${styles.themeDefault} ${styles.ttn} ${styles.headerButton} ${styles.appDownloadBtn}`}
           >
-            <IconMobileIcon className={`${styles.icon} ${styles.mobileIcon}`} />
-          </Button>
+            <AndroidIcon className={`${styles.icon} ${styles.mobileIcon} ${styles.androidIcon}`} />
+          </a>
         </div>
         <div className={styles.divider}></div>
         {showHeaderPromo ? (
@@ -58,16 +63,13 @@ export const HeaderLineTop = () => {
                 <LiveIcon className={styles.FreeMoneyLink_liveIcon} />
               </span>
             </div>
-            <span className={styles.FreeMoneyLink_description}>{settings?.bannerSubtitle || "Бонус на депозит"}</span>
+            <span className={styles.FreeMoneyLink_description}>{settings?.bannerSubtitle || t("header.promoSubtitle")}</span>
           </div>
         </div>
         ) : null}
       </div>
       <div className={styles.headerLineRight}>
-        <Button className={styles.ChangeLanguage_button}>
-          <span className={styles.ChangeLanguage_ButtonTitle_eh_mm}>RU</span>
-          <RuIcon className={styles.ruIcon} />
-        </Button>
+        <LanguageSelector />
       </div>
       {isModalOpen ? (
         <LazyLuckyDriveModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />

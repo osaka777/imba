@@ -36,12 +36,29 @@
   color: #475569;
 }
 
+.field span {
+  font-weight: 600;
+  color: #334155;
+}
+
 .field input,
 .field select {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
+  color: #0f0e27;
+  background: #f8fafc;
+  -webkit-text-fill-color: #0f0e27;
+}
+
+.field input::placeholder {
+  color: #94a3b8;
+}
+
+.field select option {
+  color: #0f0e27;
+  background: #fff;
 }
 
 .submit {

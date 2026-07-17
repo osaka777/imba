@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronDownIcon } from "lucide-react";
 import { getBalances } from "@/entities/user/api/getBalances";
 import { IBalances } from "@/entities/user/interface/IBalances";
+import { formatCurrencySymbol } from "@/shared/lib/formatCurrencySymbol";
 import styles from "./CurrencySelector.module.css";
 
 interface CurrencySelectorProps {
@@ -87,7 +88,7 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
         className={`${styles.currencyButton} ${isOpen ? styles.open : ''}`}
       >
         <span className={styles.currencyCode}>
-          {selectedCurrency}
+          {formatCurrencySymbol(selectedCurrency)}
         </span>
         <ChevronDownIcon className={styles.chevronIcon} />
       </button>
@@ -102,7 +103,7 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
                 currency.currencyCode === selectedCurrency ? styles.selected : ''
               }`}
             >
-              <span className={styles.currencyCode}>{currency.currencyCode}</span>
+              <span className={styles.currencyCode}>{formatCurrencySymbol(currency.currencyCode)}</span>
               <span className={styles.currencyAmount}>
                 {parseFloat(currency.amount).toFixed(2)}
               </span>

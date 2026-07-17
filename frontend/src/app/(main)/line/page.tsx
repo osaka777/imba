@@ -7,7 +7,11 @@ import { LoadingSpinner } from "~/shared/ui";
 
 import styles from "./layout.module.css";
 
-export const metadata: Metadata = makeMetadata("Линия");
+export const metadata: Metadata = makeMetadata("Линия", {
+  description:
+    "Прематч-линия Imba.bet: ставки на футбол, теннис, хоккей и другие виды спорта до начала матча.",
+  path: "/line",
+});
 
 export default function Line() {
   return (

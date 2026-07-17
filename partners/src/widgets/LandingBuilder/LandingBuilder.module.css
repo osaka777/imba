@@ -1,0 +1,446 @@
+.card {
+  background: #fff;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 12px 32px rgba(15, 14, 39, 0.06);
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f0e27;
+}
+
+.desc {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.templates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.templateBtn {
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.templateBtn:hover {
+  border-color: #cbd5e1;
+}
+
+.templateActive {
+  border-color: #6f48a7;
+  background: rgba(111, 72, 167, 0.06);
+  box-shadow: 0 0 0 3px rgba(111, 72, 167, 0.12);
+}
+
+.templateName {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f0e27;
+  margin-bottom: 4px;
+}
+
+.templateHint {
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.field span {
+  font-weight: 600;
+  color: #334155;
+}
+
+.field input,
+.field select {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #0f0e27;
+  background: #f8fafc;
+  -webkit-text-fill-color: #0f0e27;
+}
+
+.pickerHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.pickerTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f0e27;
+}
+
+.pickerFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pickerFilters select,
+.pickerFilters input {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #0f0e27;
+  background: #fff;
+}
+
+.eventsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.eventRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.eventRow:hover {
+  border-color: #6f48a7;
+}
+
+.eventSelected {
+  border-color: #6f48a7;
+  background: rgba(111, 72, 167, 0.06);
+}
+
+.eventTeams {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f0e27;
+}
+
+.eventMeta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.eventCheck {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.eventSelected .eventCheck {
+  background: #6f48a7;
+  border-color: #6f48a7;
+}
+
+.selectedHint {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.submit {
+  width: 100%;
+  background: linear-gradient(125deg, #181940 0%, #6f48a7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0 0 12px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .templates {
+    grid-template-columns: 1fr;
+  }
+}
+.card {
+  background: #fff;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 12px 32px rgba(15, 14, 39, 0.06);
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f0e27;
+}
+
+.desc {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.templates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.templateBtn {
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.templateBtn:hover {
+  border-color: #cbd5e1;
+}
+
+.templateActive {
+  border-color: #6f48a7;
+  background: rgba(111, 72, 167, 0.06);
+  box-shadow: 0 0 0 3px rgba(111, 72, 167, 0.12);
+}
+
+.templateName {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f0e27;
+  margin-bottom: 4px;
+}
+
+.templateHint {
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.field span {
+  font-weight: 600;
+  color: #334155;
+}
+
+.field input,
+.field select {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #0f0e27;
+  background: #f8fafc;
+  -webkit-text-fill-color: #0f0e27;
+}
+
+.pickerHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.pickerTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f0e27;
+}
+
+.pickerFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pickerFilters select,
+.pickerFilters input {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #0f0e27;
+  background: #fff;
+}
+
+.eventsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.eventRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.eventRow:hover {
+  border-color: #6f48a7;
+}
+
+.eventSelected {
+  border-color: #6f48a7;
+  background: rgba(111, 72, 167, 0.06);
+}
+
+.eventTeams {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f0e27;
+}
+
+.eventMeta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.eventCheck {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.eventSelected .eventCheck {
+  background: #6f48a7;
+  border-color: #6f48a7;
+}
+
+.selectedHint {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.submit {
+  width: 100%;
+  background: linear-gradient(125deg, #181940 0%, #6f48a7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0 0 12px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .templates {
+    grid-template-columns: 1fr;
+  }
+}

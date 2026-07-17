@@ -70,7 +70,7 @@ function PxButton({
         disabled={!isBettable}
         onClick={onToggle}
       >
-        <p className="text-sm font-medium text-black">{label}</p>
+        <p className={styles.oddName}>{label}</p>
         <p className={cn(styles.oddCoef, flash.coef)}>
           {convertToFixed(value)}
           {showLock && <AccessIcon className={styles.lock} />}

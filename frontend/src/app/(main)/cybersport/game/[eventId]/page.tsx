@@ -2,8 +2,13 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { fetchCybersportGame } from "~/entities/cybersport/api/client";
+import {
+  cyberGameSupportsWcBetting,
+  readCyberWcMeta,
+} from "~/entities/cybersport/lib/cyberGameToWcEvent";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
-import { Match } from "~/entities/game/ui/Match";
+import { CyberMatchPage } from "~/entities/cybersport/ui/CyberMatchPage";
+import { fetchWcEventDetail } from "~/entities/wc-odds/api/client";
 import { makeMetadata } from "~/shared/lib";
 
 import styles from "../../CybersportLayout.module.css";
@@ -35,17 +40,18 @@ export default async function CybersportGamePage({ params }: PageProps) {
     notFound();
   }
 
-  const matchData = {
-    ...game,
-    leagueName: maskCybersportLabel(game.leagueName),
-    team1: maskCybersportLabel(game.team1),
-    team2: maskCybersportLabel(game.team2),
-    eventName: maskCybersportLabel(game.eventName),
-  };
+  const wcRef = readCyberWcMeta(game).wcEventRef;
+  const initialWcEvent = cyberGameSupportsWcBetting(game) && wcRef
+    ? await fetchWcEventDetail(wcRef).catch(() => null)
+    : null;
 
   return (
     <div className={styles.subPage}>
-      <Match matchData={matchData} />
+      <CyberMatchPage
+        eventId={eventId}
+        initialData={game}
+        initialWcEvent={initialWcEvent}
+      />
     </div>
   );
 }

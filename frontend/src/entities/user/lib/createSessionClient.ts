@@ -1,10 +1,12 @@
 "use client";
 
+import { syncAccessTokenCookie } from "./syncAccessTokenCookie";
+
 export async function createSessionClient(accessToken: string) {
   try {
-    // Сохраняем токен в localStorage
-    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem("accessToken", accessToken);
+    syncAccessTokenCookie(accessToken);
   } catch (error) {
-    console.error('createSessionClient: Error saving token:', error);
+    console.error("createSessionClient: Error saving token:", error);
   }
 }

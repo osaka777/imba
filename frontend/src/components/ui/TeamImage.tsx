@@ -26,15 +26,15 @@ export function TeamImage({ src, alt, size = 32, className = '' }: TeamImageProp
   }, [src]);
 
   function formatImageUrl(url: string): string {
-    // Если URL уже содержит CDN_URL, возвращаем как есть
     if (url.startsWith(CDN_URL)) {
       return url;
     }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
     
-    // Удаляем протокол, если есть
     const cleanUrl = url.replace(/^https?:\/\//, '');
-    
-    // Формируем URL для CDN
     return `${CDN_URL}${cleanUrl}`;
   }
 
@@ -58,6 +58,7 @@ export function TeamImage({ src, alt, size = 32, className = '' }: TeamImageProp
         className={`object-contain w-auto h-auto ${error ? 'opacity-50' : ''}`}
         onError={handleError}
         loading="lazy"
+        unoptimized={imageSrc.startsWith('http')}
       />
     </div>
   );

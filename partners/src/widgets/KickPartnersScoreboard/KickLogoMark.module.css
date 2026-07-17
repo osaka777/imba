@@ -1,0 +1,11 @@
+.mark {
+  display: inline-block;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: #53fc18;
+  text-transform: uppercase;
+  font-family: Inter, system-ui, sans-serif;
+}

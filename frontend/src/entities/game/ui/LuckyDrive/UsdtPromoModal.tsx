@@ -5,13 +5,12 @@ import Image from 'next/image';
 
 import { DepositForm } from '~/entities/finance';
 import { getMyUsdtTrc20Order, getUsdtTrc20Config } from '~/entities/finance/api/deposit';
-import { AuthForm } from '~/entities/user';
 import { verifyUser } from '~/entities/user/api';
 import { getSessionClient } from '~/entities/user/lib/getSessionClient';
 import { CheckIcon } from '~/shared/assets';
 import { cn } from '~/shared/lib';
-import { Dialog, DialogContent } from '~/shared/ui';
 
+import { ModalInlineAuth } from './ModalInlineAuth';
 import {
   USDT_PRESET_AMOUNTS,
   USDT_PROMO_GRADIENT_FROM,
@@ -83,7 +82,10 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setAuthModalType('closed');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setStep('intro');
@@ -135,14 +137,22 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
             ? 'Депозит зачислен. Бонус +10% добавлен на баланс.'
             : null;
 
+  const showAuth = authModalType !== 'closed';
+
   return (
-    <>
-      <div className={styles.modalOverlay} onClick={onClose}>
-        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
-            ×
-          </button>
-          <main className={styles.modalBody}>
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={cn(styles.modalContent, showAuth && styles.modalContentAuth)} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
+          ×
+        </button>
+        <main className={styles.modalBody}>
+          {showAuth ? (
+            <ModalInlineAuth
+              variant={authModalType}
+              onBack={() => setAuthModalType('closed')}
+              backLabel="← Назад к акции"
+            />
+          ) : (
             <div className={cn(styles.base, step === 'deposit' && styles.baseDeposit)} style={gradientStyle}>
               {step !== 'success' ? (
                 <nav
@@ -334,20 +344,9 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                 )}
               </div>
             </div>
-          </main>
-        </div>
+          )}
+        </main>
       </div>
-
-      {authModalType !== 'closed' && (
-        <Dialog open onOpenChange={() => setAuthModalType('closed')}>
-          <DialogContent
-            className={styles.authDialog}
-            title={authModalType === 'login' ? 'Вход в систему' : 'Регистрация'}
-          >
-            <AuthForm authVariant={authModalType} className={styles.authForm} />
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+    </div>
   );
 };

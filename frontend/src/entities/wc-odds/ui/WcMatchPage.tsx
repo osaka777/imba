@@ -9,6 +9,7 @@ import { mergeWcEventDetail } from "~/entities/wc-odds/lib/wcEventDetail";
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { useWcOddsEventStream } from "~/entities/wc-odds/lib/useWcOddsStream";
 import { wcOddsFeedStore } from "~/entities/wc-odds/lib/wcOddsFeedStore";
+import { useLocale } from "~/shared/model/useLocale";
 import { WcScoreBoard } from "~/entities/wc-odds/ui/WcScoreBoard";
 import { WcOddsSection } from "~/entities/wc-odds/ui/WcOddsSection";
 import { WcMatchTelegramSubscribe } from "~/entities/wc-odds/ui/WcMatchTelegramSubscribe";
@@ -27,16 +28,74 @@ function broadcastMeta(event: WcEventDetail) {
 type WcMatchPageProps = {
   slug: string;
   initialData?: WcEventDetail | null;
+  /** @deprecated kept for call-site compat */
+  initialSynced?: boolean;
 };
 
-export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
+export function WcMatchPage({
+  slug,
+  initialData,
+}: WcMatchPageProps) {
   const broadcast = useWcBroadcast();
   const register = broadcast?.register;
   const unregister = broadcast?.unregister;
   const openBroadcast = broadcast?.openBroadcast;
-  const { event, connected, setEvent } = useWcOddsEventStream(slug, initialData ?? null);
+  const { locale, ready: localeReady, t } = useLocale();
+  const { event, connected, setEvent, marketsReady } = useWcOddsEventStream(
+    slug,
+    initialData ?? null,
+  );
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
+
+  // Locale-aware labels only — does not gate betting.
+  // Skip redundant HTTP when SSR already provided the event.
+  useEffect(() => {
+    if (!slug || !localeReady) return undefined;
+
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      setError(null);
+      if (!initialData) setLoading(true);
+      try {
+        const data = await fetchWcEventDetail(slug);
+        if (cancelled) return;
+        if (!data) {
+          if (!initialData) {
+            setError(t("common.matchNotFound"));
+            setEvent(null);
+          }
+          return;
+        }
+        const prev = wcOddsFeedStore.getEventDetail(slug);
+        setEvent(prev ? mergeWcEventDetail(prev, data) : data);
+        if (Object.keys(data.groupedMarkets ?? {}).length > 0) {
+          wcOddsFeedStore.forceEventMarketsReady(slug);
+        }
+      } catch {
+        if (!cancelled && !initialData) setError(t("common.matchLoadError"));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    if (!initialData) {
+      void bootstrap();
+    } else {
+      setLoading(false);
+    }
+
+    const onLocale = () => {
+      void bootstrap();
+    };
+    window.addEventListener("localeChanged", onLocale);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("localeChanged", onLocale);
+    };
+  }, [slug, initialData, setEvent, locale, localeReady, t]);
 
   useEffect(() => {
     if (connected || !slug) return undefined;
@@ -50,6 +109,9 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
         if (!cancelled && data) {
           const prev = wcOddsFeedStore.getEventDetail(slug);
           setEvent(prev ? mergeWcEventDetail(prev, data) : data);
+          if (Object.keys(data.groupedMarkets ?? {}).length > 0) {
+            wcOddsFeedStore.forceEventMarketsReady(slug);
+          }
         }
       } catch {
         // ignore
@@ -63,39 +125,6 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
       window.clearInterval(id);
     };
   }, [connected, slug, setEvent, event?.phase]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const bootstrap = async () => {
-      if (initialData) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchWcEventDetail(slug);
-        if (cancelled) return;
-        if (!data) {
-          setError("Матч не найден");
-          setEvent(null);
-          return;
-        }
-        setEvent(data);
-      } catch {
-        if (!cancelled) setError("Не удалось загрузить матч");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    void bootstrap();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, initialData, setEvent]);
 
   useEffect(() => {
     if (!register || !unregister) return undefined;
@@ -115,16 +144,16 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
     register(slug, true, broadcastMeta(event));
   }, [slug, event?.awayTeam, event?.homeTeam, event?.leagueName, event?.hasBroadcast, register]);
 
-  if (loading && !event) {
+  if (loading && !event && !initialData) {
     return <LoadingScreen />;
   }
 
   if (error || !event) {
     return (
       <div className={matchStyles.err}>
-        <p>{error || "Матч не найден"}</p>
+        <p>{error || t("common.matchNotFound")}</p>
         <Link href="/line/soccer" className="text-blue-400 underline mt-4 inline-block">
-          Вернуться к линии
+          {t("common.backToLine")}
         </Link>
       </div>
     );
@@ -138,6 +167,9 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
     openBroadcast(slug, true, broadcastMeta(event));
   };
 
+  const hasMarkets = Object.keys(event.groupedMarkets ?? {}).length > 0;
+  const oddsUnlocked = hasMarkets && (marketsReady || event.bettingOpen !== false);
+
   return (
     <div className={`${matchStyles.Match} ${pageStyles.wcMatchPage}`}>
       <WcScoreBoard
@@ -149,7 +181,21 @@ export function WcMatchPage({ slug, initialData }: WcMatchPageProps) {
         }
       />
       <section className={matchStyles.TournamentOdds}>
-        <WcOddsSection event={event} />
+        {event.completed || event.phase === "finished" ? (
+          <div className={pageStyles.finishedState}>
+            <strong>Матч завершён</strong>
+            <span>Итоговый счёт, периоды и доступная статистика показаны выше.</span>
+            <Link href="/results">Вернуться к результатам</Link>
+          </div>
+        ) : oddsUnlocked ? (
+          <WcOddsSection event={event} />
+        ) : (
+          <div className={pageStyles.marketsSyncing} aria-busy="true">
+            <div className={pageStyles.marketsSyncingBar} />
+            <div className={pageStyles.marketsSyncingBar} />
+            <div className={pageStyles.marketsSyncingBar} />
+          </div>
+        )}
       </section>
     </div>
   );

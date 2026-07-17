@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useSportFilter } from "~/entities/game/lib/useSportFilter";
 import { lineAllHref, lineSportHref } from "~/entities/game/lib/sportPagePaths";
-import { visibleGamesList } from "~/entities/game";
+import { useSportMenuRows } from "~/entities/cybersport/hooks/useSportMenuRows";
 import { cn } from "~/shared/lib";
 import { Button } from "~/shared/ui";
 import { getPrematchGameCounts, GameCounts } from "../../api/getGameCounts";
@@ -62,6 +62,11 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
     prioritySports.add("soccer");
   }
 
+  const { coreRows, esportsRows, totalCount } = useSportMenuRows("line", {
+    gameCounts,
+    wcCounts: wcLineCounts,
+    prioritySports,
+  });
   const countsReady = gameCountsFetched && wcLineCountsFetched;
   const isSidebar = layout === "sidebar";
 
@@ -77,21 +82,13 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
         >
           <p className={styles.text}>
             Все
-            {gameCounts.total > 0 && (
-              <span className={styles.count}>{gameCounts.total}</span>
+            {totalCount > 0 && (
+              <span className={styles.count}>{totalCount}</span>
             )}
           </p>
         </Button>
-        {visibleGamesList()
-          .map(({ Icon, label, name }) => ({
-            Icon,
-            label,
-            name,
-            count: (wcLineCounts[name] || 0) + (gameCounts[name] || 0),
-            isPriority: prioritySports.has(name)
-          }))
+        {coreRows
           .filter((item) => !isSidebar || !countsReady || item.count > 0)
-          .sort((a, b) => (isSidebar ? 0 : b.count - a.count))
           .map(({ Icon, label, name, count, isPriority }) => {
           return (
             <Button
@@ -114,6 +111,35 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
             </Button>
           );
         })}
+
+        {esportsRows.length > 0 ? (
+          <>
+            <span className={styles.divider} aria-hidden />
+            <span className={styles.groupLabel}>Киберспорт</span>
+            {esportsRows
+              .filter((item) => !isSidebar || !countsReady || item.count > 0)
+              .map(({ Icon, label, name, count, isPriority }) => (
+                <Button
+                  className={cn(
+                    styles.item,
+                    name === sport && styles.item_active,
+                    isPriority && styles.item_priority,
+                  )}
+                  elementType="link"
+                  href={lineSportHref(name)}
+                  scroll={isSidebar ? false : undefined}
+                  key={name}
+                >
+                  <Icon className={styles.icon} />
+                  <p className={styles.text}>
+                    {label}
+                    {count > 0 && <span className={styles.count}>{count}</span>}
+                  </p>
+                  {isPriority && <FireIcon className={styles.priority} />}
+                </Button>
+              ))}
+          </>
+        ) : null}
       </div>
     </div>
   );

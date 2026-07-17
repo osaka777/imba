@@ -1,0 +1,319 @@
+.frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  aspect-ratio: 16 / 9;
+  min-height: 180px;
+  padding: 20px 16px;
+  border-radius: var(--kick-radius-lg, 14px);
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgb(83 252 24 / 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #1a1a1e 0%, #0a0a0c 100%);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+.frame[data-sport="esports.cs"],
+.frame[data-sport="esports.csgo"] {
+  background:
+    linear-gradient(145deg, rgb(249 115 22 / 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #1a1a1e 0%, #0a0a0c 100%);
+}
+
+.frame[data-sport="esports.dota2"] {
+  background:
+    linear-gradient(145deg, rgb(239 68 68 / 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #1a1a1e 0%, #0a0a0c 100%);
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 120%, rgb(83 252 24 / 0.12) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.teams {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 72px;
+}
+
+.livePill {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--kick-green, #53fc18);
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.score {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 0 24px rgb(83 252 24 / 0.35);
+}
+
+.startTime {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--kick-text-secondary, #a8a8a8);
+}
+
+.hint {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--kick-text-muted, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.matchLine {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--kick-text, #fff);
+  text-align: center;
+}
+
+.vs {
+  color: var(--kick-text-muted, #666);
+  font-weight: 600;
+}
+
+/* ---------- Match finished (gamified) ---------- */
+.finishedFrame {
+  gap: 14px;
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgb(83 252 24 / 0.16) 0%, transparent 55%),
+    linear-gradient(180deg, #16161a 0%, #08080a 100%);
+}
+
+.finishedGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.finishedBadge {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.12));
+  border: 1px solid var(--kick-green-border, rgb(83 252 24 / 0.4));
+  color: var(--kick-green, #53fc18);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.finishedBadgeIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.finishedHero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(12px, 4vw, 34px);
+  width: 100%;
+  max-width: 520px;
+}
+
+.finishedTeam {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
+}
+
+.finishedTeam_win {
+  opacity: 1;
+}
+
+.finishedLogoWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
+  overflow: visible;
+}
+
+.finishedTeam_win .finishedLogoWrap {
+  border-color: var(--kick-green-border, rgb(83 252 24 / 0.5));
+  box-shadow: 0 0 22px rgb(83 252 24 / 0.28);
+}
+
+.finishedCrown {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  color: #ffce3a;
+  filter: drop-shadow(0 0 6px rgb(255 206 58 / 0.6));
+}
+
+.finishedTeamName {
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--kick-text, #fff);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finishedTeam_win .finishedTeamName {
+  color: #fff;
+}
+
+.finishedScore {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.finishedNum {
+  font-size: clamp(38px, 8vw, 58px);
+  font-weight: 900;
+  color: rgb(255 255 255 / 0.4);
+  letter-spacing: -0.02em;
+}
+
+.finishedNum_win {
+  color: var(--kick-green, #53fc18);
+  text-shadow: 0 0 28px rgb(83 252 24 / 0.45);
+}
+
+.finishedColon {
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.25);
+}
+
+.finishedCaption {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--kick-text-secondary, #b6b6bc);
+  text-transform: uppercase;
+}
+
+.finishedWinner {
+  color: var(--kick-green, #53fc18);
+  font-weight: 900;
+}
+
+.finishedMaps {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  max-width: 100%;
+}
+
+.finishedMapChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.08));
+}
+
+.finishedMapLabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--kick-text-muted, #8b8b93);
+}
+
+.finishedMapScore {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--kick-text, #fff);
+}
+
+.finishedMapColon {
+  color: rgb(255 255 255 / 0.35);
+}
+
+.finishedMapWin {
+  color: var(--kick-green, #53fc18);
+}
+
+@media screen and (max-width: 640px) {
+  .finishedHero {
+    gap: 12px;
+  }
+
+  .finishedNum {
+    font-size: 40px;
+  }
+
+  .finishedTeamName {
+    font-size: 12px;
+  }
+}

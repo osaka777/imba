@@ -21,6 +21,10 @@ import { SlideModule } from './slide/slide.module';
 import { PromoModalModule } from './promo-modal/promo-modal.module';
 import { PaymentSettingsModule } from './payment-settings/payment-settings.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { SupportModule } from './support/support.module';
+import { PushModule } from './push/push.module';
+import { SnakeModule } from './snake/snake.module';
+import { BtcUpdownModule } from './btc-updown/btc-updown.module';
 
 @Module({
   imports: [
@@ -45,6 +49,10 @@ import { TelegramModule } from './telegram/telegram.module';
     PaymentSettingsModule,
     PromoModalModule,
     TelegramModule,
+    SupportModule,
+    PushModule,
+    SnakeModule,
+    BtcUpdownModule,
   ],
 })
 export class MainModule {}

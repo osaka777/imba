@@ -1,10 +1,9 @@
 .card {
   position: relative;
   min-width: 0;
-  border: 1px solid #dfe4eb;
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 5px 16px rgb(16 24 40 / 0.06);
+  border-radius: 12px;
+  color: #101828;
+  background: #e4e8ee;
   overflow: visible;
 }
 
@@ -13,25 +12,37 @@
   align-items: center;
   gap: 8px;
   min-height: 36px;
-  padding: 7px 44px 7px 14px;
-  border-radius: 15px 15px 0 0;
+  padding: 7px 52px 7px 16px;
   color: #475467;
-  background: linear-gradient(180deg, #eef1f5 0%, #e7ebf1 100%);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.sportIconWrap {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
 }
 
 .sportIcon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  fill: #667085;
-  color: #667085;
+  width: 17px;
+  height: 17px;
+  fill: #344054;
+  color: #344054;
+}
+
+.leagueName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .liveLabel {
   margin-left: auto;
-  color: #f04438;
+  color: #d92d20;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.06em;
@@ -40,19 +51,11 @@
 .body {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) 1px minmax(300px, 1.1fr);
-  gap: 0;
-  min-height: 112px;
-  padding: 12px 18px 12px 14px;
-}
-
-.body::after {
-  content: "";
-  grid-column: 2;
-  grid-row: 1;
-  width: 1px;
-  height: 100%;
-  background: #e4e7ec;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 118px;
+  margin: 0 1px 1px;
+  border-radius: 11px;
+  background: #ffffff;
 }
 
 .matchSide {
@@ -60,7 +63,7 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  padding-right: 18px;
+  padding: 14px 18px;
   color: inherit;
   text-decoration: none;
 }
@@ -68,42 +71,30 @@
 .timeRow {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
-  margin-bottom: 9px;
+  margin-bottom: 10px;
 }
 
 .timePill {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
+  min-height: 29px;
   padding: 4px 10px;
   border: 1px solid #e4e7ec;
-  border-radius: 999px;
-  color: #344054;
+  border-radius: 14px;
+  color: #101828;
   background: #ffffff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.liveFlame {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  color: #ffffff;
-  background: #f04438;
-  font-size: 8px;
-  box-shadow: 0 3px 8px rgb(240 68 56 / 0.24);
 }
 
 .score {
   margin-left: auto;
   color: #101828;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
@@ -118,14 +109,14 @@
 .teams > span {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
 
 .teams strong {
   overflow: hidden;
   color: #101828;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -136,61 +127,58 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  padding-left: 18px;
+  margin: 14px 14px 14px 0;
+  padding-left: 16px;
+  border-left: 1px solid #e4e7ec;
 }
 
 .metrics {
   display: flex;
   align-items: center;
-  gap: 0;
   min-width: 0;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .betsMetric,
-.topMetric,
 .probabilityMetric {
   display: inline-flex;
   align-items: center;
-  min-height: 25px;
+  min-height: 26px;
   padding: 4px 9px;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 
-.betsMetric,
-.topMetric {
-  gap: 4px;
+.betsMetric {
+  gap: 5px;
   border-radius: 7px 0 0 7px;
   color: #ffffff;
-  background: linear-gradient(135deg, #0090ff 0%, #0077e6 100%);
-  box-shadow: 0 2px 6px rgb(0 119 230 / 0.2);
+  background: #ff4e16;
 }
 
-.betsMetric svg,
-.topMetric svg {
+.betsMetric svg {
   width: 13px;
   height: 13px;
-  stroke-width: 2.6;
+  fill: currentColor;
+  stroke-width: 2.5;
+}
+
+.betsMetric_hot {
+  background: #f0440d;
 }
 
 .probabilityMetric {
-  position: relative;
-  margin-left: 0;
-  padding-right: 13px;
-  border: 1px solid #e4e7ec;
-  border-left: 0;
   border-radius: 0 7px 7px 0;
-  color: #475467;
-  background: #f8fafc;
+  color: #101828;
+  background: #f2f4f7;
 }
 
 .probabilityMetric strong {
   margin-left: 3px;
-  color: #101828;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 .selection {
@@ -210,78 +198,87 @@
 .selectionText small {
   overflow: hidden;
   margin-bottom: 4px;
-  color: #667085;
-  font-size: 9px;
-  font-weight: 600;
+  color: #101828;
+  font-size: 10px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .selectionText strong {
+  display: -webkit-box;
   overflow: hidden;
   color: #101828;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .odd {
-  flex: 0 0 68px;
+  flex: 0 0 70px;
 }
 
-.odd :global(button),
-.odd > span {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 68px !important;
-  min-width: 68px !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  padding: 0 8px !important;
+.odd :global(button) {
+  width: 70px !important;
+  min-height: 34px !important;
   border: 0 !important;
-  border-radius: 10px !important;
+  border-radius: 11px !important;
   color: #ffffff !important;
-  background: linear-gradient(135deg, #0090ff 0%, #0077e6 100%) !important;
-  box-shadow: 0 4px 10px rgb(0 119 230 / 0.2);
-  font-size: 14px !important;
-  font-weight: 900 !important;
+  background: #087ee8 !important;
+  box-shadow: none !important;
 }
 
 .odd :global(button span:first-child) {
-  display: none !important;
+  color: rgb(255 255 255 / 0.74) !important;
+  font-size: 8px !important;
 }
 
 .odd :global(button span:last-child) {
   color: #ffffff !important;
-  font-size: 14px !important;
-  font-weight: 900 !important;
+  font-size: 13px !important;
+}
+
+.oddFallback {
+  display: flex;
+  width: 70px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  color: #ffffff;
+  background: #087ee8;
+  font-size: 13px;
+  font-weight: 850;
 }
 
 .openButton {
   position: absolute;
-  top: -18px;
-  right: 13px;
+  top: -16px;
+  right: 0;
   z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 3px solid #ffffff;
+  border: 2px solid #ffffff;
   border-radius: 50%;
   color: #ffffff;
-  background: #0085ff;
-  box-shadow: 0 3px 9px rgb(0 119 230 / 0.28);
-  transition:
-    transform 140ms ease,
-    background 140ms ease;
+  background: #087ee8;
+  box-shadow: none;
+  transform: translateX(2px);
+  transition: background 140ms ease;
 }
 
 .openButton:hover {
-  background: #0074e0;
-  transform: scale(1.06);
+  background: #066fcf;
+}
+
+.openButton:focus-visible {
+  outline: 2px solid #087ee8;
+  outline-offset: 2px;
 }
 
 .openButton svg {
@@ -290,62 +287,67 @@
   stroke-width: 2.5;
 }
 
-@media screen and (max-width: 700px) {
-  .card {
-    border-radius: 13px;
-  }
-
+@media screen and (max-width: 768px) {
   .leagueBar {
-    min-height: 33px;
-    padding: 6px 40px 6px 11px;
-    border-radius: 12px 12px 0 0;
-    font-size: 10px;
+    min-height: 34px;
+    padding-left: 12px;
+    font-size: 11px;
   }
 
   .body {
-    grid-template-columns: 1fr;
+    display: flex;
     min-height: 0;
-    padding: 10px;
-  }
-
-  .body::after {
-    display: none;
+    flex-direction: column;
   }
 
   .matchSide {
-    padding: 0 0 10px;
-  }
-
-  .pickSide {
-    padding: 10px 0 0;
-    border-top: 1px solid #e4e7ec;
+    padding: 12px;
   }
 
   .timeRow {
-    margin-bottom: 7px;
-  }
-
-  .timePill {
-    min-height: 24px;
-    font-size: 10px;
-  }
-
-  .teams strong {
-    font-size: 12px;
-  }
-
-  .metrics {
     margin-bottom: 8px;
   }
 
+  .teams strong {
+    font-size: 13px;
+  }
+
+  .pickSide {
+    margin: 0 12px 12px;
+    padding: 11px 0 0;
+    border-top: 1px solid #e4e7ec;
+    border-left: 0;
+  }
+
+  .metrics {
+    margin-bottom: 9px;
+  }
+
   .selectionText small {
-    white-space: normal;
+    font-size: 9px;
+  }
+
+  .selectionText strong {
+    font-size: 13px;
   }
 
   .openButton {
-    top: -17px;
-    right: 9px;
+    top: -15px;
     width: 30px;
     height: 30px;
+  }
+}
+
+@media screen and (max-width: 380px) {
+  .probabilityMetric {
+    padding-right: 7px;
+    padding-left: 7px;
+    font-size: 10px;
+  }
+
+  .betsMetric {
+    padding-right: 7px;
+    padding-left: 7px;
+    font-size: 10px;
   }
 }

@@ -9,12 +9,19 @@ import { FiInfo, FiSmartphone, FiXCircle } from "react-icons/fi";
 import { getSessionClient } from "~/entities/user/lib";
 import { KaspiLogoIcon, VisaIcon } from "~/shared/assets/icons";
 import { api } from "~/shared/api";
+import type { Formatters } from "~/shared/i18n/format";
+import type { MessageKey } from "~/shared/i18n/messages";
+import type { TranslateParams } from "~/shared/i18n/messages";
+import { useFormat } from "~/shared/model/useFormat";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./DetailsStyles.module.css";
 
 type OperationType = "INCOME" | "OUTCOME";
 type TabType = "all" | "INCOME" | "OUTCOME";
 type OperationStatus = "WAITING" | "SUCCESS" | "FAILED";
+
+type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
 
 type OperationMeta = {
   betId?: number;
@@ -42,8 +49,14 @@ interface Operation {
   meta?: OperationMeta;
 }
 
-function formatOperationDate(iso: string) {
-  return new Date(iso).toLocaleString("ru-RU", {
+function getTokenText(count: number, t: TranslateFn) {
+  if (count === 1) return t("profile.tokenWord1");
+  if (count >= 2 && count <= 4) return t("profile.tokenWord2");
+  return t("profile.tokenWord5");
+}
+
+function formatOperationDate(iso: string, format: Formatters) {
+  return format.dateTime(iso, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -53,19 +66,17 @@ function formatOperationDate(iso: string) {
   });
 }
 
-function formatOperationAmount(operation: Operation) {
+function formatOperationAmount(
+  operation: Operation,
+  t: TranslateFn,
+  format: Formatters,
+) {
   const currency = getSymbolFromCurrency(operation.currencyCode) ?? operation.currencyCode;
   const isBonusOperation = operation.source === "BONUS_BET";
   const isTokenBased =
     isBonusOperation ||
     operation.meta?.type === "bonus_bet" ||
     operation.meta?.accountType === "bonus";
-
-  const getTokenText = (count: number) => {
-    if (count === 1) return "жетон";
-    if (count >= 2 && count <= 4) return "жетона";
-    return "жетонов";
-  };
 
   let tokenCount = Number(operation.amount);
 
@@ -75,82 +86,83 @@ function formatOperationAmount(operation: Operation) {
 
   if (isBonusOperation && isTokenBased) {
     const prefix = operation.type === "INCOME" ? "+" : "−";
-    return `${prefix}${tokenCount} ${getTokenText(tokenCount)}`;
+    return `${prefix}${tokenCount} ${getTokenText(tokenCount, t)}`;
   }
 
-  const amount = Intl.NumberFormat("ru-RU", {
+  const amount = format.number(Number(operation.amount), {
     maximumFractionDigits: operation.currencyCode === "KZT" ? 0 : 2,
     minimumFractionDigits: 0,
-  }).format(Number(operation.amount));
+  });
 
   return operation.type === "INCOME" ? `+${amount} ${currency}` : `${amount} ${currency}`;
 }
 
-function getOperationTitle(operation: Operation) {
+function getOperationTitle(operation: Operation, t: TranslateFn) {
   if (operation.source === "BONUS_BET") {
-    if (operation.meta?.type === "bonus_bet_return") return "Бонус возврат";
-    return operation.type === "INCOME" ? "Бонус выигрыш" : "Бонус ставка";
+    if (operation.meta?.type === "bonus_bet_return") return t("profile.opBonusReturn");
+    return operation.type === "INCOME" ? t("profile.opBonusWin") : t("profile.opBonusBet");
   }
 
   if (operation.source === "WC_BET" || operation.source === "BET") {
-    return operation.type === "INCOME" ? "Выигрыш по ставке" : "Ставка";
+    return operation.type === "INCOME" ? t("profile.opBetWin") : t("profile.opBet");
   }
 
-  if (operation.source === "PROMO") return "Промокод";
+  if (operation.source === "PROMO") return t("profile.opPromo");
   if (operation.source === "AFFILIATE" || operation.source === "AFFILIATE_BONUS") {
-    return "Партнёрская программа";
+    return t("profile.opAffiliate");
   }
 
   if (operation.source === "PAYMENT_SYSTEM") {
-    return operation.type === "INCOME" ? "Пополнение счёта" : "Вывод средств";
+    return operation.type === "INCOME" ? t("profile.opTopUp") : t("profile.opWithdraw");
   }
 
-  return operation.type === "INCOME" ? "Пополнение" : "Списание";
+  return operation.type === "INCOME" ? t("profile.opIncome") : t("profile.opOutcome");
 }
 
-function formatPaymentSystemLabel(raw?: string | null) {
+function formatPaymentSystemLabel(raw: string | null | undefined, t: TranslateFn) {
   if (!raw) return null;
 
   const value = raw.toLowerCase();
 
   if (value.includes("kaspi")) return "Kaspi Pay";
-  if (value.includes("sberbank") || value.includes("sber")) return "Перевод из РФ";
-  if (value.includes("kzt_foreign")) return "Банковская карта";
-  if (value.includes("rub_foreign")) return "Банковская карта (RUB)";
+  if (value.includes("yandex")) return t("profile.payYandex");
+  if (value.includes("sberbank") || value.includes("sber")) return t("profile.paySber");
+  if (value.includes("kzt_foreign")) return t("profile.payBankCard");
+  if (value.includes("rub_foreign")) return t("profile.payBankCardRub");
   if (value.includes("nirvana")) return "Nirvana Pay";
   if (value.includes("visa")) return "Visa";
-  if (value.includes("usdt") || value.includes("crypto")) return "Криптовалюта";
-  if (value.includes("phone") || value.includes("mobile")) return "Перевод по номеру телефона";
-  if (value.includes("card") || value.includes("cards")) return "Банковская карта";
+  if (value.includes("usdt") || value.includes("crypto")) return t("profile.payCrypto");
+  if (value.includes("phone") || value.includes("mobile")) return t("profile.payPhone");
+  if (value.includes("card") || value.includes("cards")) return t("profile.payBankCard");
 
   return raw.replace(/_/g, " ");
 }
 
-function getPaymentMethodLabel(operation: Operation) {
+function getPaymentMethodLabel(operation: Operation, t: TranslateFn) {
   const meta = operation.meta;
   const rawMethod = meta?.paymentSystem ?? meta?.method ?? null;
 
-  if (meta?.title === "ADMIN TOPUP") return "Админ-пополнение";
-  if (meta?.title === "ADMIN WITHDRAW") return "Админ-вывод";
+  if (meta?.title === "ADMIN TOPUP") return t("profile.adminTopup");
+  if (meta?.title === "ADMIN WITHDRAW") return t("profile.adminWithdraw");
 
   if (operation.source === "PAYMENT_SYSTEM" && rawMethod) {
-    return formatPaymentSystemLabel(rawMethod);
+    return formatPaymentSystemLabel(rawMethod, t);
   }
 
   if (rawMethod) {
-    return formatPaymentSystemLabel(rawMethod);
+    return formatPaymentSystemLabel(rawMethod, t);
   }
 
   return null;
 }
 
-function getPaymentMethodHint(operation: Operation) {
+function getPaymentMethodHint(operation: Operation, t: TranslateFn) {
   if (operation.meta?.cardMask) return operation.meta.cardMask;
   if (operation.meta?.wallet) return operation.meta.wallet;
 
   if (operation.meta?.betId) {
     const prefix = operation.meta.betVariant === "ORDINAR" ? "R" : "E";
-    return `ID ставки: ${prefix}${operation.meta.betId}`;
+    return t("profile.betIdHint", { id: `${prefix}${operation.meta.betId}` });
   }
 
   return null;
@@ -171,6 +183,19 @@ function OperationIcon({ operation }: { operation: Operation }) {
         className={styles.methodIconImage}
         height={24}
         src={KaspiLogoIcon}
+        width={24}
+      />
+    );
+  }
+
+  if (rawMethod.includes("yandex")) {
+    return (
+      <Image
+        alt=""
+        aria-hidden
+        className={styles.methodIconImage}
+        height={24}
+        src="/yandex-bank.png"
         width={24}
       />
     );
@@ -209,20 +234,22 @@ function OperationIcon({ operation }: { operation: Operation }) {
   );
 }
 
-function getStatusLabel(status?: OperationStatus) {
-  if (status === "FAILED") return "Отменен";
-  if (status === "WAITING") return "В обработке";
+function getStatusLabel(status: OperationStatus | undefined, t: TranslateFn) {
+  if (status === "FAILED") return t("profile.financeStatusCancelled");
+  if (status === "WAITING") return t("profile.financeStatusProcessing");
   return null;
 }
 
-function getStatusHint(operation: Operation) {
+function getStatusHint(operation: Operation, t: TranslateFn) {
   if (operation.status === "FAILED") {
-    return operation.meta?.reason ?? "Проверьте лимит и повторите платеж";
+    return operation.meta?.reason ?? t("profile.financeRetryHint");
   }
   return null;
 }
 
 export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
+  const { t } = useLocale();
+  const format = useFormat();
   const [tab, setTab] = useState<TabType>("all");
 
   const { data: operations, isLoading } = useQuery<Operation[]>({
@@ -254,10 +281,10 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
     >
       <div className={styles.header}>
         <h2 className={styles.title} id="details-modal-title">
-          История платежей
+          {t("profile.financeTitle")}
         </h2>
         <button
-          aria-label="Закрыть"
+          aria-label={t("profile.closeAria")}
           className={styles.closeButton}
           onClick={onClose}
           type="button"
@@ -272,42 +299,40 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
           onClick={() => setTab("all")}
           type="button"
         >
-          Все
+          {t("common.all")}
         </button>
         <button
           className={`${styles.tabItem} ${tab === "INCOME" ? styles.tabItem_active : ""}`}
           onClick={() => setTab("INCOME")}
           type="button"
         >
-          Депозиты
+          {t("profile.financeTabDeposits")}
         </button>
         <button
           className={`${styles.tabItem} ${tab === "OUTCOME" ? styles.tabItem_active : ""}`}
           onClick={() => setTab("OUTCOME")}
           type="button"
         >
-          Выводы
+          {t("profile.financeTabWithdrawals")}
         </button>
       </div>
 
       <div className={styles.content}>
         {isLoading ? (
-          <div className={styles.stateText}>Загрузка...</div>
+          <div className={styles.stateText}>{t("profile.financeLoading")}</div>
         ) : !filteredOperations.length ? (
           <div className={styles.emptyBlock}>
-            <p className={styles.emptyTitle}>Ничего нет</p>
-            <p className={styles.emptyText}>
-              У вас пока нет операций для отображения
-            </p>
+            <p className={styles.emptyTitle}>{t("profile.financeEmptyTitle")}</p>
+            <p className={styles.emptyText}>{t("profile.financeEmptyText")}</p>
           </div>
         ) : (
           <div className={styles.operationsList}>
             {filteredOperations.map((operation) => {
-              const statusLabel = getStatusLabel(operation.status);
-              const statusHint = getStatusHint(operation);
-              const title = getOperationTitle(operation);
-              const methodLabel = getPaymentMethodLabel(operation);
-              const hint = getPaymentMethodHint(operation);
+              const statusLabel = getStatusLabel(operation.status, t);
+              const statusHint = getStatusHint(operation, t);
+              const title = getOperationTitle(operation, t);
+              const methodLabel = getPaymentMethodLabel(operation, t);
+              const hint = getPaymentMethodHint(operation, t);
               const isFailed = operation.status === "FAILED";
 
               return (
@@ -323,7 +348,7 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
                         <p
                           className={`${styles.amount} ${isFailed ? styles.amount_cancelled : ""}`}
                         >
-                          {formatOperationAmount(operation)}
+                          {formatOperationAmount(operation, t, format)}
                         </p>
                       </div>
 
@@ -340,7 +365,7 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
                             </p>
                           )}
                         </div>
-                        <p className={styles.date}>{formatOperationDate(operation.createdAt)}</p>
+                        <p className={styles.date}>{formatOperationDate(operation.createdAt, format)}</p>
                       </div>
                     </div>
                   </div>

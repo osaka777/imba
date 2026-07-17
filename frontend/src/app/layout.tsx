@@ -16,6 +16,7 @@ import { PreloadData } from "~/app/PreloadData";
 import { FontsExtendedLoader } from "~/app/FontsExtendedLoader";
 import { QueryDevtoolsGate } from "~/app/providers/QueryDevtoolsGate";
 import { CurrencyProvider } from "~/app/providers/CurrencyProvider";
+import { LocaleProvider } from "~/app/providers/LocaleProvider";
 import { YandexMetrika } from "~/shared/metrics";
 import { init } from "~/shared/lib";
 import { AuthProvider } from "~/app/providers/AuthProvider";
@@ -111,32 +112,34 @@ export default function RootLayout({
         </Suspense>
         <div id="root">
           <CurrencyProvider>
-            <Provider>
-              <AuthProvider>
-                <AppPushProvider>
-                  <RealtimeProviders>
-                  <div className={shellStyles.siteShell}>
-                    <div className={`${shellStyles.fullBleed} ${shellStyles.topBar}`}>
-                      <HeaderLineTop />
+            <LocaleProvider>
+              <Provider>
+                <AuthProvider>
+                  <AppPushProvider>
+                    <RealtimeProviders>
+                    <div className={shellStyles.siteShell}>
+                      <div className={`${shellStyles.fullBleed} ${shellStyles.topBar}`}>
+                        <HeaderLineTop />
+                      </div>
+                      <RootNav />
+                      <div className={shellStyles.siteMain}>{children}</div>
+                      <div className={shellStyles.fullBleed}>
+                        <FooterDeferred />
+                      </div>
                     </div>
-                    <RootNav />
-                    <div className={shellStyles.siteMain}>{children}</div>
-                    <div className={shellStyles.fullBleed}>
-                      <FooterDeferred />
-                    </div>
-                  </div>
-                  <QueryDevtoolsGate />
-                  <PreloadData />
-                  <FontsExtendedLoader />
-                  </RealtimeProviders>
-                </AppPushProvider>
-                <LiveSupportChat />
-                <SupportChatModalHost />
-              </AuthProvider>
-            </Provider>
+                    <QueryDevtoolsGate />
+                    <PreloadData />
+                    <FontsExtendedLoader />
+                    </RealtimeProviders>
+                  </AppPushProvider>
+                  <LiveSupportChat />
+                  <SupportChatModalHost />
+                  <MobileNavigation />
+                </AuthProvider>
+              </Provider>
+            </LocaleProvider>
           </CurrencyProvider>
         </div>
-        <MobileNavigation />
         <AppToastContainer />
       </body>
     </html>

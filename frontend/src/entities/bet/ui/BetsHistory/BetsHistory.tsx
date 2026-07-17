@@ -16,6 +16,8 @@ import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { mapWcBetsForHistory } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
 import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import { LoadingSpinner } from "~/shared/ui";
+import type { MessageKey } from "~/shared/i18n/messages";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { BetHistoryCard } from "./BetHistoryCard";
 import styles from "./BetsHistoryPage.module.css";
@@ -29,15 +31,28 @@ interface BetsResponse {
   ordinar: BetDto[];
 }
 
-const TABS: { id: TabType; label: string }[] = [
-  { id: "all", label: "Все" },
-  { id: "ordinar", label: "Ординар" },
-  { id: "express", label: "Экспресс" },
-];
+const STATUS_LABEL_KEYS: Record<HistoryStatusFilter, MessageKey> = {
+  all: "coupon.historyAllStatuses",
+  pending: "coupon.historyPending",
+  cashout: "coupon.historyCashout",
+  win: "coupon.historyWin",
+  lose: "coupon.historyLose",
+  return: "coupon.historyReturn",
+};
 
 export const BetsHistory: React.FC = () => {
+  const { t } = useLocale();
   const [tab, setTab] = useState<TabType>("all");
   const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
+
+  const tabs = useMemo(
+    () => [
+      { id: "all" as const, label: t("coupon.all") },
+      { id: "ordinar" as const, label: t("coupon.ordinar") },
+      { id: "express" as const, label: t("coupon.express") },
+    ],
+    [t],
+  );
 
   const { data: bets, isLoading } = useQuery<BetsResponse>({
     queryKey: ["bets"],
@@ -126,18 +141,26 @@ export const BetsHistory: React.FC = () => {
 
   const loading = isLoading || wcLoading;
 
+  const pluralBets = (n: number): string => {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return t("coupon.betWord1");
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return t("coupon.betWord2");
+    return t("coupon.betWord5");
+  };
+
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <Link className={styles.backLink} href="/profile">
-          ← Профиль
+          {t("coupon.backToProfile")}
         </Link>
-        <h1 className={styles.pageTitle}>История ставок</h1>
+        <h1 className={styles.pageTitle}>{t("coupon.historyTitle")}</h1>
         {!loading && stats.total > 0 ? (
           <p className={styles.pageSubtitle}>
             {stats.total} {pluralBets(stats.total)}
-            {stats.win > 0 ? ` · ${stats.win} выигр.` : ""}
-            {stats.pending > 0 ? ` · ${stats.pending} в игре` : ""}
+            {stats.win > 0 ? ` · ${stats.win} ${t("coupon.statsWinsShort")}` : ""}
+            {stats.pending > 0 ? ` · ${stats.pending} ${t("coupon.statsPendingShort")}` : ""}
           </p>
         ) : null}
       </header>
@@ -146,34 +169,34 @@ export const BetsHistory: React.FC = () => {
         <div className={styles.statsRow}>
           <StatPill
             active={statusFilter === "all"}
-            label="Всего"
+            label={t("coupon.historyTotal")}
             onClick={() => setStatusFilter("all")}
             value={stats.total}
           />
           <StatPill
             active={statusFilter === "pending"}
-            label="В игре"
+            label={t("coupon.historyPending")}
             onClick={() => setStatusFilter("pending")}
             tone="pending"
             value={stats.pending}
           />
           <StatPill
             active={statusFilter === "cashout"}
-            label="Продажа"
+            label={t("coupon.historyCashout")}
             onClick={() => setStatusFilter("cashout")}
             tone="cashout"
             value={stats.cashout}
           />
           <StatPill
             active={statusFilter === "win"}
-            label="Выигрыш"
+            label={t("coupon.historyWin")}
             onClick={() => setStatusFilter("win")}
             tone="win"
             value={stats.win}
           />
           <StatPill
             active={statusFilter === "lose"}
-            label="Проигрыш"
+            label={t("coupon.historyLose")}
             onClick={() => setStatusFilter("lose")}
             tone="lose"
             value={stats.lose}
@@ -182,7 +205,7 @@ export const BetsHistory: React.FC = () => {
       ) : null}
 
       <div className={styles.filterBar}>
-        {TABS.map((item) => (
+        {tabs.map((item) => (
           <button
             key={item.id}
             className={`${styles.filterChip} ${tab === item.id ? styles.filterChipActive : ""}`}
@@ -202,7 +225,7 @@ export const BetsHistory: React.FC = () => {
             onClick={() => setStatusFilter(item.id)}
             type="button"
           >
-            {item.label}
+            {t(STATUS_LABEL_KEYS[item.id])}
           </button>
         ))}
       </div>
@@ -211,18 +234,18 @@ export const BetsHistory: React.FC = () => {
         {loading ? (
           <div className={styles.loadingWrap}>
             <LoadingSpinner />
-            <span className={styles.loadingText}>Загрузка ставок…</span>
+            <span className={styles.loadingText}>{t("coupon.loadingBets")}</span>
           </div>
         ) : !filteredBets.length ? (
           <div className={styles.emptyBlock}>
             <span className={styles.emptyIcon} aria-hidden>
               📋
             </span>
-            <p className={styles.emptyTitle}>Пока пусто</p>
+            <p className={styles.emptyTitle}>{t("coupon.emptyTitle")}</p>
             <p className={styles.emptyText}>
               {statusFilter !== "all" || tab !== "all"
-                ? "Нет ставок с выбранными фильтрами"
-                : "Здесь появятся ваши ставки после первого пари"}
+                ? t("coupon.historyEmptyFiltered")
+                : t("coupon.historyEmpty")}
             </p>
           </div>
         ) : (
@@ -269,12 +292,4 @@ function StatPill({
       <span className={styles.statPillLabel}>{label}</span>
     </button>
   );
-}
-
-function pluralBets(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "ставка";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "ставки";
-  return "ставок";
 }

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -23,7 +24,10 @@ import {
 } from '~/shared/utils/balance-fractional-reserve.util';
 
 import { OlimpbetWcService } from '../olimpbet-wc/olimpbet-wc.service';
+import { isOlimpbetEsportsSportId, olimpbetSportKeyToSlug } from '../olimpbet-wc/olimpbet-sport.util';
+import type { OlimpbetApiLocale } from '~/common/locale/olimpbet-locale.util';
 import { CybersportService } from '../cybersport/cybersport.service';
+import { isCyberGameRef, olimpbetIdFromCyberGameRef } from '../cybersport/cybersport-mask.util';
 import {
   extractOlimpbetHeadToHeadId,
   sportRadarMatchNumericId,
@@ -57,13 +61,23 @@ import { resolveBetPlacementScope } from './wc-scope-market-filter.util';
 import { buildTotalsOutcomeName } from './wc-totals-outcome-name.util';
 import { advanceMatchState } from './wc-match-state-tracker.util';
 import { parseMatchState } from './wc-match-state.types';
-import { olimpbetSportKeyToSlug } from '../olimpbet-wc/olimpbet-sport.util';
+import {
+  buildKickPlayerUrl,
+  isVerifiedKickChannel,
+  isKickPlayerUrl,
+  kickChannelFromStreamUrl,
+  kickPlayerUrlFromStreamHint,
+  resolveKickBroadcastChannel,
+} from './kick-broadcast.util';
+import { buildTwitchPlayerUrl } from './twitch-en-broadcast.util';
+import { EsportsStreamResolverService } from '../kick-live/esports-stream-resolver.service';
 import { wcLeagueNameFromSportKey, wcSlugToSportKey, wcSportKeyToSlug } from './wc-sport.util';
 import {
   isWcEventId,
   olimpbetIdFromSlugHint,
   olimpbetIdFromWcEventId,
   stripLegacyHashFromSlug,
+  wcEventIdFromOlimpbet,
 } from './wc-slug.util';
 import {
   publicIdToInternal,
@@ -86,10 +100,11 @@ import {
 import { WcOddsRealtimeService } from './wc-odds-realtime.service';
 import { buildHomepageWidgets, type HomepageWidgetItem } from './wc-home-widgets.util';
 
-const HOMEPAGE_WIDGETS_CACHE_MS = 45_000;
+const HOMEPAGE_WIDGETS_CACHE_MS = 15_000;
 
 @Injectable()
 export class WcOddsBetService {
+  private readonly logger = new Logger(WcOddsBetService.name);
   private homepageWidgetsCache: {
     expiresAt: number;
     payload: { items: HomepageWidgetItem[] };
@@ -103,6 +118,7 @@ export class WcOddsBetService {
     private readonly config: ConfigService,
     private readonly broadcastProxy: WcBroadcastProxyService,
     private readonly cybersport: CybersportService,
+    private readonly esportsStream: EsportsStreamResolverService,
   ) {}
 
   private assertEnabled() {
@@ -152,15 +168,22 @@ export class WcOddsBetService {
 
   private async toDtos(
     events: Array<Parameters<WcOddsBetService['toDto']>[0]>,
+    options?: { logosCacheOnly?: boolean; locale?: OlimpbetApiLocale },
   ): Promise<WcOddsEventDto[]> {
     const dtos = events.map((event) => this.toDto(event));
-    return this.olimpbet.enrichEventDtos(dtos, events);
+    const withLogos = await this.olimpbet.enrichEventDtos(dtos, events, {
+      cacheOnly: options?.logosCacheOnly === true,
+    });
+    return this.olimpbet.localizeEventDtos(withLogos, options?.locale);
   }
 
   private async toPublicDtos(
     events: Array<Parameters<WcOddsBetService['toDto']>[0]>,
+    locale: OlimpbetApiLocale = 'ru',
   ): Promise<WcOddsEventDto[]> {
-    return sanitizePublicEventList(await this.toDtos(events));
+    return sanitizePublicEventList(
+      await this.toDtos(events, { logosCacheOnly: true, locale }),
+    );
   }
 
   private buildLineWhere(hoursFilter: WcLineHoursFilter = 'all', date?: string, sportKey?: string | null) {
@@ -218,7 +241,7 @@ export class WcOddsBetService {
     );
   }
 
-  async listLineTournaments(sport?: string): Promise<WcTournamentDto[]> {
+  async listLineTournaments(sport?: string, locale: OlimpbetApiLocale = 'ru'): Promise<WcTournamentDto[]> {
     this.assertEnabled();
     const sportKey = sport ? wcSlugToSportKey(sport) : undefined;
     const rows = await this.prisma.wcOddsEvent.findMany({
@@ -228,10 +251,16 @@ export class WcOddsBetService {
       },
       select: { tournamentId: true, leagueName: true, priorityLevel: true },
     });
-    return this.aggregateTournaments(rows);
+    const aggregated = this.aggregateTournaments(rows);
+    if (locale === 'ru') return aggregated;
+    await this.olimpbet.ensureLocalizedNames(locale);
+    return aggregated.map((row) => ({
+      ...row,
+      leagueName: this.olimpbet.localizeTournamentName(row.tournamentId, row.leagueName, locale),
+    }));
   }
 
-  async listLiveTournaments(sport?: string): Promise<WcTournamentDto[]> {
+  async listLiveTournaments(sport?: string, locale: OlimpbetApiLocale = 'ru'): Promise<WcTournamentDto[]> {
     this.assertEnabled();
     const sportKey = sport ? wcSlugToSportKey(sport) : undefined;
     const rows = await this.prisma.wcOddsEvent.findMany({
@@ -241,7 +270,13 @@ export class WcOddsBetService {
       },
       select: { tournamentId: true, leagueName: true, priorityLevel: true },
     });
-    return this.aggregateTournaments(rows);
+    const aggregated = this.aggregateTournaments(rows);
+    if (locale === 'ru') return aggregated;
+    await this.olimpbet.ensureLocalizedNames(locale);
+    return aggregated.map((row) => ({
+      ...row,
+      leagueName: this.olimpbet.localizeTournamentName(row.tournamentId, row.leagueName, locale),
+    }));
   }
 
   private buildTournamentFilter(tournamentId?: string, league?: string) {
@@ -291,12 +326,14 @@ export class WcOddsBetService {
     league?: string;
     limit?: number;
     offset?: number;
+    locale?: OlimpbetApiLocale;
   }): Promise<WcOddsEventDto[]> {
     this.assertEnabled();
     const hoursFilter = parseWcLineHoursFilter(params.hours);
     const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
     const offset = Math.max(params.offset ?? 0, 0);
     const sportKey = params.sport ? wcSlugToSportKey(params.sport) : undefined;
+    const locale = params.locale ?? 'ru';
 
     const where = {
       ...this.buildLineWhere(hoursFilter, params.date, sportKey),
@@ -311,7 +348,7 @@ export class WcOddsBetService {
       skip: offset,
     });
 
-    return this.toPublicDtos(events);
+    return this.toPublicDtos(events, locale);
   }
 
   async searchEvents(q: string, sport?: string, limit = 25): Promise<WcOddsEventDto[]> {
@@ -367,21 +404,32 @@ export class WcOddsBetService {
       return this.homepageWidgetsCache.payload;
     }
 
-    const perSport = 14;
-    const [soccerLive, soccerLine, tennisLive, tennisLine, cs2] = await Promise.all([
+    const perSport = 24;
+    const cs2Promise = this.cybersport.isEnabled()
+      ? Promise.race([
+        this.cybersport.pickHomepageCs2WithLogos().catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ])
+      : Promise.resolve(null);
+
+    const [soccerLive, soccerLine, mixLive, mixLine, cs2] = await Promise.all([
       this.listLiveEvents({ sport: 'soccer', limit: perSport }),
-      this.listLineEvents({ sport: 'soccer', limit: perSport, hours: '72' }),
-      this.listLiveEvents({ sport: 'tennis', limit: perSport }),
-      this.listLineEvents({ sport: 'tennis', limit: perSport, hours: '72' }),
-      this.cybersport.isEnabled()
-        ? this.cybersport.pickHomepageCs2WithLogos()
-        : Promise.resolve(null),
+      this.listLineEvents({ sport: 'soccer', limit: perSport, hours: '168' }),
+      this.listLiveEvents({ limit: Math.min(perSport, 12) }),
+      this.listLineEvents({ limit: Math.min(perSport, 12), hours: '72' }),
+      cs2Promise,
     ]);
 
-    const items = buildHomepageWidgets(
-      [...soccerLive, ...soccerLine, ...tennisLive, ...tennisLine],
-      cs2,
-    );
+    const wcPool = [...new Map(
+      [
+        ...soccerLive,
+        ...soccerLine,
+        ...mixLive.filter((event) => event.sport !== 'tennis'),
+        ...mixLine.filter((event) => event.sport !== 'tennis'),
+      ].map((event) => [event.id, event] as const),
+    ).values()];
+
+    const items = buildHomepageWidgets(wcPool, cs2);
 
     const payload = { items };
     this.homepageWidgetsCache = {
@@ -398,11 +446,13 @@ export class WcOddsBetService {
     limit?: number;
     offset?: number;
     broadcastOnly?: boolean;
+    locale?: OlimpbetApiLocale;
   }): Promise<WcOddsEventDto[]> {
     this.assertEnabled();
     const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
     const offset = Math.max(params.offset ?? 0, 0);
     const sportKey = params.sport ? wcSlugToSportKey(params.sport) : undefined;
+    const locale = params.locale ?? 'ru';
 
     const where = {
       ...wcLiveEventWhere(),
@@ -411,19 +461,22 @@ export class WcOddsBetService {
       ...this.buildTournamentFilter(params.tournament, params.league),
     };
 
-    const visible = await this.fetchVisibleLiveEvents(where, offset + limit);
+    const visible = await this.fetchVisibleLiveEvents(where, offset + limit, locale);
     return sanitizePublicEventList(visible.slice(offset, offset + limit));
   }
 
   private async fetchVisibleLiveEvents(
     where: Record<string, unknown>,
     needed: number,
+    locale: OlimpbetApiLocale = 'ru',
   ): Promise<WcOddsEventDto[]> {
     const visible: WcOddsEventDto[] = [];
     let dbSkip = 0;
     const batchSize = 50;
+    const maxBatches = 8; // never scan more than 400 rows for a list request
+    let batches = 0;
 
-    while (visible.length < needed) {
+    while (visible.length < needed && batches < maxBatches) {
       let events = await this.prisma.wcOddsEvent.findMany({
         where,
         orderBy: this.liveOrderBy,
@@ -432,8 +485,11 @@ export class WcOddsBetService {
       });
       if (events.length === 0) break;
       dbSkip += events.length;
+      batches += 1;
 
-      const dtos = this.mergeLiveEventStatsFromCache(await this.toDtos(events));
+      const dtos = this.mergeLiveEventStatsFromCache(
+        await this.toDtos(events, { logosCacheOnly: true, locale }),
+      );
       for (const dto of dtos) {
         if (isWcEventVisibleInLiveList(dto)) visible.push(dto);
       }
@@ -536,7 +592,14 @@ export class WcOddsBetService {
   }
 
   async findEventByRef(ref: string): Promise<WcOddsEvent | null> {
-    const decoded = resolveEventRef(ref);
+    let decoded = resolveEventRef(ref);
+
+    if (isCyberGameRef(decoded)) {
+      const cyberOlimpbetId = olimpbetIdFromCyberGameRef(decoded);
+      if (cyberOlimpbetId) {
+        decoded = wcEventIdFromOlimpbet(cyberOlimpbetId);
+      }
+    }
 
     if (isWcEventId(decoded)) {
       return this.prisma.wcOddsEvent.findUnique({ where: { id: decoded } });
@@ -571,7 +634,7 @@ export class WcOddsBetService {
 
     if (!olimpbetId) return null;
 
-    const main = await this.olimpbet.fetchEventDetail(olimpbetId);
+    const main = await this.olimpbet.fetchEventDetail(olimpbetId, { locale: 'ru' });
     const headToHeadId = extractOlimpbetHeadToHeadId(main);
     if (!headToHeadId) return null;
 
@@ -619,20 +682,128 @@ export class WcOddsBetService {
     res.send(Buffer.from(await upstream.arrayBuffer()));
   }
 
-  async getEventBroadcast(ref: string) {
+  async getEventBroadcast(ref: string, requestHost?: string) {
     this.assertEnabled();
 
     const event = await this.findEventByRef(ref);
     if (!event) throw new NotFoundException('Event not found');
 
-    const olimpbetId = olimpbetIdFromWcEventId(event.id);
+    const olimpbetId = await this.resolveOlimpbetIdForBroadcast(event, ref);
     if (!olimpbetId) {
       return { available: false, streamUrl: null, streamType: null };
     }
 
-    const payload = await this.olimpbet.fetchEventBroadcast(olimpbetId);
+    const sportMatch = /^olimp_(\d+)$/.exec(event.sportKey ?? '');
+    const preferIframe = sportMatch ? isOlimpbetEsportsSportId(Number(sportMatch[1])) : false;
+
+    const payload = await this.olimpbet.fetchEventBroadcast(olimpbetId, { preferIframe });
     const publicRef = event.slug?.trim() || toPublicEventId(event.id);
 
+    let leagueName = event.leagueName;
+    let tournamentId = event.tournamentId;
+    const main = await this.olimpbet.fetchEventDetail(olimpbetId, { locale: 'ru' });
+    if (main) {
+      if (!leagueName?.trim()) leagueName = main.tournament?.name?.trim() || leagueName;
+      if (!tournamentId) tournamentId = main.tournament?.id ?? tournamentId;
+    }
+    const isLive = Boolean(main?.live);
+
+    const kickCtx = {
+      sportKey: event.sportKey,
+      leagueName,
+      tournamentId,
+      homeTeam: event.homeTeam,
+      awayTeam: event.awayTeam,
+      olimpbetStreamUrl: payload.streamUrl,
+      olimpbetBroadcastAvailable: payload.available,
+      isLive,
+    };
+
+    const kickFromUrl = kickChannelFromStreamUrl(payload.streamUrl);
+    const kickFromRules = resolveKickBroadcastChannel(kickCtx);
+
+    const buildKickResponse = (channel: string, isFallback = false) => {
+      const kickUrl = buildKickPlayerUrl(channel, requestHost);
+      this.broadcastProxy.rememberEmbed(publicRef, kickUrl);
+      return {
+        available: true,
+        streamUrl: kickUrl,
+        streamType: 'iframe' as const,
+        provider: 'kick' as const,
+        kickChannel: channel,
+        streamFallback: isFallback,
+      };
+    };
+
+    const buildTwitchResponse = (channel: string, isFallback = true) => {
+      const twitchUrl = buildTwitchPlayerUrl(channel, requestHost);
+      return {
+        available: true,
+        streamUrl: twitchUrl,
+        streamType: 'iframe' as const,
+        provider: 'twitch' as const,
+        twitchChannel: channel,
+        streamFallback: isFallback,
+      };
+    };
+
+    const resolveLiveEsportsStream = async () => this.esportsStream.resolveLiveStream(
+      event.sportKey,
+      kickCtx,
+    );
+
+    if (preferIframe) {
+      const hlsUrl = payload.hlsFallbackUrl
+        ?? (payload.streamType === 'hls' && payload.streamUrl?.includes('.m3u8')
+          ? payload.streamUrl
+          : null);
+      const olimpbetIframeUrl = payload.iframeFallbackUrl
+        ?? (payload.streamType === 'iframe' && payload.streamUrl && !isKickPlayerUrl(payload.streamUrl)
+          ? payload.streamUrl
+          : null);
+
+      // Kick mirror extracted from Olimpbet payload (verified tournament channel).
+      if (kickFromUrl && isVerifiedKickChannel(kickFromUrl)) {
+        return buildKickResponse(kickFromUrl, false);
+      }
+
+      // This match's Olimpbet embed/HLS — before generic Kick/Twitch fallbacks.
+      if (olimpbetIframeUrl && !/^https:\/\/player\.twitch\.tv\//i.test(olimpbetIframeUrl)) {
+        this.broadcastProxy.rememberEmbed(publicRef, olimpbetIframeUrl);
+        return {
+          available: true,
+          streamUrl: `/api/feed/events/${encodeURIComponent(publicRef)}/view`,
+          streamType: 'iframe',
+          provider: 'sportboom',
+        };
+      }
+
+      if (hlsUrl) {
+        this.broadcastProxy.rememberUpstream(publicRef, hlsUrl);
+        return {
+          available: true,
+          streamUrl: `/api/feed/events/${encodeURIComponent(publicRef)}/v?t=${Date.now()}`,
+          streamType: 'hls',
+          provider: 'sportboom',
+        };
+      }
+
+      if (kickFromRules && isVerifiedKickChannel(kickFromRules)) {
+        return buildKickResponse(kickFromRules, false);
+      }
+
+      const livePick = await resolveLiveEsportsStream();
+      if (livePick?.provider === 'kick') {
+        return buildKickResponse(livePick.channel, livePick.isFallback);
+      }
+      if (livePick?.provider === 'twitch') {
+        return buildTwitchResponse(livePick.channel, livePick.isFallback);
+      }
+
+      return { available: false, streamUrl: null, streamType: null };
+    }
+
+    // Regular sportsbook — Olimpbet HLS/iframe only; never fall back to esports Kick/Twitch.
     if (payload.streamType === 'hls' && payload.streamUrl) {
       this.broadcastProxy.rememberUpstream(publicRef, payload.streamUrl);
       return {
@@ -643,6 +814,9 @@ export class WcOddsBetService {
     }
 
     if (payload.streamType === 'iframe' && payload.streamUrl) {
+      if (/twitch\.tv/i.test(payload.streamUrl)) {
+        return { available: false, streamUrl: null, streamType: null };
+      }
       this.broadcastProxy.rememberEmbed(publicRef, payload.streamUrl);
       return {
         available: payload.available,
@@ -658,25 +832,103 @@ export class WcOddsBetService {
     };
   }
 
-  async getEventDetail(ref: string): Promise<WcOddsEventDetailDto> {
+  async getEventDetail(
+    ref: string,
+    locale: OlimpbetApiLocale = 'ru',
+    options?: { sync?: boolean },
+  ): Promise<WcOddsEventDetailDto & { syncOk?: boolean }> {
     this.assertEnabled();
 
-    const cached = this.realtime.getEventCache(ref);
-    if (cached) return cached;
+    const eventRow = await this.findEventByRef(ref);
+    let base: WcOddsEventDetailDto | null = null;
+    let syncOk = !options?.sync;
 
-    let event = await this.findEventByRef(ref);
-    if (!event) throw new NotFoundException('Event not found');
+    if (options?.sync) {
+      // Fast path: force main-event odds only (linked fullMarkets is too slow for page open).
+      // Full markets catch up via focused ingest in the background.
+      const SYNC_BUDGET_MS = 2_500;
+      let refreshed: WcOddsEventDetailDto | null = null;
+      try {
+        refreshed = await Promise.race([
+          this.realtime.refreshEvent(ref, true, {
+            oddsOnly: true,
+            forceFetch: true,
+            skipStructuredStats: true,
+            persistOdds: true,
+          }),
+          new Promise<null>((resolve) => {
+            setTimeout(() => resolve(null), SYNC_BUDGET_MS);
+          }),
+        ]);
+      } catch {
+        refreshed = null;
+      }
 
-    const refreshed = await this.realtime.refreshEvent(ref, false, { fullMarkets: true });
-    if (refreshed) return sanitizePublicEventDetail(refreshed);
+      void this.realtime.refreshEvent(ref, true, {
+        fullMarkets: true,
+        persistOdds: true,
+      }).catch(() => undefined);
 
-    const groupedMarkets = (event.marketsJson ?? {}) as WcGroupedMarkets;
-    const [dto] = await this.toDtos([event]);
+      if (refreshed) {
+        syncOk = true;
+        const [localized] = await this.olimpbet.localizeEventDtos([refreshed], locale);
+        base = sanitizePublicEventDetail(localized ?? refreshed);
+      } else {
+        syncOk = false;
+        const cached = this.realtime.getEventCache(ref);
+        if (cached) {
+          const [localized] = await this.olimpbet.localizeEventDtos([cached], locale);
+          base = sanitizePublicEventDetail(localized ?? cached);
+        } else if (eventRow) {
+          const groupedMarkets = (eventRow.marketsJson ?? {}) as WcGroupedMarkets;
+          const [dto] = await this.toDtos([eventRow], { locale });
+          base = sanitizePublicEventDetail({
+            ...dto,
+            groupedMarkets,
+          });
+        }
+      }
+    } else {
+      const cached = this.realtime.getEventDetailSnapshot(ref)
+        ?? this.realtime.getEventCache(ref);
 
-    return sanitizePublicEventDetail({
-      ...dto,
-      groupedMarkets,
-    });
+      if (cached) {
+        const [localized] = await this.olimpbet.localizeEventDtos([cached], locale);
+        base = sanitizePublicEventDetail(localized ?? cached);
+      } else {
+        if (!eventRow) throw new NotFoundException('Event not found');
+
+        // Never await fullMarkets on cold miss — it fans out to dozens of linked Olimpbet GETs.
+        // Return DB markets immediately; focused SUB / background refresh fills eventCache.
+        const groupedMarkets = (eventRow.marketsJson ?? {}) as WcGroupedMarkets;
+        const [dto] = await this.toDtos([eventRow], { locale });
+        base = sanitizePublicEventDetail({
+          ...dto,
+          groupedMarkets,
+        });
+        void this.realtime.refreshEvent(ref, false, {
+          oddsOnly: true,
+          forceFetch: true,
+          skipStructuredStats: true,
+          persistOdds: true,
+        }).then(() => {
+          void this.realtime.refreshEvent(ref, false, {
+            fullMarkets: true,
+            persistOdds: true,
+          });
+        }).catch(() => undefined);
+      }
+    }
+
+    if (!base) throw new NotFoundException('Event not found');
+
+    // Display-only EN team/league labels — never rebuild linked markets on the hot path.
+    if (locale === 'en') {
+      // Names already localized via localizeEventDtos above when possible.
+      // Full EN market label rebuild belongs in background sync, not TTFB.
+    }
+
+    return { ...base, syncOk };
   }
 
   async placeBet(params: {
@@ -698,7 +950,7 @@ export class WcOddsBetService {
     this.assertEnabled();
 
     const minStake = Number(this.config.get<string>('WC_ODDS_MIN_STAKE', '100'));
-    const maxStake = Number(this.config.get<string>('WC_ODDS_MAX_STAKE', '500000'));
+    const maxStake = Number(this.config.get<string>('WC_ODDS_MAX_STAKE', '1000000'));
 
     if (!Number.isFinite(params.stake) || params.stake < minStake || params.stake > maxStake) {
       throw new BadRequestException(`Stake must be between ${minStake} and ${maxStake}`);
@@ -708,16 +960,26 @@ export class WcOddsBetService {
     if (!event) throw new NotFoundException('Event not found');
 
     const publicRef = event.slug?.trim() || toPublicEventId(event.id);
-    const refreshed = await this.realtime.refreshEvent(publicRef, true, {
-      fullMarkets: true,
-      persistOdds: true,
-    });
-    if (refreshed) {
-      event = await this.findEventByRef(params.eventId);
-      if (!event) throw new NotFoundException('Event not found');
+    const rawMarketKey = params.marketKey || 'h2h';
+    const placeStartedAt = Date.now();
+
+    const placementSnapshot = await this.realtime.resolveBetPlacementSnapshot(
+      publicRef,
+      event,
+      {
+        marketKey: rawMarketKey,
+        outcomeKey: params.outcomeKey ?? null,
+        line: params.line ?? null,
+        groupKey: params.groupKey ?? null,
+      },
+    );
+    if (!placementSnapshot) {
+      throw new NotFoundException('Event not found');
     }
 
-    if (refreshed?.bettingOpen === false) {
+    const { groupedMarkets, bettingOpen, main: placementDetail } = placementSnapshot;
+
+    if (bettingOpen === false) {
       throw new BadRequestException('Betting closed for this match');
     }
 
@@ -725,15 +987,11 @@ export class WcOddsBetService {
       throw new BadRequestException('Betting closed for this match');
     }
 
-    const rawMarketKey = params.marketKey || 'h2h';
     if (!isWcBetPlacementAllowed(rawMarketKey, params.outcomeKey)) {
       throw new BadRequestException('This market is not available for betting');
     }
 
     const marketKey = normalizeWcMarketKey(rawMarketKey);
-    const groupedMarkets = (
-      refreshed?.groupedMarkets ?? event.marketsJson ?? {}
-    ) as WcGroupedMarkets;
 
     let pick: WcOddsPick | null = params.pick ?? null;
     let outcomeKey = params.outcomeKey ?? null;
@@ -828,21 +1086,18 @@ export class WcOddsBetService {
       ? findMarketGroup(groupedMarkets, rawMarketKey, outcomeKey ?? '', line, groupKey)?.label ?? null
       : findMarketGroup(groupedMarkets, rawMarketKey, outcomeKey ?? '', line, groupKey)?.label ?? null;
 
+    const placementScope = resolveBetPlacementScope({
+      marketKey: rawMarketKey,
+      outcomeKey,
+      outcomeName,
+      groupKey,
+      totalsGroupLabel,
+    });
+
     const olimpbetId = olimpbetIdFromWcEventId(event.id);
-    let placementDetail: Awaited<ReturnType<OlimpbetWcService['fetchEventDetail']>> = null;
-    if (olimpbetId) {
-      placementDetail = await this.olimpbet.fetchEventDetail(olimpbetId);
-      if (placementDetail) {
-        const scope = resolveBetPlacementScope({
-          marketKey: rawMarketKey,
-          outcomeKey,
-          outcomeName,
-          groupKey,
-          totalsGroupLabel,
-        });
-        if (scope && isMarketScopeFinalized(placementDetail, scope)) {
-          throw new BadRequestException('Betting closed for this period');
-        }
+    if (placementDetail && olimpbetId && placementScope) {
+      if (isMarketScopeFinalized(placementDetail, placementScope)) {
+        throw new BadRequestException('Betting closed for this period');
       }
     }
 
@@ -942,6 +1197,11 @@ export class WcOddsBetService {
         },
       });
     });
+
+    const placeElapsed = Date.now() - placeStartedAt;
+    if (placeElapsed >= 2_000) {
+      this.logger.warn(`[perf] placeBet user=${params.userId} event=${params.eventId} took ${placeElapsed}ms`);
+    }
 
     return bet;
   }
@@ -1316,5 +1576,96 @@ export class WcOddsBetService {
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
+  }
+
+  async getAdminBetHealthStats(hours = 24) {
+    this.assertEnabled();
+    const since = new Date(Date.now() - hours * 3_600_000);
+
+    const [voidByMarket, pendingOnCompleted, statusTotals, stalePending] = await Promise.all([
+      this.prisma.wcOddsBet.groupBy({
+        by: ['marketKey'],
+        where: {
+          isProbe: false,
+          status: WcOddsBetStatus.VOID,
+          settledAt: { gte: since },
+        },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 15,
+      }),
+      this.prisma.wcOddsBet.count({
+        where: {
+          isProbe: false,
+          status: WcOddsBetStatus.PENDING,
+          event: { completed: true },
+        },
+      }),
+      this.prisma.wcOddsBet.groupBy({
+        by: ['status'],
+        where: { isProbe: false },
+        _count: { id: true },
+      }),
+      this.prisma.wcOddsBet.findMany({
+        where: {
+          isProbe: false,
+          status: WcOddsBetStatus.PENDING,
+          event: { completed: true },
+        },
+        select: {
+          id: true,
+          marketKey: true,
+          outcomeKey: true,
+          createdAt: true,
+          event: { select: { slug: true, homeTeam: true, awayTeam: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    return {
+      hours,
+      voidLastPeriod: voidByMarket.map((row) => ({
+        marketKey: row.marketKey,
+        count: row._count.id,
+      })),
+      pendingOnCompleted,
+      stalePending,
+      statusTotals: Object.fromEntries(
+        statusTotals.map((row) => [row.status, row._count.id]),
+      ),
+    };
+  }
+
+  private async resolveOlimpbetIdForBroadcast(
+    event: WcOddsEvent,
+    ref: string,
+  ): Promise<number | null> {
+    const fromId = olimpbetIdFromWcEventId(event.id);
+    if (fromId) return fromId;
+
+    const hints = [ref, event.slug, decodeURIComponent(ref)].filter(Boolean) as string[];
+    for (const hint of hints) {
+      if (isCyberGameRef(hint)) {
+        const cyberId = olimpbetIdFromCyberGameRef(hint);
+        if (cyberId) return cyberId;
+      }
+      const slugHint = olimpbetIdFromSlugHint(hint);
+      if (slugHint) {
+        const parsed = olimpbetIdFromWcEventId(slugHint);
+        if (parsed) return parsed;
+      }
+    }
+
+    if (event.homeTeam && event.awayTeam && event.commenceTime) {
+      return this.olimpbet.resolveOlimpbetEventIdByTeams(
+        event.commenceTime,
+        event.homeTeam,
+        event.awayTeam,
+      );
+    }
+
+    return null;
   }
 }

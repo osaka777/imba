@@ -1,4 +1,8 @@
 import type { OlimpbetEventDetail } from './olimpbet-wc.types';
+import {
+  extractRegulationScore,
+  parsePeriodScoreList,
+} from './olimpbet-score-scope.util';
 
 export type OlimpbetEventResult = {
   homeScore: number;
@@ -53,7 +57,7 @@ export function parseScorePair(raw: string | null | undefined): { home: number; 
 }
 
 export function extractOlimpbetScore(
-  detail: Pick<OlimpbetEventDetail, 'score' | 'statistics'>,
+  detail: Pick<OlimpbetEventDetail, 'score' | 'statistics' | 'fullStatistics'>,
 ): { homeScore: number | null; awayScore: number | null } {
   const fromObject = detail.score;
   if (fromObject?.home != null && fromObject?.away != null) {
@@ -69,7 +73,45 @@ export function extractOlimpbetScore(
     return { homeScore: fromStats.home, awayScore: fromStats.away };
   }
 
+  const home = Number(detail.fullStatistics?.homeStatistics?.score);
+  const away = Number(detail.fullStatistics?.awayStatistics?.score);
+  if (Number.isFinite(home) && Number.isFinite(away)) {
+    return { homeScore: home, awayScore: away };
+  }
+
   return { homeScore: null, awayScore: null };
+}
+
+/** Best-effort final score for settlement when primary feed fields are missing. */
+export function resolveSettlementScoreFromDetail(
+  detail: Pick<OlimpbetEventDetail, 'score' | 'statistics'>,
+  fallbackHome?: number | null,
+  fallbackAway?: number | null,
+): { homeScore: number; awayScore: number } | null {
+  const direct = extractOlimpbetScore(detail);
+  if (direct.homeScore != null && direct.awayScore != null) {
+    return { homeScore: direct.homeScore, awayScore: direct.awayScore };
+  }
+
+  const regulation = extractRegulationScore(detail as OlimpbetEventDetail);
+  if (regulation) return regulation;
+
+  const periods = parsePeriodScoreList(detail as OlimpbetEventDetail);
+  if (periods.length > 0) {
+    let home = 0;
+    let away = 0;
+    for (const period of periods) {
+      home += period.home;
+      away += period.away;
+    }
+    return { homeScore: home, awayScore: away };
+  }
+
+  if (fallbackHome != null && fallbackAway != null) {
+    return { homeScore: fallbackHome, awayScore: fallbackAway };
+  }
+
+  return null;
 }
 
 function hasOpenTradingMarkets(detail: OlimpbetEventDetail): boolean {
@@ -212,8 +254,8 @@ export function resolveOlimpbetEventResult(
     return { homeScore: 0, awayScore: 0, cancelled: true };
   }
 
-  const { homeScore, awayScore } = extractOlimpbetScore(detail);
-  if (homeScore == null || awayScore == null) return null;
+  const resolved = resolveSettlementScoreFromDetail(detail);
+  if (!resolved) return null;
 
-  return { homeScore, awayScore, cancelled: false };
+  return { homeScore: resolved.homeScore, awayScore: resolved.awayScore, cancelled: false };
 }

@@ -1,0 +1,30 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+}
+
+.qr {
+  border-radius: 12px;
+  background: #fff;
+}
+
+.label {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f0e27;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.45;
+}

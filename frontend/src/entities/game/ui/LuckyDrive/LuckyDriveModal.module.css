@@ -22,6 +22,16 @@
   animation: scaleIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.modalContentAuth .closeBtn {
+  background: rgba(20, 27, 46, 0.08);
+  color: rgb(20, 27, 46);
+}
+
+.modalContentAuth .closeBtn:hover {
+  background: rgba(20, 27, 46, 0.14);
+  color: rgb(20, 27, 46);
+}
+
 .closeBtn {
   position: absolute;
   top: 14px;
@@ -531,7 +541,47 @@
   opacity: 0.85;
 }
 
-/* ── Auth dialog ── */
+.authShell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 20px 20px;
+  background: #fff;
+  color: rgb(20, 27, 46);
+}
+
+.authBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-bottom: 14px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  color: rgb(8, 85, 196);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.authBack:hover {
+  color: rgb(16, 141, 231);
+}
+
+.authTitle {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgb(20, 27, 46);
+}
+
+/* ── Auth dialog (legacy — prefer inline authShell) ── */
 .authDialog {
   padding: 0 !important;
   max-width: min(440px, calc(100vw - 32px)) !important;

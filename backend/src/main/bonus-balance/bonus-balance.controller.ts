@@ -52,6 +52,15 @@ export class BonusBalanceController {
     return this.bonusBalanceService.getAllUsersWithBonusBalances();
   }
 
+  @Get('expiring')
+  @UseGuards(SuperuserGuard)
+  async getExpiringBonuses(@Query('hours') hours?: string) {
+    const withinHours = hours ? parseInt(hours, 10) : 24;
+    return this.bonusBalanceService.getExpiringBonuses(
+      Number.isFinite(withinHours) ? withinHours : 24,
+    );
+  }
+
   /**
    * Получает информацию о бонусном счете пользователя
    */

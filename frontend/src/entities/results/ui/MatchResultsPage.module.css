@@ -1,0 +1,753 @@
+.page {
+  --results-tab-slant: 14px;
+  --results-blue: #0085ff;
+  --results-blue-hover: #0074e0;
+  --results-tab-bg: #e9edf3;
+  --score-col-w: 45px;
+
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+/* ── Заголовок в стиле home-виджетов (1win / imba) ── */
+.pageTop {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tabGroup {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  width: fit-content;
+}
+
+.tabGroup::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--results-blue);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.tabPrimary {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin: 0;
+  padding: 0 calc(var(--results-tab-slant) + 14px) 0 16px;
+  margin-bottom: -1px;
+  background: var(--results-tab-bg);
+  border: none;
+  border-radius: 10px 0 0 0;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #121212;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--results-tab-slant)) 0,
+    100% 100%,
+    0 100%
+  );
+}
+
+.toolbarCard {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 0 12px 12px 12px;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
+
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.55);
+}
+
+/* ── Сегмент Завершённые / Live (как OlimpbetLineFilter) ── */
+.modeSegment {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.24);
+  border: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.modeTab {
+  min-height: 34px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgb(255 255 255 / 0.72);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modeTab:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.92);
+}
+
+.modeTab_active {
+  background: rgb(79 124 255 / 0.38);
+  color: #fff;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.22);
+}
+
+.liveDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #ff2d2d;
+  box-shadow: 0 0 0 2px rgb(255 45 45 / 0.18);
+  animation: livePulse 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(0.92); }
+}
+
+/* ── Дата ── */
+.dateNav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dateBtn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.04);
+  color: rgb(255 255 255 / 0.85);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dateBtn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.18);
+}
+
+.dateBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.datePicker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 140px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.04);
+  cursor: pointer;
+}
+
+.dateLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.92);
+  pointer-events: none;
+}
+
+.dateInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ── Виды спорта ── */
+.sportRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sportChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.04);
+  color: rgb(255 255 255 / 0.78);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.sportChip:hover {
+  background: rgb(255 255 255 / 0.07);
+  border-color: rgb(255 255 255 / 0.18);
+  color: #fff;
+}
+
+.sportChip_active {
+  border-color: rgb(79 124 255 / 0.65);
+  background: rgb(79 124 255 / 0.18);
+  color: #fff;
+}
+
+.sportIcon {
+  width: 14px;
+  height: 14px;
+  fill: currentcolor;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+/* ── Состояния загрузки / пусто ── */
+.loader {
+  margin: 48px auto;
+}
+
+.emptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px 40px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.88);
+}
+
+.emptyHint {
+  margin: 0;
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.5);
+  max-width: 280px;
+}
+
+.retryBtn {
+  margin-top: 8px;
+  height: 36px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--light-blue-gradient);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.retryBtn:hover {
+  opacity: 0.92;
+}
+
+/* ── Турнирные блоки (как TournamentTable) ── */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tournament {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.tournamentHead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 40px;
+  background: var(--light-blue-gradient);
+}
+
+.leagueCell {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.leagueIcon {
+  width: 14px;
+  height: 14px;
+  fill: var(--white);
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.leagueName {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headScores {
+  display: grid;
+  align-content: center;
+}
+
+.headCell {
+  width: var(--score-col-w);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(255 255 255 / 0.75);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ── Строка матча (как MatchRow) ── */
+.matchRow {
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  background-color: #f7f9fc;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  transition: background-color 0.12s ease;
+}
+
+/* Глобальный * { color: white } — явно задаём тёмный текст на светлых строках */
+.matchRow .matchMain .matchTime,
+.matchRow .matchMain .settledTime,
+.matchRow .matchMain .team,
+.matchRow .matchMain .team *,
+.matchRow .extraRow,
+.matchRow .extraRow *,
+.matchRow .scoreRow,
+.matchRow .scoreRow * {
+  color: var(--black);
+  font-size: 12px;
+}
+
+.matchRow .scoreMuted,
+.matchRow .scoreMuted * {
+  color: var(--gray-40);
+}
+
+.matchRow .scoreDash,
+.matchRow .scoreDash * {
+  color: var(--gray-40-transparent);
+}
+
+.matchRow .scoreLive,
+.matchRow .scoreLive * {
+  color: var(--green-00);
+  font-weight: 700;
+}
+
+.matchRow:last-child {
+  border-bottom: none;
+}
+
+@media screen and (min-width: 1024px) {
+  .matchRow:hover {
+    background-color: var(--black-blue);
+  }
+
+  .matchRow:hover .matchMain .matchTime,
+  .matchRow:hover .matchMain .settledTime,
+  .matchRow:hover .matchMain .team,
+  .matchRow:hover .matchMain .team *,
+  .matchRow:hover .extraRow,
+  .matchRow:hover .extraRow *,
+  .matchRow:hover .scoreRow,
+  .matchRow:hover .scoreRow * {
+    color: var(--white);
+  }
+
+  .matchRow:hover .scoreLive,
+  .matchRow:hover .scoreLive * {
+    color: var(--green-10);
+  }
+
+  .matchRow:hover .scoreCell:not(.scoreCell_total) {
+    background-color: transparent;
+  }
+
+  .matchRow:hover .scoreCell_total {
+    background-color: var(--black-20);
+  }
+}
+
+.matchMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  min-height: 58px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.matchStart {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.matchTime {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.settledTime {
+  margin-top: 2px;
+  font-size: 9px;
+  color: var(--gray-40);
+  font-variant-numeric: tabular-nums;
+}
+
+.matchSeparator {
+  width: 2px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--light-blue-gradient);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.matchTeams {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teamName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.metaBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.metaBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgb(37 99 235 / 0.12);
+  border: 1px solid rgb(37 99 235 / 0.18);
+  color: #2563eb;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.matchStatsMobile {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-right: 4px;
+}
+
+.scoreTotalMobile {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.matchStatsMobile,
+.matchStatsMobile * {
+  color: var(--black);
+}
+
+.matchStatsMobile .scoreTotalMobile_live,
+.matchStatsMobile .scoreTotalMobile_live * {
+  color: var(--green-00);
+}
+
+.periodsMobile,
+.periodsMobile * {
+  color: var(--gray-40);
+}
+
+.scoreRow {
+  display: grid;
+  align-content: center;
+}
+
+.scoreCell {
+  width: var(--score-col-w);
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreCell_total {
+  background-color: var(--gray-20-transparent);
+  font-weight: 700;
+}
+
+.scoreLive {
+  font-weight: 700;
+}
+
+.scoreMuted {
+  font-weight: 600;
+}
+
+.scoreDash {
+  font-weight: 600;
+}
+
+.scorePair {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.rowChevron {
+  display: none;
+  color: #6b7280 !important;
+  font-size: 20px !important;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.scoreColon {
+  opacity: 0.65;
+}
+
+.extraRow {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 7px 72px;
+  min-width: 0;
+}
+
+.goalLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.extraLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--blue-60);
+}
+
+.extraText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--black-20);
+}
+
+.statLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.statPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgb(148 166 205 / 0.18);
+  white-space: nowrap;
+  font-size: 9px;
+}
+
+.statPill b {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* ── Mobile ── */
+@media screen and (max-width: 767px) {
+  .page {
+    gap: 10px;
+    padding-bottom: 96px;
+    --results-tab-slant: 12px;
+  }
+
+  .toolbarCard {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .toolbarRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dateNav {
+    justify-content: center;
+  }
+
+  .headScores {
+    display: none;
+  }
+
+  .matchRow {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .matchMain {
+    gap: 8px;
+    padding: 11px 10px;
+    min-height: 66px;
+  }
+
+  .scoreRow {
+    display: none;
+  }
+
+  .extraRow {
+    padding: 0 8px 9px 62px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .statLine {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .matchStatsMobile {
+    display: flex;
+    min-width: 76px;
+    padding-right: 14px;
+    position: relative;
+  }
+
+  .rowChevron {
+    display: block;
+    position: absolute;
+    right: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .sportChip {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  .tabPrimary {
+    font-size: 14px;
+    height: 36px;
+  }
+
+  .matchTime {
+    font-size: 11px;
+  }
+
+  .team {
+    font-size: 11px;
+  }
+}

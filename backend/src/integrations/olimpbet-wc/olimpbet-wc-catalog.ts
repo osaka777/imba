@@ -29,7 +29,7 @@ export type OlimpbetMarketCatalog = {
   loadedAtMs: number;
 };
 
-let catalogCache: OlimpbetMarketCatalog | null = null;
+const catalogCaches = new Map<string, OlimpbetMarketCatalog>();
 
 async function fetchJson<T>(path: string): Promise<T | null> {
   const res = await fetch(`${API_HOST}${path}`, {
@@ -110,6 +110,31 @@ function humanizeOutcomeCode(code: string): string {
   return trimmed;
 }
 
+/** П1/П2 for esports map markets where Olimpbet leaves {$competitor*} templates empty. */
+export function formatEsportsMapTeamOutcome(code: string, catalogMarketName = ''): string | null {
+  const compact = code.replace(/\s/g, '');
+  const market = catalogMarketName.replace(/\s/g, '');
+
+  if (
+    /^(FIRST_BLOOD|FIRST_TOWER|BARRACKS|ROSHAN|RACE_TO_KILL|WINNER)_MAP/i.test(market)
+    || /^(FIRST_BLOOD|FIRST_TOWER|BARRACKS|ROSHAN|RACE_TO_KILL|WINNER)_MAP/i.test(compact)
+    || /ПерКр_?Карта|ПерБаш_?Карта|Барак_?Карта|Рош_?Карта|ГонкаП[12]/i.test(compact)
+    || /П[12]_Карта/i.test(compact)
+    || /П[12]_Раунд/i.test(compact)
+    || /РазнРаунд_Карта/i.test(compact)
+  ) {
+    if (/П1_Карта|П1_Раунд|К1РазнРаунд_Карта|ПерКр_?Карта1|ПерБаш_?Карта1|Барак_?КартаП1|Рош_?КартаП1|ГонкаП1/i.test(compact)) {
+      return 'П1';
+    }
+    if (/П2_Карта|П2_Раунд|К2РазнРаунд_Карта|ПерКр_?Карта2|ПерБаш_?Карта2|Барак_?КартаП2|Рош_?КартаП2|ГонкаП2/i.test(compact)) {
+      return 'П2';
+    }
+    if (/Х_Карта/i.test(compact)) return 'X';
+  }
+
+  return null;
+}
+
 /** Strip internal prefixes like ПерФакт5мин_Фол → Фол. */
 export function humanizeTechnicalOutcomeCode(code: string): string {
   let rest = code.trim();
@@ -132,9 +157,19 @@ export function humanizeTechnicalOutcomeCode(code: string): string {
   return humanized || humanizeOutcomeCode(code);
 }
 
-function pickCatalogOutcomeLabel(outcome: OlimpbetCatalogOutcome | undefined, code: string): string {
+function pickCatalogOutcomeLabel(
+  outcome: OlimpbetCatalogOutcome | undefined,
+  code: string,
+  catalogMarketName = '',
+): string {
   const shortName = outcome?.shortName?.trim() ?? '';
   const catalogName = outcome?.name?.trim() ?? '';
+
+  const resulting = formatResultingComparisonLabel(code, catalogName, shortName, catalogMarketName);
+  if (resulting) return resulting;
+
+  const esportsMapTeam = formatEsportsMapTeamOutcome(code, catalogMarketName);
+  if (esportsMapTeam) return esportsMapTeam;
 
   if (shortName && !looksLikeTemplate(shortName) && !/^перфакт/i.test(shortName.replace(/\s/g, ''))) {
     return shortName;
@@ -168,18 +203,21 @@ export function resolveVirtualCategoryName(
   return defaultRef?.categoryName ?? refs[0]?.categoryName ?? null;
 }
 
-export async function loadOlimpbetMarketCatalog(): Promise<OlimpbetMarketCatalog> {
+export async function loadOlimpbetMarketCatalog(
+  locale: 'ru' | 'en' = 'ru',
+): Promise<OlimpbetMarketCatalog> {
   const now = Date.now();
-  if (catalogCache && now - catalogCache.loadedAtMs < 60 * 60_000) {
-    return catalogCache;
+  const cached = catalogCaches.get(locale);
+  if (cached && now - cached.loadedAtMs < 60 * 60_000) {
+    return cached;
   }
 
   const [marketsRes, categoriesRes] = await Promise.all([
     fetchJson<{ items: Array<{ id: number; name: string; orderedOutcomeTypes?: Array<{ id: number; code?: string; shortName?: string; name?: string }> }> }>(
-      '/markets?locale=ru',
+      `/markets?locale=${locale}`,
     ),
     fetchJson<{ items: Array<{ name: string; orderedMarkets?: Array<{ marketId: number; parameters?: Array<{ type: string; value: string }> }> }> }>(
-      '/market-categories?locale=ru',
+      `/market-categories?locale=${locale}`,
     ),
   ]);
 
@@ -216,8 +254,14 @@ export async function loadOlimpbetMarketCatalog(): Promise<OlimpbetMarketCatalog
     }
   }
 
-  catalogCache = { markets, marketLabels, virtualCategoryRefs, loadedAtMs: now };
-  return catalogCache;
+  const next: OlimpbetMarketCatalog = {
+    markets,
+    marketLabels,
+    virtualCategoryRefs,
+    loadedAtMs: now,
+  };
+  catalogCaches.set(locale, next);
+  return next;
 }
 
 export function formatOutcomeLabel(
@@ -229,7 +273,7 @@ export function formatOutcomeLabel(
   const catalogName = market?.name ?? '';
   const outcome = market?.outcomes.get(prob.outcomeTypeId);
   const code = outcome?.code ?? '';
-  let label = pickCatalogOutcomeLabel(outcome, code) || String(prob.outcomeTypeId);
+  let label = pickCatalogOutcomeLabel(outcome, code, catalogName) || String(prob.outcomeTypeId);
 
   const goalsRange = paramValue(prob.parameters, 'PARAMETER_GOALS_RANGE');
   const rangeFrom =
@@ -369,6 +413,10 @@ export function formatOutcomeLabel(
     return label.trim();
   }
 
+  if (/^WINNER_2GAMES/i.test(catalogName) && /^П[12]\s*,\s*П[12]$/i.test(label.trim())) {
+    return label.trim();
+  }
+
   if (
     contextParts.length
     && !isScopedScoreInGameMarket(catalogName)
@@ -394,7 +442,20 @@ const CATALOG_MARKET_LABELS: Record<string, string> = {
   GOALS_TEAM2: 'Забьёт команда 2',
   DEUSE_POINT: 'Дьюс',
   NEXT_POINTS_GAME: 'Следующее очко в гейме',
+  WINNER_2GAMES_SET: 'Исход двух геймов',
+  WINNER_2GAMES_SET_4WAY: 'Исход двух геймов',
   RACE_TO_POINT_GAME: 'Гонка по очкам в гейме',
+  WINNER_MAP: 'Победа на карте',
+  WINNER_MAP_WITHOUT_OT: 'Победа на карте (без ОТ)',
+  FIRST_BLOOD_MAP: 'Первая кровь',
+  FIRST_TOWER_MAP: 'Первая башня',
+  BARRACKS_MAP: 'Разрушение барака',
+  ROSHAN_MAP: 'Убийство Рошана',
+  RACE_TO_KILL_MAP: 'Гонка по убийствам',
+  ROUNDS_WINNIGMARGIN_MAP: 'Победа с разницей раундов',
+  WINNER_ROUND: 'Исход раунда',
+  TOTAL_MAP: 'Тотал раундов на карте',
+  TOTAL_ROUNDS: 'Тотал раундов',
 };
 
 function stripCatalogSuffixes(name: string): string {
@@ -436,7 +497,19 @@ export function resolveCatalogPatternLabel(catalogName: string): string | null {
   if (/^BOTHTEAM_WILL_SCORE_OVER/i.test(base)) return 'Обе забьют + тотал (больше)';
   if (/^BOTHTEAM_WILL_SCORE_UNDER/i.test(base)) return 'Обе забьют + тотал (меньше)';
   if (/^DRAW_IN_MATCH_WITH_SCORE/i.test(base)) return 'Ничья с указанным счётом';
+  if (/^COUNT_SET/i.test(base)) return 'Кол-во геймов';
   if (/^NUMBER_OF_SETS/i.test(base)) return 'Количество сетов';
+  if (/^WINNER_MAP_WITHOUT_OT/i.test(base)) return 'Победа на карте (без ОТ)';
+  if (/^WINNER_MAP/i.test(base)) return 'Победа на карте';
+  if (/^FIRST_BLOOD_MAP/i.test(base)) return 'Первая кровь';
+  if (/^FIRST_TOWER_MAP/i.test(base)) return 'Первая башня';
+  if (/^BARRACKS_MAP/i.test(base)) return 'Разрушение барака';
+  if (/^ROSHAN_MAP/i.test(base)) return 'Убийство Рошана';
+  if (/^RACE_TO_KILL_MAP/i.test(base)) return 'Гонка по убийствам';
+  if (/^ROUNDS_WINNIGMARGIN_MAP/i.test(base)) return 'Победа с разницей раундов';
+  if (/^WINNER_ROUND$/i.test(base)) return 'Исход раунда';
+  if (/^TOTAL_MAP$/i.test(base)) return 'Тотал раундов на карте';
+  if (/^TOTAL_ROUNDS$/i.test(base)) return 'Тотал раундов';
   if (/^SCORE_VARIANT|^CORRECT_SCORE/i.test(base)) return 'Точный счёт';
   if (/^DRAWN_MINUTES_TOTAL/i.test(base)) return 'Ничейные минуты + тотал (меньше)';
   if (/^WIN_AND_TOTAL_OVER_DRAW/i.test(base)) return 'Победа или ничья + тотал (больше)';
@@ -510,7 +583,122 @@ export function resolveCatalogPatternLabel(catalogName: string): string | null {
   if (/^PENALTY_MATCH/i.test(base)) return 'Пенальти в матче';
   if (/^PENALTY_OR_REDCARD/i.test(base)) return 'Пенальти или удаление';
   if (/^REDCARD/i.test(base)) return 'Удаление';
+  if (/^SERIESPENALTY/i.test(base)) return 'Серия пенальти';
+  if (/^NO_GOALS_IN_BOTH_HALF/i.test(base)) return 'Никто не забьет в обоих таймах';
+  if (/^GOALS_BOTH_BOTHHALF/i.test(base)) return 'Обе забьют в обоих таймах';
+  if (/^GOALS_BOTHHALF/i.test(base)) return 'Гол в обоих таймах';
+  if (/^1X_AND_TOTAL_OVER/i.test(base)) return '1X + тотал (больше)';
+  if (/^1X_AND_TOTAL_UNDER/i.test(base)) return '1X + тотал (меньше)';
+  if (/^12_AND_TOTAL_OVER/i.test(base)) return '12 + тотал (больше)';
+  if (/^12_AND_TOTAL_UNDER/i.test(base)) return '12 + тотал (меньше)';
+  if (/^X2_AND_TOTAL_OVER/i.test(base)) return 'X2 + тотал (больше)';
+  if (/^X2_AND_TOTAL_UNDER/i.test(base)) return 'X2 + тотал (меньше)';
+  if (/^1X_AND_AT_LEAST_ONE_DOESNT_SCORE/i.test(base)) return '1X и хотя бы одна команда не забьёт';
+  if (/^12_AND_AT_LEAST_ONE_DOESNT_SCORE/i.test(base)) return '12 и хотя бы одна команда не забьёт';
+  if (/^X2_AND_AT_LEAST_ONE_DOESNT_SCORE/i.test(base)) return 'X2 и хотя бы одна команда не забьёт';
+  if (/^WIN1_AND_AT_LEAST_ONE_DOESNT_SCORE/i.test(base)) return 'П1 и хотя бы одна команда не забьёт';
+  if (/^WIN2_AND_AT_LEAST_ONE_DOESNT_SCORE/i.test(base)) return 'П2 и хотя бы одна команда не забьёт';
+  if (/^DRAW_AND_AT_LEAST_ONE_DOESNT_SCORE/i.test(base)) return 'Ничья и хотя бы одна команда не забьёт';
+  if (/^TEAM1_RESULTING$/i.test(base)) return 'П1';
+  if (/^TEAM2_RESULTING$/i.test(base)) return 'П2';
+  if (/^RESULTING_HALF/i.test(base)) return 'Результативность таймов';
+  if (/^RESULTING_SETS/i.test(base)) return 'Результативность сетов';
 
+  const whichsEarlier = resolveWhichsEarlierCatalogLabel(catalogName);
+  if (whichsEarlier) return whichsEarlier;
+
+  const yesNoLabel = resolveYesNoMarketLabel(catalogName);
+  if (yesNoLabel) return yesNoLabel;
+
+  return null;
+}
+
+const WHICHS_EARLIER_YES_NO_LABELS: Record<string, string> = {
+  WHICHS_EARLIER_OUT_FOUL: 'Аут раньше фола',
+  WHICHS_EARLIER_FOUL_OUT: 'Фол раньше аута',
+  WHICHS_EARLIER_GOAL_SUB: 'Гол раньше замены',
+  WHICHS_EARLIER_SUB_GOAL: 'Замена раньше гола',
+  WHICHS_EARLIER_YCARD_SUB: 'Жёлтая карточка раньше замены',
+  WHICHS_EARLIER_SUB_YCARD: 'Замена раньше жёлтой карточки',
+  WHICHS_EARLIER_YCARD_GOAL: 'Жёлтая карточка раньше гола',
+  WHICHS_EARLIER_GOAL_YCARD: 'Гол раньше жёлтой карточки',
+  WHICHS_EARLIER_YCARD_CORNER: 'Жёлтая карточка раньше углового',
+  WHICHS_EARLIER_CORNER_YCARD: 'Угловой раньше жёлтой карточки',
+  WHICHS_EARLIER_CORNER_GOAL: 'Угловой раньше гола',
+  WHICHS_EARLIER_GOAL_CORNER: 'Гол раньше углового',
+  WHICHS_EARLIER_GOAL_KICK_CORNER: 'Удар от ворот раньше углового',
+  WHICHS_EARLIER_CORNER_GOALKICK: 'Угловой раньше удара от ворот',
+  WHICHS_EARLIER_CORNER_OFFSIDE: 'Угловой раньше офсайда',
+  WHICHS_EARLIER_OFFSIDE_CORNER: 'Офсайд раньше углового',
+};
+
+const WHICHS_EARLIER_CHOICE_LABELS: Record<string, string> = {
+  WHICHS_EARLIER_GOAL_SUB: 'Что раньше: гол или замена',
+  WHICHS_EARLIER_YCARD_GOAL: 'Что раньше: жёлтая карточка или гол',
+};
+
+/** «Что раньше» / «Что будет раньше» markets from Olimpbet catalog. */
+export function resolveWhichsEarlierCatalogLabel(catalogName: string): string | null {
+  const stem = stripCatalogSuffixes(catalogName).replace(/\s+/g, '');
+  if (!/^WHICHS_EARLIER/i.test(stem)) return null;
+
+  const isYesNo = /_YES_NO$/i.test(catalogName);
+  const base = stem.replace(/_YES_NO$/i, '');
+
+  if (isYesNo) {
+    return WHICHS_EARLIER_YES_NO_LABELS[base] ?? 'Что будет раньше (Да/Нет)';
+  }
+
+  return WHICHS_EARLIER_CHOICE_LABELS[base] ?? 'Что раньше';
+}
+
+const RESULTING_COMPARISON_LABELS: Record<string, string> = {
+  '1>2': '1-й больше 2-го',
+  '1=2': '1-й равен 2-му',
+  '1<2': '1-й меньше 2-го',
+  '1>3': '1-й больше 3-го',
+  '1=3': '1-й равен 3-му',
+  '1<3': '1-й меньше 3-го',
+  '2>3': '2-й больше 3-го',
+  '2=3': '2-й равен 3-му',
+  '2<3': '2-й меньше 3-го',
+};
+
+/** «1-й больше 2-го» instead of cryptic «1>2» on RESULTING markets. */
+export function formatResultingComparisonLabel(
+  code: string,
+  label?: string,
+  shortName?: string,
+  catalogMarketName = '',
+): string | null {
+  if (label && /^\d+-[йи]\s+(больше|меньше|равен)/i.test(label.trim())) {
+    return label.trim();
+  }
+
+  const compactCode = code.replace(/\s/g, '');
+  const codeTail = compactCode.match(/_(1[<>=]2|1[<>=]3|2[<>=]3)$/i)?.[1]
+    ?? compactCode.match(/(1[<>=]2|1[<>=]3|2[<>=]3)$/i)?.[1];
+  const shortTail = (shortName ?? '').trim().match(/^(1[<>=]2|1[<>=]3|2[<>=]3)$/i)?.[1];
+  const key = (codeTail ?? shortTail)?.replace(/</g, '<').replace(/>/g, '>');
+  if (key && RESULTING_COMPARISON_LABELS[key]) {
+    return RESULTING_COMPARISON_LABELS[key]!;
+  }
+
+  if (/RESULTING/i.test(catalogMarketName) && shortName) {
+    const fromShort = shortName.trim().match(/^(1[<>=]2|1[<>=]3|2[<>=]3)$/i)?.[1];
+    if (fromShort && RESULTING_COMPARISON_LABELS[fromShort]) {
+      return RESULTING_COMPARISON_LABELS[fromShort]!;
+    }
+  }
+
+  return null;
+}
+
+/** Sub-label for TEAM1/TEAM2 RESULTING groups under «Результативность таймов по командам». */
+export function resolveResultingGroupLabel(catalogStem: string): string | null {
+  if (/^TEAM1_RESULTING$/i.test(catalogStem)) return 'П1';
+  if (/^TEAM2_RESULTING$/i.test(catalogStem)) return 'П2';
+  if (/^RESULTING_/i.test(catalogStem)) return '';
   return null;
 }
 
@@ -629,6 +817,86 @@ export function resolveSpecialBetsGroupLabel(
     return 'Удаление';
   }
 
+  const yesNoLabel = resolveYesNoMarketLabel(catalogStem);
+  if (yesNoLabel) {
+    if (yesNoLabel.trim().toLowerCase() === cat) return '';
+    return yesNoLabel;
+  }
+
+  return null;
+}
+
+const YES_NO_MARKET_LABELS: Record<string, string> = {
+  SERIESPENALTY: 'Серия пенальти',
+  NO_GOALS_IN_BOTH_HALF: 'Никто не забьет в обоих таймах',
+  ALL_YELLOW_CARDS_IN_ONE_HALF: 'Все жёлтые карты в одном тайме',
+  ANY_SUBSTITUTE_TO_HAVE_SHOT_ON_TARGET: 'Вышедший на замену игрок совершит удар в створ',
+  HEADCOACH_OR_RESPLAYER_YC: 'Главный тренер или запасной игрок получит ЖК',
+  HEADCOACH_OR_RESPLAYER_REDC: 'Главный тренер или запасной игрок получит красную карточку',
+  YELLOW_CARD_GOALKEEPER: 'Жёлтая карточка вратарю',
+  YELLOW_CARD_HEADCOACH: 'Главный тренер получит жёлтую карточку',
+  YELLOW_CARD_MORE_OFFSIDE: 'ЖК больше, чем офсайдов',
+  CORNERS_MORE_SHOT_ON_TARGET: 'Угловых больше, чем ударов в створ',
+  GOAL_FROM_SIX_YARD_BOX_IN_MATCH: 'Гол из вратарской площади в матче',
+  AFTER_FREEKICK_BALL_WILL_HIT_WALL: 'После штрафного мяч попадёт в стенку',
+  GOAL_SCORED_THROUGH_GOALKEEPERS_LEGS: 'Гол между ног вратарю',
+  BACKHEEL_GOAL_IN_MATCH: 'Гол пяткой в матче',
+  BALL_WILL_GO_INTO_NET_OFF_GOALKEEPERS_GLOVES: 'Мяч влетит в ворота от перчаток вратаря',
+  ANY_TEAM_WILL_SCORE_SHORT_HANDED_GOAL: 'Гол в меньшинстве',
+  ANY_TEAM_WILL_SCORE_POWER_PLAY_GOAL: 'Гол в большинстве',
+  FREEKICK_AWARDED_TO_ATTACKING_TEAM_IN_OPPONENTS_PENALTY_AREA:
+    'Штрафной в пользу атаки в штрафной соперника',
+  ALLGOALS_SCORED_AGAINST_ONESIDE_OF_FIELD: 'Все голы в ворота одной стороны поля',
+  BOTH_TEAMS_WILL_BE_LEADING_IN_MATCH: 'Обе команды будут лидировать в матче',
+  ANY_TEAM_IS_LOSING_DURING_MATCH_AND_WILLNOT_LOSE:
+    'Команда проигрывает по ходу матча и не проиграет',
+  ANY_TEAM_IS_DOWN_2GOALS_DURING_MATCH_AND_WILL_WIN:
+    'Команда проигрывает 2 гола по ходу матча и победит',
+  ANY_TEAM_IS_DOWN_2GOALS_DURING_MATCH_AND_WILL_NOT_LOSE:
+    'Команда проигрывает 2 гола по ходу матча и не проиграет',
+  SPECIAL_BETS_LOW_BLOW: 'Удар ниже пояса',
+  SPECIAL_BETS_COMPLETE_TERMINATION_FIGHT: 'Полная остановка боя из-за рассечения',
+  SPECIAL_BETS_POINT_WILLBE_DEDUCTED: 'Будет снято очко',
+  SPECIAL_BETS_BOXER_BITES_EAR: 'Боксёр укусит соперника за ухо',
+};
+
+/** Russian title for yes/no markets — static map + Olimpbet catalog outcome names. */
+export function resolveYesNoMarketLabel(catalogName: string): string | null {
+  const base = stripCatalogSuffixes(catalogName)
+    .replace(/_YES_NO$/i, '')
+    .replace(/\s+/g, '');
+
+  const staticLabel = YES_NO_MARKET_LABELS[base];
+  if (staticLabel) return staticLabel;
+
+  const teamMatch = /^(.*)_TEAM([12])$/i.exec(base);
+  if (teamMatch) {
+    const parentLabel = YES_NO_MARKET_LABELS[teamMatch[1]!];
+    if (parentLabel) return `${parentLabel} (команда ${teamMatch[2]})`;
+  }
+
+  return null;
+}
+
+/** Use shared Russian outcome text («Все жёлтые карты…») from Olimpbet catalog. */
+export function resolveYesNoMarketLabelFromCatalog(
+  catalog: OlimpbetMarketCatalog,
+  marketId: number,
+): string | null {
+  const market = catalog.markets.get(marketId);
+  if (!market || !/_YES_NO$/i.test(market.name)) return null;
+
+  const staticLabel = resolveYesNoMarketLabel(market.name);
+  if (staticLabel) return staticLabel;
+
+  const names = [...market.outcomes.values()]
+    .map((o) => o.name?.trim() ?? '')
+    .filter((name) => name && !looksLikeTemplate(name) && /[а-яё]/i.test(name));
+
+  if (!names.length) return null;
+  const unique = new Set(names.map((name) => name.toLowerCase()));
+  if (unique.size === 1) return names[0]!;
+
   return null;
 }
 
@@ -692,6 +960,41 @@ export function formatBttsAndOutcomeCode(code: string): string | null {
   if (drawSplit) {
     const yn = drawSplit[1]!.charAt(0).toUpperCase() + drawSplit[1]!.slice(1).toLowerCase();
     return `ОЗ·${yn}·X`;
+  }
+
+  return null;
+}
+
+/** «1X · тотал меньше» / «12» / «П1» for combo yes/no rows under one category. */
+export function resolveComboDisplayGroupLabel(catalogStem: string): string | null {
+  const base = stripCatalogSuffixes(catalogStem)
+    .replace(/_YES_NO$/i, '')
+    .replace(/_HALF$/i, '')
+    .replace(/_PERIOD$/i, '');
+
+  if (/^SERIESPENALTY/i.test(base)) return null;
+
+  const totalSide =
+    /_TOTAL_UNDER/i.test(base) ? 'меньше'
+      : /_TOTAL_OVER/i.test(base) ? 'больше'
+        : null;
+
+  const variants: Array<[RegExp, string]> = [
+    [/^1X_AND_/i, '1X'],
+    [/^12_AND_/i, '12'],
+    [/^X2_AND_/i, 'X2'],
+    [/^WIN1_AND_/i, 'П1'],
+    [/^WIN2_AND_/i, 'П2'],
+    [/^DRAW_AND_/i, 'X'],
+  ];
+
+  for (const [pattern, label] of variants) {
+    if (!pattern.test(base)) continue;
+    return totalSide ? `${label} · тотал ${totalSide}` : label;
+  }
+
+  if (/^AT_LEAST_ONE_DOESNT_SCORE_AND_TOTAL/i.test(base) && totalSide) {
+    return `хотя бы одна не забьёт · тотал ${totalSide}`;
   }
 
   return null;
@@ -871,6 +1174,11 @@ export function humanizeCatalogMarketName(
 ): string {
   if (/^DOUBLE_CHANCE$/i.test(catalogName)) return 'Двойной шанс';
 
+  if (/_YES_NO$/i.test(catalogName)) {
+    const yesNoLabel = resolveYesNoMarketLabel(catalogName);
+    if (yesNoLabel) return yesNoLabel;
+  }
+
   const stem = stripCatalogSuffixes(catalogName);
   if (/^SCORE_AFTER_X_GOALS/i.test(stem)) {
     const goalNum = Number(paramValue(parameters, 'PARAMETER_GOAL_NUMBER'));
@@ -907,6 +1215,7 @@ export function humanizeCatalogMarketName(
       .replace(/\bWITH PARAMS\b/gi, '')
       .replace(/\bWINX2\b/gi, 'X2')
       .replace(/\bWINNER\b/gi, 'Победа')
+      .replace(/\bMAP\b/gi, 'карте')
       .replace(/\bGOALS\b/gi, 'Голы')
       .replace(/\bGOAL\b/gi, 'Гол')
       .replace(/\bRANGE\b/gi, 'диапазон')

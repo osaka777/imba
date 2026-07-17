@@ -224,4 +224,159 @@ describe('resolveWcBetResult', () => {
       ).toBe(WcOddsBetStatus.WIN);
     });
   });
+
+  describe('handicap_3way', () => {
+    it('settles home win with negative handicap', () => {
+      expect(
+        resolveWcBetResult(
+          { pick: null, marketKey: 'handicap_3way', outcomeKey: 'HOME', line: '-1' },
+          3,
+          1,
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+
+    it('settles draw when adjusted score is level', () => {
+      expect(
+        resolveWcBetResult(
+          { pick: null, marketKey: 'handicap_3way', outcomeKey: 'DRAW', line: '-1' },
+          2,
+          1,
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+
+    it('settles away when home handicap is not enough', () => {
+      expect(
+        resolveWcBetResult(
+          { pick: null, marketKey: 'handicap_3way', outcomeKey: 'AWAY', line: '-1' },
+          2,
+          1,
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+  });
+
+  describe('goals_both_half', () => {
+    const detail = {
+      id: 1,
+      competitors: [],
+      eventDate: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+      status: 'EVENT_FINISHED',
+      score: { home: 2, away: 1 },
+      statistics: [{ code: 'scores_by_periods', value: '1:0,1:1' }],
+    };
+
+    it('wins YES when both halves have goals', () => {
+      expect(
+        resolveWcBetResult(
+          { pick: null, marketKey: 'goals_both_half', outcomeKey: 'YES', line: null },
+          2,
+          1,
+          detail,
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+
+    it('loses YES when one half is goalless', () => {
+      expect(
+        resolveWcBetResult(
+          { pick: null, marketKey: 'goals_both_half', outcomeKey: 'YES', line: null },
+          1,
+          0,
+          {
+            ...detail,
+            statistics: [{ code: 'scores_by_periods', value: '1:0,0:0' }],
+          },
+        ),
+      ).toBe(WcOddsBetStatus.LOSE);
+    });
+
+    it('normalizes display_GOALS_BOTHHALF market key', () => {
+      expect(
+        resolveWcBetResult(
+          { pick: null, marketKey: 'display_GOALS_BOTHHALF', outcomeKey: 'NO', line: null },
+          1,
+          0,
+          {
+            ...detail,
+            statistics: [{ code: 'scores_by_periods', value: '1:0,0:0' }],
+          },
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+  });
+
+  describe('HALF_MATCH HT/FT + total', () => {
+    const closed = {
+      id: 1,
+      status: 'EVENT_CLOSED',
+      live: false,
+      eventDate: '2026-07-14T19:00:00.000Z',
+      statistics: [] as Array<{ code: string; value: string }>,
+      probabilities: null,
+    };
+
+    it('loses W2X+Under when FT is away win (not draw), without HT scores', () => {
+      // France 0:2 Spain — FT = W2, required FT = X → LOSE
+      expect(
+        resolveWcBetResult(
+          {
+            pick: null,
+            marketKey: 'display_HALF_MATCH_W2X_AND_TOTAL',
+            outcomeKey: 'DISPLAY_1328_1800_PARAMETER_VALUE:2.5',
+            line: '2.5',
+            outcomeName: '2.5: ТМ',
+          },
+          0,
+          2,
+          closed as never,
+        ),
+      ).toBe(WcOddsBetStatus.LOSE);
+    });
+
+    it('wins W2W2+Under when HT and FT are away wins and total under holds', () => {
+      expect(
+        resolveWcBetResult(
+          {
+            pick: null,
+            marketKey: 'display_HALF_MATCH_W2W2_AND_TOTAL',
+            outcomeKey: 'DISPLAY_1329_1802_PARAMETER_VALUE:2.5',
+            line: '2.5',
+            outcomeName: '2.5: ТМ',
+          },
+          0,
+          2,
+          {
+            ...closed,
+            statistics: [{ code: 'scores_by_periods', value: '0:1,0:1' }],
+          } as never,
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+
+    it('early-loses Under when goals already exceed the line in-play', () => {
+      expect(
+        resolveWcBetResult(
+          {
+            pick: null,
+            marketKey: 'display_HALF_MATCH_W2X_AND_TOTAL',
+            outcomeKey: 'DISPLAY_1328_1800_PARAMETER_VALUE:2.5',
+            line: '2.5',
+            outcomeName: '2.5: ТМ',
+          },
+          1,
+          2,
+          {
+            id: 1,
+            status: 'EVENT_IN_PROGRESS',
+            live: true,
+            eventDate: '2026-07-14T19:00:00.000Z',
+            statistics: [{ code: 'match_phase', value: '7' }],
+            probabilities: null,
+          } as never,
+        ),
+      ).toBe(WcOddsBetStatus.LOSE);
+    });
+  });
 });

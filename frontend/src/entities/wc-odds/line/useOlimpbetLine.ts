@@ -25,6 +25,7 @@ import {
 } from "~/entities/wc-odds/line/wcLinePagination";
 import type { WcLineHoursFilter } from "~/entities/wc-odds/line/wcLineTimeFilter";
 import { filterVisibleWcLineEvents } from "~/entities/wc-odds/lib/wcLineEvents";
+import { isEsportsSport } from "~/entities/cybersport/lib/isEsportsSport";
 import { useWcListPaginationLimits } from "~/entities/wc-odds/lib/useWcListPaginationLimits";
 import { useWcLineKickoffHide } from "~/entities/wc-odds/lib/useWcLineKickoffHide";
 import { useWcOddsLineStream } from "~/entities/wc-odds/lib/useWcOddsStream";
@@ -34,6 +35,7 @@ export function useOlimpbetLine(
   hoursFilter: WcLineHoursFilter = "all",
   dateFilter: string | null = null,
 ) {
+  const esportsOnly = Boolean(sport && isEsportsSport(sport));
   const searchParams = useSearchParams();
   const tournamentFilter = searchParams.get("tournament");
   const leagueFilter = searchParams.get("league");
@@ -95,6 +97,14 @@ export function useOlimpbetLine(
       loadedOffsetRef.current = 0;
       setEvents([]);
 
+      if (esportsOnly) {
+        setEnabled(false);
+        setTimeCounts({ all: 0 });
+        setDates([]);
+        setInitialLoading(false);
+        return;
+      }
+
       try {
         const status = await fetchWcStatus();
         if (cancelled) return;
@@ -120,10 +130,16 @@ export function useOlimpbetLine(
 
     void bootstrap();
 
+    const onLocale = () => {
+      void bootstrap();
+    };
+    window.addEventListener("localeChanged", onLocale);
+
     return () => {
       cancelled = true;
+      window.removeEventListener("localeChanged", onLocale);
     };
-  }, [dateFilter, hoursFilter, initialLimit, leagueFilter, loadPage, setEvents, sport, tournamentFilter]);
+  }, [dateFilter, esportsOnly, hoursFilter, initialLimit, leagueFilter, loadPage, setEvents, sport, tournamentFilter]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || initialLoading || enabled === false) return;

@@ -5,6 +5,7 @@ import InfiniteScroll from "react-infinite-scroller";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { LoadingSpinner } from "~/shared/ui";
 import { Header } from "~/widgets/Header";
 
@@ -31,6 +32,9 @@ import {
   writeStoredLineDateFilter,
 } from "~/entities/wc-odds/line/wcLineDateFilter";
 import { WcLeagueMenu } from "~/entities/wc-odds/ui/WcLeagueMenu";
+import { isEsportsSport } from "~/entities/cybersport/lib/isEsportsSport";
+import { useCybersportFeed } from "~/entities/cybersport/hooks/useCybersportFeed";
+import { CybersportLeagueMenu } from "~/entities/cybersport/ui/CybersportLeagueMenu";
 import { Search } from "../Search";
 import { SubcategoryMenu } from "../SubcategoryMenu/SubcategoryMenu";
 import { TournamentTable } from "../TournamentTable";
@@ -57,7 +61,9 @@ export const GamesPrematch = ({
   className,
   queryOptions: { queryFn, queryKey },
 }: GamesPrematchProps) => {
+  const { t } = useLocale();
   const sport = useSportFilter();
+  const isEsports = Boolean(sport && isEsportsSport(sport));
   const { initialLimit, pageSize } = useWcListPaginationLimits(
     WC_LINE_INITIAL_LIMIT,
     WC_LINE_INITIAL_LIMIT_MOBILE,
@@ -110,7 +116,16 @@ export const GamesPrematch = ({
     timeCounts,
     dates,
   } = useOlimpbetLine(sport, hoursFilter, dateFilter);
-  const hasOlimpbetLine = olimpbetEnabled !== false && olimpbetLeagues.length > 0;
+  const hasOlimpbetLine = !isEsports && olimpbetEnabled !== false && olimpbetLeagues.length > 0;
+
+  const {
+    leagues: cyberLeagues,
+    isLoading: cyberLoading,
+    isFetchingNextPage: cyberLoadingMore,
+    hasNextPage: cyberHasMore,
+    fetchNextPage: fetchMoreCyber,
+    error: cyberError,
+  } = useCybersportFeed(sport, "line");
 
   const queryClient = useQueryClient();
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -158,9 +173,16 @@ export const GamesPrematch = ({
     retryDelay: 1000,
     // Добавляем агрессивное кэширование
     placeholderData: (previousData) => previousData,
+    enabled: !isEsports,
   });
 
   const loadMore = useCallback(() => {
+    if (isEsports) {
+      if (cyberHasMore && !cyberLoadingMore) {
+        void fetchMoreCyber();
+      }
+      return;
+    }
     if (olimpbetEnabled !== false && olimpbetHasMore && !olimpbetLoadingMore) {
       void loadMoreOlimpbet();
       return;
@@ -169,8 +191,12 @@ export const GamesPrematch = ({
       fetchNextPage();
     }
   }, [
+    cyberHasMore,
+    cyberLoadingMore,
+    fetchMoreCyber,
     fetchNextPage,
     hasNextPage,
+    isEsports,
     isFetchingNextPage,
     loadMoreOlimpbet,
     olimpbetEnabled,
@@ -178,8 +204,9 @@ export const GamesPrematch = ({
     olimpbetLoadingMore,
   ]);
 
-  const hasMoreToLoad =
-    (olimpbetEnabled !== false && olimpbetHasMore) || Boolean(hasNextPage);
+  const hasMoreToLoad = isEsports
+    ? cyberHasMore
+    : (olimpbetEnabled !== false && olimpbetHasMore) || Boolean(hasNextPage);
 
   const games = useMemo(() => {
     if (!data?.pages) return [];
@@ -204,8 +231,10 @@ export const GamesPrematch = ({
   const showGamesLoader =
     isFetchingNextPage
     || olimpbetLoadingMore
+    || cyberLoadingMore
+    || (isEsports && cyberLoading && cyberLeagues.length === 0)
     || (olimpbetEnabled !== false && olimpbetLoading && olimpbetLeagues.length === 0)
-    || (olimpbetEnabled === false && isLoading && games.length === 0);
+    || (olimpbetEnabled === false && !isEsports && isLoading && games.length === 0);
 
   return (
     <div className={cn(styles.GamesPrematch, className)}>
@@ -222,7 +251,7 @@ export const GamesPrematch = ({
               isSegmentedLineFilterDesign() && shellStyles.sidebarControls_segmented,
             )}
           >
-            {olimpbetEnabled !== false ? (
+            {olimpbetEnabled !== false && !isEsports ? (
               <div className={shellStyles.sidebarTimeFilterSlot}>
                 <OlimpbetLineFilter
                   dateFilter={dateFilter}
@@ -245,7 +274,9 @@ export const GamesPrematch = ({
             className={sport ? shellStyles.sportsMenuSlot_mobileHidden : undefined}
           />
           {sport ? (
-            olimpbetEnabled !== false ? (
+            isEsports ? (
+              <CybersportLeagueMenu type="prematch" layout="sidebar" />
+            ) : olimpbetEnabled !== false ? (
               <WcLeagueMenu type="prematch" layout="sidebar" />
             ) : (
               <SubcategoryMenu type="prematch" layout="sidebar" />
@@ -260,7 +291,7 @@ export const GamesPrematch = ({
       <LuckyDriveBanner compact placement="line" />
       </div>
       <div className={shellStyles.pageMainBody}>
-      {olimpbetEnabled !== false ? (
+      {olimpbetEnabled !== false && !isEsports ? (
         <div className={styles.lineToolbar}>
           <OlimpbetTimeFilter
             className={styles.lineToolbar_filter}
@@ -276,30 +307,53 @@ export const GamesPrematch = ({
       )}
       <InfiniteScroll
         className={styles.GamesPrematch}
-        hasMore={hasMoreToLoad && !isFetchingNextPage && !olimpbetLoadingMore}
+        hasMore={hasMoreToLoad && !isFetchingNextPage && !olimpbetLoadingMore && !cyberLoadingMore}
         loadMore={loadMore}
         pageStart={0}
         threshold={250}
         useWindow={true}
       >
-        {error && (
+        {(cyberError) && (
           <div className="p-4 text-center bg-red-500/10 text-red-500">
-            Ошибка загрузки игр. Пожалуйста, попробуйте позже.
+            {t("common.gamesLoadError")}
           </div>
         )}
-        <OlimpbetLineBlocks leagues={olimpbetLeagues} />
-        {games.length === 0 && !isLoading && !error && !hasOlimpbetLine && !olimpbetLoading && (
-          <p className="p-4 text-center bg-white/5">Игры не найдены</p>
+        {(error && olimpbetEnabled === false) && (
+          <div className="p-4 text-center bg-red-500/10 text-red-500">
+            {t("common.gamesLoadError")}
+          </div>
         )}
-        {games.map((league, index) => (
-          <TournamentTable
-            games={league.games}
-            isLive={false}
-            key={league.leagueName + index}
-            league={league.leagueName}
-            sport={league.games[0].sport}
-          />
-        ))}
+        {!isEsports ? <OlimpbetLineBlocks leagues={olimpbetLeagues} /> : null}
+        {isEsports ? (
+          cyberLeagues.length === 0 && !cyberLoading && !cyberError ? (
+            <p className="p-4 text-center bg-white/5">{t("common.gamesNotFound")}</p>
+          ) : (
+            cyberLeagues.map((league, index) => (
+              <TournamentTable
+                gameLinkPrefix="/cybersport/game/"
+                games={league.games}
+                isLive={false}
+                key={league.leagueName + index}
+                league={league.leagueName}
+                sport={league.games[0]?.sport ?? sport!}
+              />
+            ))
+          )
+        ) : null}
+        {!isEsports && games.length === 0 && !isLoading && !error && !hasOlimpbetLine && !olimpbetLoading && (
+          <p className="p-4 text-center bg-white/5">{t("common.gamesNotFound")}</p>
+        )}
+        {!isEsports
+          ? games.map((league, index) => (
+              <TournamentTable
+                games={league.games}
+                isLive={false}
+                key={league.leagueName + index}
+                league={league.leagueName}
+                sport={league.games[0].sport}
+              />
+            ))
+          : null}
         {showGamesLoader ? (
           <LoadingSpinner key="games-loading" className={styles.loading} />
         ) : null}

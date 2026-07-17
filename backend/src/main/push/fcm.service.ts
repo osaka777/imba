@@ -68,20 +68,14 @@ export class FcmService {
           body: JSON.stringify({
             message: {
               token,
-              notification: {
+              data: {
                 title: payload.title,
                 body: payload.body,
-                ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
+                ...(payload.data ?? {}),
+                ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
               },
-              data: payload.data ?? {},
               android: {
                 priority: 'HIGH',
-                notification: {
-                  channel_id: 'imba_alerts',
-                  color: '#090F1E',
-                  icon: 'ic_notification',
-                  click_action: 'OPEN_URL',
-                },
               },
             },
           }),

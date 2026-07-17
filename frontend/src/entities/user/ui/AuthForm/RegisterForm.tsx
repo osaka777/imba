@@ -21,6 +21,7 @@ import { RegistrationBirthDateInput } from "./RegistrationBirthDateInput";
 import { RegistrationCurrencySelect } from "./RegistrationCurrencySelect";
 import { RegistrationPhoneInput } from "./RegistrationPhoneInput";
 import { EmailIcon, LockIcon } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
 
 type CurrencyOption = {
   isoCode: string;
@@ -39,6 +40,7 @@ type AuthFormState = {
 };
 
 export const RegisterForm = () => {
+  const { t } = useLocale();
   const { data: currencies = [] } = useQuery<CurrencyOption[]>({
     queryKey: ["currencies"],
     queryFn: async () => {
@@ -58,19 +60,19 @@ export const RegisterForm = () => {
 
     switch (message) {
       case "email is already taken": {
-        safeToast.error("Данный Email уже используется");
+        safeToast.error(t("auth.errorEmailTaken"));
         break;
       }
       case "You must be at least 18 years old": {
-        safeToast.error("Регистрация доступна только с 18 лет");
+        safeToast.error(t("auth.errorUnderage"));
         break;
       }
       case "phone must be a valid international number": {
-        safeToast.error("Введите корректный номер телефона");
+        safeToast.error(t("auth.errorInvalidPhone"));
         break;
       }
       default: {
-        safeToast.error("Ошибка при запросе регистрации, попробуйте повторить позже");
+        safeToast.error(t("auth.errorRegisterRequest"));
       }
     }
   };
@@ -93,7 +95,7 @@ export const RegisterForm = () => {
     onSuccess: (_data, variables) => {
       localStorage.setItem("currency", JSON.stringify(variables.currencyCode));
       window.dispatchEvent(new Event("currencyChanged"));
-      safeToast.success("Регистрация успешна! Добро пожаловать!");
+      safeToast.success(t("auth.successRegister"));
       window.location.href = "/profile/settings?connectTelegram=1";
     },
   });
@@ -125,34 +127,34 @@ export const RegisterForm = () => {
 
   const onFormInvalid = () => {
     const vals = getValues();
-    if (!vals.email) { safeToast.warning("Введите Email"); return; }
-    if (!vals.password || vals.password.length < 8) { safeToast.warning("Введите пароль (минимум 8 символов)"); return; }
-    safeToast.warning("Заполните все обязательные поля");
+    if (!vals.email) { safeToast.warning(t("auth.warnEnterEmail")); return; }
+    if (!vals.password) { safeToast.warning(t("auth.warnEnterPassword")); return; }
+    safeToast.warning(t("auth.warnFillRequired"));
   };
 
   const onSubmit = async (data: AuthFormState) => {
     if (!data.ageConfirmed) {
-      safeToast.warning("Необходимо подтвердить возраст");
+      safeToast.warning(t("auth.warnConfirmAge"));
       return;
     }
 
     if (!data.termsAccepted) {
-      safeToast.warning("Необходимо подтвердить условия соглашения");
+      safeToast.warning(t("auth.warnConfirmTerms"));
       return;
     }
 
     if (!data.phone || data.phone.length < 10) {
-      safeToast.warning("Введите номер телефона");
+      safeToast.warning(t("auth.warnEnterPhone"));
       return;
     }
 
     if (!data.birthDate) {
-      safeToast.warning("Укажите дату рождения");
+      safeToast.warning(t("auth.warnEnterBirthDate"));
       return;
     }
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.birthDate)) {
-      safeToast.warning("Введите дату в формате ДД.ММ.ГГГГ");
+      safeToast.warning(t("auth.warnBirthDateFormat"));
       return;
     }
 
@@ -224,16 +226,15 @@ export const RegisterForm = () => {
       <Input
         className={styles.input}
         icon={<LockIcon className={styles.fieldIcon} />}
-        placeholder="Пароль"
+        placeholder={t("auth.password")}
         type="password"
         variant="pill"
-        {...register("password", { required: true, minLength: 8 })}
+        {...register("password", { required: true })}
       />
-      <p className={fieldStyles.hint}>Минимум 8 символов</p>
 
       <Input
         className={styles.input}
-        placeholder="Промокод (необязательно)"
+        placeholder={t("auth.promoOptional")}
         type="text"
         variant="pill"
         {...register("promo")}
@@ -311,7 +312,7 @@ export const RegisterForm = () => {
         disabled={isPending || isSuccess}
         type="submit"
       >
-        {isPending || isSuccess ? `Авторизация...` : `Зарегистрироваться`}
+        {isPending || isSuccess ? t("auth.signingIn") : t("auth.signUp")}
       </Button>
     </form>
   );

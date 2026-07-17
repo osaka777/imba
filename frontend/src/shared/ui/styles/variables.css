@@ -84,16 +84,16 @@
   --layout-sticky-bottom: 12px;
 }
 
-/* Tablet: sidebar + coupon in grid */
-@media (min-width: 768px) {
+/* Tablet: sport sidebar only (coupon is FAB) */
+@media (min-width: 768px) and (max-width: 1080px) {
   :root {
-    --layout-sidebar-w: 220px;
+    --layout-sidebar-w: 200px;
     --layout-coupon-w: 280px;
     --layout-gap: 14px;
   }
 }
 
-/* Desktop */
+/* Desktop: sidebar + sticky coupon column */
 @media (min-width: 1081px) {
   :root {
     --layout-sidebar-w: 320px;

@@ -1,0 +1,247 @@
+.wrap {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid rgba(83, 252, 24, 0.35);
+  background:
+    linear-gradient(135deg, rgba(83, 252, 24, 0.12) 0%, rgba(7, 6, 13, 0.92) 42%, rgba(7, 6, 13, 0.98) 100%);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(83, 252, 24, 0.08) inset,
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    0 0 80px rgba(83, 252, 24, 0.12);
+}
+
+.glow {
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: rgba(83, 252, 24, 0.22);
+  filter: blur(70px);
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  padding: clamp(20px, 3vw, 28px);
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(83, 252, 24, 0.14);
+  border: 1px solid rgba(83, 252, 24, 0.35);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #53fc18;
+}
+
+.badgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #53fc18;
+  box-shadow: 0 0 10px #53fc18;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.amount {
+  color: #53fc18;
+  text-shadow: 0 0 32px rgba(83, 252, 24, 0.45);
+}
+
+.desc {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.perks {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.perkCheck {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(83, 252, 24, 0.18);
+  color: #53fc18;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.card {
+  position: relative;
+  width: min(100%, 200px);
+  margin: 0 auto;
+  padding: 22px 18px;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(83, 252, 24, 0.28);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.cardRing {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid rgba(83, 252, 24, 0.2);
+  pointer-events: none;
+  animation: ringPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.cardLabel {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cardAmount {
+  margin: 0;
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #53fc18;
+  text-shadow: 0 0 28px rgba(83, 252, 24, 0.5);
+}
+
+.cardCurrency {
+  font-size: 1.6rem;
+  vertical-align: super;
+  margin-right: 2px;
+  opacity: 0.9;
+}
+
+.cardHint {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.cardDivider {
+  height: 1px;
+  margin: 14px 0 12px;
+  background: linear-gradient(90deg, transparent, rgba(83, 252, 24, 0.35), transparent);
+}
+
+.cardFoot {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.compact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(83, 252, 24, 0.1);
+  border: 1px solid rgba(83, 252, 24, 0.28);
+}
+
+.compactIcon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #53fc18, #3ecf0f);
+  color: #07060d;
+  font-size: 1.25rem;
+  font-weight: 900;
+  box-shadow: 0 0 20px rgba(83, 252, 24, 0.35);
+}
+
+.compactText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.compactText strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #53fc18;
+}
+
+.compactText span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.35;
+}

@@ -21,14 +21,17 @@ import {
 } from "react-icons/md";
 
 import type { WcEventDetail } from "~/entities/wc-odds/api/client";
-import { isBasketballLikeSport, isSoccerLikeSport } from "~/entities/wc-odds/lib/wcSportKinds";
+import { isSoccerLikeSport, isBasketballLikeSport } from "~/entities/wc-odds/lib/wcSportKinds";
+import { isEsportsMapScoreSport } from "~/entities/wc-odds/lib/wcEsportsScore";
 import { getSportBackgroundCss } from "~/entities/game/lib/sportBackground";
+import { isStaleSoccerBreak } from "~/entities/wc-odds/lib/wcSoccerPhase";
 import {
   formatTennisGameScore,
   resolveWcDisplayPeriod,
   sportUsesTennisPointScore,
 } from "~/entities/wc-odds/lib/wcLiveScore";
 import { isWcMatchEffectivelyFinished } from "~/entities/wc-odds/lib/wcLiveClock";
+import { isWcFeedPaused, wcFeedPausedLabel } from "~/entities/wc-odds/lib/wcFeedStatus";
 import { WcLiveMatchClockBar } from "~/entities/wc-odds/ui/WcLiveMatchClock";
 import { getWcSoccerCardCounts, teamHasCards } from "~/entities/wc-odds/lib/wcSoccerCards";
 import { WcPrematchKickoffCountdown } from "~/entities/wc-odds/ui/WcPrematchKickoffCountdown";
@@ -115,6 +118,9 @@ const COL_PREFIX: Record<string, string> = {
   hockey:        "П",
   soccer:        "Т",
   "cyber-football": "Т",
+  "esports.cs":  "К",
+  "esports.dota2": "К",
+  "esports.valorant": "К",
   "table-tennis":"С",
   tennis:        "С",
   volleyball:    "С",
@@ -126,6 +132,9 @@ const PERIOD_FULL: Record<string, string> = {
   hockey:        "период",
   soccer:        "тайм",
   "cyber-football": "тайм",
+  "esports.cs":  "карта",
+  "esports.dota2": "карта",
+  "esports.valorant": "карта",
   "table-tennis":"сет",
   tennis:        "сет",
   volleyball:    "сет",
@@ -251,33 +260,6 @@ function buildStatCols(event: WcEventDetail): StatCol[] {
 }
 
 // ── Progress bar stats block (football only) ─────────────────────────────
-const PROGRESS_STATS = [
-  "possession",
-  "shots_on",
-  "shots_off",
-  "dangerous_attacks",
-  "fouls",
-  "offsides",
-  "substitutions",
-  "free_kicks",
-  "penalty_score",
-  "extra_time_score",
-  "shots",
-  "saves",
-  "woodwork",
-  "goal_kicks",
-  "outs",
-  "expected_goals",
-  "aerial_duels",
-  "interceptions",
-  "dribbles",
-  "tackles",
-  "penalty_minutes",
-  "players_on_ice",
-  "aces",
-  "double_faults",
-];
-
 const STATS_BLOCK_SPORTS = new Set([
   "soccer",
   "cyber-football",
@@ -294,7 +276,7 @@ const STATS_STICKY_MS = 4000;
 function StatsBlock({ event }: { event: WcEventDetail }) {
   const [open, setOpen] = useState(false);
   const rows = useMemo(
-    () => (event.statList ?? []).filter((s) => PROGRESS_STATS.includes(s.id)),
+    () => (event.statList ?? []).filter((s) => s.id !== "server"),
     [event.statList],
   );
   const stickyRef = useRef<{ rows: typeof rows; at: number } | null>(null);
@@ -344,8 +326,10 @@ function StatsBlock({ event }: { event: WcEventDetail }) {
           {displayRows.map((row) => {
             const meta = STAT_META[row.id];
             const isPossession = row.id === "possession";
-            const h = Number(row.opp1);
-            const a = Number(row.opp2);
+            const parsedHome = Number(row.opp1);
+            const parsedAway = Number(row.opp2);
+            const h = Number.isFinite(parsedHome) ? parsedHome : 0;
+            const a = Number.isFinite(parsedAway) ? parsedAway : 0;
             const homePct = isPossession ? h : (h + a > 0 ? Math.round((h / (h + a)) * 100) : 50);
             const awayPct = 100 - homePct;
             const homeLeads = h > a;
@@ -418,10 +402,13 @@ export function WcScoreBoard({
   const isFinished = event.phase === "finished" || isWcMatchEffectivelyFinished(event);
   const isPrematch = event.phase === "prematch";
   const isSetSport = SET_SPORTS.has(event.sport);
+  const isEsportsMap = isEsportsMapScoreSport(event.sport);
 
-  const gamePhase      = score?.gamePhase ?? null;
-  const gamePhaseLabel = gamePhase ? (GAME_PHASE_LABELS[gamePhase] ?? null) : null;
-  const isBreak        = gamePhase === "break";
+  const rawGamePhase     = score?.gamePhase ?? null;
+  const isStaleBreak     = rawGamePhase === "break" && isStaleSoccerBreak(score ?? undefined);
+  const gamePhase        = isStaleBreak ? null : rawGamePhase;
+  const gamePhaseLabel   = gamePhase ? (GAME_PHASE_LABELS[gamePhase] ?? null) : null;
+  const isBreak          = gamePhase === "break";
   const isClassicSoccer = event.sport === "soccer";
 
   // ── Period data ─────────────────────────────────────────────────────────
@@ -430,16 +417,28 @@ export function WcScoreBoard({
   // Detect penalty shootout: either explicit gamePhase or 5+ periods in details
   const isPenaltiesPhase = gamePhase === "penalties" || (isClassicSoccer && isLive && details.length >= 5);
 
-  const showLiveClockBar = isLive && !isSetSport && !isBreak && !isPenaltiesPhase;
-  const colPrefix  = COL_PREFIX[event.sport] ?? "П";
-  const periodStr  = PERIOD_FULL[event.sport] ?? "период";
+  const showLiveClockBar = isLive && !isSetSport && !isBreak && !isPenaltiesPhase && !isEsportsMap;
+  const colPrefix  = COL_PREFIX[event.sport]
+    ?? (event.sport.startsWith("esports.") ? "К" : "П");
+  const periodStr  = PERIOD_FULL[event.sport]
+    ?? (event.sport.startsWith("esports.") ? "карта" : "период");
   const varState = score?.varState ?? null;
   const penaltyRisk = score?.penaltyRisk === true;
-  const feedSuspended = event.feedStatus === "EVENT_SUSPENDED";
+  const feedPaused = isWcFeedPaused(event.feedStatus);
+  const pausedLabel = wcFeedPausedLabel("ru");
 
-  const currentPeriodIdx = isSetSport
+  const currentPeriodIdx = isEsportsMap && isLive && details.length > 0
     ? details.length - 1
-    : Math.max(0, resolveWcDisplayPeriod(event.sport, score?.period, details.length) - 1);
+    : isSetSport
+      ? details.length - 1
+      : Math.max(0, resolveWcDisplayPeriod(event.sport, score?.period, details.length) - 1);
+
+  const esportsCurrentRound = useMemo(() => {
+    if (!isEsportsMap || !isLive || details.length === 0) return null;
+    const [home, away] = details[currentPeriodIdx] ?? [];
+    if (home == null || away == null) return null;
+    return `${home}:${away}`;
+  }, [currentPeriodIdx, details, isEsportsMap, isLive]);
 
   // Current game score for tennis ("40:30", "40:A" etc.)
   const currentGameScore = useMemo(() => {
@@ -460,17 +459,18 @@ export function WcScoreBoard({
     if (!isLive) return null;
     if (isPenaltiesPhase) return getPenaltiesPhaseLabel(event.sport);
     if (gamePhaseLabel) return gamePhaseLabel;
+    if (isEsportsMap) return details.length > 0 ? `Карта ${details.length}` : "Live";
     if (isSetSport) return details.length > 0 ? `${details.length} ${periodStr}` : null;
     const p = resolveWcDisplayPeriod(event.sport, score?.period, details.length);
     return p > 0 ? `${p} ${periodStr}` : null;
-  }, [isLive, isPenaltiesPhase, gamePhaseLabel, isSetSport, details.length, periodStr, score?.period, event.sport]);
+  }, [isLive, isPenaltiesPhase, gamePhaseLabel, isSetSport, isEsportsMap, details.length, periodStr, score?.period, event.sport]);
 
   // ── Stat columns (inline in table header) ──────────────────────────────
   const statCols = useMemo(() => buildStatCols(event), [event]);
 
   const hasStatsProgressBlock = useMemo(() => {
     if (!STATS_BLOCK_SPORTS.has(event.sport)) return false;
-    return (event.statList ?? []).some((s) => PROGRESS_STATS.includes(s.id));
+    return (event.statList ?? []).some((s) => s.id !== "server");
   }, [event.sport, event.statList]);
 
   /** Aces / double faults etc. — only in progress block, not duplicate columns. */
@@ -540,9 +540,14 @@ export function WcScoreBoard({
         status={
           <>
             {isFinished && "Окончена"}
-            {isLive && isPenaltiesPhase && getPenaltiesPhaseLabel(event.sport)}
-            {isLive && !isPenaltiesPhase && !isSetSport && isBreak && (gamePhaseLabel ?? "Перерыв")}
-            {isLive && isSetSport && (setsScore ? `Сеты ${setsScore}` : "Live")}
+            {isLive && feedPaused && (
+              <span className={styles.suspendedPill} title={pausedLabel}>
+                {pausedLabel}
+              </span>
+            )}
+            {isLive && !feedPaused && isPenaltiesPhase && getPenaltiesPhaseLabel(event.sport)}
+            {isLive && !feedPaused && !isPenaltiesPhase && !isSetSport && isBreak && (gamePhaseLabel ?? "Перерыв")}
+            {isLive && !feedPaused && isSetSport && (setsScore ? `Сеты ${setsScore}` : "Live")}
           </>
         }
         showBroadcastLink={showBroadcastLink}
@@ -550,14 +555,36 @@ export function WcScoreBoard({
         telegramAction={telegramAction}
       />
 
-      {showLiveClockBar ? (
+      {showLiveClockBar && !feedPaused ? (
         <WcLiveMatchClockBar
           event={event}
           periodLabel={statusLine}
         />
       ) : null}
 
-      {isLive && isSetSport && statusLine ? (
+      {isLive && feedPaused ? (
+        <div className={styles.liveClockBar}>
+          <span className={styles.suspendedBanner} title={pausedLabel}>
+            {pausedLabel}
+          </span>
+        </div>
+      ) : null}
+
+      {isLive && !feedPaused && isEsportsMap && (statusLine || esportsCurrentRound) ? (
+        <div className={styles.liveClockBar}>
+          <span className={styles.matchClockPill}>
+            <span className={styles.timerDot} aria-hidden />
+            {statusLine ? (
+              <span className={styles.matchClockPeriod}>{statusLine}</span>
+            ) : null}
+            {esportsCurrentRound ? (
+              <span className={styles.matchClockGameScore}>{esportsCurrentRound}</span>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
+
+      {isLive && !feedPaused && isSetSport && statusLine ? (
         <div className={styles.liveClockBar}>
           <span className={styles.matchClockPill}>
             <span className={styles.timerDot} aria-hidden />
@@ -709,9 +736,9 @@ export function WcScoreBoard({
                 {isClassicSoccer && penaltyRisk ? (
                   <span className={styles.penaltyRiskPill}>Пен.</span>
                 ) : null}
-                {feedSuspended ? (
-                  <span className={styles.suspendedPill} title="Приём ставок приостановлен">
-                    Стоп
+                {feedPaused ? (
+                  <span className={styles.suspendedPill} title={pausedLabel}>
+                    {pausedLabel}
                   </span>
                 ) : null}
               </div>

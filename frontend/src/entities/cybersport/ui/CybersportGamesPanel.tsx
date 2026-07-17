@@ -10,8 +10,8 @@ import {
 } from "~/entities/cybersport/api/client";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
 import { transformApiGames } from "~/entities/game/lib/transformApiGames";
+import { CybersportMatchSkeleton } from "~/entities/cybersport/ui/CybersportMatchSkeleton";
 import { TournamentTable } from "~/entities/game/ui/TournamentTable";
-import { LoadingSpinner } from "~/shared/ui";
 
 import styles from "./CybersportGamesPanel.module.css";
 
@@ -20,6 +20,7 @@ type CybersportGamesPanelProps = {
   sport: string;
   href: string;
   sportLabel: string;
+  tournamentId?: number;
 };
 
 function maskGames<T extends { leagueName?: string; team1?: string; team2?: string; eventName?: string }>(
@@ -39,12 +40,16 @@ export function CybersportGamesPanel({
   sport,
   href,
   sportLabel,
+  tournamentId,
 }: CybersportGamesPanelProps) {
   const isLive = variant === "live";
 
   const { data = [], isLoading, isError } = useQuery({
-    queryKey: ["cybersport", variant, sport],
-    queryFn: () => (isLive ? fetchCybersportLive(sport, 12) : fetchCybersportLine(sport, 12)),
+    queryKey: ["cybersport", variant, sport, tournamentId ?? "all"],
+    queryFn: () =>
+      isLive
+        ? fetchCybersportLive(sport, 12, tournamentId)
+        : fetchCybersportLine(sport, 12, 0, tournamentId),
     refetchOnMount: true,
     staleTime: 10_000,
     refetchInterval: isLive ? 15_000 : false,
@@ -56,11 +61,7 @@ export function CybersportGamesPanel({
   );
 
   if (isLoading) {
-    return (
-      <div className={styles.state}>
-        <LoadingSpinner />
-      </div>
-    );
+    return <CybersportMatchSkeleton rows={3} />;
   }
 
   if (isError) {
@@ -98,6 +99,7 @@ export function CybersportGamesPanel({
           key={league.leagueName}
           league={league.leagueName}
           sport={sport}
+          variant="cyber"
         />
       ))}
     </div>

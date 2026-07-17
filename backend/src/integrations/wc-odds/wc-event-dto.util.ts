@@ -8,6 +8,7 @@ import {
   type WcGroupedMarkets,
 } from './wc-odds-markets.util';
 import type { WcOddsEventDto } from './wc-odds.types';
+import { parseMatchState } from './wc-match-state.types';
 import { baseWcSlug, isBrokenWcSlug } from './wc-slug.util';
 import { wcLeagueNameFromSportKey, wcSportKeyToSlug } from './wc-sport.util';
 
@@ -32,6 +33,7 @@ export type WcEventRowForDto = {
   hasBroadcast?: boolean;
   priorityLevel?: number | null;
   marketsJson?: unknown;
+  matchStateJson?: unknown;
   oddsUpdatedAt?: Date | null;
 };
 
@@ -46,6 +48,21 @@ export function buildWcOddsEventDto(event: WcEventRowForDto): WcOddsEventDto {
   const totals = extractMainTotalLine(grouped);
   const lineExtras = buildWcLineExtras(grouped);
   const priorityLevel = event.priorityLevel ?? 0;
+  const persistedResult = parseMatchState(event.matchStateJson)?.result;
+  const persistedParsedScore = persistedResult?.parsedScore
+    ?? (persistedResult?.periodScores?.length
+      ? {
+          details: persistedResult.periodScores.map(
+            (period) => [period.home, period.away] as [number, number],
+          ),
+          currentScore: event.homeScore != null && event.awayScore != null
+            ? [event.homeScore, event.awayScore] as [number, number]
+            : undefined,
+          text: event.homeScore != null && event.awayScore != null
+            ? { currentScore: `${event.homeScore}:${event.awayScore}` }
+            : undefined,
+        }
+      : undefined);
 
   return {
     id: event.id,
@@ -74,6 +91,8 @@ export function buildWcOddsEventDto(event: WcEventRowForDto): WcOddsEventDto {
     hasBroadcast: Boolean(event.hasBroadcast),
     priorityLevel,
     isPriority: isOlimpbetPriorityLevel(priorityLevel),
+    parsedScore: persistedParsedScore,
+    statList: persistedResult?.statList,
     ...lineExtras,
   };
 }

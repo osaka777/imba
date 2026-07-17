@@ -1,6 +1,8 @@
 import {
   resolveWcMarketKey,
+  isJunkSpecialtyCatalogName,
 } from './olimpbet-wc-market-keys.util';
+import { isOlimpbetEsportsSportId, olimpbetSportIdToSlug } from './olimpbet-sport.util';
 
 import type { WcGroupedMarkets, WcMarketGroup } from '../wc-odds/wc-odds-markets.util';
 import { finalizeGroupedMarkets } from '../wc-odds/wc-odds-markets.util';
@@ -8,6 +10,8 @@ import { finalizeGroupedMarkets } from '../wc-odds/wc-odds-markets.util';
 import {
   catalogMarketLabel,
   formatOutcomeLabel,
+  formatEsportsMapTeamOutcome,
+  formatResultingComparisonLabel,
   formatWinningMethodOutcome,
   formatBttsAndOutcomeCode,
   formatFirstGoalAndWinnerCode,
@@ -15,14 +19,18 @@ import {
   humanizeCatalogMarketName,
   isTechnicalEnglishCatalogLabel,
   resolveBttsOutcomeGroupLabel,
+  resolveComboDisplayGroupLabel,
   resolveNextGoalGroupLabel,
   resolveCleanWinTeamSideGroupLabel,
   resolveNumberFinalScoreCategoryName,
   resolveNumberFinalScoreGroupLabel,
+  resolveResultingGroupLabel,
   resolveScoringEventsGroupLabel,
   resolveSpecialBetsGroupLabel,
   loadOlimpbetMarketCatalog,
   resolveVirtualCategoryName,
+  resolveYesNoMarketLabel,
+  resolveYesNoMarketLabelFromCatalog,
   type OlimpbetMarketCatalog,
 } from './olimpbet-wc-catalog';
 import type { OlimpbetEventDetail, OlimpbetProbability, OlimpbetProbabilityMarket } from './olimpbet-wc.types';
@@ -108,7 +116,10 @@ const CATEGORY_ORDER = [
 const MARKET_CODE_TO_CATEGORY: Record<string, string> = {
   MATCH_WINNER_X3: '1X2',
   TOTAL: 'Тотал',
-  TOTAL_ASIAN: 'Тотал',
+  TOTAL_ASIAN: 'Азиатский тотал',
+  TOTAL_ASIAN_HALF: 'Азиатский тотал',
+  TOTAL_3WAY: 'Тотал (3 исхода)',
+  TOTAL_HALF_3WAY: 'Тотал (3 исхода)',
   GOALS_BOTH: 'Обе забьют',
   GOALS_BOTHHALF: 'Гол в обоих таймах',
   GOALS_BOTH_BOTHHALF: 'Обе забьют в обоих таймах',
@@ -132,11 +143,12 @@ const MARKET_CODE_TO_CATEGORY: Record<string, string> = {
   EVEN_ODD: 'Тотал',
   TOTAL_SET: 'Тотал',
   HANDICAP_BY_SET: 'Фора',
-  SCORE: 'Счет',
+  SCORE: 'Точный счёт',
   SCORE_SET: 'Счет в гейме',
-  SCORE_FIRST_X_GAMES_SET: 'Счет',
+  SCORE_FIRST_X_GAMES_SET: 'Счёт первых геймов',
   EXACT_POINT_GAME_SET: 'Точное количество очков гейма',
   WINNER_2GAMES_SET: 'Исход двух геймов',
+  WINNER_2GAMES_SET_4WAY: 'Исход двух геймов',
   WINNER_GAME: 'Победа в гейме',
   RACE_TO_GAME: 'Гонка по геймам',
   RACE_TO_POINT_GAME: 'Гонка по очкам в гейме',
@@ -199,7 +211,7 @@ function marketGroupSig(marketKey: string, prob: OlimpbetProbability): string {
   if (/^NUMBER_OF_SETS/i.test(catalogStem)) {
     return 'number_of_sets';
   }
-  if (/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_WINNER/i.test(catalogStem)) {
+  if (/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_WINNER|^WINNER_2GAMES/i.test(catalogStem)) {
     return scoreSetGroupSig(prob);
   }
   if (
@@ -233,6 +245,62 @@ function isPeriodTabCategory(category: string): boolean {
 
 function isHandicapOtScope(catalogName: string, marketKey: string): boolean {
   return /_WITH_?OT$/i.test(catalogName) || /_ot$/i.test(marketKey);
+}
+
+/** Display labels for RU canonical buckets when building the EN market catalog. */
+const CANONICAL_CATEGORY_EN: Record<string, string> = {
+  '1X2': '1X2',
+  'Двойной шанс': 'Double Chance',
+  'Фора': 'Handicap',
+  'Фора (с ОТ)': 'Handicap (incl. OT)',
+  'Тотал': 'Total',
+  'Тотал (с ОТ)': 'Total (incl. OT)',
+  'Тотал (Чет/Нечет)': 'Total (Odd/Even)',
+  'Тотал (Чет/Нечет, с ОТ)': 'Total (Odd/Even, incl. OT)',
+  'Индивидуальный тотал': 'Team Total',
+  'Индивидуальный тотал (с ОТ)': 'Team Total (incl. OT)',
+  'Обе забьют': 'Both Teams to Score',
+  'Гол в обоих таймах': 'Goal in Both Halves',
+  'Результат + тотал': 'Result + Total',
+  'Точный счёт': 'Correct Score',
+  'Забьёт команда 1': 'Team 1 to Score',
+  'Забьёт команда 2': 'Team 2 to Score',
+  'Победа: да/нет': 'Win: Yes/No',
+  'Диапазон голов': 'Goal Range',
+  'Диапазон голов (хозяева)': 'Goal Range (Home)',
+  'Диапазон голов (гости)': 'Goal Range (Away)',
+  'Точное число голов': 'Exact Goals',
+  'Точное число голов (хозяева)': 'Exact Goals (Home)',
+  'Точное число голов (гости)': 'Exact Goals (Away)',
+  'Тотал раундов': 'Total Rounds',
+  'Индивидуальный тотал по раундам': 'Team Total Rounds',
+  'Следующий гол': 'Next Goal',
+  'Гол в интервале': 'Goal in Interval',
+  'Количество сетов': 'Number of Sets',
+  'Голевые факты (Да/Нет)': 'Scoring Events (Yes/No)',
+  'Автогол в матче': 'Own Goal',
+  'Цифра в итоговом счёте (Да/Нет)': 'Digit in Final Score (Yes/No)',
+  'Следующее очко в гейме': 'Next Point in Game',
+  'Исход двух геймов': 'Two Games Winner',
+  '40:40': '40:40',
+  'Серия пенальти': 'Penalty Shootout',
+  'Никто не забьет в обоих таймах': 'No Goals in Either Half',
+  'Гонка по геймам': 'Race to Games',
+};
+
+function localizeCategoryLabel(category: string, locale: 'ru' | 'en'): string {
+  if (locale !== 'en') return category;
+  const mapped = CANONICAL_CATEGORY_EN[category];
+  if (mapped) return mapped;
+  // Period tabs / leftover provider strings that still carry RU morphology.
+  return category
+    .replace(/^(\d+)-й\s+тайм$/i, 'Half $1')
+    .replace(/^(\d+)-я\s+четверть$/i, 'Quarter $1')
+    .replace(/^(\d+)-й\s+сет$/i, 'Set $1')
+    .replace(/^(\d+)-я\s+карта$/i, 'Map $1')
+    .replace(/\s*\(с ОТ\)/gi, ' (incl. OT)')
+    .replace(/\s*\(1-й тайм\)/gi, ' (1st Half)')
+    .replace(/\s*\(2-й тайм\)/gi, ' (2nd Half)');
 }
 
 /** Collapse Olimpbet virtual categories into stable UI buckets. */
@@ -278,16 +346,39 @@ function canonicalizeCategory(
     if (/обоих\s+тайм/i.test(category)) return 'Гол в обоих таймах';
     return 'Обе забьют';
   }
-  if (
-    mk === 'totals'
-    || mk === 'totals_home'
-    || mk === 'totals_away'
-    || /^TOTAL/i.test(catalogName)
-  ) {
+  // Only canonical totals_* keys — not specialty TOTAL_GOALS_MINUTES / TOTAL_FOULS_* (display_*).
+  if (mk === 'totals' || mk === 'totals_home' || mk === 'totals_away') {
+    if (/^TOTAL_MAP$/i.test(catalogName) && /^\d+-я карта$/i.test(category)) {
+      return category;
+    }
+    if (/^INDIVIDUAL_TOTAL_TEAM[12]_MAP$/i.test(catalogName) && /индивидуальный тотал/i.test(category)) {
+      return category;
+    }
+    if (/^TOTAL_ROUNDS$/i.test(catalogName)) return 'Тотал раундов';
+    if (/^INDIVIDUAL_TOTAL_TEAM[12]_ROUNDS$/i.test(catalogName)) return 'Индивидуальный тотал по раундам';
+    // Keep Olimpbet virtual names: injury time, asian half totals, 3-way half, etc.
+    // Never leave TOTAL_ASIAN / 3-way under plain «Тотал» (looks like basketball lines).
+    if (/^TOTAL_ASIAN(_HALF)?$/i.test(catalogName)) {
+      if (/азиатск/i.test(category)) return category.trim();
+      return 'Азиатский тотал';
+    }
+    if (/^TOTAL(_HALF)?_3WAY$/i.test(catalogName)) {
+      if (/3\s*исход/i.test(category)) return category.trim();
+      return 'Тотал (3 исхода)';
+    }
+    if (
+      /компенсирован|добавленн|азиатск|3\s*исход|add_?time|asian/i.test(category)
+      || /компенсирован|добавленн|азиатск|3\s*исход/i.test(catalogName)
+      || /^TOTAL_ADD_TIME/i.test(catalogName)
+    ) {
+      if (category.trim()) return category;
+    }
     if (/TEAM_TOTAL|INDIVIDUAL_TOTAL/i.test(catalogName) || /индивид/i.test(category)) {
       return /_WITH_?OT$/i.test(catalogName) ? 'Индивидуальный тотал (с ОТ)' : 'Индивидуальный тотал';
     }
     if (/чет\/?нечет|even/i.test(category + catalogName)) return 'Тотал (Чет/Нечет)';
+    // Half/quarter already resolved to period tab — keep there (not generic Тотал).
+    if (isPeriodTabCategory(category)) return category;
     return /_WITH_?OT$/i.test(catalogName) ? 'Тотал (с ОТ)' : 'Тотал';
   }
   if (mk === 'even_odd' || /^EVEN_ODD/i.test(catalogName)) {
@@ -327,6 +418,9 @@ function canonicalizeCategory(
     return 'Цифра в итоговом счёте (Да/Нет)';
   }
   if (/^SCORE_SET/i.test(catalogName)) return category;
+  if (/^WINNER_2GAMES/i.test(catalogName)) {
+    return MARKET_CODE_TO_CATEGORY[catalogName] ?? 'Исход двух геймов';
+  }
   if (/^CORRECT_SCORE|^SCORE_VARIANT/i.test(catalogName) || /точн/i.test(category)) return 'Точный счёт';
 
   if (/^[A-Z][A-Z0-9_]+$/.test(catalogName) && catalogName.includes('_')) {
@@ -354,9 +448,20 @@ function normalizeOutcomeDisplayName(
   awayTeam: string,
   line?: string,
 ): string {
-  const code = catalog.markets.get(marketId)?.outcomes.get(outcomeTypeId)?.code ?? '';
+  const market = catalog.markets.get(marketId);
+  const outcome = market?.outcomes.get(outcomeTypeId);
+  const code = outcome?.code ?? '';
+  const catalogMarketName = market?.name ?? '';
   let label = substituteCompetitorLabels(name, homeTeam, awayTeam).trim();
   label = label.replace(/\[\]/g, line ?? '').replace(/\{\}/g, line ?? '').trim();
+
+  const resulting = formatResultingComparisonLabel(
+    code,
+    outcome?.name,
+    outcome?.shortName ?? label,
+    catalogMarketName,
+  );
+  if (resulting) return resulting;
 
   if (/^([ПP][12])_(да|нет)$/i.test(code)) {
     const side = code.charAt(0).replace(/P/i, 'П') + code.charAt(1);
@@ -389,6 +494,13 @@ function normalizeOutcomeDisplayName(
 
   const firstGoalWinner = formatFirstGoalAndWinnerCode(code);
   if (firstGoalWinner) return firstGoalWinner;
+
+  const esportsMapTeam = formatEsportsMapTeamOutcome(code, catalogMarketName);
+  if (esportsMapTeam) return esportsMapTeam;
+
+  const compactLabel = label.replace(/\s/g, '');
+  if (/ПерКр_?Карта1|ПерБаш_?Карта1|Барак_?КартаП1|Рош_?КартаП1/i.test(compactLabel)) return 'П1';
+  if (/ПерКр_?Карта2|ПерБаш_?Карта2|Барак_?КартаП2|Рош_?КартаП2/i.test(compactLabel)) return 'П2';
 
   if (/^К1$/i.test(label) || /^К1\b/i.test(label) || (/^К1_/i.test(code) && !/^К1[_-]\d/.test(code) && !/^ПерГ1_/i.test(code))) return 'П1';
   if (/^К2$/i.test(label) || /^К2\b/i.test(label) || (/^К2_/i.test(code) && !/^К2[_-]\d/.test(code) && !/^ПерГ2_/i.test(code))) return 'П2';
@@ -542,6 +654,36 @@ function setCategoryLabel(setNum: string): string {
   return labels[setNum] ?? `${setNum}-й сет`;
 }
 
+/** Readable category keys from Olimpbet virtual categories (tennis tiebreak, etc.). */
+function normalizeResolvedCategoryName(category: string): string {
+  const trimmed = category.trim();
+  if (!trimmed) return trimmed;
+
+  const tiebreakSet = /^очки\s+в\s+тай-?брейке\s+(\d+)\s*[-–—]?\s*[йи]\s+сет$/i.exec(trimmed);
+  if (tiebreakSet) return `${setCategoryLabel(tiebreakSet[1]!)} · Тай-брейк`;
+  if (/^очки\s+в\s+тай-?брейке$/i.test(trimmed)) return 'Тай-брейк';
+
+  const tiebreakFirst = /^(\d+)\s*[-–—]?\s*[йи]\s+сет\s*[,·•]\s*тай-?брейк$/i.exec(trimmed);
+  if (tiebreakFirst) return `${setCategoryLabel(tiebreakFirst[1]!)} · Тай-брейк`;
+
+  const scoreGameSet = /^сч[её]т\s+в\s+гейме\s*[,·•]?\s*(\d+)\s*[-–—]?\s*[йи]\s+сет/i.exec(trimmed);
+  if (scoreGameSet) return `${setCategoryLabel(scoreGameSet[1]!)} · Счёт в гейме`;
+
+  const nextPoint = /^следующ.*очк.*(?:[,·•]\s*)?(\d+)\s*[-–—]?\s*[йи]\s+сет/i.exec(trimmed);
+  if (nextPoint) return `${setCategoryLabel(nextPoint[1]!)} · Следующее очко`;
+
+  const marketThenSet = /^(.+?)\s+(\d+)\s*[-–—]?\s*[йи]\s+сет$/i.exec(trimmed);
+  if (marketThenSet && !/^\d+-[йи]\s+сет$/i.test(trimmed)) {
+    const setLabel = setCategoryLabel(marketThenSet[2]!);
+    const market = marketThenSet[1]!.trim();
+    if (/^очки\s+в\s+тай-?брейке$/i.test(market)) return `${setLabel} · Тай-брейк`;
+    if (/^сч[её]т\s+в\s+гейме$/i.test(market)) return `${setLabel} · Счёт в гейме`;
+    if (/^следующ/i.test(market) && /очк/i.test(market)) return `${setLabel} · Следующее очко`;
+  }
+
+  return trimmed;
+}
+
 function resolveExactGoalsCategory(catalogName: string, half?: string): string | null {
   if (!/^EXACT_GOALS/i.test(catalogName)) return null;
 
@@ -567,6 +709,9 @@ function resolveCategory(
 
   if (/^NUMBER_OF_SETS/i.test(catalogName)) return 'Количество сетов';
 
+  if (/^SERIESPENALTY/i.test(catalogName)) return 'Серия пенальти';
+  if (/^NO_GOALS_IN_BOTH_HALF/i.test(catalogName)) return 'Никто не забьет в обоих таймах';
+
   const setNum = paramValue(parameters, 'PARAMETER_SET_NUMBER');
   if (/^RACE_TO_GAME/i.test(catalogName)) {
     if (setNum) return setCategoryLabel(setNum);
@@ -577,8 +722,32 @@ function resolveCategory(
   const exactGoalsCategory = resolveExactGoalsCategory(catalogName, half);
   if (exactGoalsCategory) return exactGoalsCategory;
 
+  if (/_YES_NO$/i.test(catalogName)) {
+    const fromCatalog = resolveYesNoMarketLabelFromCatalog(catalog, marketId);
+    if (fromCatalog) return fromCatalog;
+    const labeled = resolveYesNoMarketLabel(catalogName);
+    if (labeled) return labeled;
+  }
+
   const virtualCategory = resolveVirtualCategoryName(catalog, marketId, parameters);
-  if (virtualCategory) return virtualCategory;
+  if (virtualCategory) {
+    if (/специальн/i.test(virtualCategory) && /_YES_NO$/i.test(catalogName)) {
+      const fromCatalog = resolveYesNoMarketLabelFromCatalog(catalog, marketId);
+      if (fromCatalog) return fromCatalog;
+      const labeled = resolveYesNoMarketLabel(catalogName)
+        ?? humanizeCatalogMarketName(catalogName, parameters);
+      if (/[а-яё]/i.test(labeled) && labeled !== catalogName) return labeled;
+    }
+    let resolved = normalizeResolvedCategoryName(virtualCategory);
+    if (catalogName.startsWith('DOUBLE_CHANCE')) {
+      const from = paramValue(parameters, 'PARAMETER_FROM');
+      const to = paramValue(parameters, 'PARAMETER_TO');
+      if (from !== undefined && to !== undefined && !/\(\s*\d+\s*[–-]\s*\d+\s*мин\s*\)/i.test(resolved)) {
+        resolved = `Двойной шанс (${from}–${to} мин)`;
+      }
+    }
+    return resolved;
+  }
 
   if (/^SCORING_EVENTS/i.test(catalogName)) return 'Голевые факты (Да/Нет)';
   if (/^OWNGOAL/i.test(catalogName)) return 'Автогол в матче';
@@ -665,6 +834,86 @@ function buildScoreInGameGroupLabel(
   return parts.length ? parts.join(', ') : null;
 }
 
+/** Genitive unit for linked stat sections (corners/fouls/…), not match goals. */
+function totalsUnitFromStatCategory(category: string): string | null {
+  const name = category.trim().toLowerCase();
+  if (!name) return null;
+
+  if (/^углов/.test(name)) return 'угловых';
+  if (/^желт/.test(name)) return 'жёлтых карточек';
+  if (/^фол/.test(name)) return 'фолов';
+  if (/^офсайд/.test(name)) return 'офсайдов';
+  if (/^аут/.test(name)) return 'аутов';
+  if (/удар.*створ/.test(name)) return 'ударов в створ';
+  if (/удар.*от\s+ворот/.test(name)) return 'ударов от ворот';
+  if (/удар.*по\s+ворот|^удары$/.test(name)) return 'ударов';
+  if (/штанг|перекладин/.test(name)) return 'штанг';
+  if (/^сейв/.test(name)) return 'сейвов';
+  if (/^замен/.test(name)) return 'замен';
+  if (/видеопросмотр|var/i.test(name)) return 'видеопросмотров';
+  if (/^перехват/.test(name)) return 'перехватов';
+  if (/успешн.*обвод/.test(name)) return 'успешных обводок';
+  if (/успешн.*отбор/.test(name)) return 'успешных отборов';
+  if (/%\s*точн|точн.*передач/.test(name)) return 'точных передач';
+  if (/касани.*вратар/.test(name)) return 'касаний мяча вратарём';
+  if (/ожидаем|xg/i.test(name)) return 'ожидаемых голов (xG)';
+  if (/верхов|единоборств/.test(name)) return 'верховых единоборств';
+  if (/мед\.?\s*бригад|медицин/.test(name)) return 'выходов мед.бригады';
+  if (/^эйс/.test(name)) return 'эйсов';
+  if (/двойн.*ошиб/.test(name)) return 'двойных ошибок';
+  if (/^брейк/.test(name)) return 'брейков';
+
+  return null;
+}
+
+/** Period totals unit by Olimpbet sport (half/quarter). Soccer ≠ basketball. */
+function periodTotalsUnitForSportId(sportId?: number | null): string {
+  const slug = sportId != null ? olimpbetSportIdToSlug(sportId) : 'soccer';
+  switch (slug) {
+    case 'basketball':
+    case 'cyber-basketball':
+    case 'volleyball':
+    case 'table-tennis':
+      return 'очков';
+    case 'tennis':
+      return 'геймов';
+    case 'mma':
+      return 'раундов';
+    case 'soccer':
+    case 'hockey':
+    case 'cyber-football':
+    default:
+      return 'голов';
+  }
+}
+
+function resolveTotalsUnitLabel(
+  catalogName: string,
+  category: string,
+  mapNum?: string,
+  gameNum?: string,
+  setNum?: string,
+  half?: string,
+  quarter?: string,
+  sportId?: number | null,
+): string {
+  if (/TOTAL_MAP|INDIVIDUAL_TOTAL_TEAM[12]_MAP/i.test(catalogName)) return 'раундов';
+  if (/TOTAL_ROUNDS|INDIVIDUAL_TOTAL_TEAM[12]_ROUNDS/i.test(catalogName)) return 'раундов';
+  if (mapNum) return 'раундов';
+  if (/ADD_TIME|компенсирован|добавленн/i.test(`${catalogName} ${category}`)) return 'минут';
+  if (sportId != null && isOlimpbetEsportsSportId(sportId) && /^TOTAL/i.test(catalogName) && !/MAP|ROUND/i.test(catalogName)) {
+    return 'карт';
+  }
+  if (gameNum) return 'очков';
+  if (setNum || /^\d+-[йи]\s+сет$/i.test(category)) return 'геймов';
+
+  const statUnit = totalsUnitFromStatCategory(category);
+  if (statUnit) return statUnit;
+
+  if (half || quarter) return periodTotalsUnitForSportId(sportId);
+  return periodTotalsUnitForSportId(sportId);
+}
+
 function buildScopedTotalsHandicapLabel(
   kind: 'totals' | 'handicap',
   category: string,
@@ -674,13 +923,38 @@ function buildScopedTotalsHandicapLabel(
   half?: string,
   quarter?: string,
   line?: string,
+  catalogName = '',
+  sportId?: number | null,
+  mapNum?: string,
 ): string {
+  // Keep rich Olimpbet category titles (injury time, asian half, 3-way half).
+  if (
+    kind === 'totals'
+    && (
+      /компенсирован|добавленн|азиатск|3\s*исход/i.test(category)
+      || /ADD_TIME|ASIAN|HALF_3WAY/i.test(catalogName)
+    )
+  ) {
+    const head = category.trim() || `Тотал ${resolveTotalsUnitLabel(catalogName, category, mapNum, gameNum, setNum, half, quarter, sportId)}`;
+    let titled = head;
+    const base = baseMarketKey(marketKey);
+    if (base === 'totals_home') titled = `П1 · ${titled}`;
+    else if (base === 'totals_away') titled = `П2 · ${titled}`;
+    return line ? `${titled} · ${line}` : titled;
+  }
+
   const scopeParts: string[] = [];
 
   if (/^\d+-[йи]\s+сет$/i.test(category.trim())) {
     scopeParts.push(category.trim());
   } else if (setNum) {
     scopeParts.push(`${setNum}-й сет`);
+  }
+
+  if (/^\d+-я карта$/i.test(category.trim())) {
+    scopeParts.push(category.trim());
+  } else if (mapNum && !scopeParts.length) {
+    scopeParts.push(`${mapNum}-я карта`);
   }
 
   if (gameNum && !/\d+-й\s*гейм/i.test(category)) {
@@ -694,19 +968,29 @@ function buildScopedTotalsHandicapLabel(
     scopeParts.push(quarterCategoryLabel(quarter));
   }
 
-  const unit = gameNum
-    ? 'очков'
-    : scopeParts.some((p) => /сет/i.test(p)) || /^\d+-[йи]\s+сет$/i.test(category)
-      ? 'геймов'
-      : half || quarter
-        ? 'очков'
-        : 'голов';
+  const unit = resolveTotalsUnitLabel(
+    catalogName,
+    category,
+    mapNum,
+    gameNum,
+    setNum,
+    half,
+    quarter,
+    sportId,
+  );
 
-  const prefix = kind === 'handicap' ? 'Фора' : `Тотал ${unit}`;
+  const prefix = kind === 'handicap'
+    ? 'Фора'
+    // Soccer/hockey: Olimpbet-style plain "Тотал" (not "Тотал голов")
+    : (unit === 'голов' ? 'Тотал' : `Тотал ${unit}`);
   let head = scopeParts.length ? `${scopeParts.join(', ')} · ${prefix}` : prefix;
 
-  if (kind === 'totals' && /индивид/i.test(category)) {
-    const base = baseMarketKey(marketKey);
+  const base = baseMarketKey(marketKey);
+  // Team totals: always prefix side (cards/corners/ind. goals), not only "индивид" categories.
+  if (kind === 'totals' && (base === 'totals_home' || base === 'totals_away')) {
+    if (base === 'totals_home') head = `П1 · ${head}`;
+    else head = `П2 · ${head}`;
+  } else if (kind === 'totals' && /индивид/i.test(category)) {
     if (base === 'totals_home') head = `П1 · ${head}`;
     else if (base === 'totals_away') head = `П2 · ${head}`;
   }
@@ -714,22 +998,53 @@ function buildScopedTotalsHandicapLabel(
   return line ? `${head} · ${line}` : head;
 }
 
+function halfScopeAlreadyInCategory(category: string, half: string): boolean {
+  const normalized = category.trim().toLowerCase();
+  if (half === '1') {
+    return /1\s*[-–—]?\s*(?:й|м)\s+тайм/i.test(normalized)
+      || /в\s+1\s*[-–—]?\s*м\s+тайм/i.test(normalized);
+  }
+  if (half === '2') {
+    return /2\s*[-–—]?\s*(?:й|м)\s+тайм/i.test(normalized)
+      || /во\s+2\s*[-–—]?\s*м\s+тайм/i.test(normalized);
+  }
+  return false;
+}
+
 function buildGroupLabel(
   category: string,
   marketKey: string,
   parameters?: OlimpbetProbability['parameters'],
+  catalogName = '',
+  sportId?: number | null,
 ): string {
   const line = paramValue(parameters, 'PARAMETER_VALUE');
   const half = paramValue(parameters, 'PARAMETER_HALF_NUMBER');
   const setNum = paramValue(parameters, 'PARAMETER_SET_NUMBER');
   const gameNum = paramValue(parameters, 'PARAMETER_GAME_NUMBER');
   const quarter = paramValue(parameters, 'PARAMETER_QUARTER_NUMBER');
+  const mapNum = paramValue(parameters, 'PARAMETER_MAP_NUMBER');
+  const roundNum = paramValue(parameters, 'PARAMETER_ROUND_NUMBER');
+  const winningMargin = paramValue(parameters, 'PARAMETER_WINNING_MARGIN');
   const from = paramValue(parameters, 'PARAMETER_FROM');
   const to = paramValue(parameters, 'PARAMETER_TO');
 
   const pointNum = paramValue(parameters, 'PARAMETER_POINT_NUMBER');
 
   const catalogStem = marketKey.replace(/^display_/i, '');
+
+  if (/специальн/i.test(category) && /^display_/i.test(marketKey)) {
+    const marketHumanized = humanizeCatalogMarketName(catalogStem, parameters);
+    if (/[а-яё]/i.test(marketHumanized) && marketHumanized !== catalogStem) {
+      return marketHumanized;
+    }
+  }
+
+  const resultingGroupLabel = resolveResultingGroupLabel(catalogStem);
+  if (resultingGroupLabel !== null) return resultingGroupLabel;
+
+  const comboGroupLabel = resolveComboDisplayGroupLabel(catalogStem);
+  if (comboGroupLabel) return comboGroupLabel;
 
   const specialBetsGroupLabel = resolveSpecialBetsGroupLabel(catalogStem, category);
   if (specialBetsGroupLabel !== null) return specialBetsGroupLabel;
@@ -782,6 +1097,33 @@ function buildGroupLabel(
     return '';
   }
 
+  if (/^WINNER_MAP/i.test(catalogStem)) {
+    if (/^\d+-я карта$/i.test(category.trim())) return '';
+    return 'Победа на карте';
+  }
+
+  if (/^ROUNDS_WINNIGMARGIN_MAP/i.test(catalogStem)) {
+    if (winningMargin) {
+      const marginText = winningMargin.replace(/-/g, '–');
+      if (/разниц/i.test(category)) return `Разница ${marginText} раундов`;
+      return `Разница ${marginText} раундов`;
+    }
+    return '';
+  }
+
+  if (/^WINNER_ROUND$/i.test(catalogStem)) {
+    const parts: string[] = [];
+    if (mapNum && !/^\d+-я карта$/i.test(category.trim())) parts.push(`${mapNum}-я карта`);
+    if (roundNum) parts.push(`${roundNum}-й раунд`);
+    return parts.length ? parts.join(' · ') : '';
+  }
+
+  if (/^(FIRST_BLOOD|FIRST_TOWER|BARRACKS|ROSHAN|RACE_TO_KILL)_MAP/i.test(catalogStem)) {
+    const humanized = humanizeCatalogMarketName(catalogStem, parameters);
+    if (humanized && humanized.trim().toLowerCase() === category.trim().toLowerCase()) return '';
+    if (humanized && humanized !== catalogStem) return humanized;
+  }
+
   if (/^MULTISCORE/i.test(catalogStem)) {
     return '';
   }
@@ -796,13 +1138,22 @@ function buildGroupLabel(
     return parts.join(', ');
   }
 
+  if (/^WINNER_2GAMES/i.test(catalogStem) && (setNum || gameNum)) {
+    const parts: string[] = [];
+    if (setNum && !/\d+-[йи]\s+сет/i.test(category)) parts.push(`${setNum}-й сет`);
+    if (gameNum && !/\d+-[йи]\s+гейм/i.test(category)) parts.push(`${gameNum}-й гейм`);
+    return parts.join(', ');
+  }
+
   const suffixParts = [
-    half === '1' ? '1-й тайм' : half === '2' ? '2-й тайм' : null,
+    half === '1' && !halfScopeAlreadyInCategory(category, '1') ? '1-й тайм'
+      : half === '2' && !halfScopeAlreadyInCategory(category, '2') ? '2-й тайм'
+        : null,
     quarter ? quarterCategoryLabel(quarter) : null,
     from != null && to != null ? `${from}–${to} мин` : null,
     line ? String(line) : null,
-    setNum && !category.includes('сете') ? `${setNum}-й сет` : null,
-    gameNum && !category.includes('гейм') ? `${gameNum}-й гейм` : null,
+    setNum && !/\d+-[йи]\s+сет/i.test(category) ? `${setNum}-й сет` : null,
+    gameNum && !/\d+-[йи]\s+гейм/i.test(category) ? `${gameNum}-й гейм` : null,
   ].filter(Boolean);
 
   const displayCategory = /^[A-Z][A-Z0-9_]+$/.test(category) && category.includes('_')
@@ -829,6 +1180,9 @@ function buildGroupLabel(
       half,
       quarter,
       line ? String(line) : undefined,
+      catalogName,
+      sportId,
+      mapNum,
     );
   }
 
@@ -845,6 +1199,9 @@ function buildGroupLabel(
       half,
       quarter,
       line ? String(line) : undefined,
+      catalogName,
+      sportId,
+      mapNum,
     );
   }
 
@@ -859,12 +1216,13 @@ function buildGroupLabel(
       return displayCategory;
     }
 
-    if (marketKey.startsWith('display_')) {
+    if (marketKey.startsWith('display_') && !/^WINNER_2GAMES/i.test(catalogStem)) {
       const marketHumanized = humanizeCatalogMarketName(catalogStem, parameters);
       if (
         marketHumanized !== catalogStem
         && !isTechnicalEnglishCatalogLabel(marketHumanized)
         && marketHumanized.trim().toLowerCase() !== category.trim().toLowerCase()
+        && !(half && halfScopeAlreadyInCategory(category, half))
       ) {
         return marketHumanized;
       }
@@ -1044,9 +1402,12 @@ function parseMarketGroup(
   isMainEvent: boolean,
   homeTeam: string,
   awayTeam: string,
+  sportId?: number | null,
+  catalogLocale: 'ru' | 'en' = 'ru',
 ): Array<{ category: string; group: WcMarketGroup }> {
   const catalogMarket = catalog.markets.get(market.marketId);
   if (!catalogMarket) return [];
+  if (isJunkSpecialtyCatalogName(catalogMarket.name)) return [];
 
   const eligible = market.probabilities.filter(
     (p) => !hasPlayerParam(p) && p.odd > 1,
@@ -1087,17 +1448,36 @@ function parseMarketGroup(
       isMainEvent,
       probs[0].parameters,
     );
-    const category = isMainEvent
+    let category = isMainEvent
       ? canonicalizeCategory(rawCategory, catalogMarket.name, marketKey)
       : rawCategory;
+    category = normalizeResolvedCategoryName(category);
+    // Prefer EN catalog/provider text when already Latin; otherwise map RU buckets.
+    if (catalogLocale === 'en' && isMainEvent) {
+      const preferred =
+        rawCategory.trim()
+        && !/[а-яё]/i.test(rawCategory)
+        && !/^[A-Z][A-Z0-9_]+$/.test(rawCategory)
+          ? rawCategory.trim()
+          : category;
+      category = localizeCategoryLabel(preferred, 'en');
+    } else if (catalogLocale === 'en') {
+      category = localizeCategoryLabel(category, 'en');
+    }
     const line = probs[0].parameters?.find((p) => p.type === 'PARAMETER_VALUE')?.value;
-    const groupLabel = buildGroupLabel(category, marketKey, probs[0].parameters);
+    const groupLabel = buildGroupLabel(
+      category,
+      marketKey,
+      probs[0].parameters,
+      catalogMarket.name,
+      sportId,
+    );
     const groupKey = `${market.marketId}__${innerSig}`;
 
     const outcomes = probs.map((p) => {
       const probLine = paramValue(p.parameters, 'PARAMETER_VALUE');
       const rawName = formatOutcomeLabel(catalog, market.marketId, p);
-      const name = normalizeOutcomeDisplayName(
+      let name = normalizeOutcomeDisplayName(
         rawName,
         catalog,
         market.marketId,
@@ -1141,6 +1521,15 @@ function parseMarketGroup(
       else if (/^GOAL15MIN|^NEXT_GOAL_MIN_YES_NO/i.test(catalogMarket.name)) {
         outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
       }
+      else if (/^COUNT_SET/i.test(catalogMarket.name) || /_YES_NO$/i.test(catalogMarket.name)) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
+      else if (/^(WIN1|WIN2|DRAW)_OR_(OVER|UNDER)/i.test(catalogMarket.name)) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
+      else if (/^TEAM[12]_WILL_SCORE_/i.test(catalogMarket.name)) {
+        outcomeKey = mapYesNoOutcome(p.outcomeTypeId, catalog, market.marketId);
+      }
       else if (/^NEXT_GOAL_TIME_\d+MIN$/i.test(catalogMarket.name)) {
         outcomeKey = mapNextGoalTimeOutcome(p.outcomeTypeId, catalog, market.marketId);
       }
@@ -1164,6 +1553,20 @@ function parseMarketGroup(
           ?? paramValue(p.parameters, 'PARAMETER_VALUE')
           ?? paramValue(p.parameters, 'PARAMETER_GAME_NUMBER');
         if (raceTarget != null) point = Number(raceTarget);
+      }
+
+      const goalsRangeParam = paramValue(p.parameters, 'PARAMETER_GOALS_RANGE');
+      if (/GOAL_RANGE/i.test(catalogMarket.name) && goalsRangeParam != null) {
+        name = String(goalsRangeParam).replace(/-/g, '–');
+      }
+
+      if (
+        (/_YES_NO$/i.test(catalogMarket.name)
+          || /^(WIN1|WIN2|DRAW)_OR_(OVER|UNDER)/i.test(catalogMarket.name)
+          || /^TEAM[12]_WILL_SCORE_/i.test(catalogMarket.name))
+        && (outcomeKey === 'YES' || outcomeKey === 'NO')
+      ) {
+        name = outcomeKey === 'YES' ? 'Да' : 'Нет';
       }
 
       return {
@@ -1215,10 +1618,12 @@ export async function parseOlimpbetEventToGroupedMarkets(
   detail: OlimpbetEventDetail,
   sectionLabel = '',
   isMainEvent = true,
+  catalogLocale: 'ru' | 'en' = 'ru',
 ): Promise<WcGroupedMarkets> {
-  const catalog = await loadOlimpbetMarketCatalog();
+  const catalog = await loadOlimpbetMarketCatalog(catalogLocale);
   const grouped: WcGroupedMarkets = {};
   const { homeTeam, awayTeam } = eventTeamNames(detail);
+  const sportId = detail.tournament?.sportId ?? null;
 
   const mergedMarkets = new Map<number, NonNullable<OlimpbetEventDetail['probabilities']>['markets'][number]>();
   for (const market of detail.probabilities?.markets ?? []) {
@@ -1237,7 +1642,16 @@ export async function parseOlimpbetEventToGroupedMarkets(
     const catalogMarket = catalog.markets.get(market.marketId);
     if (!catalogMarket) continue;
 
-    const items = parseMarketGroup(catalog, market, sectionLabel, isMainEvent, homeTeam, awayTeam);
+    const items = parseMarketGroup(
+      catalog,
+      market,
+      sectionLabel,
+      isMainEvent,
+      homeTeam,
+      awayTeam,
+      sportId,
+      catalogLocale,
+    );
     for (const { category, group } of items) {
       if (!grouped[category]) grouped[category] = [];
       grouped[category].push(group);
@@ -1254,10 +1668,16 @@ export async function parseOlimpbetEventToGroupedMarkets(
 export async function parseOlimpbetFullEvent(
   main: OlimpbetEventDetail,
   linked: Array<{ detail: OlimpbetEventDetail; sectionLabel: string }>,
+  catalogLocale: 'ru' | 'en' = 'ru',
 ): Promise<WcGroupedMarkets> {
-  let merged = await parseOlimpbetEventToGroupedMarkets(main, '', true);
+  let merged = await parseOlimpbetEventToGroupedMarkets(main, '', true, catalogLocale);
   for (const row of linked) {
-    const extra = await parseOlimpbetEventToGroupedMarkets(row.detail, row.sectionLabel, false);
+    const extra = await parseOlimpbetEventToGroupedMarkets(
+      row.detail,
+      row.sectionLabel,
+      false,
+      catalogLocale,
+    );
     for (const [category, groups] of Object.entries(extra)) {
       if (!merged[category]) merged[category] = [];
       merged[category].push(...groups);

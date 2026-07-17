@@ -15,7 +15,7 @@ import {
 
 export const TOP_EVENTS_CARD_LIMIT = 8;
 export const TOP_EVENTS_FETCH_LIMIT = 100;
-export const HOMEPAGE_TOP_EVENTS_TOTAL = 4;
+export const HOMEPAGE_TOP_EVENTS_TOTAL = 8;
 
 export type HomepageTopEventsSlots = {
   soccer: number;
@@ -23,10 +23,10 @@ export type HomepageTopEventsSlots = {
   cs2: number;
 };
 
-/** Homepage carousel: 2× football (priority), 1× tennis, 1× CS2. */
+/** Homepage carousel: WC football focus, no tennis. */
 export const DEFAULT_HOMEPAGE_TOP_EVENTS_SLOTS: HomepageTopEventsSlots = {
-  soccer: 2,
-  tennis: 1,
+  soccer: 3,
+  tennis: 0,
   cs2: 1,
 };
 
@@ -160,6 +160,20 @@ export function cyberTopEventBadge(priority: number | undefined): "SUPERTOP" | "
   if ((priority ?? 0) >= 2) return "SUPERTOP";
   if ((priority ?? 0) >= 1) return "TOP";
   return null;
+}
+
+/** Short label for top-event cards (full name stays in title). */
+export function formatTopEventLeague(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+
+  if (/чемпионат мира/i.test(trimmed)) {
+    const round = trimmed.match(/(1\/\d+)\s*финал/i)?.[1];
+    return round ? `ЧМ-2026 · ${round}` : "ЧМ-2026";
+  }
+
+  if (trimmed.length <= 30) return trimmed;
+  return `${trimmed.slice(0, 28).trimEnd()}…`;
 }
 
 export function topEventIsTwoWay(item: TopEventItem): boolean {

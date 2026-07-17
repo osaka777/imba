@@ -10,7 +10,11 @@ import { PrismaModule } from '~/prisma/prisma.module';
 
 import { CybersportModule } from '../cybersport/cybersport.module';
 import { OlimpbetAuthService } from '../olimpbet-wc/olimpbet-auth.service';
+import { OlimpbetHttpClient } from '../olimpbet-wc/olimpbet-http.client';
 import { OlimpbetWcService } from '../olimpbet-wc/olimpbet-wc.service';
+
+import { KickChannelLiveModule } from '../kick-live/kick-channel-live.module';
+import { EsportsStreamResolverService } from '../kick-live/esports-stream-resolver.service';
 
 import { WcBroadcastProxyService } from './wc-broadcast-proxy.service';
 import { WcOddsExpressService } from './wc-odds-express.service';
@@ -27,10 +31,11 @@ import { WcSocialPulseService } from './wc-social-pulse.service';
 import { WcTelegramPulseService } from './wc-telegram-pulse.service';
 
 @Module({
-  imports: [PrismaModule, OperationModule, PartnersModule, AuthenticationModule, CybersportModule, EventModule, TelegramModule, PushModule],
+  imports: [PrismaModule, OperationModule, PartnersModule, AuthenticationModule, CybersportModule, EventModule, TelegramModule, PushModule, KickChannelLiveModule],
   controllers: [WcOddsController, WcSocialPulseController],
   providers: [
     OlimpbetAuthService,
+    OlimpbetHttpClient,
     OlimpbetWcService,
     WcBroadcastProxyService,
     WcOddsBetService,

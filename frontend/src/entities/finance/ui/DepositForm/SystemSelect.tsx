@@ -4,7 +4,7 @@ import { Button } from "~/shared/ui";
 
 import styles from "./SystemSelect.module.css";
 
-type SystemSelectVariant = "default" | "kaspi" | "sberbank";
+type SystemSelectVariant = "default" | "kaspi" | "sberbank" | "yandex";
 
 type SystemSelectProps = {
   formName: string;
@@ -27,7 +27,8 @@ export const SystemSelect: React.FC<SystemSelectProps> = ({
   text,
   variant = "default",
 }) => {
-  const brandVariant = variant === "kaspi" || variant === "sberbank" ? variant : null;
+  const brandVariant =
+    variant === "kaspi" || variant === "sberbank" || variant === "yandex" ? variant : null;
 
   return (
     <Button

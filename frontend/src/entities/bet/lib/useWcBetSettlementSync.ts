@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGamesBettingContext } from '~/app/providers/GamesBetting.provider';
 import { getMyWcBetsGrouped } from '~/entities/wc-odds/api/getMyWcBets';
 
+const SETTLEMENT_POLL_MS = 15_000;
+
 /** Poll pending WC bets and refresh balance when a bet settles (WS fallback). */
 export const useWcBetSettlementSync = () => {
   const { isAuth } = useGamesBettingContext();
@@ -14,7 +16,9 @@ export const useWcBetSettlementSync = () => {
   useEffect(() => {
     if (!isAuth) return;
 
-    const interval = setInterval(async () => {
+    const poll = async () => {
+      if (document.hidden) return;
+
       try {
         const grouped = await getMyWcBetsGrouped('PENDING');
         const currentIds = new Set<string>([
@@ -38,7 +42,10 @@ export const useWcBetSettlementSync = () => {
       } catch {
         // ignore transient fetch errors
       }
-    }, 3000);
+    };
+
+    void poll();
+    const interval = setInterval(() => void poll(), SETTLEMENT_POLL_MS);
 
     return () => clearInterval(interval);
   }, [isAuth, queryClient]);

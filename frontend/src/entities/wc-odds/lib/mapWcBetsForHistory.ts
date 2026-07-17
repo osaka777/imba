@@ -29,12 +29,12 @@ export type WcHistoryOrdinarBet = {
  */
 function isPeriodScopedBet(bet: WcBet, label: string): boolean {
   const haystack = `${label} ${bet.outcomeName ?? ""} ${bet.marketKey ?? ""}`;
-  return /тайм|четверт|период|\bсет\b|half|quarter|period|set/i.test(haystack);
+  return /тайм|половин|четверт|период|\bсет\b|half|quarter|period|set/i.test(haystack);
 }
 
 export function mapWcBetsForHistory(wcBets: WcBet[]): WcHistoryOrdinarBet[] {
   return wcBets.map((bet) => {
-    const label = getWcBetLabel(bet);
+    const label = getWcBetLabel({ ...bet, sport: bet.event.sport });
     const hasMatchScore =
       bet.event.homeScore != null && bet.event.awayScore != null;
     const showMatchScore = hasMatchScore && !isPeriodScopedBet(bet, label);

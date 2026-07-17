@@ -21,6 +21,7 @@ import {
 } from "~/entities/wc-odds/api/client";
 import { ArrowIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 
 import styles from "~/entities/game/ui/SubcategoryMenu/SubcategoryMenu.module.css";
@@ -65,6 +66,7 @@ export const WcLeagueMenu = React.memo(function WcLeagueMenu({
   layout = "horizontal",
 }: WcLeagueMenuProps) {
   const sport = useSportFilter();
+  const { locale, t } = useLocale();
   const searchParams = useSearchParams();
   const activeTournament = searchParams.get("tournament");
   const activeLeague = searchParams.get("league");
@@ -72,7 +74,7 @@ export const WcLeagueMenu = React.memo(function WcLeagueMenu({
   const backPath = type === "live" ? liveAllHref() : lineAllHref();
 
   const { data: tournaments = [], isLoading } = useQuery({
-    queryKey: ["wcTournaments", type, sport],
+    queryKey: ["wcTournaments", type, sport, locale],
     queryFn: () =>
       type === "live"
         ? fetchWcLiveTournaments(sport)
@@ -102,7 +104,7 @@ export const WcLeagueMenu = React.memo(function WcLeagueMenu({
     return (
       <div className={cn(styles.menu, layout === "sidebar" && styles.menu_sidebar)}>
         <div className={styles.wrapper}>
-          <div className={styles.loading}>Загрузка лиг...</div>
+          <div className={styles.loading}>{t("common.loadingLeagues")}</div>
         </div>
       </div>
     );
@@ -116,7 +118,7 @@ export const WcLeagueMenu = React.memo(function WcLeagueMenu({
         {/* Back button + current sport header — hidden in sidebar via CSS */}
         <Button className={styles.backButton} elementType="link" href={backPath}>
           <ArrowIcon className={styles.backIcon} />
-          <span>Назад</span>
+          <span>{t("common.back")}</span>
         </Button>
 
         {SportIcon ? (
@@ -127,7 +129,7 @@ export const WcLeagueMenu = React.memo(function WcLeagueMenu({
         ) : null}
 
         {/* Section label "Турниры" — only shown in sidebar */}
-        {isSidebar && <span className={styles.sectionLabel}>Турниры</span>}
+        {isSidebar && <span className={styles.sectionLabel}>{t("common.tournaments")}</span>}
 
         <Button
           className={cn(styles.item, isAllActive && styles.item_active)}

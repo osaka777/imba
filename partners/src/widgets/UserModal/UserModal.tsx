@@ -13,7 +13,7 @@ export const UserModal = () => {
             <div onClick={() => setIsOpen(true)} className={header.icon}>
                 <UserIcon />
             </div>
-            <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+            <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="lg" labelledBy="profile-modal-title">
                 <ProfileForm onClose={() => setIsOpen(false)} />
             </Modal>
         </>

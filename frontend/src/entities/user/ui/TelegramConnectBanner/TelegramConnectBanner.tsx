@@ -20,7 +20,8 @@ export function TelegramConnectBanner({ onDismiss, compact = false }: TelegramCo
       <div className={styles.text}>
         <p className={styles.title}>Привяжите Telegram</p>
         <p className={styles.desc}>
-          Сброс пароля, уведомления о расчёте ставок и голах в live — за 30 секунд.
+          Без верификации лимит вывода 50&nbsp;000 ₸/день. После привязки и
+          подтверждения телефона — вывод безлимитный.
         </p>
       </div>
       <div className={styles.actions}>

@@ -86,7 +86,7 @@ export function filterVisibleWcLiveEvents(events: WcEvent[]): WcEvent[] {
   });
 }
 
-/** Patch odds/score in place — keep rich parsedScore when WS sends odds-only deltas. */
+/** Patch odds/score — WS frames omit names (stripped in feed store); HTTP may refresh labels. */
 export function mergeWcEvent(prev: WcEvent, incoming: WcEvent): WcEvent {
   const parsedScore = mergeWcParsedScore(prev.parsedScore, incoming.parsedScore);
   const statList = mergeStatListForEvent(incoming.id, prev.statList, incoming.statList);
@@ -94,6 +94,10 @@ export function mergeWcEvent(prev: WcEvent, incoming: WcEvent): WcEvent {
   const merged: WcEvent = {
     ...prev,
     ...incoming,
+    // Prefer incoming labels when present (HTTP); keep prev when WS stripped them.
+    homeTeam: incoming.homeTeam || prev.homeTeam,
+    awayTeam: incoming.awayTeam || prev.awayTeam,
+    leagueName: incoming.leagueName || prev.leagueName,
     parsedScore,
     statList,
     homeScore: incoming.homeScore ?? prev.homeScore,

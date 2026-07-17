@@ -2,7 +2,7 @@
 
 import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/wc-odds/api/client";
 import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
-import { handicapPairSideLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
+import { handicapRowSideLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
 import { formatHandicapScopeLabel, isScopeCaptionRedundant } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
@@ -19,6 +19,7 @@ type WcHandicapPairProps = {
   bettingOpen: boolean;
   categoryName?: string;
   showScopeHeader?: boolean;
+  kickChip?: boolean;
 };
 
 export function WcHandicapPair({
@@ -30,6 +31,7 @@ export function WcHandicapPair({
   bettingOpen,
   categoryName,
   showScopeHeader = false,
+  kickChip = false,
 }: WcHandicapPairProps) {
   const { toggle, isSelected, isBettable } = useWcMarketPairToggle(event, group, bettingOpen);
 
@@ -40,22 +42,38 @@ export function WcHandicapPair({
   const homeFlash = wcOddsFlashClasses(homeValue, prevHome, styles);
   const awayFlash = wcOddsFlashClasses(awayValue, prevAway, styles);
 
+  const scopeOptions = {
+    homeTeam: event.homeTeam,
+    awayTeam: event.awayTeam,
+    sport: event.sport,
+  };
+
   const scopeLabel = showScopeHeader
-    ? formatHandicapScopeLabel(group, categoryName)
+    ? formatHandicapScopeLabel(group, categoryName, scopeOptions)
     : null;
   const showScopeCaption = scopeLabel && !isScopeCaptionRedundant(categoryName, scopeLabel);
+
+  const labelOptions = { kickChip, pivot: point };
+  const awayLabel = away
+    ? handicapRowSideLabel(away, event.awayTeam, { ...labelOptions, side: "away" })
+    : undefined;
+  const homeLabel = home
+    ? handicapRowSideLabel(home, event.homeTeam, { ...labelOptions, side: "home" })
+    : undefined;
 
   return (
     <div className={showScopeCaption ? styles.totalsScopedRow : undefined}>
       {showScopeCaption ? <p className={styles.totalsScopeCaption}>{scopeLabel}</p> : null}
       <MarketPairRow
-        handicapLayout
+        chipStyle={kickChip ? "kick" : "classic"}
+        handicapLayout={!kickChip}
+        totalsLayout={kickChip}
         pivot={point}
         showPivot={point !== ""}
         left={
           away
             ? {
-                label: handicapPairSideLabel("away", point),
+                label: awayLabel!,
                 value: awayValue,
                 selected: isSelected(away),
                 bettable: isBettable(away),
@@ -68,7 +86,7 @@ export function WcHandicapPair({
         right={
           home
             ? {
-                label: handicapPairSideLabel("home", point),
+                label: homeLabel!,
                 value: homeValue,
                 selected: isSelected(home),
                 bettable: isBettable(home),

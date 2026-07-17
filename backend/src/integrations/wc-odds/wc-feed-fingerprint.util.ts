@@ -32,6 +32,21 @@ export function fingerprintWcListCache(events: WcOddsEventDto[]): string {
   return events.map((event) => `${event.id}:${fingerprintWcListEvent(event)}`).join(';');
 }
 
+/** Compact price sample so WS dedup notices grouped-market moves, not only scalar 1X2. */
+function fingerprintGroupedMarketPrices(detail: WcOddsEventDetailDto): string {
+  const grouped = detail.groupedMarkets;
+  if (!grouped) return '0';
+  const parts: string[] = [String(Object.keys(grouped).length)];
+  for (const groups of Object.values(grouped)) {
+    for (const group of groups) {
+      for (const outcome of group.outcomes) {
+        parts.push(`${group.key}:${outcome.outcomeKey}:${outcome.price}:${outcome.suspended ? 1 : 0}`);
+      }
+    }
+  }
+  return parts.join(',');
+}
+
 export function fingerprintWcEventDetail(detail: WcOddsEventDetailDto): string {
-  return `${fingerprintWcListEvent(detail)}:${detail.groupedMarkets ? Object.keys(detail.groupedMarkets).length : 0}`;
+  return `${fingerprintWcListEvent(detail)}:${fingerprintGroupedMarketPrices(detail)}`;
 }

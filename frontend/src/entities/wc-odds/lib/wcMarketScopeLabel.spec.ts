@@ -72,6 +72,49 @@ describe("formatTotalsScopeLabel", () => {
     const second = group({ label: "2-й сет · Тотал геймов · 8.5", key: "g2" });
     expect(totalsScopeBucketKey(first, "Тотал")).toBe(totalsScopeBucketKey(second, "Тотал"));
   });
+  it("labels soccer half totals as plain total, not goals", () => {
+    expect(
+      formatTotalsScopeLabel(
+        group({ label: "1-й тайм · Тотал очков · 2.5" }),
+        "1-й тайм",
+        { sport: "soccer" },
+      ),
+    ).toBe("1-й тайм · Тотал");
+  });
+
+  it("relabels corner/foul totals away from goals", () => {
+    expect(
+      formatTotalsScopeLabel(
+        group({ label: "1-й тайм · Тотал голов · 4.5" }),
+        "Угловые",
+        { sport: "soccer" },
+      ),
+    ).toBe("1-й тайм · Тотал угловых");
+
+    expect(
+      formatTotalsScopeLabel(
+        group({ label: "1-й тайм · Тотал голов · 11.5" }),
+        "Фолы",
+        { sport: "soccer" },
+      ),
+    ).toBe("1-й тайм · Тотал фолов");
+  });
+
+  it("labels basketball half totals as points", () => {
+    expect(
+      formatTotalsScopeLabel(
+        group({ label: "1-й тайм · Тотал голов · 110.5" }),
+        "1-й тайм",
+        { sport: "basketball" },
+      ),
+    ).toBe("1-й тайм · Тотал очков");
+  });
+
+  it("infers soccer half scope as plain total", () => {
+    expect(
+      formatTotalsScopeLabel(group({ label: "2.5" }), "1-й тайм", { sport: "soccer" }),
+    ).toBe("1-й тайм · тотал");
+  });
 });
 
 describe("formatHandicapScopeLabel", () => {
@@ -79,5 +122,15 @@ describe("formatHandicapScopeLabel", () => {
     expect(
       formatHandicapScopeLabel(group({ label: "2-й сет · Фора · -1.5", marketKey: "handicap" })),
     ).toBe("2-й сет · фора по геймам");
+  });
+
+  it("maps esports map totals to handicap wording", () => {
+    expect(
+      formatHandicapScopeLabel(
+        group({ label: "Тотал карт · -1.5", marketKey: "handicap" }),
+        "Фора",
+        { sport: "esports.dota2" },
+      ),
+    ).toBe("Фора по картам");
   });
 });

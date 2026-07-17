@@ -7,6 +7,7 @@ import {
   countCyberListMarkets,
   cyberGameHasTeamLogos,
   cyberGameHasWinnerOdds,
+  listSnapshotNeedsDetailFetch,
   mapOlimpbetCyberEventToGameDto,
 } from './cybersport-markets.util';
 import { olimpbetIdFromCyberGameRef } from './cybersport-mask.util';
@@ -15,21 +16,64 @@ import {
   cyberSlugFromOlimpbetSportId,
   DEFAULT_CYBER_OLIMP_SPORT_IDS,
 } from './cybersport-sport.util';
+import { CybersportWcBridgeService } from './cybersport-wc-bridge.service';
+import { slugifyCyberTournament } from './cybersport-tournament.util';
+import {
+  compareOlimpbetPriority,
+  resolveOlimpbetPriorityLevel,
+} from '../olimpbet-wc/olimpbet-priority.util';
 import type {
   OlimpbetCyberEventDetail,
   OlimpbetCyberEventListItem,
   OlimpbetCyberEventListResponse,
+  OlimpbetCyberTournamentListItem,
+  OlimpbetCyberTournamentListResponse,
 } from './cybersport.types';
+import {
+  loadOlimpbetMarketCatalog,
+  type OlimpbetMarketCatalog,
+} from '../olimpbet-wc/olimpbet-wc-catalog';
+import { OlimpbetHttpClient } from '../olimpbet-wc/olimpbet-http.client';
+import { buildOlimpbetSportKey } from '../olimpbet-wc/olimpbet-sport.util';
+import { EsportsStreamResolverService } from '../kick-live/esports-stream-resolver.service';
+import {
+  parseOlimpbetCyberEventDetail,
+  parseOlimpbetCyberEventListResponse,
+  parseOlimpbetCyberTournamentListResponse,
+} from '../olimpbet-wc/olimpbet-wc.schemas';
 
-const API_HOST = 'https://olimpbet.kz/api';
 const LINE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 const LIST_DETAIL_CONCURRENCY = 6;
+const COUNTS_CACHE_TTL_MS = 90_000;
+const TOURNAMENTS_CACHE_TTL_MS = 90_000;
 
 @Injectable()
 export class CybersportService {
   private readonly logger = new Logger(CybersportService.name);
+  private countsCache: { at: number; data: Record<string, number> } | null = null;
+  private tournamentsCache = new Map<
+    string,
+    {
+      at: number;
+      data: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        sportId: number;
+        apiSport: string;
+        liveCount: number;
+        lineCount: number;
+        priorityLevel: number;
+      }>;
+    }
+  >();
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly wcBridge: CybersportWcBridgeService,
+    private readonly http: OlimpbetHttpClient,
+    private readonly esportsStream: EsportsStreamResolverService,
+  ) {}
 
   isEnabled(): boolean {
     return this.config.get<string>('CYBERSPORT_ENABLED', 'true') === 'true';
@@ -46,34 +90,6 @@ export class CybersportService {
       .filter((n) => Number.isFinite(n) && n > 0);
   }
 
-  private async fetchJson<T>(
-    path: string,
-    params?: Record<string, string | number | boolean | undefined>,
-  ): Promise<T | null> {
-    const url = new URL(`${API_HOST}${path}`);
-    if (params) {
-      for (const [k, v] of Object.entries(params)) {
-        if (v === undefined) continue;
-        url.searchParams.set(k, String(v));
-      }
-    }
-
-    const res = await fetch(url.toString(), {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'Mozilla/5.0',
-      },
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      this.logger.warn(`Cybersport API ${res.status} ${path}: ${body.slice(0, 120)}`);
-      return null;
-    }
-
-    return (await res.json()) as T;
-  }
-
   private isWithinLineWindow(eventDate: string, nowMs = Date.now()): boolean {
     const kickoff = Date.parse(eventDate);
     if (!Number.isFinite(kickoff)) return false;
@@ -82,21 +98,27 @@ export class CybersportService {
 
   private async listSportEventsPage(
     sportId: number,
-    params: { live?: boolean; paginationKey?: string },
+    params: { live?: boolean; paginationKey?: string; tournamentId?: number },
   ): Promise<OlimpbetCyberEventListResponse | null> {
-    return this.fetchJson<OlimpbetCyberEventListResponse>('/v2/events', {
-      'sport-ids': sportId,
-      'page-size': 100,
-      locale: 'ru',
-      platform: 'web-desktop',
-      ...(params.live === undefined ? {} : { live: params.live }),
-      ...(params.paginationKey ? { 'pagination-key': params.paginationKey } : {}),
-    });
+    return this.http.fetchJson(
+      '/v2/events',
+      {
+        'sport-ids': sportId,
+        'page-size': 100,
+        locale: 'ru',
+        platform: 'web-desktop',
+        ...(params.live === undefined ? {} : { live: params.live }),
+        ...(params.tournamentId ? { 'tournament-ids': params.tournamentId } : {}),
+        ...(params.paginationKey ? { 'pagination-key': params.paginationKey } : {}),
+      },
+      parseOlimpbetCyberEventListResponse,
+    );
   }
 
   private async listSportEventItems(
     sportId: number,
     mode: 'live' | 'line',
+    tournamentId?: number,
   ): Promise<OlimpbetCyberEventListItem[]> {
     const rows: OlimpbetCyberEventListItem[] = [];
     let paginationKey: string | undefined;
@@ -106,6 +128,7 @@ export class CybersportService {
       const list = await this.listSportEventsPage(sportId, {
         live: mode === 'live',
         paginationKey,
+        tournamentId,
       });
 
       for (const item of list?.items ?? []) {
@@ -122,29 +145,63 @@ export class CybersportService {
     return rows;
   }
 
+  /** Attach a verified-live Kick/Twitch channel when Olimpbet has no esports broadcast URL. */
+  private async enrichLiveKickBroadcast(
+    dto: GameDtoWithGroupedMarkets,
+    sportId: number,
+  ): Promise<void> {
+    const meta = (dto.meta ?? {}) as Record<string, unknown>;
+    if (meta.hasBroadcast || meta.wcHasBroadcast) return;
+
+    const sportKey = buildOlimpbetSportKey(sportId);
+    const kickCtx = {
+      sportKey,
+      leagueName: dto.leagueName,
+      tournamentId: typeof meta.tournamentId === 'number' ? meta.tournamentId : null,
+      homeTeam: dto.team1,
+      awayTeam: dto.team2,
+      olimpbetBroadcastAvailable: false,
+      isLive: true,
+    };
+
+    const live = await this.esportsStream.resolveLiveStream(sportKey, kickCtx);
+    if (!live) return;
+
+    dto.meta = {
+      ...meta,
+      hasBroadcast: true,
+      wcHasBroadcast: true,
+      kickChannel: live.provider === 'kick' ? live.channel : undefined,
+      twitchChannel: live.provider === 'twitch' ? live.channel : undefined,
+      streamProvider: live.provider,
+      kickBroadcastFallback: live.isFallback,
+    };
+  }
+
   async fetchEventDetail(eventId: number): Promise<OlimpbetCyberEventDetail | null> {
-    return this.fetchJson<OlimpbetCyberEventDetail>(`/events/${eventId}`, { locale: 'ru' });
+    return this.http.fetchJson(
+      `/events/${eventId}`,
+      { locale: 'ru' },
+      parseOlimpbetCyberEventDetail,
+    );
   }
 
   private async mapListItems(
     items: OlimpbetCyberEventListItem[],
     sportId: number,
+    mode: 'live' | 'line',
   ): Promise<GameDtoWithGroupedMarkets[]> {
+    const catalog = await loadOlimpbetMarketCatalog();
     const results: GameDtoWithGroupedMarkets[] = [];
 
     for (let i = 0; i < items.length; i += LIST_DETAIL_CONCURRENCY) {
       const chunk = items.slice(i, i + LIST_DETAIL_CONCURRENCY);
-      const details = await Promise.all(
-        chunk.map((item) => this.fetchEventDetail(item.id)),
+      const mapped = await Promise.all(
+        chunk.map((item) => this.mapListItem(item, sportId, mode, catalog)),
       );
 
-      for (const detail of details) {
-        if (!detail?.id) continue;
-        try {
-          results.push(await mapOlimpbetCyberEventToGameDto(detail, sportId));
-        } catch (err) {
-          this.logger.warn(`Cybersport map failed for ${detail.id}: ${(err as Error).message}`);
-        }
+      for (const dto of mapped) {
+        if (dto) results.push(dto);
       }
     }
 
@@ -157,7 +214,48 @@ export class CybersportService {
     );
   }
 
-  async listLive(sport?: string, limit = 24): Promise<GameDtoWithGroupedMarkets[]> {
+  private async mapListItem(
+    item: OlimpbetCyberEventListItem,
+    sportId: number,
+    mode: 'live' | 'line',
+    catalog: OlimpbetMarketCatalog,
+  ): Promise<GameDtoWithGroupedMarkets | null> {
+    const listSnapshot = item as OlimpbetCyberEventDetail;
+    const needsDetail = listSnapshotNeedsDetailFetch(listSnapshot, mode, catalog);
+
+    try {
+      const snapshot = needsDetail
+        ? await this.fetchEventDetail(item.id)
+        : listSnapshot;
+      if (!snapshot?.id) return null;
+
+      const dto = await mapOlimpbetCyberEventToGameDto(snapshot, sportId, catalog);
+      if (item.outcomesCount != null && item.outcomesCount > 0) {
+        dto.meta = {
+          ...(dto.meta as object),
+          marketsCount: item.outcomesCount,
+        };
+      }
+      await this.wcBridge.attachWcBettingMeta(
+        dto,
+        snapshot.id,
+        snapshot.tournament?.sportId ?? sportId,
+      );
+      if (mode === 'live') {
+        await this.enrichLiveKickBroadcast(dto, snapshot.tournament?.sportId ?? sportId);
+      }
+      return dto;
+    } catch (err) {
+      this.logger.warn(`Cybersport map failed for ${item.id}: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  async listLive(
+    sport?: string,
+    limit = 24,
+    tournamentId?: number,
+  ): Promise<GameDtoWithGroupedMarkets[]> {
     if (!this.isEnabled()) return [];
 
     const sportIds = sport
@@ -166,8 +264,8 @@ export class CybersportService {
 
     const games: GameDtoWithGroupedMarkets[] = [];
     for (const sportId of sportIds) {
-      const items = await this.listSportEventItems(sportId, 'live');
-      const mapped = await this.mapListItems(items.slice(0, limit), sportId);
+      const items = await this.listSportEventItems(sportId, 'live', tournamentId);
+      const mapped = await this.mapListItems(items.slice(0, limit), sportId, 'live');
       games.push(...mapped);
     }
 
@@ -178,6 +276,7 @@ export class CybersportService {
     sport?: string,
     limit = 24,
     offset = 0,
+    tournamentId?: number,
   ): Promise<GameDtoWithGroupedMarkets[]> {
     if (!this.isEnabled()) return [];
 
@@ -187,12 +286,143 @@ export class CybersportService {
 
     const games: GameDtoWithGroupedMarkets[] = [];
     for (const sportId of sportIds) {
-      const items = await this.listSportEventItems(sportId, 'line');
-      const mapped = await this.mapListItems(items, sportId);
+      const items = await this.listSportEventItems(sportId, 'line', tournamentId);
+      const mapped = await this.mapListItems(items, sportId, 'line');
       games.push(...mapped);
     }
 
     return games.slice(offset, offset + limit);
+  }
+
+  async listTournaments(sport?: string): Promise<
+    Array<{
+      id: number;
+      name: string;
+      slug: string;
+      sportId: number;
+      apiSport: string;
+      liveCount: number;
+      lineCount: number;
+      priorityLevel: number;
+    }>
+  > {
+    if (!this.isEnabled()) return [];
+
+    const cacheKey = sport ?? '__all__';
+    const now = Date.now();
+    const cached = this.tournamentsCache.get(cacheKey);
+    if (cached && now - cached.at < TOURNAMENTS_CACHE_TTL_MS) {
+      return cached.data;
+    }
+
+    const sportIds = sport
+      ? [cyberOlimpbetSportIdFromSlug(sport)].filter((id): id is number => id != null)
+      : this.sportIds();
+
+    const metaById = new Map<
+      number,
+      { name: string; sportId: number; priorityLevel: number }
+    >();
+    const liveCounts = new Map<number, number>();
+    const lineCounts = new Map<number, number>();
+
+    const bumpPriority = (tournamentId: number, eventTags?: Array<number | string>) => {
+      const level = resolveOlimpbetPriorityLevel(eventTags);
+      const meta = metaById.get(tournamentId);
+      if (!meta) return;
+      meta.priorityLevel = Math.max(meta.priorityLevel, level);
+    };
+
+    for (const sportId of sportIds) {
+      let paginationKey: string | undefined;
+      let pages = 0;
+
+      do {
+        const list = await this.http.fetchJson(
+          '/v2/tournaments',
+          {
+            'sport-ids': sportId,
+            'page-size': 100,
+            locale: 'ru',
+            platform: 'web-desktop',
+            ...(paginationKey ? { 'pagination-key': paginationKey } : {}),
+          },
+          parseOlimpbetCyberTournamentListResponse,
+        );
+
+        for (const item of list?.items ?? []) {
+          if (!item?.id) continue;
+          metaById.set(item.id, {
+            name: item.name?.trim() || 'Турнир',
+            sportId: item.sportId ?? sportId,
+            priorityLevel: resolveOlimpbetPriorityLevel(item.tags),
+          });
+        }
+
+        paginationKey = list?.paginationKeyForward ?? undefined;
+        pages += 1;
+      } while (paginationKey && pages < 10);
+
+      const [liveItems, lineItems] = await Promise.all([
+        this.listSportEventItems(sportId, 'live'),
+        this.listSportEventItems(sportId, 'line'),
+      ]);
+
+      for (const item of liveItems) {
+        const tid = item.tournament?.id;
+        if (!tid) continue;
+        liveCounts.set(tid, (liveCounts.get(tid) ?? 0) + 1);
+        if (!metaById.has(tid)) {
+          metaById.set(tid, {
+            name: item.tournament?.name?.trim() || 'Турнир',
+            sportId: item.tournament?.sportId ?? sportId,
+            priorityLevel: 0,
+          });
+        }
+        bumpPriority(tid, item.tags);
+      }
+
+      for (const item of lineItems) {
+        const tid = item.tournament?.id;
+        if (!tid) continue;
+        lineCounts.set(tid, (lineCounts.get(tid) ?? 0) + 1);
+        if (!metaById.has(tid)) {
+          metaById.set(tid, {
+            name: item.tournament?.name?.trim() || 'Турнир',
+            sportId: item.tournament?.sportId ?? sportId,
+            priorityLevel: 0,
+          });
+        }
+        bumpPriority(tid, item.tags);
+      }
+    }
+
+    const result = [...metaById.entries()]
+      .map(([id, meta]) => {
+        const liveCount = liveCounts.get(id) ?? 0;
+        const lineCount = lineCounts.get(id) ?? 0;
+        const sportId = meta.sportId;
+        return {
+          id,
+          name: meta.name,
+          slug: slugifyCyberTournament(meta.name, id),
+          sportId,
+          apiSport: cyberSlugFromOlimpbetSportId(sportId),
+          liveCount,
+          lineCount,
+          priorityLevel: meta.priorityLevel,
+        };
+      })
+      .filter((row) => row.liveCount + row.lineCount > 0)
+      .sort(
+        (a, b) =>
+          compareOlimpbetPriority(a.priorityLevel, b.priorityLevel)
+          || b.liveCount + b.lineCount - (a.liveCount + a.lineCount)
+          || a.name.localeCompare(b.name, 'ru'),
+      );
+
+    this.tournamentsCache.set(cacheKey, { at: now, data: result });
+    return result;
   }
 
   async getGame(eventId: string): Promise<GameDtoWithGroupedMarkets | null> {
@@ -210,11 +440,25 @@ export class CybersportService {
       ...(dto.meta as object),
       marketsCount,
     };
+    await this.wcBridge.attachWcBettingMeta(
+      dto,
+      detail.id,
+      detail.tournament?.sportId ?? 1040,
+      { fullMarkets: true },
+    );
+    if (dto.status === 'IN_PROGRESS') {
+      await this.enrichLiveKickBroadcast(dto, detail.tournament?.sportId ?? 1040);
+    }
     return dto;
   }
 
   async counts(): Promise<Record<string, number>> {
     if (!this.isEnabled()) return {};
+
+    const now = Date.now();
+    if (this.countsCache && now - this.countsCache.at < COUNTS_CACHE_TTL_MS) {
+      return this.countsCache.data;
+    }
 
     const counts: Record<string, number> = {};
     for (const sportId of this.sportIds()) {
@@ -225,6 +469,8 @@ export class CybersportService {
       ]);
       counts[slug] = liveItems.length + lineItems.length;
     }
+
+    this.countsCache = { at: now, data: counts };
     return counts;
   }
 
@@ -237,29 +483,27 @@ export class CybersportService {
     const sportId = cyberOlimpbetSportIdFromSlug('esports.cs');
     if (!sportId) return null;
 
+    const candidates: Array<{ game: GameDtoWithGroupedMarkets; isLive: boolean }> = [];
+
     for (const mode of ['live', 'line'] as const) {
       const items = (await this.listSportEventItems(sportId, mode)).slice(0, maxScan);
+      const mapped = await this.mapListItems(items, sportId, mode);
 
-      for (let i = 0; i < items.length; i += LIST_DETAIL_CONCURRENCY) {
-        const chunk = items.slice(i, i + LIST_DETAIL_CONCURRENCY);
-        const details = await Promise.all(
-          chunk.map((item) => this.fetchEventDetail(item.id)),
-        );
-
-        for (const detail of details) {
-          if (!detail?.id) continue;
-          try {
-            const dto = await mapOlimpbetCyberEventToGameDto(detail, sportId);
-            if (!cyberGameHasTeamLogos(dto) || !cyberGameHasWinnerOdds(dto)) continue;
-            const isLive = mode === 'live' || Boolean(detail.live);
-            return { game: dto, isLive };
-          } catch (err) {
-            this.logger.warn(`Cybersport homepage pick failed for ${detail.id}: ${(err as Error).message}`);
-          }
-        }
+      for (const dto of mapped) {
+        if (!cyberGameHasTeamLogos(dto) || !cyberGameHasWinnerOdds(dto)) continue;
+        candidates.push({
+          game: dto,
+          isLive: mode === 'live' || dto.status === 'IN_PROGRESS',
+        });
       }
     }
 
-    return null;
+    candidates.sort(
+      (a, b) =>
+        Number(b.isLive) - Number(a.isLive)
+        || (b.game.priority ?? 0) - (a.game.priority ?? 0),
+    );
+
+    return candidates[0] ?? null;
   }
 }

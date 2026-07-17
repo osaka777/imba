@@ -4,6 +4,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -21,6 +23,7 @@ import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.
 import { PrismaService } from '~/prisma/prisma.service';
 
 import { isMarketScopeFinalized } from '../olimpbet-wc/olimpbet-score-scope.util';
+import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
 import { OlimpbetWcService } from '../olimpbet-wc/olimpbet-wc.service';
 
 import { parseBetPlacementContext } from './wc-bet-placement-context.util';
@@ -48,6 +51,12 @@ import type { WcBetSettlementInput } from './wc-odds-settlement.util';
 
 const QUOTE_TTL_MS = 8_000;
 const EXECUTE_TOLERANCE = 0.02;
+const CASHOUT_CONTEXT_TTL_MS = 20_000;
+const PLACEMENT_DETAIL_TTL_MS = 30_000;
+const CASHOUT_PUSH_DEBOUNCE_MS = 1_500;
+const SLOW_OP_MS = 2_000;
+
+type CashoutEventContext = Awaited<ReturnType<WcOddsCashoutService['buildCashoutEventContext']>>;
 
 export type WcCashoutQuoteDto =
   | {
@@ -65,8 +74,14 @@ export type WcCashoutQuoteDto =
     };
 
 @Injectable()
-export class WcOddsCashoutService {
+export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(WcOddsCashoutService.name);
+  private readonly eventContextCache = new Map<string, { ctx: CashoutEventContext; expiresAt: number }>();
+  private readonly placementDetailCache = new Map<
+    string,
+    { detail: OlimpbetEventDetail | null; expiresAt: number }
+  >();
+  private readonly pushDebounce = new Map<string, NodeJS.Timeout>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -77,6 +92,75 @@ export class WcOddsCashoutService {
     private readonly eventGateway: EventGateway,
     private readonly telegramUserNotify: TelegramUserNotifyService,
   ) {}
+
+  onModuleInit(): void {
+    this.realtime.registerOddsUpdatedHandler((eventId) => {
+      this.schedulePushQuotesForEvent(eventId);
+    });
+  }
+
+  onModuleDestroy(): void {
+    for (const timer of this.pushDebounce.values()) {
+      clearTimeout(timer);
+    }
+    this.pushDebounce.clear();
+  }
+
+  private schedulePushQuotesForEvent(eventId: string): void {
+    if (this.config.get<string>('WC_CASHOUT_ENABLED', 'true') !== 'true') return;
+    if (this.pushDebounce.has(eventId)) return;
+
+    this.pushDebounce.set(
+      eventId,
+      setTimeout(() => {
+        this.pushDebounce.delete(eventId);
+        void this.pushQuotesForEvent(eventId);
+      }, CASHOUT_PUSH_DEBOUNCE_MS),
+    );
+  }
+
+  async pushQuotesForEvent(eventId: string): Promise<void> {
+    if (!this.olimpbet.isEnabled()) return;
+
+    const bets = await this.prisma.wcOddsBet.findMany({
+      where: {
+        eventId,
+        isProbe: false,
+        status: WcOddsBetStatus.PENDING,
+        wcExpressBetId: null,
+      },
+      select: { id: true, userId: true },
+    });
+    if (!bets.length) return;
+
+    const byUser = new Map<number, number[]>();
+    for (const bet of bets) {
+      const group = byUser.get(bet.userId) ?? [];
+      group.push(bet.id);
+      byUser.set(bet.userId, group);
+    }
+
+    for (const [userId, betIds] of byUser) {
+      try {
+        const quotes = await this.getCashoutQuotesForUser(userId, betIds);
+        this.eventGateway.sendUserNotification(String(userId), {
+          eventId: `user_${userId}`,
+          type: 'wc_cashout_quotes',
+          payload: { quotes, ts: Date.now() },
+        } as { type: string; payload: unknown });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.debug(`Cashout WS push skipped for user ${userId}: ${message.slice(0, 120)}`);
+      }
+    }
+  }
+
+  private logSlowOp(label: string, startedAt: number): void {
+    const elapsed = Date.now() - startedAt;
+    if (elapsed >= SLOW_OP_MS) {
+      this.logger.warn(`[perf] ${label} took ${elapsed}ms`);
+    }
+  }
 
   private assertEnabled() {
     if (!this.olimpbet.isEnabled()) {
@@ -97,18 +181,62 @@ export class WcOddsCashoutService {
 
   async getCashoutQuote(userId: number, betId: number): Promise<WcCashoutQuoteDto> {
     this.assertEnabled();
-    const calc = await this.evaluateCashout(userId, betId);
-    if (calc.available === false) {
-      return { available: false, reason: calc.reason, code: calc.code };
+    const quotes = await this.getCashoutQuotesForUser(userId, [betId]);
+    const quote = quotes[betId];
+    if (!quote) {
+      throw new NotFoundException('Bet not found');
     }
-    return {
-      available: true,
-      amount: calc.amount.toFixed(2),
-      currentOdds: calc.currentOdds.toFixed(2),
-      placedOdds: calc.placedOdds.toFixed(2),
-      mode: calc.mode,
-      expiresAt: new Date(Date.now() + QUOTE_TTL_MS).toISOString(),
-    };
+    return quote;
+  }
+
+  async getCashoutQuotesForUser(
+    userId: number,
+    betIds?: number[],
+  ): Promise<Record<number, WcCashoutQuoteDto>> {
+    const startedAt = Date.now();
+    this.assertEnabled();
+
+    const bets = await this.prisma.wcOddsBet.findMany({
+      where: {
+        userId,
+        isProbe: false,
+        status: WcOddsBetStatus.PENDING,
+        wcExpressBetId: null,
+        ...(betIds?.length ? { id: { in: betIds } } : {}),
+      },
+      include: { event: true },
+      orderBy: { createdAt: 'desc' },
+      take: betIds?.length ? betIds.length : 50,
+    });
+
+    const result: Record<number, WcCashoutQuoteDto> = {};
+    const byEvent = new Map<string, typeof bets>();
+
+    for (const bet of bets) {
+      if (!bet.event) {
+        result[bet.id] = {
+          available: false,
+          reason: 'Событие недоступно',
+          code: 'event_missing',
+        };
+        continue;
+      }
+      const group = byEvent.get(bet.eventId) ?? [];
+      group.push(bet);
+      byEvent.set(bet.eventId, group);
+    }
+
+    for (const eventBets of byEvent.values()) {
+      const event = eventBets[0]!.event!;
+      const ctx = await this.loadCashoutEventContext(event);
+
+      for (const bet of eventBets) {
+        result[bet.id] = this.toQuoteDto(this.evaluateCashoutForBet(bet, ctx));
+      }
+    }
+
+    this.logSlowOp(`getCashoutQuotesForUser user=${userId} bets=${betIds?.length ?? 'all'}`, startedAt);
+    return result;
   }
 
   async executeCashout(
@@ -170,68 +298,96 @@ export class WcOddsCashoutService {
     });
 
     this.notifyCashout(bet, amount);
+    this.invalidateCashoutEventCache(bet.eventId);
     this.logger.log(`WC cashout bet #${betId} user ${userId}: ${amount} ${bet.currencyCode}`);
 
     return { ok: true, amount: amount.toFixed(2), betId };
   }
 
-  private async evaluateCashout(
-    userId: number,
-    betId: number,
-  ): Promise<WcCashoutCalculationResult> {
-    const bet = await this.prisma.wcOddsBet.findFirst({
-      where: { id: betId, userId, isProbe: false },
-      include: { event: true },
+  private toQuoteDto(calc: WcCashoutCalculationResult): WcCashoutQuoteDto {
+    if (calc.available === false) {
+      return { available: false, reason: calc.reason, code: calc.code };
+    }
+    return {
+      available: true,
+      amount: calc.amount.toFixed(2),
+      currentOdds: calc.currentOdds.toFixed(2),
+      placedOdds: calc.placedOdds.toFixed(2),
+      mode: calc.mode,
+      expiresAt: new Date(Date.now() + QUOTE_TTL_MS).toISOString(),
+    };
+  }
+
+  private async loadCashoutEventContext(event: {
+    id: string;
+    slug: string | null;
+    homeScore: number | null;
+    awayScore: number | null;
+    completed: boolean;
+    commenceTime: Date;
+    matchStateJson: unknown;
+    marketsJson: unknown;
+    oddsHome: Decimal | null;
+    oddsDraw: Decimal | null;
+    oddsAway: Decimal | null;
+  }): Promise<CashoutEventContext> {
+    const cached = this.eventContextCache.get(event.id);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.ctx;
+    }
+
+    const ctx = await this.buildCashoutEventContext(event);
+    this.eventContextCache.set(event.id, {
+      ctx,
+      expiresAt: Date.now() + CASHOUT_CONTEXT_TTL_MS,
     });
-    if (!bet) throw new NotFoundException('Bet not found');
-    if (bet.status !== WcOddsBetStatus.PENDING) {
-      return { available: false, reason: 'Ставка уже закрыта', code: 'not_pending' };
-    }
-    if (bet.wcExpressBetId != null) {
-      return { available: false, reason: 'Продажа недоступна для экспресса', code: 'express_leg' };
-    }
-    if (!bet.event) {
-      return { available: false, reason: 'Событие недоступно', code: 'event_missing' };
-    }
+    return ctx;
+  }
 
-    const rawMarketKey = bet.marketKey;
-    if (!isWcBetPlacementAllowed(rawMarketKey, bet.outcomeKey)) {
-      return { available: false, reason: 'Продажа недоступна для этого рынка', code: 'market_blocked' };
-    }
-
-    const event = bet.event;
+  private async buildCashoutEventContext(event: {
+    id: string;
+    slug: string | null;
+    homeScore: number | null;
+    awayScore: number | null;
+    completed: boolean;
+    commenceTime: Date;
+    matchStateJson: unknown;
+    marketsJson: unknown;
+    oddsHome: Decimal | null;
+    oddsDraw: Decimal | null;
+    oddsAway: Decimal | null;
+  }) {
     const publicRef = event.slug?.trim() || toPublicEventId(event.id);
-    const refreshed = await this.realtime.refreshEvent(publicRef, true, {
-      fullMarkets: true,
-      persistOdds: false,
-    });
+    let refreshed = this.realtime.getEventCache(publicRef);
 
-    const placementCtx = parseBetPlacementContext(bet.placementContextJson);
+    const cacheAgeMs = refreshed?.oddsUpdatedAt
+      ? Date.now() - new Date(refreshed.oddsUpdatedAt).getTime()
+      : Number.POSITIVE_INFINITY;
+
+    if (!refreshed || cacheAgeMs > CASHOUT_CONTEXT_TTL_MS) {
+      refreshed = await this.realtime.refreshEvent(publicRef, false, {
+        oddsOnly: true,
+        persistOdds: false,
+        skipStructuredStats: true,
+      }) ?? refreshed;
+    }
+
     const matchState = parseMatchState(event.matchStateJson) ?? emptyMatchState();
-    const homeScore = refreshed?.homeScore ?? event.homeScore ?? placementCtx?.homeScore ?? 0;
-    const awayScore = refreshed?.awayScore ?? event.awayScore ?? placementCtx?.awayScore ?? 0;
-
-    const settlementInput = this.toBetSettlementInput(bet);
-    let determinateResult = resolveDeterminateBetResult(
-      settlementInput,
-      homeScore,
-      awayScore,
-      undefined,
-      matchState,
-    );
+    const homeScore = refreshed?.homeScore ?? event.homeScore ?? 0;
+    const awayScore = refreshed?.awayScore ?? event.awayScore ?? 0;
 
     const olimpbetId = olimpbetIdFromWcEventId(event.id);
-    let placementDetail = null;
+    let placementDetail: OlimpbetEventDetail | null = null;
     if (olimpbetId) {
-      placementDetail = await this.olimpbet.fetchEventDetail(olimpbetId);
-      if (placementDetail && determinateResult == null) {
-        determinateResult = resolveDeterminateBetResult(
-          settlementInput,
-          homeScore,
-          awayScore,
-          placementDetail,
-          matchState,
-        );
+      const detailCached = this.placementDetailCache.get(event.id);
+      if (detailCached && detailCached.expiresAt > Date.now()) {
+        placementDetail = detailCached.detail;
+      } else {
+        placementDetail = await this.olimpbet.fetchEventDetail(olimpbetId, { locale: 'ru' });
+        this.placementDetailCache.set(event.id, {
+          detail: placementDetail,
+          expiresAt: Date.now() + PLACEMENT_DETAIL_TTL_MS,
+        });
       }
     }
 
@@ -240,14 +396,72 @@ export class WcOddsCashoutService {
       || refreshed?.bettingOpen === false
       || !isWcBettingOpen(event.completed, event.commenceTime);
 
-    if (placementDetail && determinateResult == null) {
+    const groupedMarkets = (refreshed?.groupedMarkets ?? event.marketsJson ?? {}) as WcGroupedMarkets;
+
+    return {
+      event,
+      refreshed,
+      matchState,
+      homeScore,
+      awayScore,
+      placementDetail,
+      bettingClosed,
+      groupedMarkets,
+    };
+  }
+
+  private invalidateCashoutEventCache(eventId: string): void {
+    this.eventContextCache.delete(eventId);
+    this.placementDetailCache.delete(eventId);
+  }
+
+  private evaluateCashoutForBet(
+    bet: {
+      marketKey: string;
+      outcomeKey: string | null;
+      line: string | null;
+      outcomeName: string | null;
+      pick: WcOddsPick | null;
+      stake: Decimal;
+      odds: Decimal;
+      potentialPayout: Decimal;
+      placementContextJson: unknown;
+    },
+    ctx: CashoutEventContext,
+  ): WcCashoutCalculationResult {
+    const rawMarketKey = bet.marketKey;
+    if (!isWcBetPlacementAllowed(rawMarketKey, bet.outcomeKey)) {
+      return { available: false, reason: 'Продажа недоступна для этого рынка', code: 'market_blocked' };
+    }
+
+    const placementCtx = parseBetPlacementContext(bet.placementContextJson);
+    const settlementInput = this.toBetSettlementInput(bet);
+    let determinateResult = resolveDeterminateBetResult(
+      settlementInput,
+      ctx.homeScore,
+      ctx.awayScore,
+      undefined,
+      ctx.matchState,
+    );
+
+    if (ctx.placementDetail && determinateResult == null) {
+      determinateResult = resolveDeterminateBetResult(
+        settlementInput,
+        ctx.homeScore,
+        ctx.awayScore,
+        ctx.placementDetail,
+        ctx.matchState,
+      );
+    }
+
+    if (ctx.placementDetail && determinateResult == null) {
       const scope = resolveBetPlacementScope({
         marketKey: rawMarketKey,
         outcomeKey: bet.outcomeKey,
         outcomeName: bet.outcomeName,
         totalsGroupLabel: placementCtx?.totalsGroupLabel ?? null,
       });
-      if (scope && isMarketScopeFinalized(placementDetail, scope)) {
+      if (scope && isMarketScopeFinalized(ctx.placementDetail, scope)) {
         return {
           available: false,
           reason: 'Ожидается расчёт ставки',
@@ -259,10 +473,10 @@ export class WcOddsCashoutService {
     const stake = Number(bet.stake);
     const placedOdds = Number(bet.odds);
     const potentialPayout = Number(bet.potentialPayout);
-    const groupedMarkets = (refreshed?.groupedMarkets ?? event.marketsJson ?? {}) as WcGroupedMarkets;
     const marketKey = normalizeWcMarketKey(rawMarketKey);
     const outcomeKey = bet.outcomeKey;
     const line = bet.line;
+    const { event, groupedMarkets, bettingClosed } = ctx;
 
     let currentOdds: number | null = null;
     let outcomeSuspended = false;
@@ -314,6 +528,29 @@ export class WcOddsCashoutService {
       winMargin,
       minStakeRatio,
     });
+  }
+
+  private async evaluateCashout(
+    userId: number,
+    betId: number,
+  ): Promise<WcCashoutCalculationResult> {
+    const bet = await this.prisma.wcOddsBet.findFirst({
+      where: { id: betId, userId, isProbe: false },
+      include: { event: true },
+    });
+    if (!bet) throw new NotFoundException('Bet not found');
+    if (bet.status !== WcOddsBetStatus.PENDING) {
+      return { available: false, reason: 'Ставка уже закрыта', code: 'not_pending' };
+    }
+    if (bet.wcExpressBetId != null) {
+      return { available: false, reason: 'Продажа недоступна для экспресса', code: 'express_leg' };
+    }
+    if (!bet.event) {
+      return { available: false, reason: 'Событие недоступно', code: 'event_missing' };
+    }
+
+    const ctx = await this.loadCashoutEventContext(bet.event);
+    return this.evaluateCashoutForBet(bet, ctx);
   }
 
   private toBetSettlementInput(bet: {

@@ -6,37 +6,35 @@ import { useRegister } from "../../model";
 import styles from "./AuthForm.module.css";
 
 import * as Yup from "yup";
-import {useFormik} from "formik";
+import { useFormik } from "formik";
 import { QuestionIcon } from "@/shared/assets";
-import { AffiliateProgramRegisterRequest } from "../../../../../packages/affiliate-program-api";
-import TypeEnum = AffiliateProgramRegisterRequest.TypeEnum;
 import { useRouter } from "next/navigation";
 
 type AuthFormState = {
     checked: boolean;
     email: string;
     password: string;
-    type: 'REVSHARE' | "CPA"
-    trafficSource: string,
-    telegram: string,
-    phone: string,
-    whatsapp: string,
+    type: "REVSHARE" | "CPA";
+    trafficSource: string;
+    telegram: string;
+    phone: string;
+    whatsapp: string;
 };
 
 const initialValues: AuthFormState = {
-    email: '',
-    password: '',
+    email: "",
+    password: "",
     checked: false,
-    type: 'REVSHARE',
-    trafficSource: '',
-    telegram: '',
-    phone: '',
-    whatsapp: '',
+    type: "REVSHARE",
+    trafficSource: "",
+    telegram: "",
+    phone: "",
+    whatsapp: "",
 };
 
 export const RegisterForm = () => {
-    const { error, pending, register, clearError } = useRegister();
-    const [formError, setFormError] = useState<string>("")
+    const { error, pending, register } = useRegister();
+    const [formError, setFormError] = useState<string>("");
     const router = useRouter();
     const [success, setSuccess] = useState(false);
 
@@ -55,8 +53,8 @@ export const RegisterForm = () => {
         validateOnChange: false,
         validateOnMount: false,
         validateOnBlur: false,
-        onSubmit: async (values, { resetForm }) => {
-            setFormError('')
+        onSubmit: async (values) => {
+            setFormError("");
             const resp = await register({
                 email: values.email,
                 type: values.type,
@@ -66,9 +64,9 @@ export const RegisterForm = () => {
                     telegram: values.telegram,
                     whatsapp: values.whatsapp,
                     phone: values.phone,
-                }
-            })
-            if(resp) {
+                },
+            });
+            if (resp) {
                 setSuccess(true);
                 router.push("/profile/dashboard");
             }
@@ -76,11 +74,11 @@ export const RegisterForm = () => {
     });
 
     useEffect(() => {
-        if(formik.errors) {
-            for(let key in formik.errors) {
-                const value = formik.errors[key as keyof typeof formik.errors]
-                if(value) {
-                    setFormError(value.toString())
+        if (formik.errors) {
+            for (const key in formik.errors) {
+                const value = formik.errors[key as keyof typeof formik.errors];
+                if (value) {
+                    setFormError(value.toString());
                     break;
                 }
             }
@@ -91,22 +89,27 @@ export const RegisterForm = () => {
         <form className={styles.form} onSubmit={formik.handleSubmit}>
             <div className={styles.type}>
                 <div
-                    onClick={e => formik.setFieldValue("type", 'REVSHARE')}
-                    className={`${styles.type_item}  ${formik.values.type === 'REVSHARE' ? styles.type_item_active : ''}`}>
-                    <div className={styles.type_check}></div>
-                    <p className={styles.type_text}>
-                        RevShare
-                    </p>
+                    onClick={() => formik.setFieldValue("type", "REVSHARE")}
+                    className={`${styles.type_item} ${formik.values.type === "REVSHARE" ? styles.type_item_active : ""}`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && formik.setFieldValue("type", "REVSHARE")}
+                >
+                    <div className={styles.type_check} />
+                    <p className={styles.type_text}>RevShare</p>
                     <div className={styles.type_question}>
-                        <QuestionIcon/>
+                        <QuestionIcon />
                     </div>
                 </div>
-                <div onClick={e => formik.setFieldValue("type", 'CPA')}
-                    className={`${styles.type_item} ${formik.values.type === 'CPA' ? styles.type_item_active : ''}`} >
-                    <div className={styles.type_check}></div>
-                    <p className={styles.type_text}>
-                        CPA
-                    </p>
+                <div
+                    onClick={() => formik.setFieldValue("type", "CPA")}
+                    className={`${styles.type_item} ${formik.values.type === "CPA" ? styles.type_item_active : ""}`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && formik.setFieldValue("type", "CPA")}
+                >
+                    <div className={styles.type_check} />
+                    <p className={styles.type_text}>CPA</p>
                     <div className={styles.type_question}>
                         <QuestionIcon />
                     </div>
@@ -117,10 +120,11 @@ export const RegisterForm = () => {
                 onChange={formik.handleChange}
                 value={formik.values.email}
                 className={styles.input}
-                type="text"
+                type="email"
                 name="email"
                 id="email"
-                placeholder="Введите Почту"
+                placeholder="Введите почту"
+                autoComplete="email"
             />
             <Input
                 label="Пароль"
@@ -130,63 +134,69 @@ export const RegisterForm = () => {
                 type="password"
                 name="password"
                 id="password"
-                placeholder="Введите пароль (минимум 8 символов)"
+                placeholder="Минимум 8 символов"
+                autoComplete="new-password"
             />
-            <Input
-                label="Номер телефона (необязательно)"
-                onChange={formik.handleChange}
-                value={formik.values.phone}
-                className={styles.input}
-                type="text"
-                name="phone"
-                id="phone"
-                placeholder="Введите номер телефона"
-            />
-            <Input
-                label="WhatsApp (необязательно)"
-                onChange={formik.handleChange}
-                value={formik.values.whatsapp}
-                className={styles.input}
-                type="text"
-                name="whatsapp"
-                id="whatsapp"
-                placeholder="Введите whatsapp"
-            />
-            <Input
-                label="Telegram (необязательно)"
-                onChange={formik.handleChange}
-                value={formik.values.telegram}
-                className={styles.input}
-                type="text"
-                name="telegram"
-                id="telegram"
-                placeholder="Введите telegram"
-            />
+            <div className={styles.optionalGrid}>
+                <Input
+                    label="Телефон (необязательно)"
+                    onChange={formik.handleChange}
+                    value={formik.values.phone}
+                    className={styles.input}
+                    type="tel"
+                    name="phone"
+                    id="phone"
+                    placeholder="+7 …"
+                    autoComplete="tel"
+                />
+                <Input
+                    label="WhatsApp (необязательно)"
+                    onChange={formik.handleChange}
+                    value={formik.values.whatsapp}
+                    className={styles.input}
+                    type="text"
+                    name="whatsapp"
+                    id="whatsapp"
+                    placeholder="@username или номер"
+                />
+                <Input
+                    label="Telegram (необязательно)"
+                    onChange={formik.handleChange}
+                    value={formik.values.telegram}
+                    className={styles.input}
+                    type="text"
+                    name="telegram"
+                    id="telegram"
+                    placeholder="@username"
+                />
+            </div>
             <Input
                 label="Источник трафика"
                 onChange={formik.handleChange}
                 value={formik.values.trafficSource}
                 className={styles.input}
-                type="text"
+                type="url"
                 name="trafficSource"
                 id="trafficSource"
-                placeholder="Введите ссылку"
+                placeholder="Ссылка на сайт, канал или соцсеть"
             />
             <Checkbox
-                onChange={e => formik.setFieldValue("checked", e.target.checked)}
+                onChange={(e) => formik.setFieldValue("checked", e.target.checked)}
                 checked={formik.values.checked}
                 classNames={{ Checkbox: styles.agreement, text: styles.agreementText }}
-            >{`Я согласен с Условиями и Соглашениями об использовании сайта oneX`}</Checkbox>
+            >
+                Я согласен с условиями и соглашением об использовании сайта imba.bet
+            </Checkbox>
 
             <Button
                 disabled={pending}
                 type="submit"
-                className={`${styles.authButton} ${success ? styles.authButton_succes : null}`}
+                className={`${styles.authButton} ${success ? styles.authButton_succes : ""}`}
             >
-                {success ? `Вход` : `Зарегистрироваться`}
+                {success ? "Вход" : "Зарегистрироваться"}
                 {pending || success ? <LoadingSpiner className={styles.loading} /> : null}
             </Button>
-            {formError !== '' ? <p className={styles.error}>{formError}</p> : null}
+            {formError !== "" ? <p className={styles.error}>{formError}</p> : null}
             {error ? <p className={styles.error}>{error}</p> : null}
         </form>
     );

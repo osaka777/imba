@@ -1,0 +1,92 @@
+.page {
+  color: #e5e7eb;
+  margin: 0 auto;
+  max-width: 720px;
+  padding: 1rem 1rem 6rem;
+}
+
+.title {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.empty {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.itemHead {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.tag {
+  background: rgba(16, 141, 231, 0.18);
+  border-radius: 999px;
+  color: #7dd3fc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+}
+
+.date {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.preview {
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.itemFoot {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+}
+
+.statusOpen {
+  color: #4ade80;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusClosed {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.csat {
+  color: #fbbf24;
+  font-size: 0.75rem;
+}

@@ -1,20 +1,57 @@
 html[data-cybersport-theme="true"] {
-  --cy-bg-main: #121214;
-  --cy-bg-secondary: #1c1d21;
-  --cy-bg-card: #25262b;
-  --cy-bg-elevated: #2e3036;
-  --cy-bg-input: #1c1d21;
-  --cy-border: rgb(255 255 255 / 0.1);
-  --cy-border-active: rgb(255 255 255 / 0.22);
-  --cy-text-primary: #e8e8ea;
-  --cy-text-secondary: #909090;
-  --cy-text-muted: #6b6b6f;
+  /* Kick.com design tokens */
+  --kick-bg-base: #070809;
+  --kick-bg-surface: #0f0f10;
+  --kick-bg-card: #161617;
+  --kick-bg-elevated: #1e1e20;
+  --kick-bg-input: #232326;
+  --kick-green: #53fc18;
+  --kick-green-hover: #6aff2e;
+  --kick-green-dim: rgb(83 252 24 / 0.14);
+  --kick-green-glow: rgb(83 252 24 / 0.4);
+  --kick-green-border: rgb(83 252 24 / 0.45);
+  --kick-live: #ff4646;
+  --kick-live-dim: rgb(255 70 70 / 0.14);
+  --kick-live-border: rgb(255 70 70 / 0.42);
+  --kick-text: #ffffff;
+  --kick-text-secondary: #b6b6bc;
+  --kick-text-muted: #8b8b93;
+  --kick-border: rgb(255 255 255 / 0.07);
+  --kick-border-strong: rgb(255 255 255 / 0.12);
+  --kick-radius: 10px;
+  --kick-radius-lg: 14px;
+
+  /* Shared aliases used across cyber components */
+  --cy-bg-main: var(--kick-bg-base);
+  --cy-bg-secondary: var(--kick-bg-surface);
+  --cy-bg-card: var(--kick-bg-card);
+  --cy-bg-elevated: var(--kick-bg-elevated);
+  --cy-bg-input: var(--kick-bg-input);
+  --cy-border: var(--kick-border);
+  --cy-border-active: var(--kick-green-border);
+  --cy-text-primary: var(--kick-text);
+  --cy-text-secondary: var(--kick-text-secondary);
+  --cy-text-muted: var(--kick-text-muted);
+  --cy-accent: var(--kick-green);
+  --cy-glow: var(--kick-green-glow);
+  --cy-glow-soft: var(--kick-green-dim);
+
+  /* Legacy twitch aliases → kick */
+  --twitch-bg-base: var(--kick-bg-base);
+  --twitch-bg-card: var(--kick-bg-card);
+  --twitch-bg-elevated: var(--kick-bg-elevated);
+  --twitch-purple: var(--kick-green);
+  --twitch-purple-soft: var(--kick-green-dim);
+  --twitch-live: var(--kick-green);
+  --twitch-text-primary: var(--kick-text);
+  --twitch-text-secondary: var(--kick-text-secondary);
+  --twitch-text-muted: var(--kick-text-muted);
 }
 
 html[data-cybersport-theme="true"],
 html[data-cybersport-theme="true"] body,
 html[data-cybersport-theme="true"] #root {
-  background-color: var(--cy-bg-main) !important;
+  background-color: var(--kick-bg-base) !important;
 }
 
 html[data-cybersport-theme="true"] main {
@@ -22,168 +59,817 @@ html[data-cybersport-theme="true"] main {
 }
 
 html[data-cybersport-theme="true"] footer {
-  background-color: var(--cy-bg-main) !important;
-  border-top: 1px solid var(--cy-border);
+  background-color: var(--kick-bg-base) !important;
+  border-top: 1px solid var(--kick-border);
 }
 
 /* Top utility bar */
 html[data-cybersport-theme="true"] .HeaderLineTop_cyber {
-  background-color: var(--cy-bg-main) !important;
-  border-bottom: 1px solid var(--cy-border);
+  background-color: var(--kick-bg-base) !important;
+  border-bottom: 1px solid var(--kick-border);
 }
 
 html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="headerLineRight"],
 html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="FreeMoneyLink_root"],
 html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="headerButton"] {
-  background: var(--cy-bg-secondary) !important;
+  background: var(--kick-bg-surface) !important;
   background-image: none !important;
 }
 
 html[data-cybersport-theme="true"] .HeaderLineTop_cyber [class*="button"]:not([class*="headerButton"]) {
-  background: var(--cy-bg-card) !important;
+  background: var(--kick-bg-card) !important;
   background-image: none !important;
-  border: 1px solid var(--cy-border);
+  border: 1px solid var(--kick-border);
 }
 
-/* Main nav */
+/* Main nav — Kick: dark bar + green active */
 html[data-cybersport-theme="true"] .Navigation_cyber {
-  background: var(--cy-bg-secondary) !important;
+  background: var(--kick-bg-surface) !important;
   background-image: none !important;
-  border: 1px solid var(--cy-border);
-  box-shadow: none;
+  border: 1px solid var(--kick-border) !important;
+  border-radius: var(--kick-radius-lg) !important;
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.45);
 }
 
 html[data-cybersport-theme="true"] .Navigation_cyber a,
 html[data-cybersport-theme="true"] .Navigation_cyber p {
-  color: var(--cy-text-secondary);
-}
-
-html[data-cybersport-theme="true"] .Navigation_cyber [class*="underline"] {
-  background: var(--cy-text-primary) !important;
-  background-image: none !important;
+  color: var(--kick-text-secondary);
 }
 
 html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] > a,
 html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] > p,
 html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] a {
-  color: var(--cy-text-primary) !important;
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="item_current"] [class*="underline"] {
+  background: var(--kick-green) !important;
+  height: 3px !important;
+  border-radius: 2px;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="newBadge"] {
+  background: var(--kick-green) !important;
+  color: #000 !important;
+  font-weight: 800 !important;
 }
 
 html[data-cybersport-theme="true"] .Navigation_cyber [class*="user_wrapper"],
 html[data-cybersport-theme="true"] .Navigation_cyber [class*="telegram"] {
-  background: var(--cy-bg-card) !important;
+  background: var(--kick-bg-card) !important;
 }
 
 html[data-cybersport-theme="true"] .Navigation_cyber [class*="button"] {
-  background: var(--cy-bg-card) !important;
+  background: var(--kick-bg-card) !important;
   background-image: none !important;
-  border: 1px solid var(--cy-border);
+  border: 1px solid var(--kick-border);
+}
+
+/* Balance / deposit widget — Kick */
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="depositWrapper"] {
+  background: var(--kick-bg-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--kick-border-strong) !important;
+  border-radius: var(--kick-radius) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="depositWrapper"] [class*="balanceTitle"],
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="depositWrapper"] [class*="balanceAnimated"],
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="depositWrapper"] [class*="currencyText"] {
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="depositWrapper"] [class*="CurrencySelector"],
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="depositWrapper"] [class*="select"] {
+  color: var(--kick-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="Deposit_Deposit__"] {
+  background: var(--kick-green) !important;
+  background-image: none !important;
+  color: #000 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  border: none !important;
+  border-radius: 8px !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="Deposit_Deposit__"]:hover {
+  background: var(--kick-green-hover) !important;
+  color: #000 !important;
+  box-shadow: 0 0 18px var(--kick-green-glow) !important;
+  transform: translateY(-1px);
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="Deposit_Deposit__"]::before {
+  background-image: radial-gradient(
+    19.58% 37.96% at 16.68% 41.55%,
+    rgb(255 255 255 / 0.55) 0%,
+    rgb(255 255 255 / 0) 100%
+  ) !important;
+}
+
+/* User avatar / profile menu — Kick */
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="user_wrapper"] {
+  background: var(--kick-bg-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--kick-border-strong) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="user_wrapper"]:hover {
+  background: var(--kick-bg-elevated) !important;
+  border-color: var(--kick-green-border) !important;
+  box-shadow: 0 0 16px var(--kick-green-glow);
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="userRound_wrapper"] {
+  background-image: none !important;
+  background: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="userRound"]:not([class*="userRound_wrapper"]) {
+  background-color: var(--kick-bg-elevated) !important;
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="menu_toggle"] svg,
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="menu_toggle"] path {
+  fill: var(--kick-text-secondary) !important;
+  color: var(--kick-text-secondary) !important;
+}
+
+/* Notifications bell — Kick */
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="bellBtn"] {
+  background: var(--kick-bg-card) !important;
+  border: 1px solid var(--kick-border-strong) !important;
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="bellBtn"]:hover {
+  background: var(--kick-bg-elevated) !important;
+  border-color: var(--kick-green-border) !important;
+  box-shadow: 0 0 16px var(--kick-green-glow);
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="bellBtn"] [class*="bellIcon"] {
+  fill: currentColor;
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] .Navigation_cyber [class*="bellBtn"] [class*="badge"] {
+  background: var(--kick-green) !important;
+  background-image: none !important;
+  color: #000 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 2px var(--kick-bg-card) !important;
 }
 
 /* Mobile bottom nav */
 html[data-cybersport-theme="true"] .MobileNav_cyber {
-  background: var(--cy-bg-secondary) !important;
-  border-top-color: var(--cy-border) !important;
-}
-
-html[data-cybersport-theme="true"] .MobileNav_cyber .tab {
-  background: var(--cy-bg-secondary) !important;
+  background: var(--kick-bg-surface) !important;
+  border-top: 1px solid var(--kick-border) !important;
 }
 
 html[data-cybersport-theme="true"] .MobileNav_cyber [class*="link"] {
-  color: var(--cy-text-secondary) !important;
+  color: var(--kick-text-secondary) !important;
 }
 
 html[data-cybersport-theme="true"] .MobileNav_cyber [class*="item_current"] [class*="link"] {
-  color: var(--cy-text-primary) !important;
+  color: var(--kick-green) !important;
 }
 
 html[data-cybersport-theme="true"] .MobileNav_cyber [class*="item_current"] [class*="icon"] {
-  fill: var(--cy-text-primary) !important;
-  color: var(--cy-text-primary) !important;
+  fill: var(--kick-green) !important;
+  color: var(--kick-green) !important;
 }
 
-/* Coupon sidebar */
+/* Coupon */
 html[data-cybersport-theme="true"] .CouponSidebar_cyber {
   padding: 0;
-  border-radius: 12px;
+  border-radius: var(--kick-radius-lg);
   background: transparent;
-  border: none;
 }
 
-html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="coupon"] {
-  background: var(--cy-bg-secondary) !important;
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="CouponWrapper_coupon"],
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="Coupon_Coupon"] {
+  background: var(--kick-bg-surface) !important;
   background-image: none !important;
-  border: 1px solid var(--cy-border) !important;
-  border-radius: 12px !important;
+  border: 1px solid var(--kick-border) !important;
+  border-radius: var(--kick-radius-lg) !important;
   box-shadow: none !important;
 }
 
-html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="CouponWrapper"] [class*="coupon"] {
-  background: var(--cy-bg-secondary) !important;
-  background-image: none !important;
-}
-
-html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="tab"],
-html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="Tab"] {
-  color: var(--cy-text-secondary);
+html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="couponTypeRadiogroup"] {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="active"],
 html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="Active"] {
-  border-color: var(--cy-border-active) !important;
-  color: var(--cy-text-primary) !important;
+  border-color: var(--kick-green-border) !important;
+  color: var(--kick-green) !important;
 }
 
-/* Match tables inside cybersport content */
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="Tournament"] {
-  background: var(--cy-bg-card) !important;
+/* Coupon / betslip — kill blue accents, use Kick green */
+html[data-cybersport-theme="true"] [class*="Coupon_active"] {
   background-image: none !important;
-  border-radius: 10px;
-  border: 1px solid var(--cy-border);
+  background: var(--kick-green-dim) !important;
+  border-color: var(--kick-green-border) !important;
+  color: var(--kick-green) !important;
 }
 
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"] {
-  background-color: var(--cy-bg-card) !important;
-  border-top-color: var(--cy-border) !important;
-  border-bottom-color: var(--cy-border) !important;
-}
-
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"] * {
-  color: var(--cy-text-primary);
-}
-
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="startAt"],
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="marketsCount"] {
-  color: var(--cy-text-secondary) !important;
-}
-
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="oddCell"] {
-  background: var(--cy-bg-secondary) !important;
+html[data-cybersport-theme="true"] [class*="Checkbox_iconBox_checked"],
+html[data-cybersport-theme="true"] [class*="iconBox_checked"] {
   background-image: none !important;
-  border: 1px solid var(--cy-border);
-  border-radius: 8px;
+  background: var(--kick-green) !important;
+  border-color: var(--kick-green) !important;
 }
 
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="oddCoefficient"] {
-  color: var(--cy-text-primary) !important;
-  font-weight: 700;
+html[data-cybersport-theme="true"] [class*="Checkbox_iconBox_checked"] svg,
+html[data-cybersport-theme="true"] [class*="Checkbox_iconBox_checked"] path,
+html[data-cybersport-theme="true"] [class*="iconBox_checked"] svg,
+html[data-cybersport-theme="true"] [class*="iconBox_checked"] path {
+  fill: #000 !important;
+  color: #000 !important;
+  background: transparent !important;
 }
 
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="Head"] [class*="headRow"] * {
-  color: var(--cy-text-secondary) !important;
+html[data-cybersport-theme="true"] [class*="allInButton"] {
+  background-image: none !important;
+  background: var(--kick-green) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  border: none !important;
 }
 
-html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="nameCell"] {
-  color: var(--cy-text-primary) !important;
+html[data-cybersport-theme="true"] [class*="allInButton"]:hover {
+  background: var(--kick-green-hover) !important;
+  box-shadow: 0 0 16px var(--kick-green-glow) !important;
 }
 
-@media screen and (min-width: 1024px) {
-  html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"]:hover {
-    background-color: var(--cy-bg-elevated) !important;
+html[data-cybersport-theme="true"] [class*="baseCouponSubmit"]:not(:disabled) {
+  background-image: none !important;
+  background: var(--kick-green) !important;
+  color: #000 !important;
+  border-color: var(--kick-green) !important;
+  font-weight: 700 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="baseCouponSubmit"]:not(:disabled):hover {
+  background: var(--kick-green-hover) !important;
+  box-shadow: 0 0 16px var(--kick-green-glow) !important;
+}
+
+/* Open bet slip cards — Kick header & dark body (cybersport only) */
+html[data-cybersport-theme="true"] [class*="openBetCard"] {
+  border-radius: var(--kick-radius-lg, 14px) !important;
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.08)) !important;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.35) !important;
+  background: var(--kick-bg-card, #161617) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderBar"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(83 252 24 / 0.14) 0%,
+      rgb(83 252 24 / 0.04) 42%,
+      rgb(0 0 0 / 0) 100%
+    ),
+    var(--kick-bg-elevated, #1e1e20) !important;
+  border-bottom: 1px solid rgb(83 252 24 / 0.22) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderLeft"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderPhase"] {
+  color: var(--kick-green, #53fc18) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderPhase_live"] {
+  color: var(--kick-green, #53fc18) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderScore"] {
+  color: var(--kick-text, #fff) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderLeft"] [class*="openBetHeaderPhase"] + [class*="openBetHeaderScore"]::before {
+  color: rgb(83 252 24 / 0.55) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderDate"] {
+  color: var(--kick-green, #53fc18) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderBrand"] {
+  background: rgb(83 252 24 / 0.12) !important;
+  border: 1px solid rgb(83 252 24 / 0.35) !important;
+  color: var(--kick-green, #53fc18) !important;
+  font-weight: 800 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderBrandLogo"] {
+  background: rgb(255 255 255 / 0.06) !important;
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12)) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetHeaderId"] {
+  color: var(--kick-text-secondary, #a8a8a8) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="couponBetCloseBtn"] {
+  background: rgb(255 255 255 / 0.06) !important;
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.1)) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="couponBetCloseIcon"] {
+  fill: var(--kick-text-secondary, #a8a8a8) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetSlip"] {
+  background: var(--kick-bg-card, #161617) !important;
+  padding: 12px 12px 14px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetSlip"] p,
+html[data-cybersport-theme="true"] [class*="openBetSlip"] span {
+  color: inherit !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetCoefPill"] {
+  background: var(--kick-green, #53fc18) !important;
+  background-image: none !important;
+  box-shadow: 0 4px 14px rgb(83 252 24 / 0.28) !important;
+  color: #000 !important;
+  border-radius: 8px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetOutcome"] {
+  color: var(--kick-text, #fff) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetLiveRibbon"],
+html[data-cybersport-theme="true"] [class*="openBetRibbon_live"] {
+  color: #fff !important;
+  background: rgb(255 70 70 / 0.16) !important;
+  border: 1px solid rgb(255 70 70 / 0.42) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetLineRibbon"],
+html[data-cybersport-theme="true"] [class*="openBetRibbon_line"] {
+  color: var(--kick-text-secondary) !important;
+  background: rgb(255 255 255 / 0.06) !important;
+  border: 1px solid var(--kick-border) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetLiveDot"] {
+  background: #ff4646 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetTeamsText"] {
+  color: var(--kick-text, #fff) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetScoreMain"] {
+  color: var(--kick-green, #53fc18) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetLeague"],
+html[data-cybersport-theme="true"] [class*="openBetKickoff"] {
+  color: var(--kick-text-secondary, #a8a8a8) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetMatchRow"] {
+  border-top-color: var(--kick-border, rgb(255 255 255 / 0.08)) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetMatchRowLink"]:hover {
+  background: rgb(83 252 24 / 0.06) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetDivider"] {
+  background: var(--kick-border, rgb(255 255 255 / 0.08)) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="couponWinLineHero"] {
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.12)) !important;
+  border: 1px solid var(--kick-green-border, rgb(83 252 24 / 0.35)) !important;
+  color: var(--kick-green, #53fc18) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="filterChip"] {
+  border-color: var(--kick-border-strong) !important;
+  background: var(--kick-bg-elevated) !important;
+  color: var(--kick-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="filterChipActive"] {
+  border-color: var(--kick-green-border) !important;
+  background: var(--kick-green-dim) !important;
+  color: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="openBetCardFresh"] {
+  animation: cyberOpenBetPulse 1.8s ease-out 1;
+}
+
+@keyframes cyberOpenBetPulse {
+  0% { box-shadow: 0 0 0 3px rgb(83 252 24 / 0.55); }
+  100% { box-shadow: 0 8px 28px rgb(0 0 0 / 0.35); }
+}
+
+/* Floating support launcher (24/7) — Kick */
+html[data-cybersport-theme="true"] [class*="LiveSupportChat_launcher__"] {
+  background: var(--kick-bg-elevated) !important;
+  background-image: none !important;
+  border: 1px solid var(--kick-green-border) !important;
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 0.5),
+    0 0 18px rgb(83 252 24 / 0.14) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="launcherLabel"] {
+  color: var(--kick-green) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+}
+
+html[data-cybersport-theme="true"] [class*="launcherSegment"] {
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="launcherSegment"]:hover {
+  background: var(--kick-green-dim) !important;
+  color: var(--kick-green) !important;
+}
+
+/* Cybersport content area */
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] {
+  color: var(--kick-text);
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-shell="true"] {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(83 252 24 / 0.07), transparent 55%),
+    var(--kick-bg-base);
+}
+
+html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="TournamentTable_Tournament"] {
+  background: var(--kick-bg-card) !important;
+  background-image: none !important;
+  border-radius: var(--kick-radius);
+  border: 1px solid var(--kick-border);
+}
+
+/* Match page scoreboard — Kick shell */
+html[data-cybersport-theme="true"] [class*="wcScoreBoard"] {
+  border-radius: var(--kick-radius-lg) !important;
+  border: 1px solid var(--kick-border) !important;
+  background: var(--kick-bg-card) !important;
+  overflow: hidden;
+}
+
+html[data-cybersport-theme="true"] [class*="metaBar"] {
+  background: rgb(0 0 0 / 0.35) !important;
+  border-bottom-color: var(--kick-border) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="metaBar_broadcast"] button,
+html[data-cybersport-theme="true"] [class*="broadcastBtn"] {
+  background: var(--kick-green) !important;
+  color: #000 !important;
+  border: none !important;
+  font-weight: 800 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="metaBar_broadcast"] button:hover,
+html[data-cybersport-theme="true"] [class*="broadcastBtn"]:hover {
+  background: var(--kick-green-hover) !important;
+  box-shadow: 0 0 16px var(--kick-green-glow);
+}
+
+/* ══ Scoreboard info-board (under stream) → Kick redesign ══════════ */
+html[data-cybersport-theme="true"] [class*="scoreStrip"] [class*="wcScoreBoard"] {
+  position: relative;
+  border: 1px solid var(--kick-border-strong) !important;
+  border-radius: var(--kick-radius-lg) !important;
+  background:
+    linear-gradient(180deg, rgb(83 252 24 / 0.05) 0%, transparent 34%),
+    var(--kick-bg-card) !important;
+  box-shadow: 0 10px 34px rgb(0 0 0 / 0.4) !important;
+}
+
+/* Тонкая зелёная линия сверху доски */
+html[data-cybersport-theme="true"] [class*="scoreStrip"] [class*="wcScoreBoard"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--kick-green) 50%,
+    transparent 100%
+  );
+  opacity: 0.7;
+}
+
+html[data-cybersport-theme="true"] [class*="metaBar"] {
+  background: rgb(0 0 0 / 0.3) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="metaBar_league"] {
+  color: var(--kick-text) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* "Карта 2 · 12:12" pill — герой-счёт */
+html[data-cybersport-theme="true"] [class*="liveClockBar"] {
+  background: rgb(0 0 0 / 0.28) !important;
+  border-bottom-color: var(--kick-border) !important;
+  padding: 0.6rem 0.875rem !important;
+}
+
+html[data-cybersport-theme="true"] [class*="matchClockPill"] {
+  background: var(--kick-bg-elevated) !important;
+  border: 1px solid var(--kick-green-border) !important;
+  box-shadow: 0 0 18px rgb(83 252 24 / 0.12) !important;
+  padding: 0.3rem 0.8rem !important;
+}
+
+html[data-cybersport-theme="true"] [class*="matchClockPeriod"] {
+  color: var(--kick-text-secondary) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="matchClockGameScore"] {
+  color: var(--kick-green) !important;
+  font-size: 1.15rem !important;
+  text-shadow: 0 0 16px var(--kick-green-glow);
+}
+
+/* Заголовки таблицы */
+html[data-cybersport-theme="true"] [class*="cell_teamHeader"],
+html[data-cybersport-theme="true"] [class*="cell_header"] {
+  background: rgb(255 255 255 / 0.02) !important;
+  border-bottom-color: var(--kick-border) !important;
+  min-height: 2.6rem !important;
+}
+
+/* Текущая карта — зелёный вместо синего */
+html[data-cybersport-theme="true"] [class*="cell_header_active"] {
+  color: var(--kick-green) !important;
+  background: var(--kick-green-dim) !important;
+  box-shadow: inset 0 -2px 0 var(--kick-green) !important;
+}
+
+/* Строки команд */
+html[data-cybersport-theme="true"] [class*="cell_team"] {
+  background: transparent !important;
+  border-top-color: var(--kick-border) !important;
+  padding-top: 0.7rem !important;
+  padding-bottom: 0.7rem !important;
+}
+
+html[data-cybersport-theme="true"] [class*="teamNameCompact"] {
+  color: var(--kick-text) !important;
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Логотип команды крупнее */
+html[data-cybersport-theme="true"] [class*="teamRowMain"] > span:first-child,
+html[data-cybersport-theme="true"] [class*="teamRowMain"] > div:first-child {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* Колонка счёта серии — нейтрально, но крупно */
+html[data-cybersport-theme="true"] [class*="cell_totalScore"] {
+  background: rgb(255 255 255 / 0.04) !important;
+  border-top-color: var(--kick-border) !important;
+  border-left-color: var(--kick-border-strong) !important;
+  color: #fff !important;
+  font-size: 1.2rem !important;
+  font-weight: 800 !important;
+}
+
+/* Ячейки счёта по картам */
+html[data-cybersport-theme="true"] [class*="cell_periodScore"] {
+  background: transparent !important;
+  border-top-color: var(--kick-border) !important;
+  border-left-color: var(--kick-border) !important;
+}
+
+/* Текущая карта — зелёная подсветка */
+html[data-cybersport-theme="true"] [class*="cell_periodScore_current"] {
+  color: #fff !important;
+  font-weight: 800 !important;
+  background: var(--kick-green-dim) !important;
+  box-shadow: inset 0 0 0 1px var(--kick-green-border);
+}
+
+/* Победитель завершённой карты */
+html[data-cybersport-theme="true"] [class*="cell_periodScore_won"] {
+  color: var(--kick-green) !important;
+  font-weight: 700 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="liveBadge"],
+html[data-cybersport-theme="true"] [class*="statusLive"] {
+  background: var(--kick-live-dim, rgb(255 70 70 / 0.14)) !important;
+  border: 1px solid var(--kick-live-border, rgb(255 70 70 / 0.42)) !important;
+  color: #fff !important;
+}
+
+/* Match page scoreboard — Kick shell */
+@media screen and (max-width: 1080px) {
+  html[data-cybersport-theme="true"] .coupon {
+    position: static;
+    height: 0;
+    min-height: 0;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+  }
+}
+
+/* Kick coupon modal on cyber — overlay shell only, not the floating trigger */
+@media screen and (max-width: 1080px) {
+  html[data-cybersport-theme="true"] [class*="CouponWrapper_"]:not([class*="trigger"]) {
+    background-color: rgb(0 0 0 / 0.78);
   }
 
-  html[data-cybersport-theme="true"] [data-cybersport-content="true"] [class*="MatchRow"]:hover [class*="oddCell"] {
-    background: var(--cy-bg-elevated) !important;
+  html[data-cybersport-theme="true"] [class*="CouponWrapper_"] [class*="coupon_"],
+  html[data-cybersport-theme="true"] .CouponSidebar_cyber [class*="coupon_"] {
+    background: var(--kick-bg-elevated) !important;
+    border: 1px solid var(--kick-border-strong) !important;
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.55), 0 0 32px rgb(83 252 24 / 0.08) !important;
   }
+}
+
+/* Floating coupon pill — Kick gaming CTA */
+@media screen and (max-width: 1080px) {
+  html[data-cybersport-theme="true"] button[class*="trigger_kick"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    min-width: max-content !important;
+    height: 46px !important;
+    padding: 0 18px !important;
+    border-radius: 999px !important;
+    border: 2px solid rgb(83 252 24 / 0.65) !important;
+    background: linear-gradient(180deg, #6aff2e 0%, #53fc18 45%, #45d912 100%) !important;
+    color: #000 !important;
+    box-shadow:
+      0 0 0 1px rgb(83 252 24 / 0.35),
+      0 10px 32px rgb(0 0 0 / 0.55),
+      0 0 28px rgb(83 252 24 / 0.45) !important;
+    z-index: 10001 !important;
+  }
+
+  html[data-cybersport-theme="true"] button[class*="trigger_kick"]:hover {
+    background: linear-gradient(180deg, #7dff45 0%, #6aff2e 50%, #53fc18 100%) !important;
+    box-shadow:
+      0 0 0 1px rgb(83 252 24 / 0.5),
+      0 12px 36px rgb(0 0 0 / 0.55),
+      0 0 36px rgb(83 252 24 / 0.55) !important;
+    transform: translate(-50%, -3px) !important;
+  }
+
+  html[data-cybersport-theme="true"] button[class*="trigger_kick"] [class*="_icon_"],
+  html[data-cybersport-theme="true"] button[class*="trigger_kick"] [class*="counter"] {
+    display: none !important;
+  }
+
+  html[data-cybersport-theme="true"] button[class*="trigger_kick"] [class*="kickBadge"] {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #000 !important;
+    color: var(--kick-green) !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+    line-height: 1;
+  }
+
+  html[data-cybersport-theme="true"] button[class*="trigger_kick"] [class*="triggerLabel"] {
+    color: #000 !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+  }
+}
+
+/* Broadcast auth gate — Kick green CTAs (flat overlay on cyber stream) */
+html[data-cybersport-theme="true"] [data-cyber-stream-frame="true"] [class*="authGateBackdrop"] {
+  background:
+    radial-gradient(ellipse 85% 70% at 50% 42%, rgb(83 252 24 / 0.18), transparent 62%),
+    linear-gradient(180deg, rgb(8 8 10 / 0.9) 0%, rgb(0 0 0 / 0.97) 100%) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateBackdrop"] {
+  background:
+    radial-gradient(circle at 50% 38%, rgb(83 252 24 / 0.2), transparent 58%),
+    linear-gradient(180deg, rgb(10 10 12 / 0.92), rgb(0 0 0 / 0.98)) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateBackdrop"]::before {
+  opacity: 0.22 !important;
+  background-size: 28px 28px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateBadge"],
+html[data-cybersport-theme="true"] [class*="broadcastBadge"] {
+  background: var(--kick-green) !important;
+  color: #000 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateIconWrap"] {
+  border-color: var(--kick-green-border) !important;
+  background: var(--kick-green-dim) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateTitle"] {
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateHint"] {
+  color: var(--kick-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGatePreview"] {
+  background: var(--kick-green-dim) !important;
+  border-color: var(--kick-green-border) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateMatch"] {
+  color: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGatePrimary"],
+html[data-cybersport-theme="true"] [class*="authGateSidebarPrimary"] {
+  background: var(--kick-green) !important;
+  color: #000 !important;
+  box-shadow: 0 8px 24px rgb(83 252 24 / 0.35) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGatePrimary"]:hover,
+html[data-cybersport-theme="true"] [class*="authGateSidebarPrimary"]:hover {
+  background: var(--kick-green-hover) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateSecondary"],
+html[data-cybersport-theme="true"] [class*="authGateSidebarSecondary"] {
+  background: rgb(255 255 255 / 0.06) !important;
+  border: 1px solid var(--kick-green-border) !important;
+  color: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateSidebarIconWrap"] {
+  border-color: var(--kick-green-border) !important;
+  background: var(--kick-green-dim) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="authGateSidebarIcon"],
+html[data-cybersport-theme="true"] [class*="authGateIcon"] {
+  fill: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="tapPlayBtn"] {
+  background: rgb(0 0 0 / 0.65) !important;
+  color: var(--kick-green) !important;
+  font-weight: 800 !important;
 }

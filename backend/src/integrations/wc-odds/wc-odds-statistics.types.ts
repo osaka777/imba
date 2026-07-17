@@ -29,6 +29,8 @@ export type WcParsedScore = {
   penaltyRisk?: boolean | null;
   /** Human-readable phase label: 'extra_time_1', 'extra_time_2', 'penalties', 'break' */
   gamePhase?: 'extra_time_1' | 'extra_time_2' | 'penalties' | 'break' | null;
+  /** Raw Olimpbet match_phase for soccer refinement. */
+  matchPhaseRaw?: string | null;
   details?: [string | number, string | number][];
   currentScore?: [string | number, string | number];
   liveScore?: {

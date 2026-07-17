@@ -6,6 +6,7 @@ import {
   coalesceTotalsGroups,
   findTotalsPair,
   hasCompleteTotalsPair,
+  isComboResultTotalGroup,
 } from "./wcTotalsPairs";
 
 function totalsGroup(
@@ -60,5 +61,49 @@ describe("wcTotalsPairs", () => {
 
     const merged = coalesceTotalsGroups([regular, ot]);
     expect(merged).toHaveLength(2);
+  });
+
+  it("parses line from dotted labels and DISPLAY outcome keys", () => {
+    const group = totalsGroup("g1", "totals", [
+      { outcomeKey: "DISPLAY_12_34_2_5", name: "ТМ", price: 1.8 },
+      { outcomeKey: "DISPLAY_12_35_2_5", name: "ТБ", price: 1.9 },
+    ]);
+    group.label = "1-й тайм · Тотал голов · 2.5";
+
+    const pair = findTotalsPair(group);
+    expect(pair.point).toBe("2.5");
+    expect(pair.under?.name).toMatch(/тм/i);
+    expect(pair.over?.name).toMatch(/тб/i);
+  });
+
+  it("swaps reversed under/over outcomes", () => {
+    const group = totalsGroup("g1", "totals", [
+      { outcomeKey: "OUT_1", name: "ТБ", price: 1.9 },
+      { outcomeKey: "OUT_2", name: "ТМ", price: 1.8 },
+    ]);
+
+    const pair = findTotalsPair(group);
+    expect(pair.under?.name).toMatch(/тм/i);
+    expect(pair.over?.name).toMatch(/тб/i);
+  });
+
+  it("parses line from outcome names when keys lack pivot", () => {
+    const group = totalsGroup("g1", "totals", [
+      { outcomeKey: "DISPLAY_1_1", name: "ТМ 2.5", price: 1.8 },
+      { outcomeKey: "DISPLAY_1_2", name: "ТБ 2.5", price: 1.9 },
+    ]);
+
+    const pair = findTotalsPair(group);
+    expect(pair.point).toBe("2.5");
+  });
+
+  it("detects combo result + total groups with tm/tb outcomes", () => {
+    const group = totalsGroup("g1", "display_12_AND_TOTAL", [
+      { outcomeKey: "DISPLAY_1", name: "ТМ", price: 4.67, point: 1.5 },
+      { outcomeKey: "DISPLAY_2", name: "ТБ", price: 1.69, point: 1.5 },
+    ]);
+
+    expect(isComboResultTotalGroup(group)).toBe(true);
+    expect(findTotalsPair(group).point).toBe(1.5);
   });
 });

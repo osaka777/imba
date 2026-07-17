@@ -11,14 +11,19 @@ import {
   initManualForeignCardOrder,
   uploadRubForeignCardReceipt,
   uploadRubSberbankReceipt,
+  uploadRubYandexBankReceipt,
   getMyRubForeignCardOrder,
   getMyRubSberbankOrder,
+  getMyRubYandexBankOrder,
   getManualDepositConfig,
   type ManualForeignCardMethod,
 } from "~/entities/finance/api/deposit";
 import { calculateBrlFromRub, formatBrlAmount } from "~/entities/finance/lib/rubBrlConversion";
 import { ManualForeignCardPage } from "~/entities/finance/ui/ManualForeignCardPage/ManualForeignCardPage";
 import { trackDepositOrder, untrackDepositOrder } from "~/shared/lib/appNotifications";
+import { useLocale } from "~/shared/model/useLocale";
+import type { MessageKey } from "~/shared/i18n/locales";
+import type { TranslateParams } from "~/shared/i18n/messages";
 import paymentModalStyles from "./PaymentModal.module.css";
 import styles from "./NirvanaPayForm.module.css";
 import { DepositFormHeading } from "../DepositFormHeading";
@@ -28,33 +33,34 @@ interface FormShape {
   currency: string;
 }
 
-type ForeignRubVariant = "card" | "sberbank";
+type ForeignRubVariant = "card" | "sberbank" | "yandex";
 
-const VARIANT_CONFIG: Record<
-  ForeignRubVariant,
-  {
-    method: ManualForeignCardMethod;
-    subtitle: string;
-    title: string;
-    getMyOrder: typeof getMyRubForeignCardOrder;
-    uploadReceipt: typeof uploadRubForeignCardReceipt;
-  }
-> = {
-  card: {
-    method: "RUB_FOREIGN_CARD",
-    subtitle: "Иностранная карта",
-    title: "Пополнение — Перевод в RUB",
-    getMyOrder: getMyRubForeignCardOrder,
-    uploadReceipt: uploadRubForeignCardReceipt,
-  },
-  sberbank: {
-    method: "RUB_SBERBANK",
-    subtitle: "Перевод из РФ",
-    title: "Пополнение — Перевод из РФ",
-    getMyOrder: getMyRubSberbankOrder,
-    uploadReceipt: uploadRubSberbankReceipt,
-  },
-};
+type Translate = (key: MessageKey, params?: TranslateParams) => string;
+
+const getVariantConfig = (t: Translate) =>
+  ({
+    card: {
+      method: "RUB_FOREIGN_CARD" as ManualForeignCardMethod,
+      subtitle: t("deposit.foreignCard"),
+      title: t("deposit.titleTransferRub"),
+      getMyOrder: getMyRubForeignCardOrder,
+      uploadReceipt: uploadRubForeignCardReceipt,
+    },
+    sberbank: {
+      method: "RUB_SBERBANK" as ManualForeignCardMethod,
+      subtitle: t("deposit.sberbank"),
+      title: t("deposit.titleSberbank"),
+      getMyOrder: getMyRubSberbankOrder,
+      uploadReceipt: uploadRubSberbankReceipt,
+    },
+    yandex: {
+      method: "RUB_YANDEX_BANK" as ManualForeignCardMethod,
+      subtitle: t("deposit.yandexBank"),
+      title: t("deposit.titleYandex"),
+      getMyOrder: getMyRubYandexBankOrder,
+      uploadReceipt: uploadRubYandexBankReceipt,
+    },
+  }) as const;
 
 type ForeignRubInitFormProps = {
   forceCurrency?: string;
@@ -81,7 +87,8 @@ export const ForeignRubInitForm = ({
   modalEmbedded = false,
   onDepositComplete,
 }: ForeignRubInitFormProps) => {
-  const config = VARIANT_CONFIG[variant];
+  const { t } = useLocale();
+  const config = getVariantConfig(t)[variant];
   const defaultCurrency = useReadLocalStorage<string>("currency") || "RUB";
   const currency = forceCurrency || defaultCurrency;
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -95,7 +102,7 @@ export const ForeignRubInitForm = ({
   const [minAmount, setMinAmount] = useState(1000);
 
   const quickSetAmounts = useMemo(
-    () => presetAmounts?.length ? presetAmounts : [1000, 2000, 5000],
+    () => (presetAmounts?.length ? presetAmounts : [1000, 2000, 5000]),
     [presetAmounts],
   );
 
@@ -119,13 +126,14 @@ export const ForeignRubInitForm = ({
       : 0;
 
   useEffect(() => {
-    if (variant !== "sberbank") return;
+    if (variant !== "sberbank" && variant !== "yandex") return;
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await getManualDepositConfig("RUB_SBERBANK");
+        const configKey = variant === "yandex" ? "RUB_YANDEX_BANK" : "RUB_SBERBANK";
+        const { data } = await getManualDepositConfig(configKey);
         if (!cancelled) {
-          if (data?.rubPerBrl) setRubPerBrl(data.rubPerBrl);
+          if (variant === "sberbank" && data?.rubPerBrl) setRubPerBrl(data.rubPerBrl);
           if (data?.minAmount) setMinAmount(data.minAmount);
         }
       } catch {
@@ -153,7 +161,11 @@ export const ForeignRubInitForm = ({
     if (currency !== "RUB") return;
     const amount = Number(data.amount);
     if (!amount || amount < minAmount) {
-      toast.warn(`Минимальная сумма — ${minAmount.toLocaleString()} RUB`);
+      toast.warn(
+        t("deposit.minAmountShort", {
+          amount: `${minAmount.toLocaleString()} RUB`,
+        }),
+      );
       return;
     }
     setInitLoading(true);
@@ -171,7 +183,7 @@ export const ForeignRubInitForm = ({
       setPaymentOpen(true);
       if (embedded) onDepositComplete?.();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Не удалось создать заявку";
+      const msg = err instanceof Error ? err.message : t("deposit.createFailed");
       toast.error(String(msg));
     } finally {
       setInitLoading(false);
@@ -182,7 +194,7 @@ export const ForeignRubInitForm = ({
 
   if (currency !== "RUB") {
     return (
-      <div className={styles.formSection_empty}>Метод доступен только для RUB</div>
+      <div className={styles.formSection_empty}>{t("deposit.rubOnly")}</div>
     );
   }
 
@@ -197,7 +209,7 @@ export const ForeignRubInitForm = ({
             resetPayment();
           }}
         >
-          ← Назад
+          {t("deposit.back")}
         </button>
         <ManualForeignCardPage
           asModal
@@ -253,15 +265,15 @@ export const ForeignRubInitForm = ({
             validate: (value) => !!value && value >= minAmount,
           })}
           className={styles.input}
-          label="Сумма"
-          placeholder="Введите сумму депозита"
+          label={t("deposit.amount")}
+          placeholder={t("deposit.amountPlaceholder")}
           type="number"
         />
       </div>
 
       {variant === "sberbank" && brlPreview > 0 ? (
         <p className={styles.error} style={{ color: "#60a5fa", marginTop: 0 }}>
-          Отправьте ровно {formatBrlAmount(brlPreview)} · курс 1 R$ = {rubPerBrl.toLocaleString()} ₽
+          {t("deposit.sendExactBrl", { amount: formatBrlAmount(brlPreview), rate: rubPerBrl.toLocaleString() })}
         </p>
       ) : null}
 
@@ -280,15 +292,16 @@ export const ForeignRubInitForm = ({
 
       {errors.amount && (
         <p className={styles.error}>
-          Минимальная сумма пополнения - {minAmount.toLocaleString()}{" "}
-          {getSymbolFromCurrency(currency)}
+          {t("deposit.minAmount", {
+            amount: `${minAmount.toLocaleString()} ${getSymbolFromCurrency(currency)}`,
+          })}
         </p>
       )}
 
       {!embedded ? <DialogClose ref={closeRef} style={{ display: "none" }} /> : null}
 
       <Button className={styles.submit} disabled={initLoading} type="submit">
-        {initLoading ? "Создание заявки..." : "Пополнить"}
+        {initLoading ? t("deposit.creatingRequest") : t("deposit.topUp")}
       </Button>
     </form>
   );

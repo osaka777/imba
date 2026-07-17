@@ -84,7 +84,7 @@ export function WcSingleBetRow({
         disabled={!isBettable}
         onClick={toggleRate}
       >
-        <p className="text-sm font-medium text-black">{title}</p>
+        <p className={styles.oddName}>{title}</p>
         <p className={cn(styles.oddCoef, flash.coef)}>
           {convertToFixed(value)}
           {showLock && <AccessIcon className={styles.lock} />}

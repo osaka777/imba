@@ -134,6 +134,31 @@
   pointer-events: none;
 }
 
+.miniImageWrapLarge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  align-self: auto;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  width: auto;
+  max-width: 46%;
+  padding: 0;
+  margin-right: 0;
+}
+
+.miniImageLarge {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-height: none;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: right center;
+}
+
 .content {
   display: flex;
   flex-direction: column;
@@ -197,10 +222,14 @@
 .image {
   position: absolute;
   right: 0;
+  top: 0;
   bottom: 0;
-  height: 80px;
+  height: 100%;
   width: auto;
+  max-width: 42%;
   object-fit: contain;
+  object-position: right center;
+  pointer-events: none;
 }
 
 /* Mobile */
@@ -241,19 +270,38 @@
     padding: 6px 8px 6px 0;
   }
 
+  .miniImageWrapLarge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-self: auto;
+    padding: 0;
+  }
+
   .miniImage {
     max-height: 28px;
     max-width: 62px;
   }
 
-  .content {
-    min-height: 72px;
-    padding: 14px 16px;
+  .miniContentLarge {
+    max-width: calc(100% - 88px);
+    padding-right: 8px;
   }
 
-  .image {
-    width: auto;
-    height: 60px;
+  .miniImageWrapLarge {
+    max-width: 42%;
+  }
+
+  .miniImageLarge {
+    height: 100%;
+    max-height: none;
+    max-width: 100%;
+  }
+
+  .content {
+    min-height: 72px;
+    padding: 14px 100px 14px 16px;
   }
 
   .title {
@@ -323,9 +371,34 @@
     padding: 12px 14px 12px 0;
   }
 
+  .miniImageWrapLarge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-self: auto;
+    padding: 0;
+  }
+
   .miniImage {
     max-height: 44px;
     max-width: 96px;
+  }
+
+  .miniContentLarge {
+    max-width: calc(100% - 124px);
+    padding-right: 8px;
+  }
+
+  .miniImageWrapLarge {
+    max-width: 44%;
+    margin-right: 0;
+  }
+
+  .miniImageLarge {
+    height: 100%;
+    max-height: none;
+    max-width: 100%;
   }
 
   .content {
@@ -358,13 +431,6 @@
     margin: 0;
   }
 
-  .image {
-    height: 72px;
-    width: auto;
-    bottom: 0;
-    right: 0;
-  }
-
   .rootCompact {
     margin: 0;
   }
@@ -394,9 +460,5 @@
 
   .subtitle {
     font-size: 14px;
-  }
-
-  .image {
-    height: 80px;
   }
 }

@@ -1,8 +1,6 @@
-import { api } from "@/shared/api";
-import { AffiliateProgramRegisterRequest } from "affiliate-program-api";
 import { useState } from "react";
+import axios from "axios";
 import { IRegisterRequest, register as registerApi } from "./../api/register";
-import axios, { AxiosResponse } from "axios";
 
 export const useRegister = () => {
     const [response, setResponse] = useState<{

@@ -1,0 +1,164 @@
+.card {
+  background: linear-gradient(135deg, #0f0e27 0%, #1a1838 100%);
+  border: 1px solid rgba(83, 252, 24, 0.18);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(15, 14, 39, 0.2);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(83, 252, 24, 0.15);
+  color: #53fc18;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.dotDone {
+  background: rgba(83, 252, 24, 0.18);
+  color: #53fc18;
+  border-color: rgba(83, 252, 24, 0.45);
+}
+
+.dotActive {
+  background: rgba(83, 252, 24, 0.28);
+  color: #0f0e27;
+  border-color: #53fc18;
+}
+
+.label {
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.labelDone {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.barWrap {
+  margin-bottom: 14px;
+}
+
+.barMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.barTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #53fc18);
+  transition: width 0.35s ease;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stat {
+  flex: 1 1 140px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.statLabel {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.statLocked {
+  color: #fbbf24;
+}
+
+.hint {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 720px) {
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 14px;
+  }
+}

@@ -6,6 +6,7 @@ import { StatisticsCards } from '@/widgets/statistics/StatisticsCards'
 import { StatisticsCharts } from '@/widgets/statistics/StatisticsCharts'
 import { PartnersTable } from '@/widgets/statistics/PartnersTable'
 import { TimePeriodFilter } from '@/widgets/statistics/TimePeriodFilter'
+import { BonusAnalyticsDashboard } from '@/widgets/bonuses/BonusAnalyticsDashboard'
 
 export default function StatisticsPage() {
   const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month'>('day')
@@ -62,6 +63,14 @@ export default function StatisticsPage() {
               
               {/* Charts Section */}
               <StatisticsCharts statistics={statistics} timePeriod={timePeriod} />
+
+              <section>
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Welcome-бонус</h2>
+                  <p className="text-gray-600 text-sm">Воронка, отыгрыш и сгорающие бонусы</p>
+                </div>
+                <BonusAnalyticsDashboard period={timePeriod} />
+              </section>
               
               {/* Partners Performance Table */}
               <PartnersTable statistics={statistics} />

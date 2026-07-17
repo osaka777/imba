@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
+import { TelegramModule } from '~/main/telegram/telegram.module';
 import { PartnersModule } from '~/main/partners/partners.module';
 import { UserModule } from '~/main/user/user.module';
 import { PrismaModule } from '~/prisma/prisma.module';
@@ -14,9 +15,10 @@ import { AuthRateLimitGuard } from '~/common/guards/auth-rate-limit.guard';
 @Module({
   controllers: [AuthenticationController],
   imports: [
-    UserModule, 
-    PrismaModule, 
+    UserModule,
+    PrismaModule,
     PartnersModule,
+    TelegramModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

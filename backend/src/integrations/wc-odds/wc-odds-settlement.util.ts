@@ -1,13 +1,15 @@
 import { WcOddsBetStatus, WcOddsPick } from '@prisma/client';
 
 import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
-import { isOlimpbetEventCompleted } from '../olimpbet-wc/olimpbet-event-result.util';
-import { pickSettlementScores } from '../olimpbet-wc/olimpbet-score-scope.util';
+import { isOlimpbetEventCompleted, extractOlimpbetScore } from '../olimpbet-wc/olimpbet-event-result.util';
+import { pickSettlementScores, extractPeriodScore } from '../olimpbet-wc/olimpbet-score-scope.util';
+import { isTennisGameFeed } from '../olimpbet-wc/point-set-sport-score.util';
 
+import { isTennisGamePointsTotalsScope } from './tennis-totals-scope.util';
 import type { WcMatchState } from './wc-match-state.types';
 import type { WcBetPlacementContext } from './wc-bet-placement-context.util';
 import { normalizeWcMarketKey, outcomeKeyToPick, isTotalsMarketKey } from './wc-odds-markets.util';
-import { resolveVerifiedBetResult } from './wc-verified-settlement.util';
+import { resolveTotalsScopeTotal, resolveVerifiedBetResult } from './wc-verified-settlement.util';
 
 export type WcBetSettlementInput = {
   pick: WcOddsPick | null;
@@ -61,6 +63,77 @@ function settleOverUnderTotalInPlay(
   return finished ? WcOddsBetStatus.LOSE : null;
 }
 
+function resolveHandicap3WayLine(bet: WcBetSettlementInput): number | null {
+  const fromLine = Number(bet.line);
+  if (Number.isFinite(fromLine)) return fromLine;
+
+  const name = bet.outcomeName ?? '';
+  const homeMatch = name.match(/(?:Ф1|П1|F1|P1)\s*\((-?[\d.]+)\)/i);
+  if (homeMatch) {
+    const value = Number(homeMatch[1]);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  const awayMatch = name.match(/(?:Ф2|П2|F2|P2)\s*\((-?[\d.]+)\)/i);
+  if (awayMatch) {
+    const value = Number(awayMatch[1]);
+    return Number.isFinite(value) ? -value : null;
+  }
+
+  const h3wMatch = bet.outcomeKey?.match(/^H3W_.*_(-?[\d.]+)$/);
+  if (h3wMatch) {
+    const value = Number(h3wMatch[1]);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  return null;
+}
+
+function winningPickWithHandicap(
+  homeScore: number,
+  awayScore: number,
+  handicap: number,
+): WcOddsPick {
+  const adjusted = homeScore + handicap - awayScore;
+  if (adjusted > 0) return WcOddsPick.HOME;
+  if (adjusted === 0) return WcOddsPick.DRAW;
+  return WcOddsPick.AWAY;
+}
+
+function settleYesNo(yes: boolean, outcomeKey: string | null): WcOddsBetStatus | null {
+  if (outcomeKey === 'YES') {
+    return yes ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
+  }
+  if (outcomeKey === 'NO') {
+    return yes ? WcOddsBetStatus.LOSE : WcOddsBetStatus.WIN;
+  }
+  return null;
+}
+
+function resolveHalfGoalsBet(
+  bet: WcBetSettlementInput,
+  detail: OlimpbetEventDetail | undefined,
+  mode: 'goal_each_half' | 'both_teams_both_halves',
+): WcOddsBetStatus | null {
+  if (!eventFinishedForSettlement(detail)) return null;
+
+  const firstHalf = extractPeriodScore(detail, { kind: 'half', index: 1 });
+  const secondHalf = extractPeriodScore(detail, { kind: 'half', index: 2 });
+  if (!firstHalf || !secondHalf) return null;
+
+  const firstHalfGoals = firstHalf.homeScore + firstHalf.awayScore;
+  const secondHalfGoals = secondHalf.homeScore + secondHalf.awayScore;
+
+  const yes = mode === 'goal_each_half'
+    ? firstHalfGoals > 0 && secondHalfGoals > 0
+    : firstHalf.homeScore > 0
+      && firstHalf.awayScore > 0
+      && secondHalf.homeScore > 0
+      && secondHalf.awayScore > 0;
+
+  return settleYesNo(yes, bet.outcomeKey);
+}
+
 /** Pure bet result resolver — shared by settlement service and unit tests. */
 export function resolveWcBetResult(
   bet: WcBetSettlementInput,
@@ -83,6 +156,15 @@ export function resolveWcBetResult(
 
   if (marketKey === 'h2h') {
     if (!eventFinishedForSettlement(detail)) return null;
+    if (
+      detail
+      && extractOlimpbetScore(detail).homeScore == null
+      && extractOlimpbetScore(detail).awayScore == null
+      && homeScore === 0
+      && awayScore === 0
+    ) {
+      return null;
+    }
     const winner = winningPick(homeScore, awayScore);
     const pick = bet.pick ?? outcomeKeyToPick(bet.outcomeKey || '');
     if (!pick) return WcOddsBetStatus.LOSE;
@@ -93,10 +175,29 @@ export function resolveWcBetResult(
     const line = resolveTotalsLine(bet);
     if (line == null) return WcOddsBetStatus.LOSE;
 
+    const scopeHint = bet.placementContext?.totalsGroupLabel
+      ?? bet.outcomeName
+      ?? null;
+    const scopedTotal = resolveTotalsScopeTotal(
+      bet,
+      { homeScore, awayScore, detail, matchState },
+    );
+
     let scopeTotal: number;
-    if (marketKey === 'totals_home') scopeTotal = homeScore;
-    else if (marketKey === 'totals_away') scopeTotal = awayScore;
-    else scopeTotal = homeScore + awayScore;
+    if (scopedTotal != null) {
+      scopeTotal = scopedTotal;
+    } else if (
+      isTennisGameFeed(detail)
+      && isTennisGamePointsTotalsScope(scopeHint)
+    ) {
+      return null;
+    } else if (marketKey === 'totals_home') {
+      scopeTotal = homeScore;
+    } else if (marketKey === 'totals_away') {
+      scopeTotal = awayScore;
+    } else {
+      scopeTotal = homeScore + awayScore;
+    }
 
     return settleOverUnderTotalInPlay(scopeTotal, line, bet.outcomeKey, detail);
   }
@@ -165,10 +266,24 @@ export function resolveWcBetResult(
 
   if (marketKey === 'handicap_3way') {
     if (!eventFinishedForSettlement(detail)) return null;
-    const winner = winningPick(homeScore, awayScore);
-    const pick = outcomeKeyToPick(bet.outcomeKey || '');
-    if (!pick) return WcOddsBetStatus.LOSE;
+    const pick = bet.pick ?? outcomeKeyToPick(bet.outcomeKey || '');
+    const handicap = resolveHandicap3WayLine(bet);
+    if (!pick || handicap == null) {
+      if (bet.outcomeKey?.startsWith('DISPLAY_') || bet.outcomeKey?.startsWith('H3W_')) {
+        return resolveVerifiedBetResult(bet, { homeScore, awayScore, detail, matchState });
+      }
+      return WcOddsBetStatus.LOSE;
+    }
+    const winner = winningPickWithHandicap(homeScore, awayScore, handicap);
     return pick === winner ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
+  }
+
+  if (marketKey === 'goals_both_half') {
+    return resolveHalfGoalsBet(bet, detail, 'goal_each_half');
+  }
+
+  if (marketKey === 'goals_both_teams_both_halves') {
+    return resolveHalfGoalsBet(bet, detail, 'both_teams_both_halves');
   }
 
   if (marketKey === 'goals_both_min') {

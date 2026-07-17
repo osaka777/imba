@@ -18,6 +18,7 @@ import {
   Globe,
   LogOut,
   QrCode,
+  Radio,
 } from 'lucide-react'
 import { authUtils } from '@/shared/utils/auth'
 
@@ -60,6 +61,7 @@ const navigation = [
     icon: Users,
     children: [
       { name: 'пратнеры', href: '/partners', icon: Users },
+      { name: 'Kick партнёры', href: '/kick-partners', icon: Radio },
       { name: 'Пользователи', href: '/users', icon: Users },
       { name: 'рефералы', href: '/referrals', icon: Users },
     ]

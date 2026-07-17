@@ -443,19 +443,42 @@
 
 .LicenseSection_container {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 24px;
 }
 
-.LicenseSection_copyright {
+.LicenseSection_legalBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.LicenseSection_notice {
+  margin: 0;
   font-size: 9px;
-  line-height: 12px;
+  line-height: 14px;
   font-weight: 400;
-  color: #34405e;
-  flex: auto;
+  color: #5a647a;
+}
+
+.LicenseSection_notice a {
+  font-size: 9px;
+  line-height: 14px;
+  color: #8692aca6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.LicenseSection_notice a:hover {
+  color: #b8c0d0;
 }
 
 .LicenseSection_bold {
   font-size: 9px;
+  line-height: 12px;
   color: #34405e;
   font-weight: 700;
 }
@@ -466,8 +489,8 @@
   flex: none;
   height: -moz-min-content;
   height: min-content;
-  margin-left: 70px;
-  /* padding-bottom: 20px; */
+  margin-left: auto;
+  padding-top: 2px;
 }
 
 .Listings_desktop {

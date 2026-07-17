@@ -56,6 +56,14 @@ export const LazyUsdtPromoModal = dynamic(
   { ssr: false },
 );
 
+export const LazyWelcomeBonusModal = dynamic(
+  () =>
+    import("~/entities/game/ui/LuckyDrive/WelcomeBonusModal").then(
+      (m) => m.WelcomeBonusModal,
+    ),
+  { ssr: false },
+);
+
 export const LazyCouponSidebar = dynamic(
   () =>
     import("~/entities/bet/ui/Coupon/CouponWrapper").then(

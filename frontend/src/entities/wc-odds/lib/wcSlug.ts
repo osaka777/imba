@@ -119,7 +119,7 @@ export function makeWcGameMetadata(event: {
   const description = `Ставки на матч ${event.homeTeam} — ${event.awayTeam}. Коэффициенты, тоталы и исходы на Imba.bet.`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords: [
       event.homeTeam,
@@ -142,11 +142,43 @@ export function makeWcGameMetadata(event: {
   };
 }
 
-export async function fetchWcEventByRef(ref: string) {
-  const host = process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
-  const res = await fetch(`${host}/api/feed/events/${encodeURIComponent(ref)}`, {
+import { cache } from "react";
+
+/** Server-side: hit backend directly. Browser: same-origin public host. */
+function feedApiHost(): string {
+  if (typeof window === "undefined") {
+    return (
+      process.env.BACKEND_URL
+      || process.env.BACKEND_INTERNAL_URL
+      || process.env.NEXT_PUBLIC_HOST
+      || "http://localhost:3000"
+    );
+  }
+  return process.env.NEXT_PUBLIC_HOST || window.location.origin;
+}
+
+export const fetchWcEventByRef = cache(async function fetchWcEventByRef(
+  ref: string,
+  options?: { sync?: boolean },
+) {
+  const host = feedApiHost();
+  let locale = "ru";
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const raw = jar.get("imba_locale")?.value;
+    if (raw === "en" || raw === "ru") locale = raw;
+  } catch {
+    // SSR cookie unavailable in some contexts
+  }
+  const q = options?.sync ? "?sync=1" : "";
+  const res = await fetch(`${host}/api/feed/events/${encodeURIComponent(ref)}${q}`, {
     cache: "no-store",
+    headers: {
+      "X-Locale": locale,
+      "Accept-Language": locale,
+    },
   });
   if (!res.ok) return null;
   return res.json();
-}
+});

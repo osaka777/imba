@@ -18,6 +18,8 @@ const SCORE_MARKET_KEYS = new Set([
   'btts',
   'even_odd',
   'goals_both_min',
+  'goals_both_half',
+  'goals_both_teams_both_halves',
   'double_chance',
 ]);
 

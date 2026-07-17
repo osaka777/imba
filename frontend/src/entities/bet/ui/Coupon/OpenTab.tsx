@@ -18,19 +18,35 @@ import { getLegacyOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDis
 import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { WcExpressOpenBetCard } from "~/entities/wc-odds/ui/WcExpressOpenBetCard";
 import { WcOpenBetCard } from "~/entities/wc-odds/ui/WcOpenBetCard";
+import { useWcCashoutQuotes } from "~/entities/wc-odds/lib/useWcCashoutQuotes";
 import { gamesList } from "~/entities/game";
 import { LoadingSpinner } from "~/shared/ui";
+import { getClientLocale } from "~/shared/i18n/get-client-locale";
+import { translate, type MessageKey } from "~/shared/i18n/messages";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { createTitleForBet } from "../../lib";
 import { OpenBetSlipCard, OpenBetSlipExpressLeg } from "./OpenBetSlipCard";
 import styles from "./OpenTab.module.css";
 
-const FILTERS: { id: OpenBetFilter; label: string }[] = [
-  { id: "all", label: "Все" },
-  { id: "live", label: "Live" },
-  { id: "line", label: "Линия" },
-  { id: "today", label: "Сегодня" },
-];
+const FILTER_IDS: OpenBetFilter[] = ["all", "live", "line", "today"];
+
+function tt(key: MessageKey, params?: Record<string, string | number>) {
+  return translate(getClientLocale(), key, params);
+}
+
+function filterLabel(id: OpenBetFilter) {
+  if (id === "all") return tt("coupon.all");
+  if (id === "live") return tt("coupon.live");
+  if (id === "line") return tt("coupon.line");
+  return tt("coupon.today");
+}
+
+function eventWord(count: number) {
+  if (count === 1) return tt("coupon.eventWord1");
+  if (count < 5) return tt("coupon.eventWord2");
+  return tt("coupon.eventWord5");
+}
 
 function getBetNameFromApiResponse(bet: Record<string, unknown>, betIndex?: number): string {
   try {
@@ -102,7 +118,7 @@ function renderLegacyOrdiCard(bet: Record<string, unknown>) {
     <OpenBetSlipCard
       coef={cf}
       dataKey={`r-${bet.id}`}
-      footerRightLabel={bonusProgress ? "Прогресс к бонусу" : "Возм. выигрыш"}
+      footerRightLabel={bonusProgress ? tt("coupon.bonusProgress") : tt("coupon.potentialWinShort")}
       footerRightValue={
         bonusProgress
           ? `${bonusProgress.current}/${bonusProgress.total}`
@@ -113,7 +129,7 @@ function renderLegacyOrdiCard(bet: Record<string, unknown>) {
       highlight={isFresh}
       isLive={isLive}
       key={`r-${bet.id}`}
-      kindLabel="Ординар"
+      kindLabel={tt("coupon.ordinar")}
       kickoffLabel={
         !isLive && kickoffRaw
           ? formatOpenBetKickoff(String(kickoffRaw))
@@ -123,7 +139,7 @@ function renderLegacyOrdiCard(bet: Record<string, unknown>) {
         game?.leagueName ? truncateLeagueName(String(game.leagueName)) : null
       }
       matchHref={href}
-      matchLinkText="Перейти к событию →"
+      matchLinkText={tt("coupon.goToEvent")}
       outcome={getBetNameFromApiResponse(bet)}
       placedAt={formatCouponPlacedAt(String(bet.createdAt ?? ""))}
       scoreDetail={scoreDetail}
@@ -151,7 +167,7 @@ function renderExpressCard(bet: Record<string, unknown>) {
     <OpenBetSlipCard
       coef={cf}
       dataKey={`e-${bet.id}`}
-      footerRightLabel={bonusProgress ? "Прогресс к бонусу" : "Возм. выигрыш"}
+      footerRightLabel={bonusProgress ? tt("coupon.bonusProgress") : tt("coupon.potentialWinShort")}
       footerRightValue={
         bonusProgress
           ? `${bonusProgress.current}/${bonusProgress.total}`
@@ -162,9 +178,9 @@ function renderExpressCard(bet: Record<string, unknown>) {
       highlight={isFresh}
       isLive={isLive}
       key={`e-${bet.id}`}
-      kindLabel="Экспресс"
+      kindLabel={tt("coupon.express")}
       matchHref="#"
-      outcome={`${legs.length} ${legs.length === 1 ? "событие" : legs.length < 5 ? "события" : "событий"}`}
+      outcome={`${legs.length} ${eventWord(legs.length)}`}
       placedAt={formatCouponPlacedAt(String(bet.createdAt ?? ""))}
       stakeLabel={formatCouponMoney(amount, currencyCode)}
       teamsLabel=""
@@ -200,28 +216,34 @@ function renderExpressCard(bet: Record<string, unknown>) {
   );
 }
 
-export const OpenTab = () => {
+export const OpenTab = ({ isActive = true }: { isActive?: boolean }) => {
+  const { t } = useLocale();
   const [filter, setFilter] = useState<OpenBetFilter>("all");
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useQuery({
     queryFn: () => getBets(),
     queryKey: ["bets", "open"],
-    refetchInterval: 3000,
-    refetchIntervalInBackground: true,
-    staleTime: 0,
+    staleTime: 4_000,
   });
 
   const { data: wcGrouped = { ordinar: [], express: [] }, isLoading: wcLoading } = useQuery({
     queryFn: () => getMyWcBetsGrouped("PENDING"),
     queryKey: ["wc-bets", "pending"],
-    refetchInterval: 3000,
-    refetchIntervalInBackground: true,
-    staleTime: 0,
+    staleTime: 4_000,
   });
 
   const wcBets = wcGrouped.ordinar;
   const wcExpressBets = wcGrouped.express;
+
+  const pendingWcBetIds = useMemo(
+    () => wcBets.map((bet) => bet.id),
+    [wcBets],
+  );
+  const { data: cashoutQuotes = {}, isLoading: cashoutLoading } = useWcCashoutQuotes(
+    pendingWcBetIds,
+    isActive && pendingWcBetIds.length > 0,
+  );
 
   const filteredData = data
     ? {
@@ -266,14 +288,14 @@ export const OpenTab = () => {
   return (
     <div className={styles.openTab} data-open-bets-panel ref={listRef}>
       <div className={styles.filterBar}>
-        {FILTERS.map(({ id, label }) => (
+        {FILTER_IDS.map((id) => (
           <button
             className={`${styles.filterChip} ${filter === id ? styles.filterChipActive : ""}`}
             key={id}
             onClick={() => setFilter(id)}
             type="button"
           >
-            {label}
+            {filterLabel(id)}
             {filterCounts[id] > 0 ? ` · ${filterCounts[id]}` : ""}
           </button>
         ))}
@@ -295,8 +317,10 @@ export const OpenTab = () => {
           return (
             <WcOpenBetCard
               bet={entry.wcBet}
+              cashoutQuote={cashoutQuotes[entry.wcBet.id]}
               highlight={isFreshOpenBet(entry.createdAt)}
               key={entry.key}
+              quotesLoading={cashoutLoading}
             />
           );
         }
@@ -312,17 +336,17 @@ export const OpenTab = () => {
       {visibleEntries.length === 0 && !isLoading && !wcLoading && (
         <div className={styles.notFound}>
           {filter === "all"
-            ? "Вы не сделали ни одной ставки"
+            ? t("coupon.emptyOpenBets")
             : (
               <>
-                Нет ставок по фильтру «{FILTERS.find((f) => f.id === filter)?.label}»
+                {t("coupon.emptyFilter", { filter: filterLabel(filter) })}
                 {allEntries.length > 0 ? (
                   <button
                     className={styles.filterResetBtn}
                     onClick={() => setFilter("all")}
                     type="button"
                   >
-                    Показать все
+                    {t("coupon.showAll")}
                   </button>
                 ) : null}
               </>

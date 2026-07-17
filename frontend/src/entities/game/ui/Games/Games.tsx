@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import InfiniteScroll from "react-infinite-scroller";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { LoadingSpinner } from "~/shared/ui";
 import { transformApiGames } from "../../lib/transformApiGames";
 import { useSportFilter } from "../../lib/useSportFilter";
@@ -27,12 +28,17 @@ import {
 import { useWcListPaginationLimits } from "~/entities/wc-odds/lib/useWcListPaginationLimits";
 import { WcLeagueMenu } from "~/entities/wc-odds/ui/WcLeagueMenu";
 import { Header } from "~/widgets/Header";
+import { isEsportsSport } from "~/entities/cybersport/lib/isEsportsSport";
+import { useCybersportFeed } from "~/entities/cybersport/hooks/useCybersportFeed";
+import { CybersportLeagueMenu } from "~/entities/cybersport/ui/CybersportLeagueMenu";
 
 const GamesComponent = ({
   className,
   queryOptions: { queryFn, queryKey },
 }: any) => {
+  const { t } = useLocale();
   const sport = useSportFilter();
+  const isEsports = Boolean(sport && isEsportsSport(sport));
   const { initialLimit, pageSize } = useWcListPaginationLimits(
     WC_LIVE_INITIAL_LIMIT,
     WC_LIVE_INITIAL_LIMIT_MOBILE,
@@ -47,7 +53,16 @@ const GamesComponent = ({
     loadMore: loadMoreOlimpbet,
     leagues: olimpbetLeagues,
   } = useOlimpbetLive(sport);
-  const hasOlimpbetLive = olimpbetEnabled !== false && olimpbetLeagues.length > 0;
+  const hasOlimpbetLive = !isEsports && olimpbetEnabled !== false && olimpbetLeagues.length > 0;
+
+  const {
+    leagues: cyberLeagues,
+    isLoading: cyberLoading,
+    isFetchingNextPage: cyberLoadingMore,
+    hasNextPage: cyberHasMore,
+    fetchNextPage: fetchMoreCyber,
+    error: cyberError,
+  } = useCybersportFeed(sport, "live");
 
   const queryClient = useQueryClient();
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -96,10 +111,16 @@ const GamesComponent = ({
     // Отключаем автоматическую загрузку в фоне
     refetchOnReconnect: false,
     // BetAPI live отключён, когда активна линия Olimpbet
-    enabled: typeof window !== "undefined" && olimpbetEnabled === false,
+    enabled: typeof window !== "undefined" && !isEsports && olimpbetEnabled === false,
   });
 
   const loadMore = useCallback(() => {
+    if (isEsports) {
+      if (cyberHasMore && !cyberLoadingMore) {
+        void fetchMoreCyber();
+      }
+      return;
+    }
     if (olimpbetEnabled !== false) {
       if (olimpbetHasMore && !olimpbetLoadingMore) {
         void loadMoreOlimpbet();
@@ -110,8 +131,12 @@ const GamesComponent = ({
       fetchNextPage();
     }
   }, [
+    cyberHasMore,
+    cyberLoadingMore,
+    fetchMoreCyber,
     fetchNextPage,
     hasNextPage,
+    isEsports,
     isFetchingNextPage,
     loadMoreOlimpbet,
     olimpbetEnabled,
@@ -119,8 +144,11 @@ const GamesComponent = ({
     olimpbetLoadingMore,
   ]);
 
-  const hasMoreToLoad =
-    olimpbetEnabled !== false ? olimpbetHasMore : Boolean(hasNextPage);
+  const hasMoreToLoad = isEsports
+    ? cyberHasMore
+    : olimpbetEnabled !== false
+      ? olimpbetHasMore
+      : Boolean(hasNextPage);
 
   const games = useMemo(() => {
     if (!data?.pages) return [];
@@ -268,8 +296,10 @@ const GamesComponent = ({
   const showGamesLoader =
     isFetchingNextPage
     || olimpbetLoadingMore
+    || cyberLoadingMore
+    || (isEsports && cyberLoading && cyberLeagues.length === 0)
     || (olimpbetEnabled !== false && olimpbetLoading && olimpbetLeagues.length === 0)
-    || (olimpbetEnabled === false && isLoading && games.length === 0);
+    || (olimpbetEnabled === false && !isEsports && isLoading && games.length === 0);
 
   return (
     <div className={cn(styles.Games, className)}>
@@ -291,7 +321,9 @@ const GamesComponent = ({
             className={sport ? shellStyles.sportsMenuSlot_mobileHidden : undefined}
           />
           {sport ? (
-            olimpbetEnabled !== false ? (
+            isEsports ? (
+              <CybersportLeagueMenu type="live" layout="sidebar" />
+            ) : olimpbetEnabled !== false ? (
               <WcLeagueMenu type="live" layout="sidebar" />
             ) : (
               <SubcategoryMenu type="live" layout="sidebar" />
@@ -309,31 +341,54 @@ const GamesComponent = ({
       <Search sport={sport} hideOnDesktop />
       <InfiniteScroll
         className={styles.Games}
-        hasMore={hasMoreToLoad && !isFetchingNextPage && !olimpbetLoadingMore}
+        hasMore={hasMoreToLoad && !isFetchingNextPage && !olimpbetLoadingMore && !cyberLoadingMore}
         loadMore={loadMore}
         pageStart={0}
         threshold={250}
         element="div"
         useWindow={true}
       >
-        {error && (
+        {(cyberError) && (
           <div className="p-4 text-center bg-red-500/10 text-red-500">
-            Ошибка загрузки игр. Пожалуйста, попробуйте позже.
+            {t("common.gamesLoadError")}
           </div>
         )}
-        <OlimpbetLineBlocks leagues={olimpbetLeagues} showInlineStats={false} />
-        {games.length === 0 && !isLoading && !error && !hasOlimpbetLive && !olimpbetLoading && (
-          <p className="p-4 text-center bg-white/5">Игры не найдены</p>
+        {(error && olimpbetEnabled === false) && (
+          <div className="p-4 text-center bg-red-500/10 text-red-500">
+            {t("common.gamesLoadError")}
+          </div>
         )}
-        {games.map((league, index) => (
-          <TournamentTable
-            games={league.games}
-            isLive={true}
-            key={league.leagueName + index}
-            league={league.leagueName}
-            sport={league.games[0].sport}
-          />
-        ))}
+        {!isEsports ? <OlimpbetLineBlocks leagues={olimpbetLeagues} showInlineStats={false} /> : null}
+        {isEsports ? (
+          cyberLeagues.length === 0 && !cyberLoading && !cyberError ? (
+            <p className="p-4 text-center bg-white/5">{t("common.gamesNotFound")}</p>
+          ) : (
+            cyberLeagues.map((league, index) => (
+              <TournamentTable
+                gameLinkPrefix="/cybersport/game/"
+                games={league.games}
+                isLive={true}
+                key={league.leagueName + index}
+                league={league.leagueName}
+                sport={league.games[0]?.sport ?? sport!}
+              />
+            ))
+          )
+        ) : null}
+        {!isEsports && games.length === 0 && !isLoading && !error && !hasOlimpbetLive && !olimpbetLoading && (
+          <p className="p-4 text-center bg-white/5">{t("common.gamesNotFound")}</p>
+        )}
+        {!isEsports
+          ? games.map((league, index) => (
+              <TournamentTable
+                games={league.games}
+                isLive={true}
+                key={league.leagueName + index}
+                league={league.leagueName}
+                sport={league.games[0].sport}
+              />
+            ))
+          : null}
         {showGamesLoader ? (
           <LoadingSpinner key="games-loading" className={styles.loading} />
         ) : null}

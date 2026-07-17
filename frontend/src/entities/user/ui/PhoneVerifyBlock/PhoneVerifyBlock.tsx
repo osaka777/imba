@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 
 import { getSessionClient } from "~/entities/user/lib/getSessionClient";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./PhoneVerifyBlock.module.css";
 
@@ -15,7 +16,7 @@ type PhoneVerifyBlockProps = {
   onVerified?: () => void;
 };
 
-async function apiPost(path: string, body: object) {
+async function apiPost(path: string, body: object, fallbackError: string) {
   const token = getSessionClient();
   const res = await fetch(`${window.location.origin}/api/user/${path}`, {
     method: "POST",
@@ -30,7 +31,7 @@ async function apiPost(path: string, body: object) {
     throw new Error(
       typeof data?.message === "string"
         ? data.message
-        : "Не удалось выполнить запрос",
+        : fallbackError,
     );
   }
   return data;
@@ -42,23 +43,25 @@ export function PhoneVerifyBlock({
   telegramLinked,
   onVerified,
 }: PhoneVerifyBlockProps) {
+  const { t } = useLocale();
   const [phoneInput, setPhoneInput] = useState(phone || "");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const requestFailed = t("profile.phoneRequestFailed");
 
   const requestMutation = useMutation({
-    mutationFn: () => apiPost("phone/request-code", { phone: phoneInput }),
+    mutationFn: () => apiPost("phone/request-code", { phone: phoneInput }, requestFailed),
     onSuccess: () => {
       setCodeSent(true);
-      toast.success("Код отправлен в Telegram");
+      toast.success(t("profile.phoneCodeSent"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const verifyMutation = useMutation({
-    mutationFn: () => apiPost("phone/verify", { code }),
+    mutationFn: () => apiPost("phone/verify", { code }, requestFailed),
     onSuccess: () => {
-      toast.success("Телефон подтверждён");
+      toast.success(t("profile.phoneVerified"));
       onVerified?.();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -67,10 +70,10 @@ export function PhoneVerifyBlock({
   if (phoneVerified) {
     return (
       <div className={styles.card}>
-        <div className={styles.badge}>✓ Подтверждён</div>
-        <p className={styles.title}>Телефон верифицирован</p>
+        <div className={styles.badge}>{t("profile.phoneVerifiedBadge")}</div>
+        <p className={styles.title}>{t("profile.phoneVerifiedTitle")}</p>
         <p className={styles.hint}>
-          Повышенный дневной лимит на вывод средств активен.
+          {t("profile.phoneVerifiedHint")}
         </p>
       </div>
     );
@@ -78,14 +81,13 @@ export function PhoneVerifyBlock({
 
   return (
     <div className={styles.card}>
-      <p className={styles.title}>Верификация телефона</p>
+      <p className={styles.title}>{t("profile.phoneVerifyTitle")}</p>
       <p className={styles.hint}>
-        Без подтверждения — лимит вывода 50&nbsp;000 ₸/день. Код приходит в
-        Telegram-бот после привязки аккаунта.
+        {t("profile.phoneVerifyHint")}
       </p>
 
       {!telegramLinked ? (
-        <p className={styles.warn}>Сначала привяжите Telegram выше.</p>
+        <p className={styles.warn}>{t("profile.phoneLinkTgFirst")}</p>
       ) : (
         <>
           <input
@@ -102,7 +104,7 @@ export function PhoneVerifyBlock({
               onClick={() => requestMutation.mutate()}
               type="button"
             >
-              {requestMutation.isPending ? "Отправка…" : "Получить код"}
+              {requestMutation.isPending ? t("profile.phoneSending") : t("profile.phoneGetCode")}
             </button>
           ) : (
             <>
@@ -111,7 +113,7 @@ export function PhoneVerifyBlock({
                 inputMode="numeric"
                 maxLength={6}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                placeholder="Код из Telegram"
+                placeholder={t("profile.phoneTgCode")}
                 value={code}
               />
               <button
@@ -120,7 +122,7 @@ export function PhoneVerifyBlock({
                 onClick={() => verifyMutation.mutate()}
                 type="button"
               >
-                {verifyMutation.isPending ? "Проверка…" : "Подтвердить"}
+                {verifyMutation.isPending ? t("profile.phoneChecking") : t("profile.phoneConfirm")}
               </button>
             </>
           )}

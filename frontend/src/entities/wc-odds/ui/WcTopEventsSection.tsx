@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ReactNode, useCallback, useEffect, useState } from "react";
+import { FiTrendingUp } from "react-icons/fi";
 
 import { useSocialPulse } from "~/entities/social-pulse/lib/useSocialPulse";
 import {
@@ -94,6 +95,20 @@ function WcTopEventsSectionInner() {
 
   return (
     <section aria-label={t("home.topEvents")} className={styles.section}>
+      <header className={styles.header}>
+        <div className={styles.heading}>
+          <span className={styles.eyebrow}>
+            <i aria-hidden />
+            {t("home.topEventsLive")}
+          </span>
+          <h2>{t("home.topEvents")}</h2>
+          <p>{t("home.topEventsSubtitle")}</p>
+        </div>
+        <span className={styles.legend}>
+          <FiTrendingUp aria-hidden />
+          {t("home.topEventsLegend")}
+        </span>
+      </header>
       <div className={styles.track}>
         {loading
           ? Array.from({ length: HOMEPAGE_TOP_EVENTS_TOTAL }).map((_, index) => (

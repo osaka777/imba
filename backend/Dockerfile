@@ -1,10 +1,13 @@
 FROM node:22-slim
 
-# Установка зависимостей
+# python3/make/g++ — fallback сборка native-модулей (bcrypt), если prebuild с GitHub недоступен
 RUN apt-get update && apt-get install -y \
   postgresql-client \
   openssl \
   wget \
+  python3 \
+  make \
+  g++ \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

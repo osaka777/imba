@@ -5,3 +5,18 @@
   overflow: hidden;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
 }
+
+.Tournament_cyber {
+  background: var(--twitch-bg-card, #18181b);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 10px;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.body_cyber {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}

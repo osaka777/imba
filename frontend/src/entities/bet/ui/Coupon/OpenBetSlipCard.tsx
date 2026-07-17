@@ -51,6 +51,7 @@ export type OpenBetSlipCardProps = {
   highlight?: boolean;
   dataKey: string;
   children?: ReactNode;
+  postFooter?: ReactNode;
 };
 
 export function OpenBetSlipCard({
@@ -78,6 +79,7 @@ export function OpenBetSlipCard({
   highlight,
   dataKey,
   children,
+  postFooter,
 }: OpenBetSlipCardProps) {
   const rightValue = footerRightValue ?? winLabel;
   const coefFlash = useFlashOnChange(coef);
@@ -94,20 +96,20 @@ export function OpenBetSlipCard({
     >
       <div className={styles.openBetHeaderBar}>
         <span className={styles.openBetHeaderDate}>{headerDate}</span>
-        {kindLabel === "Ординар" ? (
-          <span className={styles.openBetHeaderBrandLogo}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className={styles.openBetHeaderCenter}>
+          {kindLabel === "Ординар" ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               alt="Imba.bet"
-              className={styles.openBetHeaderBrandLogoImg}
+              className={styles.openBetHeaderBrandLogo}
               height={18}
               src={ORDINAR_BRAND_LOGO}
               width={72}
             />
-          </span>
-        ) : (
-          <span className={styles.openBetHeaderBrand}>{kindLabel}</span>
-        )}
+          ) : (
+            <span className={styles.openBetHeaderBrand}>{kindLabel}</span>
+          )}
+        </div>
         <span className={styles.openBetHeaderId}>ID {ticketId}</span>
       </div>
 
@@ -197,6 +199,8 @@ export function OpenBetSlipCard({
             </span>
           </div>
         </div>
+
+        {postFooter}
 
         <div aria-hidden className={styles.openBetScallops} />
       </div>

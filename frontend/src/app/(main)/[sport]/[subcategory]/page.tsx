@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { api } from "~/shared/api";
 import { GamesBySportAndSubcategory } from "~/entities/game";
 import { Header } from "~/widgets/Header";
+import { makeMetadata } from "~/shared/lib";
 
 interface SubcategoryPageProps {
   params: {
@@ -15,9 +16,11 @@ export const generateMetadata = async ({
   params,
 }: SubcategoryPageProps): Promise<Metadata> => {
   const paramsObj = await params;
-  return {
-    title: `${paramsObj.sport} - ${paramsObj.subcategory} - Live режим - Kazik`,
-  };
+  const label = `${paramsObj.sport} — ${paramsObj.subcategory}`;
+  return makeMetadata(`Live: ${label}`, {
+    description: `Live-ставки на ${label} в Imba.bet.`,
+    path: `/${paramsObj.sport}/${paramsObj.subcategory}`,
+  });
 };
 
 export default async function SubcategoryPage({

@@ -1,0 +1,202 @@
+.card {
+  background: linear-gradient(135deg, #0f0e27 0%, #4a2d7a 100%);
+  border-radius: 20px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(15, 14, 39, 0.18);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(49, 188, 105, 0.2);
+  color: #7dffb0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.liveBadge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #31bc69;
+  box-shadow: 0 0 8px #31bc69;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.duration {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statHighlight {
+  background: rgba(83, 252, 24, 0.1);
+  border-color: rgba(83, 252, 24, 0.25);
+}
+
+.statLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.statHighlight .statValue {
+  color: #53fc18;
+}
+
+.footer {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.race {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.raceTitle {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fcd34d;
+}
+
+.raceBar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.raceFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #53fc18);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+.streakInline {
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fcd34d;
+}
+
+.streakCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(111, 72, 167, 0.08));
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.streakFlame {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.streakTitle {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f0e27;
+}
+
+.streakText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.guess {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.guessTitle {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.guessMeta {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.guessList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guessList li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+}

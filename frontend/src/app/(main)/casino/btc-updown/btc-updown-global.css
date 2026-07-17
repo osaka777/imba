@@ -1,0 +1,15 @@
+html[data-btc-page] main {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "nav"
+    "content" !important;
+}
+
+html[data-btc-page] main > *:last-child {
+  display: none !important;
+}
+
+html[data-btc-page] main > div:nth-child(2) {
+  max-width: 100%;
+  padding-inline: 0;
+}

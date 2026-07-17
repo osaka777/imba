@@ -77,23 +77,13 @@ export function buildInternationalPhone(dialCode: string, localDigits: string): 
   return `+${dialDigits}${local}`;
 }
 
-export const REGISTRATION_CURRENCY_CODES = [
-  "KZT",
-  "RUB",
-  "USD",
-  "USDT",
-  "UAH",
-  "TRY",
-  "UZS",
-  "AZN",
-  "KGS",
-  "TJS",
-] as const;
+import { VISIBLE_SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
+
+export const REGISTRATION_CURRENCY_CODES = VISIBLE_SITE_CURRENCY_CODES;
 
 export const REGISTRATION_CURRENCY_LABELS: Record<string, string> = {
   KZT: "Тенге (KZT)",
   RUB: "Российский рубль",
-  USD: "Доллар США",
   USDT: "Tether (USDT)",
   UAH: "Гривна",
   TRY: "Турецкая лира",
@@ -106,7 +96,6 @@ export const REGISTRATION_CURRENCY_LABELS: Record<string, string> = {
 export const REGISTRATION_CURRENCY_SHORT_LABELS: Record<string, string> = {
   KZT: "Тенге",
   RUB: "Рубль",
-  USD: "Доллар",
   USDT: "USDT",
   UAH: "Гривна",
   TRY: "Лира",
@@ -119,7 +108,6 @@ export const REGISTRATION_CURRENCY_SHORT_LABELS: Record<string, string> = {
 const REGISTRATION_CURRENCY_ICON_FILES: Record<string, string> = {
   KZT: "kzt.svg",
   RUB: "rub.svg",
-  USD: "usd.svg",
   USDT: "usdt.svg",
   UAH: "uah.svg",
   TRY: "try.svg",

@@ -6,6 +6,7 @@ import {
   shouldShowKickoffTicker,
 } from "~/entities/wc-odds/lib/wcKickoffCountdown";
 import { formatWcCompactTime } from "~/entities/wc-odds/lib/wcCompactFormat";
+import { useLocale } from "~/shared/model/useLocale";
 import { useKickoffCountdown } from "~/entities/wc-odds/lib/useKickoffCountdown";
 
 import styles from "~/entities/wc-odds/ui/WcPrematchKickoffCountdown.module.css";
@@ -15,8 +16,9 @@ type WcPrematchKickoffCountdownProps = {
 };
 
 export function WcPrematchKickoffCountdown({ commenceTime }: WcPrematchKickoffCountdownProps) {
+  const { locale } = useLocale();
   const countdown = useKickoffCountdown(commenceTime);
-  const { date, time } = formatWcCompactTime(commenceTime);
+  const { date, time } = formatWcCompactTime(commenceTime, locale);
   const showTicker = shouldShowKickoffTicker(countdown.totalMs);
   const humanHint = formatKickoffCountdownHuman(countdown.totalMs);
 

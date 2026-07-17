@@ -1,5 +1,8 @@
 export function getApiBaseUrl() {
-  const host = process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
+  const host =
+    (typeof window === "undefined" && (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_MAIN_SITE))
+    || process.env.NEXT_PUBLIC_HOST
+    || "http://localhost:3000";
   const base = host.replace(/\/$/, "");
   return base.endsWith("/api") ? base : `${base}/api`;
 }

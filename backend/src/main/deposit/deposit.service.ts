@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { DepositStatus, OperationSource, OperationStatus, OperationType } from '@prisma/client';
 
@@ -38,6 +38,19 @@ export class DepositService {
   async createDeposit(data: CreateDepositData) {
     this.logger.log(`[DEBUG] Creating deposit for user ${data.userId}, amount: ${data.amount} ${data.currencyCode}`);
     this.logger.log(`[DEBUG] Deposit data:`, JSON.stringify(data, null, 2));
+
+    const pendingDeposit = await this.prismaService.deposit.findFirst({
+      where: {
+        userId: data.userId,
+        status: { in: [DepositStatus.PENDING, DepositStatus.PROCESSING] },
+      },
+      select: { id: true },
+    });
+    if (pendingDeposit) {
+      throw new BadRequestException(
+        'У вас уже есть активная заявка на пополнение. Дождитесь её обработки или отмены.',
+      );
+    }
 
     try {
       this.logger.log(`[DEBUG] About to call prismaService.deposit.create`);

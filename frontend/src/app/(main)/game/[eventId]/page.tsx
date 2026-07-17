@@ -71,6 +71,7 @@ export default async function MatchPage({ params }: PageProps) {
   const { eventId } = await params;
 
   if (isOlimpbetGameRef(eventId)) {
+    // Fast SSR from cache — markets unlock via WS focused oddsOnly refresh.
     const event = await fetchWcEventByRef(eventId);
     if (!event) {
       notFound();

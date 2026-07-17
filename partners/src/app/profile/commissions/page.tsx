@@ -1,5 +1,6 @@
 import { getCommissions } from "@/entities/user/api/getCommissions";
 import { getPostbacks } from "@/entities/user/api/getPostbacks";
+import { formatMoney } from "@/shared/lib/formatCurrencySymbol";
 import shell from "../profile-shell.module.css";
 
 export default async function CommissionsPage() {
@@ -40,7 +41,7 @@ export default async function CommissionsPage() {
                     <td>{new Date(item.createdAt).toLocaleString("ru-RU")}</td>
                     <td>{item.type === "INCOME" ? "Начисление" : "Сторно"}</td>
                     <td>
-                      {item.amount.toFixed(2)} {item.currencyCode}
+                      {formatMoney(item.amount, item.currencyCode)}
                     </td>
                     <td>
                       {item.onHold && item.holdUntil

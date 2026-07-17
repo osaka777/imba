@@ -1,0 +1,29 @@
+/* Светлая зона личного кабинета — наследование тёмного текста */
+[data-profile-light] {
+  color: #0f0e27;
+}
+
+[data-profile-light] input:not([type="submit"]):not([type="button"]):not(.withdrawal_card_input),
+[data-profile-light] select,
+[data-profile-light] textarea {
+  color: #0f0e27;
+  -webkit-text-fill-color: #0f0e27;
+}
+
+[data-profile-light] input:not([type="submit"]):not([type="button"]):not(.withdrawal_card_input),
+[data-profile-light] select:not([data-dark-select]),
+[data-profile-light] textarea {
+  background-color: #f8fafc;
+}
+
+[data-profile-light] input::placeholder,
+[data-profile-light] textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+  -webkit-text-fill-color: #94a3b8;
+}
+
+[data-profile-light] select option {
+  color: #0f0e27;
+  background-color: #fff;
+}

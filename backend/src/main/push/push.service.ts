@@ -20,6 +20,16 @@ export class PushService {
       notifyLiveMatch: dto.notifyLiveMatch ?? true,
     };
 
+    if (userId != null) {
+      await this.prisma.pushDevice.deleteMany({
+        where: {
+          userId,
+          platform: dto.platform ?? 'android',
+          fcmToken: { not: dto.fcmToken },
+        },
+      });
+    }
+
     return this.prisma.pushDevice.upsert({
       where: { fcmToken: dto.fcmToken },
       create: {

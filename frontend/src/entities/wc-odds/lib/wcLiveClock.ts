@@ -1,4 +1,5 @@
 import type { WcEventDetail } from "~/entities/wc-odds/api/client";
+import { isStaleSoccerBreak } from "~/entities/wc-odds/lib/wcSoccerPhase";
 import { isCountdownClockSport } from "./wcSportKinds";
 
 /** Strip period suffixes like " - T2", " · 2Т" from Olimpbet clock strings. */
@@ -251,7 +252,7 @@ export function isWcLiveClockRunning(event: WcClockEvent): boolean {
   if (SET_SPORTS.has(event.sport)) return false;
 
   const score = event.parsedScore;
-  if (score?.gamePhase === "break") return false;
+  if (score?.gamePhase === "break" && !isStaleSoccerBreak(score)) return false;
 
   const source = resolveLiveClockSource(event);
   if (source.baseSeconds > 0) return true;

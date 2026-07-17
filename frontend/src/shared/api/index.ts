@@ -1,16 +1,41 @@
 import createClient from "openapi-fetch";
 import { createManagedInterval } from "../lib";
+import { getClientLocale } from "../i18n/get-client-locale";
 import { components } from './api';
 
 const getApiUrl = () => {
-  // Всегда используем NEXT_PUBLIC_HOST для API запросов
-  return process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000';
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
 };
 
 const API_URL = getApiUrl();
 
 export const api = createClient<any>({
   baseUrl: API_URL,
+});
+
+api.use({
+  // openapi-fetch ^0.9 passes Request as the 1st arg;
+  // 0.12+ passes { request }. Support both so currency/user fetches don't crash.
+  onRequest(input: Request | { request: Request }) {
+    const request =
+      input instanceof Request
+        ? input
+        : input?.request instanceof Request
+          ? input.request
+          : null;
+
+    if (!request) {
+      return input instanceof Request ? input : input?.request;
+    }
+
+    const locale = getClientLocale();
+    request.headers.set("Accept-Language", locale);
+    request.headers.set("X-Locale", locale);
+    return request;
+  },
 });
 
 // Export components type from generated schema

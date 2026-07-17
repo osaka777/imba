@@ -1,6 +1,7 @@
 import { getReferralLink } from "@/entities/user/api/getReferralLink";
 import { getReferredClients } from "@/entities/user/api/getClients";
 import { ReferralLinkCard } from "@/widgets/ReferralLink/ReferralLinkCard";
+import { ReferralHowItWorks } from "@/widgets/ReferralHowItWorks/ReferralHowItWorks";
 import { PartnerPromoCreateForm } from "@/widgets/PartnerPromoCreateForm/PartnerPromoCreateForm";
 import shell from "../profile-shell.module.css";
 
@@ -18,6 +19,8 @@ export default async function ReferralsPage() {
           Ваша ссылка и игроки, зарегистрированные по партнёрскому тегу
         </p>
       </header>
+
+      <ReferralHowItWorks />
 
       {referral ? (
         <ReferralLinkCard

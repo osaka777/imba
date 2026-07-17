@@ -10,8 +10,10 @@ import * as winston from 'winston';
 import { format } from 'winston';
 
 import configuration from './config/configuration';
+import { LocaleModule } from './common/locale/locale.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { MainModule } from './main/main.module';
+import { RedisModule } from './shared/redis/redis.module';
 // import { TestCalculateController } from './test-calculate.controller'; // Отключен для использования реального BetCalculationController
 
 const logFormat = winston.format.printf(
@@ -83,6 +85,8 @@ const fileErrorFormat = winston.format.combine(
         }),
       ],
     }),
+    RedisModule,
+    LocaleModule,
     IntegrationsModule,
     MainModule,
   ],

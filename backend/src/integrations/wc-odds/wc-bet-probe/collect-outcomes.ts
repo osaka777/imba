@@ -5,6 +5,7 @@ import {
   type WcGroupedMarkets,
   type WcMarketGroup,
 } from '../wc-odds-markets.util';
+import { isWcBetPlacementBlockedMarket } from '../wc-bet-placement-blocklist.util';
 
 import type { WcBetProbeCandidate, WcBetProbeGroupRef } from './types';
 
@@ -85,7 +86,7 @@ export function collectBettableOutcomes(
       return a.key.localeCompare(b.key);
     });
 
-  const candidates: WcBetProbeCandidate[] = [];
+  const allCandidates: WcBetProbeCandidate[] = [];
 
   for (const group of groups) {
     for (const outcome of group.outcomes) {
@@ -98,7 +99,7 @@ export function collectBettableOutcomes(
           ? String(outcome.point)
           : null;
 
-      candidates.push({
+      allCandidates.push({
         marketKey: group.marketKey,
         groupKey: group.key,
         groupLabel: group.label,
@@ -111,7 +112,40 @@ export function collectBettableOutcomes(
     }
   }
 
-  return candidates.slice(0, opts.maxOutcomes);
+  const picked: WcBetProbeCandidate[] = [];
+  const seenCategories = new Set<string>();
+  const seenMarkets = new Set<string>();
+
+  for (const candidate of allCandidates) {
+    const category = groups.find((g) => g.key === candidate.groupKey)?.category ?? candidate.groupLabel;
+    if (!seenCategories.has(category)) {
+      picked.push(candidate);
+      seenCategories.add(category);
+      seenMarkets.add(candidate.marketKey);
+      if (picked.length >= opts.maxOutcomes) break;
+    }
+  }
+
+  if (picked.length < opts.maxOutcomes) {
+    for (const candidate of allCandidates) {
+      if (picked.length >= opts.maxOutcomes) break;
+      if (seenMarkets.has(candidate.marketKey)) continue;
+      picked.push(candidate);
+      seenMarkets.add(candidate.marketKey);
+    }
+  }
+
+  if (picked.length < opts.maxOutcomes) {
+    for (const candidate of allCandidates) {
+      if (picked.length >= opts.maxOutcomes) break;
+      if (picked.some((p) => p.groupKey === candidate.groupKey && p.outcome.outcomeKey === candidate.outcome.outcomeKey)) {
+        continue;
+      }
+      picked.push(candidate);
+    }
+  }
+
+  return picked;
 }
 
 export function findVisibleButNotBettable(grouped: WcGroupedMarkets): Array<{
@@ -122,6 +156,7 @@ export function findVisibleButNotBettable(grouped: WcGroupedMarkets): Array<{
 }> {
   const mismatches: Array<{ marketKey: string; groupKey: string; outcomeKey: string; price: number }> = [];
   for (const group of iterGroups(grouped)) {
+    if (isWcBetPlacementBlockedMarket(group.marketKey)) continue;
     for (const outcome of group.outcomes ?? []) {
       if (!isOutcomeOffered(outcome)) continue;
       if (isWcBetPlacementAllowed(group.marketKey, outcome.outcomeKey)) continue;

@@ -1,0 +1,229 @@
+.board {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgb(15 23 42 / 0.95) 0%, rgb(15 23 42 / 0.82) 100%);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.metaBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.league {
+  font-size: 12px;
+  color: rgb(255 255 255 / 0.72);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(239 68 68 / 0.18);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.broadcastBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.9);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.broadcastBtn:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.broadcastIcon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.main {
+  padding: 18px 14px 16px;
+}
+
+.teamsRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.teamBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.teamBlock_home {
+  align-items: flex-end;
+}
+
+.teamBlock_away {
+  align-items: flex-start;
+}
+
+.teamIdentity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.teamBlock_home .teamIdentity {
+  flex-direction: row-reverse;
+}
+
+.teamName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+  text-align: center;
+  word-break: break-word;
+}
+
+.teamBlock_home .teamName {
+  text-align: right;
+}
+
+.teamBlock_away .teamName {
+  text-align: left;
+}
+
+.centerScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusLabel {
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.seriesScore {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.phaseLabel {
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.65);
+}
+
+.mapsTable {
+  margin-top: 16px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.mapsHeader,
+.mapsRow {
+  display: grid;
+  grid-template-columns: 1fr repeat(var(--map-cols, 3), minmax(44px, 1fr));
+  gap: 0;
+}
+
+.mapsHeader {
+  background: rgb(255 255 255 / 0.05);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.mapsHeaderCell,
+.mapsCell,
+.mapsTeamCell {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.mapsHeaderCell {
+  color: rgb(255 255 255 / 0.55);
+  text-align: center;
+  font-weight: 500;
+}
+
+.mapsHeaderCell:first-child,
+.mapsTeamCell {
+  text-align: left;
+  color: rgb(255 255 255 / 0.85);
+  font-weight: 500;
+}
+
+.mapsRow + .mapsRow {
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.mapsCell {
+  text-align: center;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.mapsCell_active {
+  background: rgb(59 130 246 / 0.18);
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.prematchTime {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.prematchDate {
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.6);
+}

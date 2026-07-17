@@ -471,8 +471,3 @@ export default function WithdrawalsPage() {
     </AuthGuard>
   )
 }
-
-
-
-
-

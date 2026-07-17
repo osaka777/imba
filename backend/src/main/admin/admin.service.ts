@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional, BadRequestException } from '@nestjs/common';
 import { AffilatorStatus, OperationType, OperationStatus, BetStatus, OperationSource, DepositStatus, WcOddsBetStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+import { OperationService } from '../operation/operation.service';
 import { PartnersService } from '../partners/partners.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DepositUserNotifyService } from '../deposit/deposit-user-notify.service';
+import { KickPartnerService } from '../../integrations/kick-dev/kick-partner.service';
 import { readPublicOrderId } from '../deposit/deposit-public-order-id.util';
+import { BonusBalanceService } from '../bonus-balance/bonus-balance.service';
+import {
+  calcDepositBonusAmount,
+  calcMaxCashout,
+  calcRequiredWager,
+  parsePromoBonusPolicy,
+} from '../bonus-balance/bonus-policy.util';
+import { buildPaymentFingerprint } from '../bonus-balance/payment-fingerprint.util';
 
 @Injectable()
 export class AdminService {
@@ -13,6 +23,9 @@ export class AdminService {
     private prisma: PrismaService,
     private depositUserNotify: DepositUserNotifyService,
     private partnersService: PartnersService,
+    private kickPartnerService: KickPartnerService,
+    private operationService: OperationService,
+    @Optional() private bonusBalanceService?: BonusBalanceService,
   ) {}
 
   private getDateFilter(period: string) {
@@ -296,6 +309,30 @@ export class AdminService {
   async getAffiliatePartnerPromos(userId: number) {
     const items = await this.partnersService.getPartnerPromoCodes(userId);
     return { items };
+  }
+
+  async getKickPartnersOverview(limit = 200) {
+    return this.kickPartnerService.listKickPartnersForAdmin(limit);
+  }
+
+  async getKickPartnerSessions(userId: number, limit = 50) {
+    const items = await this.kickPartnerService.getPartnerSessions(userId, limit);
+    return { items };
+  }
+
+  async getRecentKickSessions(limit = 50) {
+    const items = await this.kickPartnerService.listRecentKickSessionsForAdmin(limit);
+    return { total: items.length, items };
+  }
+
+  async grantKickBrandBonus(
+    _userId: number,
+    _tier: 'pro',
+    _currencyCode = 'USD',
+  ) {
+    throw new BadRequestException(
+      'Ручной бренд-бонус отключён. Welcome $10 начисляется автоматически при первом подключении Kick.',
+    );
   }
 
   async getUsersStatistics(period: string) {
@@ -1112,6 +1149,147 @@ export class AdminService {
   }
 
   // ===== Deposits (admin) =====
+  async getExpiringBonuses(withinHours = 24) {
+    const now = new Date();
+    const until = new Date(now.getTime() + withinHours * 60 * 60 * 1000);
+
+    const rows = await this.prisma.bonusBalance.findMany({
+      where: {
+        expiresAt: { gte: now, lte: until },
+        OR: [
+          { isActive: true },
+          { requiresDeposit: true, depositActivated: false },
+        ],
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            telegramUserId: true,
+          },
+        },
+      },
+      orderBy: { expiresAt: 'asc' },
+    });
+
+    return rows.map((row) => {
+      const isLocked = row.requiresDeposit && !row.depositActivated;
+      const remainingMs = row.expiresAt
+        ? row.expiresAt.getTime() - now.getTime()
+        : null;
+
+      return {
+        id: row.id,
+        userId: row.userId,
+        email: row.user?.email ?? null,
+        currency: row.currencyCode,
+        amount: Number(row.amount),
+        phase: isLocked ? 'awaiting_deposit' : 'wagering',
+        expiresAt: row.expiresAt?.toISOString() ?? null,
+        remainingHours: remainingMs != null
+          ? Math.max(0, Math.round(remainingMs / (60 * 60 * 1000) * 10) / 10)
+          : null,
+        totalWagered: Number(row.totalWagered),
+        requiredWager: Number(row.requiredWager),
+        telegramLinked: Boolean(row.user?.telegramUserId),
+      };
+    });
+  }
+
+  async getWelcomeBonusAnalytics(period: string = 'week') {
+    const dateFilter = this.getDateFilter(period);
+    const now = new Date();
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const [
+      offersInPeriod,
+      activatedInPeriod,
+      lockedNow,
+      expiringSoon,
+      expiredLocked,
+      telegramWarnings,
+      wageringRows,
+      newUsersInPeriod,
+    ] = await Promise.all([
+      this.prisma.welcomeBonusClaim.count({ where: { createdAt: dateFilter } }),
+      this.prisma.bonusBalance.count({
+        where: {
+          requiresDeposit: true,
+          depositActivated: true,
+          updatedAt: dateFilter,
+        },
+      }),
+      this.prisma.bonusBalance.count({
+        where: {
+          requiresDeposit: true,
+          depositActivated: false,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        },
+      }),
+      this.prisma.bonusBalance.count({
+        where: {
+          expiresAt: { gte: now, lte: in24h },
+          OR: [
+            { isActive: true },
+            { requiresDeposit: true, depositActivated: false },
+          ],
+        },
+      }),
+      this.prisma.bonusBalance.count({
+        where: {
+          requiresDeposit: true,
+          depositActivated: false,
+          expiresAt: { lt: now },
+        },
+      }),
+      this.prisma.bonusExpiryNotifyCursor.count({ where: { createdAt: dateFilter } }),
+      this.prisma.bonusBalance.findMany({
+        where: {
+          requiresDeposit: true,
+          depositActivated: true,
+          requiredWager: { gt: 0 },
+        },
+        select: {
+          totalWagered: true,
+          requiredWager: true,
+          isActive: true,
+        },
+      }),
+      this.prisma.user.count({ where: { createdAt: dateFilter } }),
+    ]);
+
+    const wageringActive = wageringRows.filter(
+      (row) => row.isActive && Number(row.totalWagered) < Number(row.requiredWager),
+    ).length;
+    const wageringCompleted = wageringRows.filter(
+      (row) => Number(row.totalWagered) >= Number(row.requiredWager),
+    ).length;
+
+    const depositConversionPct = offersInPeriod > 0
+      ? Math.round((activatedInPeriod / offersInPeriod) * 1000) / 10
+      : 0;
+
+    const registrationToWelcomePct = newUsersInPeriod > 0
+      ? Math.round((offersInPeriod / newUsersInPeriod) * 1000) / 10
+      : 0;
+
+    return {
+      period,
+      offersInPeriod,
+      activatedInPeriod,
+      depositConversionPct,
+      registrationToWelcomePct,
+      lockedNow,
+      wageringActive,
+      wageringCompleted,
+      expiringSoon,
+      expiredLocked,
+      telegramWarnings,
+      newUsersInPeriod,
+    };
+  }
+
   async listDeposits(status: 'pending' | 'approved' | 'rejected' = 'pending') {
     const map: Record<string, DepositStatus> = {
       pending: DepositStatus.PENDING,
@@ -1171,6 +1349,16 @@ export class AdminService {
     let tokenMinOdds = 0;
     let redeemedPromo: { id: number; code: string; partnerId: string | null; value: unknown } | null = null;
     let diagnostics: any = { path: 'approveDeposit', promoFound: false, alreadyUsed: null as null | boolean, remaining: null as null | number, voucher: null as null | string };
+
+    const voucherPrecheck: string | undefined = (depo.meta as any)?.voucher;
+    if (voucherPrecheck) {
+      const promoPre = await this.prisma.promo.findFirst({
+        where: { code: { equals: voucherPrecheck, mode: 'insensitive' } as any },
+      });
+      if (promoPre) {
+        await this.partnersService.assertPartnerPromoRedeemable(promoPre);
+      }
+    }
 
     console.log(`[approveDeposit] start id=${id}`);
     await this.prisma.$transaction(async (tx) => {
@@ -1238,6 +1426,7 @@ export class AdminService {
             {
               // Compute values
               const value: any = promo.value as any;
+              const policy = parsePromoBonusPolicy(value, promo.type);
               const totalTokens = Number((value?.totalTokens ?? 0));
               const tokensPerBetVal = Number((value?.tokensPerBet ?? 1));
               const tokenMinOddsVal = Number((value?.tokenMinOdds ?? 1.8));
@@ -1247,9 +1436,8 @@ export class AdminService {
               if (promo.type === 'DIRECT_BONUS' || promo.type === 'VOUCHER') {
                 bonusAmount = Number(value?.amount || 0);
               } else if (promo.type === 'DEPOSIT_BONUS') {
-                const pct = Number(value?.percentage || 0);
                 const depoAmountNum = parseFloat((depo.amount as any)?.toString?.() || String(depo.amount));
-                bonusAmount = depoAmountNum * (pct / 100);
+                bonusAmount = calcDepositBonusAmount(depoAmountNum, policy);
               }
               const bonusCurrency = promo.currencyCode || depo.currencyCode;
               const allowApply = !(promo.currencyCode && String(promo.currencyCode).toUpperCase() !== String(depo.currencyCode).toUpperCase());
@@ -1266,22 +1454,48 @@ export class AdminService {
                 });
 
                 const requiredWagerAmount = bonusAmount > 0
-                  ? new Decimal(bonusAmount).mul(3)
+                  ? new Decimal(
+                    calcRequiredWager(
+                      parseFloat((depo.amount as any)?.toString?.() || String(depo.amount)),
+                      bonusAmount,
+                      policy,
+                    ),
+                  )
                   : new Decimal(0);
+                const depoAmountNum = parseFloat((depo.amount as any)?.toString?.() || String(depo.amount));
+                const maxCashoutAmount = calcMaxCashout(depoAmountNum, policy);
+
+                const replacingLockedWelcome = Boolean(
+                  existingBB?.requiresDeposit && !existingBB?.depositActivated,
+                );
 
                 if (existingBB) {
                   await tx.bonusBalance.update({
                     where: { userId_currencyCode: { userId: depo.userId, currencyCode: bonusCurrency } },
                     data: {
-                      amount: { increment: new Decimal(bonusAmount) },
-                      totalBonusReceived: { increment: new Decimal(bonusAmount) },
-                      requiredWager: { increment: requiredWagerAmount },
+                      amount: replacingLockedWelcome
+                        ? new Decimal(bonusAmount)
+                        : { increment: new Decimal(bonusAmount) },
+                      totalBonusReceived: replacingLockedWelcome
+                        ? new Decimal(bonusAmount)
+                        : { increment: new Decimal(bonusAmount) },
+                      totalWagered: replacingLockedWelcome
+                        ? new Decimal(0)
+                        : existingBB.totalWagered,
+                      requiredWager: replacingLockedWelcome
+                        ? requiredWagerAmount
+                        : { increment: requiredWagerAmount },
                       totalTokens: totalTokens > 0 ? { increment: totalTokens } : existingBB.totalTokens,
                       remainingTokens: totalTokens > 0 ? { increment: totalTokens } : existingBB.remainingTokens,
                       tokensPerBet: totalTokens > 0 ? tokensPerBetVal : existingBB.tokensPerBet,
                       minOdds: new Decimal(tokenMinOddsVal),
                       isTokenBased: totalTokens > 0 || existingBB.isTokenBased,
                       isActive: true,
+                      requiresDeposit: false,
+                      depositActivated: true,
+                      activationDepositAmount: new Decimal(depoAmountNum),
+                      maxCashout: maxCashoutAmount ? new Decimal(maxCashoutAmount) : null,
+                      wagerMultiplier: policy.wagerMultiplier,
                       promoId: promo.id,
                     } as any,
                   });
@@ -1299,6 +1513,11 @@ export class AdminService {
                       requiredConsecutiveWins: 0,
                       currentBetAmount: new Decimal(0),
                       isActive: true,
+                      requiresDeposit: false,
+                      depositActivated: true,
+                      activationDepositAmount: new Decimal(depoAmountNum),
+                      maxCashout: maxCashoutAmount ? new Decimal(maxCashoutAmount) : null,
+                      wagerMultiplier: policy.wagerMultiplier,
                       totalTokens: totalTokens,
                       remainingTokens: totalTokens,
                       tokensPerBet: tokensPerBetVal,
@@ -1364,6 +1583,27 @@ export class AdminService {
             }
           }
         }
+      }
+
+      if (!bonusApplied) {
+        const priorSuccess = await tx.deposit.count({
+          where: { userId: depo.userId, status: DepositStatus.SUCCESS },
+        });
+        const fingerprint = buildPaymentFingerprint({
+          paymentSystem: depo.paymentSystem,
+          externalId: depo.externalId,
+          meta: depo.meta,
+        });
+        await this.bonusBalanceService?.afterDepositCredited({
+          userId: depo.userId,
+          currencyCode: depo.currencyCode,
+          depositAmount: parseFloat((depo.amount as any)?.toString?.() || String(depo.amount)),
+          paymentSystem: depo.paymentSystem,
+          externalId: depo.externalId,
+          meta: depo.meta,
+          depositOrdinal: priorSuccess + 1,
+          tx,
+        });
       }
 
       // Update deposit status

@@ -5,7 +5,6 @@ import {
   IsOptional,
   IsString,
   Matches,
-  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -19,7 +18,6 @@ export class RegistrationDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
   password: string;
 
   @IsString()

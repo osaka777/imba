@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { BetApiModule } from '~/integrations/betapi/betapi.module';
 import { CybersportModule } from '~/integrations/cybersport/cybersport.module';
+import { KickDevModule } from '~/integrations/kick-dev/kick-dev.module';
 import { OddsCorpModule } from '~/integrations/odds-corp/odds-corp.module';
 import { BovaPaymentSystemModule } from '~/integrations/payment-system/bova/bova-payment-system.module';
 import { GreengoPaymentSystemModule } from '~/integrations/payment-system/greengo/greengo-payment-system.module';
@@ -20,6 +21,7 @@ import { NirvanaPayPayinModule } from './payment-system/nirvanapay-payin/nirvana
     PaymentSystemModule,
     BetApiModule,
     CybersportModule,
+    KickDevModule,
     AAIOPaymentSystemModule,
     PaylinkPaymentSystemModule,
     BovaPaymentSystemModule,

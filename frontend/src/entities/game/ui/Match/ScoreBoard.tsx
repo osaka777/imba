@@ -345,7 +345,7 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center w-full max-w-2xl">
                   <TeamScore 
                     name={game.team1}
-                    icon={game.meta?.opp_1_icon || null}
+                    icon={game.team1Icon ?? game.meta?.opp_1_icon ?? null}
                     isActive={score?.liveScore?.active === 1}
                     align="right"
                   />
@@ -357,7 +357,7 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
 
                   <TeamScore 
                     name={game.team2}
-                    icon={game.meta?.opp_2_icon || null}
+                    icon={game.team2Icon ?? game.meta?.opp_2_icon ?? null}
                     isActive={score?.liveScore?.active === 2}
                     align="left"
                   />

@@ -74,6 +74,49 @@ const nextConfig = {
         destination: "/game/:slug*",
         permanent: true,
       },
+      {
+        source: "/cybersport/line",
+        destination: "/line?sport=esports.cs",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/line/esports.cs",
+        destination: "/line?sport=esports.cs",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/line/esports.dota2",
+        destination: "/line?sport=esports.dota2",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/line/esports.valorant",
+        destination: "/line?sport=esports.valorant",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/live",
+        has: [{ type: "query", key: "sport", value: "esports.cs" }],
+        destination: "/live?sport=esports.cs",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/live",
+        has: [{ type: "query", key: "sport", value: "esports.dota2" }],
+        destination: "/live?sport=esports.dota2",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/live",
+        has: [{ type: "query", key: "sport", value: "esports.valorant" }],
+        destination: "/live?sport=esports.valorant",
+        permanent: true,
+      },
+      {
+        source: "/cybersport/live",
+        destination: "/live?sport=esports.cs",
+        permanent: true,
+      },
     ];
   },
   async headers() {

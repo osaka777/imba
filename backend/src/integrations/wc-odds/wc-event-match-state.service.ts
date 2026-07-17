@@ -8,6 +8,7 @@ import { OlimpbetWcService } from '../olimpbet-wc/olimpbet-wc.service';
 
 import { advanceMatchState } from './wc-match-state-tracker.util';
 import type { WcMatchState } from './wc-match-state.types';
+import type { WcEventStatsPayload } from './wc-odds-statistics.types';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
 
 @Injectable()
@@ -32,8 +33,25 @@ export class WcEventMatchStateService {
     sportKey: string,
     detail: OlimpbetEventDetail,
     prevStateJson?: unknown,
+    statsPayload?: WcEventStatsPayload | null,
   ): Promise<WcMatchState> {
     const matchState = this.buildMatchState(detail, sportKey, prevStateJson);
+    if (
+      statsPayload
+      && (
+        statsPayload.statList.length > 0
+        || statsPayload.parsedScore
+      )
+    ) {
+      matchState.result = {
+        ...matchState.result,
+        parsedScore: statsPayload.parsedScore ?? matchState.result?.parsedScore ?? null,
+        statList: statsPayload.statList.length > 0
+          ? statsPayload.statList
+          : (matchState.result?.statList ?? []),
+        capturedAt: new Date().toISOString(),
+      };
+    }
 
     await this.prisma.wcOddsEvent.update({
       where: { id: eventId },

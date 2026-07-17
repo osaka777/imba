@@ -2,16 +2,26 @@
 
 import React, { ReactNode, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "../Button";
 import styles from "./Modal.module.css";
+
+type ModalSize = "sm" | "md" | "lg";
 
 type ModalProps = {
     isOpen: boolean;
     onClose: () => void;
     children: ReactNode;
+    size?: ModalSize;
+    /** id for aria-labelledby when the child provides a heading */
+    labelledBy?: string;
 };
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+export const Modal: React.FC<ModalProps> = ({
+    isOpen,
+    onClose,
+    children,
+    size = "md",
+    labelledBy,
+}) => {
     const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,13 +40,11 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
         if (isOpen) {
             window.addEventListener("keydown", handleEscape);
             window.addEventListener("mousedown", handleClickOutside);
-            document.body.style.maxHeight = "100svh";
             document.body.style.overflow = "hidden";
         }
 
         return () => {
-            document.body.style.maxHeight = "unset";
-            document.body.style.overflow = "auto";
+            document.body.style.overflow = "";
             window.removeEventListener("keydown", handleEscape);
             window.removeEventListener("mousedown", handleClickOutside);
         };
@@ -44,19 +52,29 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
     if (!isOpen) return null;
 
-    return (
-        <>
-            {createPortal(
-                <div className={styles.modalOverlay}>
-                    <div className={styles.modal} ref={modalRef}>
-                        <Button className={styles.closeButton} onClick={onClose}>
-                            x
-                        </Button>
-                        <div className={styles.modalContent}>{children}</div>
-                    </div>
-                </div>,
-                document.body,
-            )}
-        </>
+    const sizeClass =
+        size === "sm" ? styles.modal_sm : size === "lg" ? styles.modal_lg : styles.modal_md;
+
+    return createPortal(
+        <div className={styles.modalOverlay} role="presentation">
+            <div
+                className={`${styles.modal} ${sizeClass}`}
+                ref={modalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={labelledBy}
+            >
+                <button
+                    type="button"
+                    className={styles.closeButton}
+                    onClick={onClose}
+                    aria-label="Закрыть"
+                >
+                    ×
+                </button>
+                <div className={styles.modalContent}>{children}</div>
+            </div>
+        </div>,
+        document.body,
     );
 };

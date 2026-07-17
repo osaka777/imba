@@ -20,11 +20,20 @@ import {
   VerifyTelegram2faDto,
 } from './dto/authenticate.dto';
 import { RegistrationDto } from './dto/registration.dto';
+import { TelegramAuthService } from '~/main/telegram/telegram-auth.service';
+import {
+  TelegramAuthResultDto,
+  TelegramCompleteProfileDto,
+  TelegramWidgetAuthDto,
+} from '~/main/telegram/dto/telegram-auth.dto';
 
 @Controller('')
 @ApiTags('Auth')
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly telegramAuthService: TelegramAuthService,
+  ) {}
 
   @Post('sign-in')
   @UseGuards(AuthRateLimitGuard)
@@ -58,6 +67,40 @@ export class AuthenticationController {
     return new AuthenticateResultDto({
       accessToken: result.accessToken,
     });
+  }
+
+  @Post('auth/telegram')
+  @UseGuards(AuthRateLimitGuard)
+  async authenticateWithTelegram(
+    @Body() body: TelegramWidgetAuthDto,
+    @Req() request: Request,
+  ): Promise<TelegramAuthResultDto> {
+    const result = await this.telegramAuthService.authenticateWithWidget(
+      body,
+      request,
+    );
+    return new TelegramAuthResultDto(result);
+  }
+
+  @Post('auth/telegram/complete-profile')
+  @UseGuards(AuthRateLimitGuard)
+  async completeTelegramProfile(
+    @Body() body: TelegramCompleteProfileDto,
+    @Req() request: Request,
+  ): Promise<TelegramAuthResultDto> {
+    const result = await this.telegramAuthService.completeProfile(body, request);
+    return new TelegramAuthResultDto({
+      accessToken: result.accessToken,
+      isNewUser: result.isNewUser,
+    });
+  }
+
+  @Get('auth/telegram/config')
+  getTelegramAuthConfig() {
+    return {
+      botUsername: this.telegramAuthService.getBotUsername(),
+      botId: this.telegramAuthService.getBotId(),
+    };
   }
 
   @Post('sign-up')

@@ -9,9 +9,14 @@ import { RegisterForm } from "./RegisterForm";
 type AuthFormProps = {
     authVariant?: "login" | "register";
     className?: string;
+    inModal?: boolean;
 };
 
-export const AuthForm: React.FC<AuthFormProps> = ({ authVariant = "register", className }) => {
+export const AuthForm: React.FC<AuthFormProps> = ({
+    authVariant = "register",
+    className,
+    inModal = false,
+}) => {
     const [authType, setAuthType] = useState(authVariant);
 
     const isRegister = authType === "register";
@@ -19,7 +24,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ authVariant = "register", cl
     const changeAuthMethod = () => setAuthType((prev) => (prev === "register" ? `login` : `register`));
 
     return (
-        <div className={`${styles.AuthForm} ${className}`}>
+        <div
+            className={`${styles.AuthForm} ${inModal ? styles.AuthForm_modal : ""} ${className ?? ""}`}
+            id={inModal ? "auth-modal-title" : undefined}
+        >
             <h2 className={styles.heading}>{isRegister ? `Регистрация` : `Вход`}</h2>
             {isRegister ? <RegisterForm /> : <LoginForm />}
             <div className={styles.changeAuthMethod}>

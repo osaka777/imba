@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getApiBaseUrl } from "@/shared/lib/apiBaseUrl";
 
+function isKickHost(request: NextRequest): boolean {
+  const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+  return host === "kick.imba.bet";
+}
+
 export async function middleware(request: NextRequest) {
   const partnerTag = request.nextUrl.searchParams.get("tag");
   const response = NextResponse.next();
   const isProd = process.env.NODE_ENV === "production";
-  
+  const kickHost = isKickHost(request);
+  const pathname = request.nextUrl.pathname;
+
   if (partnerTag && /^[0-9a-f-]{36}$/i.test(partnerTag)) {
     response.cookies.set("partnerTag", partnerTag, {
       maxAge: 60 * 60 * 24 * 90,
@@ -16,34 +23,37 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  if (kickHost && (pathname === "/" || pathname === "")) {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = "/kick";
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
   // Проверяем токен для защищенных маршрутов
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/profile');
-  const token = request.cookies.get('access_token');
+  const isProtectedRoute = pathname.startsWith("/profile");
+  const token = request.cookies.get("access_token");
 
   if (isProtectedRoute) {
     if (!token) {
-      // Нет токена - редирект на главную
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
 
     // Проверяем валидность токена
     try {
       const userResponse = await fetch(`${getApiBaseUrl()}/affiliate-program/user`, {
         headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "application/json",
         },
       });
 
       if (!userResponse.ok) {
-        // Токен недействителен - удаляем и редиректим
-        response.cookies.delete('access_token');
-        return NextResponse.redirect(new URL('/', request.url));
+        response.cookies.delete("access_token");
+        return NextResponse.redirect(new URL("/", request.url));
       }
-    } catch (error) {
-      // Ошибка при проверке токена - удаляем и редиректим
-      response.cookies.delete('access_token');
-      return NextResponse.redirect(new URL('/', request.url));
+    } catch {
+      response.cookies.delete("access_token");
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 

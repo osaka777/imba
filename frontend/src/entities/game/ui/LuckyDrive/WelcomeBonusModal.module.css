@@ -1,0 +1,472 @@
+/* Welcome modal — imba.bet brand (blue glass + amber accents) */
+
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 40px);
+  overflow: hidden;
+  background: linear-gradient(
+    155deg,
+    rgb(8, 85, 196) 0%,
+    rgb(16, 141, 231) 48%,
+    rgb(30, 58, 138) 100%
+  );
+  color: #fff;
+}
+
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(255, 202, 77, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 0% 100%, rgba(0, 0, 0, 0.18) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.scroll {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 20px 22px;
+}
+
+/* ── Header ── */
+.head {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+
+.badgeAccent {
+  background: linear-gradient(107deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
+  color: rgb(20, 27, 46);
+  border-color: transparent;
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: clamp(20px, 4.5vw, 24px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0 auto;
+  max-width: 38ch;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* ── Progress motivation card ── */
+.progressCard {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.progressHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.progressLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.progressValue {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgb(255, 202, 77);
+}
+
+.progressTrack {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
+  transition: width 0.4s ease;
+}
+
+.progressHeadline {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.progressTimer {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(255, 202, 77);
+}
+
+/* ── Steps timeline ── */
+.steps {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 16px;
+  padding-left: 4px;
+}
+
+.stepItem {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  padding-bottom: 14px;
+  position: relative;
+}
+
+.stepItem:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.stepItem:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.stepItemDone:not(:last-child)::before {
+  background: linear-gradient(180deg, rgb(255, 202, 77) 0%, rgba(255, 255, 255, 0.2) 100%);
+}
+
+.stepItemCurrent {
+  margin: 0 -8px;
+  padding: 10px 8px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 202, 77, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.stepItemUpcoming {
+  opacity: 0.55;
+}
+
+.stepItemExpired {
+  opacity: 0.7;
+}
+
+.stepItemExpired .stepTitle {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.stepDot {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.stepDotDone {
+  background: linear-gradient(135deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
+  color: rgb(20, 27, 46);
+  border-color: transparent;
+  font-size: 14px;
+}
+
+.stepDotCurrent {
+  background: #fff;
+  color: rgb(8, 85, 196);
+  border-color: rgb(255, 202, 77);
+  box-shadow: 0 0 0 3px rgba(255, 202, 77, 0.35);
+  animation: stepPulse 2s ease-in-out infinite;
+}
+
+@keyframes stepPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255, 202, 77, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 202, 77, 0.15); }
+}
+
+.stepBody {
+  padding-top: 4px;
+  min-width: 0;
+}
+
+.stepTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stepBadge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: linear-gradient(107deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
+  color: rgb(20, 27, 46);
+}
+
+.stepDoneBadge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.stepText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  opacity: 0.85;
+}
+
+.stepItemDone .stepText {
+  opacity: 0.72;
+}
+
+.stepWagerBar {
+  margin-top: 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.stepWagerFill {
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(255, 202, 77);
+}
+
+/* ── Limits panel (white card) ── */
+.limitsPanel {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgb(255, 255, 255);
+  color: rgb(20, 27, 46);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.limitsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgb(237, 242, 255);
+}
+
+.limitsLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(148, 166, 205);
+}
+
+.limitsCurrency {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgb(8, 85, 196);
+}
+
+.limitsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.limitStat {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgb(237, 242, 255);
+}
+
+.limitStatLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: rgb(148, 166, 205);
+  font-weight: 600;
+}
+
+.limitStatValue {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: rgb(20, 27, 46);
+  line-height: 1.2;
+}
+
+/* ── Rules ── */
+.rulesSection {
+  margin-bottom: 18px;
+}
+
+.rulesTitle {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.rulesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ruleCard {
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(4px);
+}
+
+.ruleIcon {
+  font-size: 16px;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+.ruleTitle {
+  margin: 0 0 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ruleText {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  opacity: 0.82;
+}
+
+.footerLink {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: background 0.15s ease;
+}
+
+.footerLink:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+@media (min-width: 768px) {
+  .scroll {
+    padding: 28px 26px 26px;
+  }
+}
+
+@media (max-width: 400px) {
+  .rulesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .limitsGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -223,6 +223,22 @@ export class TelegramUserNotifyService {
     });
   }
 
+  /** Важное уведомление о сгорании бонуса — без проверки promo-настроек */
+  async notifyBonusExpiry(input: {
+    userId: number;
+    telegramUserId: string;
+    message: string;
+    type: string;
+  }): Promise<void> {
+    await this.deliver({
+      userId: input.userId,
+      telegramUserId: input.telegramUserId,
+      type: input.type,
+      message: input.message,
+      options: undefined,
+    });
+  }
+
   async notifySecurity(input: {
     userId: number;
     telegramUserId: string;

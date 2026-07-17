@@ -1,17 +1,5 @@
-const COMPACT_MONTHS = [
-  "янв",
-  "фев",
-  "мар",
-  "апр",
-  "май",
-  "июн",
-  "июл",
-  "авг",
-  "сен",
-  "окт",
-  "ноя",
-  "дек",
-] as const;
+import type { AppLocale } from "~/shared/i18n/locale";
+import { toIntlLocale } from "~/shared/i18n/format";
 
 const ALMATY = "Asia/Almaty";
 
@@ -19,27 +7,19 @@ export function formatWcCompactOdd(v: number | null, empty = "—") {
   return v != null && Number.isFinite(v) ? v.toFixed(2) : empty;
 }
 
-export function formatWcCompactTime(iso: string) {
+export function formatWcCompactTime(iso: string, locale: AppLocale = "ru") {
   const d = new Date(iso);
-  const day = new Intl.DateTimeFormat("en-US", {
+  const intl = toIntlLocale(locale);
+  const date = new Intl.DateTimeFormat(intl, {
     day: "numeric",
+    month: "short",
     timeZone: ALMATY,
   }).format(d);
-  const monthIndex =
-    Number(
-      new Intl.DateTimeFormat("en-US", {
-        month: "numeric",
-        timeZone: ALMATY,
-      }).format(d),
-    ) - 1;
-  const time = new Intl.DateTimeFormat("ru-RU", {
+  const time = new Intl.DateTimeFormat(intl, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: ALMATY,
   }).format(d);
 
-  return {
-    date: `${day} ${COMPACT_MONTHS[monthIndex] ?? "янв"}`,
-    time,
-  };
+  return { date, time };
 }

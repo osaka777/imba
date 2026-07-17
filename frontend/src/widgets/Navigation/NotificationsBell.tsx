@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react
 import { createPortal } from "react-dom";
 import { FiBell, FiCheckCircle, FiClock, FiGift, FiInfo, FiX, FiXCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
+import { shouldDeferToNativePush } from "~/entities/push/lib/nativeApp";
 import {
   getMyKztForeignCardOrder,
   getMyRubForeignCardOrder,
@@ -131,7 +132,9 @@ export const NotificationsBell = () => {
           title: `Заявка #${displayId} одобрена`,
           message: "Средства зачислены на баланс.",
         });
-        toast.success(`Заявка #${displayId} одобрена`);
+        if (!shouldDeferToNativePush()) {
+          toast.success(`Заявка #${displayId} одобрена`);
+        }
       } else if (payload.status === "rejected") {
         addDepositNotification({
           orderId: payload.orderId,
@@ -139,7 +142,9 @@ export const NotificationsBell = () => {
           title: `Заявка #${displayId} отклонена`,
           message: "Обратитесь в поддержку, если это ошибка.",
         });
-        toast.error(`Заявка #${displayId} отклонена`);
+        if (!shouldDeferToNativePush()) {
+          toast.error(`Заявка #${displayId} отклонена`);
+        }
       } else if (payload.status === "expired") {
         addDepositNotification({
           orderId: payload.orderId,
@@ -147,7 +152,9 @@ export const NotificationsBell = () => {
           title: `Заявка #${displayId} истекла`,
           message: "Создайте новую заявку на пополнение.",
         });
-        toast.info(`Заявка #${displayId} истекла`);
+        if (!shouldDeferToNativePush()) {
+          toast.info(`Заявка #${displayId} истекла`);
+        }
       }
       refresh();
     });

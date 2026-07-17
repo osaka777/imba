@@ -12,7 +12,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { WcOddsBetStatus, WcOddsPick } from '@prisma/client';
 
 import { AuthenticationGuard } from '~/main/user/authentication/authentication.guard';
@@ -24,6 +24,24 @@ import { WcOddsExpressService } from './wc-odds-express.service';
 import { WcOddsBetService } from './wc-odds-bet.service';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
 import { WcOddsSyncService } from './wc-odds-sync.service';
+import { parseRequestLocale } from '~/common/locale/parse-request-locale';
+import type { OlimpbetApiLocale } from '~/common/locale/olimpbet-locale.util';
+
+function resolveUiLocale(
+  xLocale?: string,
+  acceptLanguage?: string,
+): OlimpbetApiLocale {
+  return parseRequestLocale(xLocale, acceptLanguage) === 'en' ? 'en' : 'ru';
+}
+
+function resolveRequestHost(req: { headers: Record<string, string | string[] | undefined> }): string {
+  const forwarded = req.headers['x-forwarded-host'];
+  const raw = typeof forwarded === 'string'
+    ? forwarded.split(',')[0]
+    : req.headers.host;
+  return String(raw ?? 'imba.bet').trim();
+}
+
 import { OlimpbetWcService } from '../olimpbet-wc/olimpbet-wc.service';
 
 class PlaceWcBetDto {
@@ -95,8 +113,12 @@ export class WcOddsController {
   }
 
   @Get('line/tournaments')
-  lineTournaments(@Query('sport') sport?: string) {
-    return this.betService.listLineTournaments(sport);
+  lineTournaments(
+    @Query('sport') sport?: string,
+    @Headers('x-locale') xLocale?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.betService.listLineTournaments(sport, resolveUiLocale(xLocale, acceptLanguage));
   }
 
   @Get('line/events')
@@ -108,6 +130,8 @@ export class WcOddsController {
     @Query('league') league?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Headers('x-locale') xLocale?: string,
+    @Headers('accept-language') acceptLanguage?: string,
   ) {
     return this.betService.listLineEvents({
       sport,
@@ -117,6 +141,7 @@ export class WcOddsController {
       league,
       limit: limit ? parseInt(limit, 10) : undefined,
       offset: offset ? parseInt(offset, 10) : undefined,
+      locale: resolveUiLocale(xLocale, acceptLanguage),
     });
   }
 
@@ -133,8 +158,12 @@ export class WcOddsController {
   }
 
   @Get('live/tournaments')
-  liveTournaments(@Query('sport') sport?: string) {
-    return this.betService.listLiveTournaments(sport);
+  liveTournaments(
+    @Query('sport') sport?: string,
+    @Headers('x-locale') xLocale?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    return this.betService.listLiveTournaments(sport, resolveUiLocale(xLocale, acceptLanguage));
   }
 
   @Get('live/events')
@@ -145,6 +174,8 @@ export class WcOddsController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
     @Query('broadcast') broadcast?: string,
+    @Headers('x-locale') xLocale?: string,
+    @Headers('accept-language') acceptLanguage?: string,
   ) {
     return this.betService.listLiveEvents({
       sport,
@@ -153,6 +184,7 @@ export class WcOddsController {
       limit: limit ? parseInt(limit, 10) : undefined,
       offset: offset ? parseInt(offset, 10) : undefined,
       broadcastOnly: broadcast === '1' || broadcast === 'true',
+      locale: resolveUiLocale(xLocale, acceptLanguage),
     });
   }
 
@@ -167,8 +199,25 @@ export class WcOddsController {
   }
 
   @Get('events/:ref')
-  eventDetail(@Param('ref') ref: string) {
-    return this.betService.getEventDetail(ref);
+  async eventDetail(
+    @Param('ref') ref: string,
+    @Query('sync') sync?: string,
+    @Headers('x-locale') xLocale?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const forceSync = sync === '1' || sync === 'true';
+    const detail = await this.betService.getEventDetail(
+      ref,
+      resolveUiLocale(xLocale, acceptLanguage),
+      { sync: forceSync },
+    );
+    const { syncOk, ...payload } = detail;
+    if (forceSync && res) {
+      res.setHeader('X-WC-Synced', syncOk === false ? '0' : '1');
+      res.setHeader('Cache-Control', 'no-store');
+    }
+    return payload;
   }
 
   @Get('embed/h2h/:ref/sh')
@@ -192,16 +241,19 @@ export class WcOddsController {
     res.send(html);
   }
 
+  @UseGuards(AuthenticationGuard)
   @Get('events/:ref/play')
-  eventBroadcast(@Param('ref') ref: string) {
-    return this.betService.getEventBroadcast(ref);
+  eventBroadcast(@Param('ref') ref: string, @Req() req: Request) {
+    return this.betService.getEventBroadcast(ref, resolveRequestHost(req));
   }
 
+  @UseGuards(AuthenticationGuard)
   @Get('events/:ref/v')
   broadcastManifest(@Param('ref') ref: string, @Res() res: Response) {
     return this.broadcastProxy.proxyManifest(ref, res);
   }
 
+  @UseGuards(AuthenticationGuard)
   @Get('events/:ref/s')
   broadcastSegment(
     @Param('ref') ref: string,
@@ -211,9 +263,15 @@ export class WcOddsController {
     return this.broadcastProxy.proxyHls(ref, src ?? '', res);
   }
 
+  @UseGuards(AuthenticationGuard)
   @Get('events/:ref/view')
-  broadcastEmbed(@Param('ref') ref: string, @Res() res: Response) {
-    return this.broadcastProxy.proxyEmbed(ref, res);
+  broadcastEmbed(
+    @Param('ref') ref: string,
+    @Query('muted') muted: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    return this.broadcastProxy.proxyEmbed(ref, res, resolveRequestHost(req), muted !== 'false');
   }
 
   @UseGuards(AuthenticationGuard)
@@ -283,6 +341,18 @@ export class WcOddsController {
   }
 
   @UseGuards(AuthenticationGuard)
+  @Get('bets/cashout-quotes')
+  cashoutQuotes(
+    @Req() req: { user: { id: number } },
+    @Query('ids') ids?: string,
+  ) {
+    const betIds = ids
+      ? ids.split(",").map((id) => Number(id.trim())).filter((id) => Number.isFinite(id) && id > 0)
+      : undefined;
+    return this.cashoutService.getCashoutQuotesForUser(req.user.id, betIds);
+  }
+
+  @UseGuards(AuthenticationGuard)
   @Get('bets/:id/cashout-quote')
   cashoutQuote(@Req() req: { user: { id: number } }, @Param('id') id: string) {
     return this.cashoutService.getCashoutQuote(req.user.id, Number(id));
@@ -343,6 +413,15 @@ export class WcOddsController {
   }
 
   @UseGuards(SuperuserGuard)
+  @Get('admin/bets/health')
+  adminBetHealth(@Query('hours') hours?: string) {
+    const parsed = Number(hours);
+    return this.betService.getAdminBetHealthStats(
+      Number.isFinite(parsed) && parsed > 0 ? parsed : 24,
+    );
+  }
+
+  @UseGuards(SuperuserGuard)
   @Post('admin/sync')
   adminSync() {
     return this.syncService.syncOdds();
@@ -358,5 +437,11 @@ export class WcOddsController {
   @Post('admin/settle/bet/:id')
   adminSettleBet(@Param('id') id: string) {
     return this.settlementService.tryRecalcPendingBet(Number(id));
+  }
+
+  @UseGuards(SuperuserGuard)
+  @Post('admin/repair/event/:eventId')
+  adminRepairEvent(@Param('eventId') eventId: string) {
+    return this.settlementService.repairEventSettledBets(eventId);
   }
 }

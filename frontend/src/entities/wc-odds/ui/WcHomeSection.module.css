@@ -28,10 +28,6 @@
   .wrap {
     padding-bottom: 8px;
   }
-
-  .tableBody {
-    padding-bottom: 72px;
-  }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1080px) {
@@ -88,10 +84,6 @@
   border-radius: 0 12px 12px 12px;
   overflow: hidden;
   width: 100%;
-}
-
-.card_mobile .tableBody {
-  padding-bottom: 80px;
 }
 
 .panel {
@@ -482,10 +474,6 @@
     width: 100%;
   }
 
-  .tableBody {
-    padding-bottom: 72px;
-  }
-
   .panel_mobileHidden {
     display: none !important;
   }
@@ -501,11 +489,5 @@
   .grid {
     grid-template-columns: 1fr;
     gap: 0;
-  }
-}
-
-@media screen and (max-width: 1024px) {
-  .tableBody {
-    padding-bottom: 80px;
   }
 }

@@ -1,4 +1,5 @@
 import {
+  isJunkMinuteTotalsCatalogName,
   resolveWcMarketKey,
   stripOvertimeCatalogSuffix,
 } from './olimpbet-wc-market-keys.util';
@@ -52,12 +53,41 @@ describe('resolveWcMarketKey', () => {
   });
 
   it('maps pattern-based variants not in the explicit list', () => {
-    expect(resolveWcMarketKey('TOTAL_CUSTOM_NEW')).toEqual({ marketKey: 'totals', bettable: true });
+    expect(resolveWcMarketKey('TOTAL_ASIAN_HALF')).toEqual({ marketKey: 'totals', bettable: true });
     expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_TEAM1')).toEqual({ marketKey: 'totals_home', bettable: true });
     expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_TEAM2')).toEqual({ marketKey: 'totals_away', bettable: true });
+    expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_TEAM1_HALF')).toEqual({ marketKey: 'totals_home', bettable: true });
+    expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_TEAM2_HALF')).toEqual({ marketKey: 'totals_away', bettable: true });
+    expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_ASIAN_TEAM1')).toEqual({ marketKey: 'totals_home', bettable: true });
+    expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_ASIAN_TEAM2')).toEqual({ marketKey: 'totals_away', bettable: true });
     expect(resolveWcMarketKey('INDIVIDUAL_TOTAL_TEAM3')).toEqual({ marketKey: 'totals', bettable: true });
     expect(resolveWcMarketKey('HANDICAP_CUSTOM')).toEqual({ marketKey: 'handicap', bettable: true });
     expect(resolveWcMarketKey('MATCH_WINNER_SPECIAL')).toEqual({ marketKey: 'h2h', bettable: true });
+  });
+
+  it('keeps specialty TOTAL_* markets out of canonical totals', () => {
+    expect(resolveWcMarketKey('TOTAL_GOALS_MINUTES')).toEqual({
+      marketKey: 'display_TOTAL_GOALS_MINUTES',
+      bettable: true,
+    });
+    expect(isJunkMinuteTotalsCatalogName('TOTAL_GOALS_MINUTES')).toBe(true);
+    expect(isJunkMinuteTotalsCatalogName('TO_COME_FROM_BEHIND')).toBe(true);
+    expect(isJunkMinuteTotalsCatalogName('NUMBER_FINAL_SCORE')).toBe(true);
+    expect(isJunkMinuteTotalsCatalogName('STRONG_WILLED')).toBe(true);
+    expect(isJunkMinuteTotalsCatalogName('TOTAL')).toBe(false);
+    expect(isJunkMinuteTotalsCatalogName('TOTAL_CORNERS')).toBe(false);
+    expect(resolveWcMarketKey('TOTAL_FOULS_BEFORE_1ST_YELLOW_CARD')).toEqual({
+      marketKey: 'display_TOTAL_FOULS_BEFORE_1ST_YELLOW_CARD',
+      bettable: true,
+    });
+    expect(resolveWcMarketKey('TOTAL_RED_CARDS')).toEqual({
+      marketKey: 'display_TOTAL_RED_CARDS',
+      bettable: true,
+    });
+    expect(resolveWcMarketKey('TOTALPENALTY')).toEqual({
+      marketKey: 'display_TOTALPENALTY',
+      bettable: true,
+    });
   });
 
   it('maps handicap 3-way separately from 2-way handicap', () => {
@@ -68,6 +98,17 @@ describe('resolveWcMarketKey', () => {
   it('maps even/odd catalog to even_odd', () => {
     expect(resolveWcMarketKey('EVEN_ODD')).toEqual({ marketKey: 'even_odd', bettable: true });
     expect(resolveWcMarketKey('EVEN_ODD_WITH_OT')).toEqual({ marketKey: 'even_odd', bettable: true });
+  });
+
+  it('maps COUNT_SET yes/no to display market, not totals', () => {
+    expect(resolveWcMarketKey('COUNT_SET')).toEqual({
+      marketKey: 'display_COUNT_SET',
+      bettable: true,
+    });
+    expect(resolveWcMarketKey('COUNT_SET_YES_NO')).toEqual({
+      marketKey: 'display_COUNT_SET_YES_NO',
+      bettable: true,
+    });
   });
 
   it('falls back to display_* for unknown markets', () => {

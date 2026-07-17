@@ -1,7 +1,5 @@
 import {
   BasketballIcon,
-  CSIcon,
-  DotaIcon,
   HockeyIcon,
   MmaIcon,
   SoccerIcon,
@@ -10,16 +8,12 @@ import {
   VolleyballIcon,
 } from "~/shared/assets";
 
-export const gamesList: Record<
-  string,
-  {
-    Icon: React.FC<{ className?: string }>;
-    label: string;
-    name: string;
-    /** Temporarily hidden from line/live sport menu */
-    hidden?: boolean;
-  }
-> = {
+import {
+  CYBERSPORT_CATALOG,
+  cyberIconForApiSport,
+} from "~/entities/cybersport/lib/cyberDisciplineCatalog";
+
+const coreGames = {
   soccer: { Icon: SoccerIcon, label: "Футбол", name: "soccer" },
   hockey: { Icon: HockeyIcon, label: "Хоккей", name: "hockey" },
   basketball: { Icon: BasketballIcon, label: "Баскетбол", name: "basketball" },
@@ -33,26 +27,31 @@ export const gamesList: Record<
   mma: { Icon: MmaIcon, label: "UFC/MMA", name: "mma" },
   "cyber-football": { Icon: SoccerIcon, label: "Киберфутбол", name: "cyber-football" },
   "cyber-basketball": { Icon: BasketballIcon, label: "Кибербаскетбол", name: "cyber-basketball" },
-  // eslint-disable-next-line perfectionist/sort-objects
-  ["esports.cs"]: {
-    Icon: CSIcon,
-    label: "Counter strike",
-    name: "esports.cs",
-    hidden: true,
-  },
-  // eslint-disable-next-line perfectionist/sort-objects
-  ["esports.dota2"]: {
-    Icon: DotaIcon,
-    label: "Dota 2",
-    name: "esports.dota2",
-    hidden: true,
-  },
-  ["esports.valorant"]: {
-    Icon: CSIcon,
-    label: "Valorant",
-    name: "esports.valorant",
-    hidden: true,
-  },
+} as const;
+
+const esportsGames = Object.fromEntries(
+  CYBERSPORT_CATALOG.map((entry) => [
+    entry.apiSport,
+    {
+      Icon: cyberIconForApiSport(entry.apiSport),
+      label: entry.label,
+      name: entry.apiSport,
+      hidden: true as const,
+    },
+  ]),
+);
+
+export const gamesList: Record<
+  string,
+  {
+    Icon: React.FC<{ className?: string }>;
+    label: string;
+    name: string;
+    hidden?: boolean;
+  }
+> = {
+  ...coreGames,
+  ...esportsGames,
 };
 
 export const visibleGamesList = () =>

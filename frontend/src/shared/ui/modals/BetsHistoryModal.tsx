@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import getSymbolFromCurrency from "currency-symbol-map";
+
 import styles from "./BetsHistoryStyles.module.css";
 import { api } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
@@ -13,11 +12,16 @@ import { createTitleForBet } from "~/entities/bet/lib";
 import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { mapWcBetsForHistory } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
 import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
-
-type BetStatus = "PENDING" | "WIN" | "LOSE" | "RETURN";
-type TabType = "all" | "express" | "ordinar";
+import type { MessageKey } from "~/shared/i18n/messages";
+import type { TranslateParams } from "~/shared/i18n/messages";
+import { useFormat } from "~/shared/model/useFormat";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { components } from "~/shared/api";
+
+type BetStatus = "PENDING" | "WIN" | "LOSE" | "RETURN" | "CASHOUT";
+type TabType = "all" | "express" | "ordinar";
+type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
 
 type BetDto = components["schemas"]["BetDto"];
 type ExpressBetDto = components["schemas"]["ExpressBetDto"];
@@ -34,6 +38,8 @@ export const BetsHistoryModal = ({
     onClose: () => void;
     accountNumber?: string;
 }) => {
+    const { t } = useLocale();
+    const format = useFormat();
     const [tab, setTab] = useState<TabType>("all");
     const router = useRouter();
 
@@ -48,15 +54,12 @@ export const BetsHistoryModal = ({
             onClose();
             return;
         }
-        // Для обычной ставки
         if (bet.game?.parentEventId) {
             router.push(`/game/${bet.game.parentEventId}`);
         }
-        // Для экспресс-ставки - переходим к первой игре
         else if (bet.bets?.length > 0 && bet.bets[0]?.parentEventId) {
             router.push(`/game/${bet.bets[0].parentEventId}`);
         }
-        // Закрываем модальное окно после клика
         onClose();
     };
 
@@ -82,7 +85,7 @@ export const BetsHistoryModal = ({
                 return { express: [], ordinar: [] };
             }
         },
-        refetchInterval: 30000, // Обновляем каждые 30 секунд
+        refetchInterval: 30000,
         refetchIntervalInBackground: true,
     });
 
@@ -107,19 +110,16 @@ export const BetsHistoryModal = ({
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    // Helper functions to get event name and choice
     const getEventName = (bet: any): string => {
         if (bet.isWcBet) {
             return bet.eventName;
         }
         if (bet.bets?.length > 0) {
-            // Express bet - show first bet's event or generic name
             const firstBet = bet.bets[0];
-            const eventName = firstBet?.eventName || firstBet?.game?.eventName || `Экспресс из ${bet.bets.length} событий`;
+            const eventName = firstBet?.eventName || firstBet?.game?.eventName || t("coupon.expressFromEvents", { count: bet.bets.length });
             const sport = firstBet?.sport || firstBet?.game?.sport;
             const league = firstBet?.leagueName || firstBet?.game?.leagueName;
 
-            // Формируем строку с дополнительной информацией
             let displayText = eventName;
             if (sport || league) {
                 const additionalInfo = [sport, league].filter(Boolean).join(' • ');
@@ -127,12 +127,10 @@ export const BetsHistoryModal = ({
             }
             return displayText;
         } else if (bet.game || bet.eventName) {
-            // Ordinary bet - используем новые поля из backend
-            const eventName = bet.eventName || bet.game?.eventName || 'Событие';
+            const eventName = bet.eventName || bet.game?.eventName || t("coupon.eventDefault");
             const sport = bet.sport || bet.game?.sport;
             const league = bet.leagueName || bet.game?.leagueName;
 
-            // Формируем строку с дополнительной информацией
             let displayText = eventName;
             if (sport || league) {
                 const additionalInfo = [sport, league].filter(Boolean).join(' • ');
@@ -140,50 +138,54 @@ export const BetsHistoryModal = ({
             }
             return displayText;
         }
-        return 'Событие';
+        return t("coupon.eventDefault");
     };
 
     const getChoice = (bet: any): string => {
         if (bet.isWcBet) {
-            const info = bet.betInfo || "Ставка";
-            if (bet.score && !/сч[ёе]т\s*:/i.test(info)) {
-                return `${info} · Счёт: ${bet.score}`;
+            const info = bet.betInfo || t("coupon.betLabel");
+            if (bet.score && !/сч[ёе]т\s*:/i.test(info) && !/score\s*:/i.test(info)) {
+                return `${info} · ${t("coupon.scoreLabel", { score: bet.score })}`;
             }
             return info;
         }
         if (bet.bets?.length > 0) {
-            // Express bet - show number of events with score info if available
-            let choiceText = `Экспресс из ${bet.bets.length} событий`;
+            let choiceText = t("coupon.expressFromEvents", { count: bet.bets.length });
 
-            // Добавляем информацию о счете первого события, если доступна
             const firstBet = bet.bets[0];
             const score = firstBet?.score || firstBet?.game?.score;
             if (score && score !== 'N/A' && score !== '0:0') {
-                choiceText += `Счёт: ${score}`;
+                choiceText += t("coupon.scoreLabel", { score });
             }
 
             return choiceText;
         } else if (bet.betInfo) {
-            // Ordinary bet - use createTitleForBet and add score info
-            let choiceText = '';
-
             const score = bet.score || bet.game?.score;
             if (score && score !== 'N/A' && score !== '0:0') {
-                choiceText += `Счёт: ${score}`;
+                return t("coupon.scoreLabel", { score });
             }
 
-            return choiceText;
+            return createTitleForBet(bet.betInfo) || t("coupon.betLabel");
         }
-        return bet.betType || 'Ставка';
+        return bet.betType || t("coupon.betLabel");
     };
+
+    const formatBetDate = (createdAt: string) =>
+        format.dateTime(createdAt, {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        }).replace(",", " •");
 
     return (
         <div className={styles.detailsModal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
                 <div className={styles.headerRow}>
-                    <div className={styles.headerTitle}>История ставок</div>
+                    <div className={styles.headerTitle}>{t("coupon.historyTitle")}</div>
                     <div className={styles.headerAccount}>
-                        <span>Счет #{accountNumber}</span>
+                        <span>{t("profile.accountId", { id: accountNumber })}</span>
                         <button className={styles.closeButton} onClick={onClose}>
                             <svg width="18" height="18" viewBox="0 0 320 512" aria-hidden="true">
                                 <path
@@ -201,38 +203,38 @@ export const BetsHistoryModal = ({
                     className={`${styles.tabItem} ${tab === "all" ? styles.active : ""}`}
                     onClick={() => setTab("all")}
                 >
-                    Всё
+                    {t("coupon.all")}
                 </div>
                 <div
                     className={`${styles.tabItem} ${tab === "express" ? styles.active : ""}`}
                     onClick={() => setTab("express")}
                 >
-                    Экспресс
+                    {t("coupon.express")}
                 </div>
                 <div
                     className={`${styles.tabItem} ${tab === "ordinar" ? styles.active : ""}`}
                     onClick={() => setTab("ordinar")}
                 >
-                    Ординар
+                    {t("coupon.ordinar")}
                 </div>
             </div>
 
             <div className={styles.content}>
                 {isLoading || wcLoading ? (
-                    <div className={styles.loadingText}>Загрузка ставок...</div>
+                    <div className={styles.loadingText}>{t("coupon.loadingBets")}</div>
                 ) : !filteredBets.length ? (
                     <div className={styles.emptyBlock}>
-                        <div className={styles.emptyTitle}>Ничего нет</div>
+                        <div className={styles.emptyTitle}>{t("coupon.emptyTitle")}</div>
                         <div className={styles.emptyText}>
-                            У вас пока нет ни одной ставки, чтоб отобразить ее
+                            {t("coupon.historyModalEmpty")}
                         </div>
                     </div>
                 ) : (
                     <div className={styles.operationsList}>
                         {filteredBets.map((bet, index) => {
-                            // Создаем уникальный ключ на основе типа ставки, ID и индекса
                             const betType = (bet as any).betVariant === 'EXPRESS' ? 'express' : 'ordinar';
                             const uniqueKey = `${betType}-${bet.id}-${index}`;
+                            const statusName = getBetStatusName(bet.status, getGameStatus(bet), t);
 
                             return (
                                 <div
@@ -244,41 +246,49 @@ export const BetsHistoryModal = ({
                                     <div className={styles.betHeader}>
                                         <div className={styles.betHeaderLeft}>
                                             <span className={styles.betDate}>
-                                                {format(new Date(bet.createdAt), "dd.MM.yyyy • HH:mm", { locale: ru })}
+                                                {formatBetDate(bet.createdAt)}
                                             </span>
                                             {tab === "all" && (
                                                 <span className={styles.betType}>
                                                     {(bet as any).isWcBet
-                                                        ? "Ординар"
-                                                        : (bet as any).betVariant === 'EXPRESS' ? "Экспресс" : "Ординар"}
+                                                        ? t("coupon.ordinar")
+                                                        : (bet as any).betVariant === 'EXPRESS' ? t("coupon.express") : t("coupon.ordinar")}
                                                 </span>
                                             )}
                                         </div>
                                         <div className={styles.betStatus}>
                                             <span className={
-                                                bet.status === "WIN" ? styles.statusWin :
+                                                bet.status === "WIN" || bet.status === "CASHOUT" ? styles.statusWin :
                                                     bet.status === "LOSE" ? styles.statusLose :
                                                         bet.status === "PENDING" ? styles.statusPending :
                                                             styles.statusReturn
                                             }>
-                                                {getBetStatusName(bet.status, getGameStatus(bet))}
+                                                {statusName}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className={styles.betContent}>
                                         <div className={styles.betEvent}>{getEventName(bet)}</div>
-                                        <div className={styles.betChoice}>{getBetStatusName(bet.status, getGameStatus(bet)) !== "Расчет" ? getChoice(bet) : 'ОКОНЧЕНА'}</div>
+                                        <div className={styles.betChoice}>
+                                            {statusName !== t("coupon.historySettling") ? getChoice(bet) : t("coupon.eventFinished")}
+                                        </div>
                                     </div>
 
                                     <div className={styles.betFooter}>
                                         <div className={styles.betCoefficient}>
-                                            <span className={styles.betCoefficientLabel}>Кф:</span>
+                                            <span className={styles.betCoefficientLabel}>{t("coupon.coefficientShort")}</span>
                                             <span className={styles.betCoefficientValue}>{bet.cf || 'N/A'}</span>
                                         </div>
                                         <div className={styles.betAmount}>
                                             <span className={styles.betAmountLabel}>
-                                                {bet.status === "WIN" ? "Выигрыш:" : bet.status === "RETURN" ? "Возврат:" : "Ставка:"}
+                                                {bet.status === "WIN"
+                                                    ? t("coupon.payoutWin")
+                                                    : bet.status === "CASHOUT"
+                                                      ? t("coupon.payoutCashout")
+                                                      : bet.status === "RETURN"
+                                                        ? t("coupon.payoutReturn")
+                                                        : t("coupon.payoutStake")}
                                             </span>
                                             <span className={styles.betAmountValue}>
                                                 {getPayoutDisplay(bet)} {getSymbolFromCurrency(bet.currencyCode) || bet.currencyCode}
@@ -298,35 +308,28 @@ export const BetsHistoryModal = ({
 function getPayoutDisplay(bet: any): string {
     const stake = Number(bet.amount) || 0;
 
-    if (bet.status === "WIN") {
-        // WC bets carry an exact payout; legacy bets fall back to stake × coef.
+    if (bet.status === "WIN" || bet.status === "CASHOUT") {
         const payout = bet.payout != null
             ? Number(bet.payout)
             : stake * (Number(bet.cf) || 1);
         return Number.isFinite(payout) ? String(Math.round(payout)) : String(stake);
     }
 
-    // LOSE / PENDING / RETURN — show the stake itself.
     return String(Math.round(stake));
 }
 
 function isGameFinished(game: any): boolean {
     if (!game) return false;
 
-    // Проверяем finale флаг (самый надежный индикатор)
     if (game.finale === true) return true;
 
-    // Проверяем статус игры
     if (game.status === "FINISHED" || game.status === 2) return true;
     if (game.status === "CANCELED" || game.status === 3) return true;
 
-    // Проверяем таймер игры
     if (game.timer && (game.timer.includes("FT") || game.timer.includes("Final"))) return true;
 
-    // Проверяем флаг canceled
     if (game.canceled === true) return true;
 
-    // Проверяем возраст игры (если игра старше 3 часов и нет активности)
     if (game.startTime) {
         const gameStart = new Date(game.startTime);
         const now = new Date();
@@ -341,37 +344,39 @@ function getGameStatus(bet: any): { isFinished: boolean; game: any } {
     if (bet.isWcBet) {
         return { isFinished: Boolean(bet.eventCompleted), game: null };
     }
-    // Для экспресс-ставок проверяем все игры
     if (bet.bets && bet.bets.length > 0) {
-        // Экспресс считается завершенным, если все игры завершены
         const allGamesFinished = bet.bets.every((subBet: any) =>
             isGameFinished(subBet.game)
         );
         return { isFinished: allGamesFinished, game: bet.bets[0]?.game };
     }
 
-    // Для обычных ставок проверяем статус игры
     return {
         isFinished: isGameFinished(bet.game),
         game: bet.game
     };
 }
 
-function getBetStatusName(status: BetStatus, gameStatus?: { isFinished: boolean; game: any }): string {
+function getBetStatusName(
+    status: BetStatus,
+    gameStatus: { isFinished: boolean; game: any } | undefined,
+    t: TranslateFn,
+): string {
     switch (status) {
         case "PENDING":
-            // Если игра завершена, но ставка еще в статусе PENDING, показываем "Расчет"
             if (gameStatus?.isFinished) {
-                return "Расчет";
+                return t("coupon.historySettling");
             }
-            return "В игре";
+            return t("coupon.historyPending");
         case "WIN":
-            return "Выигрыш";
+            return t("coupon.historyWin");
         case "LOSE":
-            return "Проигрыш";
+            return t("coupon.historyLose");
         case "RETURN":
-            return "Возврат";
+            return t("coupon.historyReturn");
+        case "CASHOUT":
+            return t("coupon.historyCashout");
         default:
-            return "Неизвестно";
+            return t("coupon.statusUnknown");
     }
 }

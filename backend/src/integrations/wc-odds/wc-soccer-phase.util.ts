@@ -5,6 +5,10 @@ const ET2_START_SEC = 105 * 60;
 const MATCH_END_SEC = 120 * 60;
 /** After this elapsed, "break" / awaiting-pens feed codes mean 2nd ET if clock still runs. */
 const ET2_PLAYING_GRACE_SEC = 60;
+const HALFTIME_END_SEC = 46 * 60;
+const FULLTIME_START_SEC = 88 * 60;
+
+const ACTIVE_PLAY_PHASES = new Set(['3', '4', '6', '7', '41', '42']);
 
 export function resolveSoccerGamePhaseFromMatchPhase(matchPhase: string | null): SoccerGamePhase {
   if (!matchPhase) return null;
@@ -18,13 +22,40 @@ export function resolveSoccerGamePhaseFromMatchPhase(matchPhase: string | null):
   return null;
 }
 
-/** Correct stale break / awaiting-pens codes when the match clock shows active extra time. */
+function clearStaleRegularBreak(
+  matchPhase: string | null,
+  seconds: number | null | undefined,
+  detailsLength: number,
+): boolean {
+  if (!matchPhase) return false;
+
+  if (ACTIVE_PLAY_PHASES.has(matchPhase)) return true;
+
+  if (matchPhase === '31') {
+    if (detailsLength >= 2) return true;
+    if (seconds != null && seconds > HALFTIME_END_SEC && seconds < ET1_START_SEC) return true;
+  }
+
+  if (matchPhase === '32' && seconds != null && seconds < FULLTIME_START_SEC) {
+    return true;
+  }
+
+  return false;
+}
+
+/** Correct stale break / awaiting-pens codes when the match clock shows active play. */
 export function refineSoccerGamePhase(
   matchPhase: string | null | undefined,
   seconds: number | null | undefined,
   declared?: SoccerGamePhase | null,
+  detailsLength = 0,
 ): SoccerGamePhase | null {
   const mp = matchPhase?.trim() || null;
+
+  if (clearStaleRegularBreak(mp, seconds, detailsLength)) {
+    return null;
+  }
+
   const base = resolveSoccerGamePhaseFromMatchPhase(mp) ?? declared ?? null;
 
   if (mp === '50' || base === 'penalties') return 'penalties';
@@ -68,6 +99,7 @@ export function refineSoccerDisplayPeriod(
   if (gamePhase === 'extra_time_2') return 4;
   if (gamePhase === 'extra_time_1') return 3;
   if (gamePhase === 'break' && matchPhase === '34') return 5;
+  void seconds;
   return period ?? null;
 }
 
@@ -79,9 +111,15 @@ export function applySoccerPhaseRefinement(
     matchPhaseRaw?: string | null;
   },
   matchPhase: string | null,
+  detailsLength = 0,
 ): void {
-  const refined = refineSoccerGamePhase(matchPhase, parsed.seconds, parsed.gamePhase);
-  if (refined) parsed.gamePhase = refined;
+  parsed.matchPhaseRaw = matchPhase;
+  parsed.gamePhase = refineSoccerGamePhase(
+    matchPhase,
+    parsed.seconds,
+    parsed.gamePhase,
+    detailsLength,
+  );
   const nextPeriod = refineSoccerDisplayPeriod(
     matchPhase,
     parsed.seconds,

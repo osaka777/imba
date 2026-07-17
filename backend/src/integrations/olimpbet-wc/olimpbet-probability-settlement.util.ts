@@ -57,8 +57,8 @@ function probabilityToResult(
 
   const status = (prob.tradingStatus ?? '').toUpperCase();
   if (status.includes('RESULTED') || status.includes('SETTLED') || status.includes('CLOSED')) {
-    if (prob.odd >= 1 && prob.odd < 1.01) return 'WIN';
-    if (prob.odd <= 1) return 'LOSE';
+    if (prob.odd >= 1 && prob.odd < 1.01) return 'VOID';
+    if (prob.odd < 1) return 'LOSE';
   }
 
   return null;

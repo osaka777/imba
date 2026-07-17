@@ -37,7 +37,8 @@ export type ManualForeignCardMethod =
   | "KZT_FOREIGN_CARD"
   | "KZT_KASPI"
   | "RUB_FOREIGN_CARD"
-  | "RUB_SBERBANK";
+  | "RUB_SBERBANK"
+  | "RUB_YANDEX_BANK";
 
 export type MyKztForeignCardOrder = {
   id: number;
@@ -75,7 +76,7 @@ const authHeaders = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
-export const getManualDepositConfig = async (currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK') => {
+export const getManualDepositConfig = async (currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK' | 'RUB_YANDEX_BANK') => {
   const token = getSessionClient();
   if (!token) throw new Error('Не авторизован');
   return api.GET(`/api/deposit/manual-deposit/config?currency=${currency}`, {
@@ -167,6 +168,14 @@ export const getMyRubSberbankOrder = async () => {
   const token = getSessionClient();
   if (!token) throw new Error('Не авторизован');
   return api.GET('/api/deposit/rub-sberbank/me', {
+    headers: authHeaders(),
+  });
+};
+
+export const getMyRubYandexBankOrder = async () => {
+  const token = getSessionClient();
+  if (!token) throw new Error('Не авторизован');
+  return api.GET('/api/deposit/rub-yandex-bank/me', {
     headers: authHeaders(),
   });
 };
@@ -273,6 +282,29 @@ export const uploadRubSberbankReceipt = async (form: FormData) => {
     throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
   }
   const res = await fetch(`${apiBase()}/api/deposit/rub-sberbank`, {
+    method: 'POST',
+    body: form,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    } as any,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || 'Ошибка загрузки чека');
+  }
+  try {
+    return await res.json();
+  } catch {
+    return { ok: true } as any;
+  }
+};
+
+export const uploadRubYandexBankReceipt = async (form: FormData) => {
+  const token = getSessionClient();
+  if (!token) {
+    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+  }
+  const res = await fetch(`${apiBase()}/api/deposit/rub-yandex-bank`, {
     method: 'POST',
     body: form,
     headers: {

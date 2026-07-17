@@ -1,3 +1,4 @@
+import { setDefaultResultOrder } from 'dns';
 import { INestApplication, ValidationPipe, BadRequestException } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -7,6 +8,15 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { uploadsPathGuard } from './common/middleware/uploads-path.middleware';
+import { runWithLocale } from './common/locale/locale.context';
+import { parseRequestLocale } from './common/locale/parse-request-locale';
+
+// This container has no working IPv6 egress (ENETUNREACH). Force IPv4-first
+// resolution app-wide so outbound fetch()/dns.lookup() never race/stall on a
+// dead-end AAAA candidate (seen causing UND_ERR_CONNECT_TIMEOUT to olimpbet.kz).
+// This container has no working IPv6 egress (ENETUNREACH observed). Force
+// IPv4-first resolution app-wide as a safe defensive measure.
+setDefaultResultOrder('ipv4first');
 
 const mainConfig = (app: NestExpressApplication) => {
   app.enableCors({
@@ -22,15 +32,21 @@ const mainConfig = (app: NestExpressApplication) => {
       'https://cdn.imba.bet',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'X-Locale', 'Origin', 'X-Requested-With'],
     credentials: true,
   });
 
   // Используем WebSocket адаптер
   app.useWebSocketAdapter(new WsAdapter(app));
 
-  // Добавляем cookie-parser для обработки cookies
   app.use(cookieParser());
+  app.use((req, _res, next) => {
+    const locale = parseRequestLocale(
+      req.headers['x-locale'],
+      req.headers['accept-language'],
+    );
+    runWithLocale(locale, () => next());
+  });
 
   app.set('trust proxy', 1);
 
@@ -97,6 +113,7 @@ const setupDocs = (app: INestApplication) => {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     cors: true,
+    rawBody: true,
   });
 
 

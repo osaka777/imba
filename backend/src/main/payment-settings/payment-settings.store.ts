@@ -11,6 +11,7 @@ export type PaymentMethodKey =
   | 'KZT_KASPI'
   | 'RUB_FOREIGN_CARD'
   | 'RUB_SBERBANK'
+  | 'RUB_YANDEX_BANK'
   | 'USDT_TRC20'
   | 'NirvanaPay'
   | 'Aaio'
@@ -90,10 +91,18 @@ export function getDefaultPaymentSettings(): PaymentSettingsFile {
       RUB_SBERBANK: {
         cardNumber: '',
         holderName: DEFAULT_HOLDER,
-        bankName: 'Inter',
+        bankName: 'Сбербанк',
         qrImageUrl: '',
         minAmount: 1000,
         rubPerBrl: 183,
+        enabled: true,
+      },
+      RUB_YANDEX_BANK: {
+        cardNumber: '',
+        holderName: DEFAULT_HOLDER,
+        bankName: 'Яндекс Банк',
+        qrImageUrl: '',
+        minAmount: 1000,
         enabled: true,
       },
       USDT: {
@@ -110,7 +119,8 @@ export function getDefaultPaymentSettings(): PaymentSettingsFile {
       KZT_FOREIGN_CARD: { enabled: true, label: 'Visa/Mastercard KZT' },
       KZT_KASPI: { enabled: true, label: 'Kaspi KZT' },
       RUB_FOREIGN_CARD: { enabled: false, label: 'Visa/Mastercard RUB' },
-      RUB_SBERBANK: { enabled: true, label: 'Перевод из РФ' },
+      RUB_SBERBANK: { enabled: true, label: 'Сбербанк' },
+      RUB_YANDEX_BANK: { enabled: true, label: 'Яндекс Банк' },
       USDT_TRC20: { enabled: true, label: 'USDT TRC-20' },
       NirvanaPay: { enabled: true, label: 'NirvanaPay' },
       Aaio: { enabled: true, label: 'Aaio / Карты' },
@@ -149,6 +159,11 @@ export function loadPaymentSettings(): PaymentSettingsFile {
           'RUB_SBERBANK',
           parsed.manualDeposit?.RUB_SBERBANK,
           defaults.manualDeposit.RUB_SBERBANK,
+        ),
+        RUB_YANDEX_BANK: mergeManualDepositItem(
+          'RUB_YANDEX_BANK',
+          parsed.manualDeposit?.RUB_YANDEX_BANK,
+          defaults.manualDeposit.RUB_YANDEX_BANK,
         ),
         USDT: mergeManualDepositItem('USDT', parsed.manualDeposit?.USDT, defaults.manualDeposit.USDT),
       },

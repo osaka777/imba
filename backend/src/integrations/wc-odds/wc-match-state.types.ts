@@ -1,3 +1,5 @@
+import type { WcParsedScore, WcStatListItem } from './wc-odds-statistics.types';
+
 /** Persisted per-event state for verified micro-market settlement. */
 export type WcTennisGameState = {
   /** True once 40:40 or advantage (50) observed in this game. */
@@ -43,6 +45,13 @@ export type WcMatchState = {
   v: 1;
   tennis?: WcMatchStateTennis;
   soccer?: WcMatchStateSoccer;
+  /** Sport-agnostic result snapshot that survives process restarts and feed expiry. */
+  result?: {
+    periodScores?: Array<{ home: number; away: number }>;
+    parsedScore?: WcParsedScore | null;
+    statList?: WcStatListItem[];
+    capturedAt: string;
+  };
   /** Key: `${marketId}:${outcomeTypeId}:${sortedParams}` */
   probabilitySnapshots?: Record<string, WcProbabilitySnapshotResult>;
   updatedAt: string;

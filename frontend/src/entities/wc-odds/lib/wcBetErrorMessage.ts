@@ -1,14 +1,18 @@
-const WC_BET_ERROR_RU: Record<string, string> = {
-  "Odds unavailable for this outcome": "Приём ставок на этот исход закрыт",
-  "This outcome is temporarily suspended": "Исход временно приостановлен",
-  "Betting closed for this period": "Приём ставок на этот период закрыт",
-  "Betting closed for this match": "Приём ставок на этот матч закрыт",
-  "This market is not available for betting": "Этот рынок недоступен для ставок",
-  "Insufficient funds": "Недостаточно средств на счёте",
-  "Event not found": "Матч не найден",
-  "Outcome required": "Не выбран исход",
-  "Pick required for 1X2 market": "Выберите исход: П1, X или П2",
-  "Odds have changed": "Коэффициент изменился",
+import type { AppLocale } from "~/shared/i18n/locale";
+import { toIntlLocale } from "~/shared/i18n/format";
+import { translate } from "~/shared/i18n/messages";
+
+const WC_BET_ERROR_KEYS: Record<string, Parameters<typeof translate>[1]> = {
+  "Odds unavailable for this outcome": "coupon.wcOutcomeClosed",
+  "This outcome is temporarily suspended": "coupon.wcOutcomeSuspended",
+  "Betting closed for this period": "coupon.wcPeriodClosed",
+  "Betting closed for this match": "coupon.wcMatchClosed",
+  "This market is not available for betting": "coupon.wcMarketUnavailable",
+  "Insufficient funds": "coupon.wcInsufficientFunds",
+  "Event not found": "coupon.wcEventNotFound",
+  "Outcome required": "coupon.wcOutcomeRequired",
+  "Pick required for 1X2 market": "coupon.wcPickRequired",
+  "Odds have changed": "coupon.wcOddsChanged",
 };
 
 const OUTCOME_CLOSED_ERRORS = new Set([
@@ -18,18 +22,22 @@ const OUTCOME_CLOSED_ERRORS = new Set([
   "Betting closed for this match",
 ]);
 
-export function formatWcBetErrorMessage(message: string): string {
+export function formatWcBetErrorMessage(
+  message: string,
+  locale: AppLocale = "ru",
+): string {
   const trimmed = message.trim();
-  if (!trimmed) return "Не удалось принять ставку";
+  if (!trimmed) return translate(locale, "coupon.wcBetFailed");
 
-  const exact = WC_BET_ERROR_RU[trimmed];
-  if (exact) return exact;
+  const key = WC_BET_ERROR_KEYS[trimmed];
+  if (key) return translate(locale, key);
 
   const stakeMatch = trimmed.match(/^Stake must be between ([\d.]+) and ([\d.]+)$/);
   if (stakeMatch) {
-    const min = Number(stakeMatch[1]).toLocaleString("ru-RU");
-    const max = Number(stakeMatch[2]).toLocaleString("ru-RU");
-    return `Сумма ставки — от ${min} до ${max}`;
+    const intl = toIntlLocale(locale);
+    const min = Number(stakeMatch[1]).toLocaleString(intl);
+    const max = Number(stakeMatch[2]).toLocaleString(intl);
+    return translate(locale, "coupon.wcStakeRange", { min, max });
   }
 
   return trimmed;

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale";
+import { enUS, ru } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import getSymbolFromCurrency from "currency-symbol-map";
 import { api, components } from "~/shared/api";
@@ -13,10 +13,11 @@ import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
 import { getWcBetLabel } from "~/entities/wc-odds/lib/wcRate";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./BetsHistoryPage.module.css";
 
-type BetStatus = "PENDING" | "WIN" | "LOSE" | "RETURN";
+type BetStatus = "PENDING" | "WIN" | "LOSE" | "RETURN" | "CASHOUT";
 type TabType = "all" | "express" | "ordinar";
 
 type BetDto = components["schemas"]["BetDto"];
@@ -30,6 +31,8 @@ interface BetsResponse {
 export const BetsHistory: React.FC = () => {
   const [tab, setTab] = useState<TabType>("all");
   const router = useRouter();
+  const { locale } = useLocale();
+  const dateLocale = locale === "en" ? enUS : ru;
 
   const handleBetClick = (bet: any) => {
     if (bet?.isWcBet && bet?.wcGameHref) {
@@ -90,7 +93,7 @@ export const BetsHistory: React.FC = () => {
     amount: Number(bet.stake).toFixed(0),
     currencyCode: bet.currencyCode,
     eventName: `${bet.event.homeTeam} — ${bet.event.awayTeam}`,
-    betInfo: getWcBetLabel(bet),
+    betInfo: getWcBetLabel({ ...bet, sport: bet.event.sport }),
     wcGameHref: bet.event.slug
       ? buildWcGameHref({
           slug: bet.event.slug,
@@ -232,7 +235,7 @@ export const BetsHistory: React.FC = () => {
                     <div className={styles.betHeaderLeft}>
                       <span className={styles.betDate}>
                         {format(new Date(bet.createdAt), "dd.MM.yyyy • HH:mm", {
-                          locale: ru,
+                          locale: dateLocale,
                         })}
                       </span>
                       {tab === "all" && (
@@ -248,7 +251,7 @@ export const BetsHistory: React.FC = () => {
                     <div className={styles.betStatus}>
                       <span
                         className={
-                          bet.status === "WIN"
+                          bet.status === "WIN" || bet.status === "CASHOUT"
                             ? styles.statusWin
                             : bet.status === "LOSE"
                               ? styles.statusLose
@@ -275,9 +278,13 @@ export const BetsHistory: React.FC = () => {
                       </span>
                     </div>
                     <div className={styles.betAmount}>
-                      <span className={styles.betAmountLabel}>Сумма:</span>
+                      <span className={styles.betAmountLabel}>
+                        {bet.status === "CASHOUT" ? "Продажа:" : "Сумма:"}
+                      </span>
                       <span className={styles.betAmountValue}>
-                        {bet.amount}{" "}
+                        {bet.status === "CASHOUT" && bet.payout
+                          ? bet.payout
+                          : bet.amount}{" "}
                         {getSymbolFromCurrency(bet.currencyCode) ||
                           bet.currencyCode}
                       </span>
@@ -337,6 +344,8 @@ function getBetStatusName(
       return "Проигрыш";
     case "RETURN":
       return "Возврат";
+    case "CASHOUT":
+      return "Продажа";
     default:
       return "Неизвестно";
   }

@@ -64,6 +64,11 @@ export class PromoModalService implements OnModuleInit {
         ? {
             percentage: settings.bonusPercentage,
             minDeposit: settings.minDepositAmount,
+            maxBonusAmount: settings.bonusAmount,
+            wagerMultiplier: 6,
+            maxCashoutMultiplier: 2,
+            wagerOnDepositPlusBonus: true,
+            requiresDeposit: true,
             totalTokens: 0,
             tokensPerBet: 1,
             tokenMinOdds: 1.8,

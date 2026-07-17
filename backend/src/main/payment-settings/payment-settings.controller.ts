@@ -45,7 +45,7 @@ export class AdminPaymentSettingsController {
   updateSettings(@Body() body: Partial<PaymentSettingsFile>) {
     const current = loadPaymentSettings();
     const mergeItem = (
-      currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK' | 'USDT',
+      currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK' | 'RUB_YANDEX_BANK' | 'USDT',
       patch?: Partial<PaymentSettingsFile['manualDeposit']['KZT']>,
     ) => {
       const merged = { ...current.manualDeposit[currency], ...patch };
@@ -60,6 +60,7 @@ export class AdminPaymentSettingsController {
         KZT_KASPI: mergeItem('KZT_KASPI', body.manualDeposit?.KZT_KASPI),
         RUB: mergeItem('RUB', body.manualDeposit?.RUB),
         RUB_SBERBANK: mergeItem('RUB_SBERBANK', body.manualDeposit?.RUB_SBERBANK),
+        RUB_YANDEX_BANK: mergeItem('RUB_YANDEX_BANK', body.manualDeposit?.RUB_YANDEX_BANK),
         USDT: mergeItem('USDT', body.manualDeposit?.USDT),
       },
       paymentMethods: {
@@ -128,6 +129,10 @@ export class PublicPaymentSettingsController {
         RUB_SBERBANK: {
           enabled: settings.manualDeposit.RUB_SBERBANK.enabled !== false,
           minAmount: settings.manualDeposit.RUB_SBERBANK.minAmount,
+        },
+        RUB_YANDEX_BANK: {
+          enabled: settings.manualDeposit.RUB_YANDEX_BANK.enabled !== false,
+          minAmount: settings.manualDeposit.RUB_YANDEX_BANK.minAmount,
         },
         USDT: {
           enabled: settings.manualDeposit.USDT.enabled !== false,

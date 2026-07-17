@@ -16,7 +16,7 @@ import { UserService } from './user.service';
   imports: [
     CurrencyModule,
     PrismaModule,
-    PartnersModule,
+    forwardRef(() => PartnersModule),
     BonusBalanceModule,
     PhoneVerificationModule,
     forwardRef(() => AuthenticationModule),

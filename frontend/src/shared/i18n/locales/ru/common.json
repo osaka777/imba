@@ -1,0 +1,15 @@
+{
+  "all": "Все",
+  "line": "Линия",
+  "live": "Live",
+  "back": "Назад",
+  "today": "Сегодня",
+  "gamesLoadError": "Ошибка загрузки игр. Пожалуйста, попробуйте позже.",
+  "gamesNotFound": "Игры не найдены",
+  "gameNotFound": "Игра не найдена",
+  "matchNotFound": "Матч не найден",
+  "matchLoadError": "Не удалось загрузить матч",
+  "backToLine": "Вернуться к линии",
+  "loadingLeagues": "Загрузка лиг...",
+  "tournaments": "Турниры"
+}

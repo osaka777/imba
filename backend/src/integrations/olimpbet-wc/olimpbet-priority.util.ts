@@ -5,10 +5,15 @@ export const OLIMP_TAG_TOP = 1;
 export type OlimpbetPriorityLevel = 0 | 1 | 2;
 
 export function resolveOlimpbetPriorityLevel(
-  eventTags?: number[] | null,
-  tournamentTags?: number[] | null,
+  eventTags?: Array<number | string> | null,
+  tournamentTags?: Array<number | string> | null,
 ): OlimpbetPriorityLevel {
-  const tags = [...(eventTags ?? []), ...(tournamentTags ?? [])];
+  const toNumbers = (tags?: Array<number | string> | null) =>
+    (tags ?? [])
+      .map((tag) => Number(tag))
+      .filter((tag) => Number.isFinite(tag));
+
+  const tags = [...toNumbers(eventTags), ...toNumbers(tournamentTags)];
   if (tags.includes(OLIMP_TAG_SUPER_TOP)) return 2;
   if (tags.includes(OLIMP_TAG_TOP)) return 1;
   return 0;

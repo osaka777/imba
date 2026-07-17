@@ -1,0 +1,4 @@
+.root {
+  width: 100%;
+  min-height: calc(100vh - var(--layout-nav-h, 56px));
+}

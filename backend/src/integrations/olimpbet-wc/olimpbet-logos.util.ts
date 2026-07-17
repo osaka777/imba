@@ -1,5 +1,6 @@
 const API_HOST = 'https://olimpbet.kz/api';
 const LOGO_TTL_MS = 6 * 60 * 60 * 1000;
+const LOGO_FETCH_TIMEOUT_MS = 2_500;
 
 type LogoCacheEntry = {
   url: string | null;
@@ -19,6 +20,11 @@ type OlimpbetLogoItem = {
 type OlimpbetLogosResponse = {
   entityType?: string;
   items?: OlimpbetLogoItem[];
+};
+
+export type FetchLogosOptions = {
+  /** Never hit the network — return only warm cache (list endpoints). */
+  cacheOnly?: boolean;
 };
 
 function pickLogoUrl(item: OlimpbetLogoItem): string | null {
@@ -41,6 +47,7 @@ export function getCachedOlimpbetCompetitorLogo(
 
 export async function fetchOlimpbetCompetitorLogos(
   ids: number[],
+  options?: FetchLogosOptions,
 ): Promise<Map<number, string | null>> {
   const result = new Map<number, string | null>();
   const missing: number[] = [];
@@ -52,10 +59,14 @@ export async function fetchOlimpbetCompetitorLogos(
       result.set(id, cached.url);
       continue;
     }
+    if (options?.cacheOnly) {
+      result.set(id, cached?.url ?? null);
+      continue;
+    }
     missing.push(id);
   }
 
-  if (missing.length === 0) return result;
+  if (missing.length === 0 || options?.cacheOnly) return result;
 
   const unique = [...new Set(missing)];
   const chunkSize = 40;
@@ -68,6 +79,7 @@ export async function fetchOlimpbetCompetitorLogos(
     try {
       const res = await fetch(url.toString(), {
         headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(LOGO_FETCH_TIMEOUT_MS),
       });
       if (!res.ok) continue;
 
@@ -91,7 +103,10 @@ export async function fetchOlimpbetCompetitorLogos(
         result.set(id, null);
       }
     } catch {
-      // keep missing ids without cache poisoning
+      // Network/timeout — serve without logos; do not poison cache.
+      for (const id of chunk) {
+        if (!result.has(id)) result.set(id, null);
+      }
     }
   }
 

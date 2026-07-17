@@ -11,21 +11,21 @@ export interface IUser {
             whatsapp: string | null;
             wallet: string | null;
             postbackUrl?: string | null;
-        },
-        trafficSource: string,
+        };
+        trafficSource: string;
         uid: string;
         percent: string;
-    }
+    };
     balances: {
         id: number;
         currencyCode: string;
         amount: number;
-    }[]
+    }[];
     operations: {
         id: number;
-        status: 'WAITING' | "SUCCESS" | "FAILED"
-        type: 'INCOME' | 'OUTCOME';
+        status: "WAITING" | "SUCCESS" | "FAILED";
+        type: "INCOME" | "OUTCOME";
         amount: number;
         currencyCode: string;
-    }[]
+    }[];
 }

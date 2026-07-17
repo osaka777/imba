@@ -125,7 +125,8 @@ export class AuthenticationService {
     this.logger.debug('Checking if email is unique', defaultLogMeta);
 
     const registrationIp = request ? extractClientIp(request) : undefined;
-    const user = await this.usersService.create(dto, registrationIp);
+    const deviceId = request?.headers['x-client-device-id'] as string | undefined;
+    const user = await this.usersService.create(dto, registrationIp, deviceId);
 
     this.logger.debug('User registered', {
       ...defaultLogMeta,

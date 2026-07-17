@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useReadLocalStorage } from "usehooks-ts";
 import { toast } from "react-toastify";
 import { Button, Input, LoadingSpinner } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 import styles from "./ForeignKztCardForm.module.css";
 import { DepositFormHeading } from "../DepositFormHeading";
 import { uploadKztForeignCardReceipt } from "../../../api/deposit";
@@ -16,6 +17,7 @@ interface FormShape {
 }
 
 export const ForeignKztCardForm = ({ forceCurrency }: { forceCurrency?: string }) => {
+  const { t } = useLocale();
   const defaultCurrency = useReadLocalStorage<string>("currency") || "KZT";
   const currency = forceCurrency || defaultCurrency;
 
@@ -44,7 +46,7 @@ export const ForeignKztCardForm = ({ forceCurrency }: { forceCurrency?: string }
     try {
       const file = data.receipt?.[0];
       if (!file) {
-        toast.warn("Загрузите фото подтверждения перевода");
+        toast.warn(t("deposit.uploadReceipt"));
         return;
       }
       const form = new FormData();
@@ -60,56 +62,56 @@ export const ForeignKztCardForm = ({ forceCurrency }: { forceCurrency?: string }
       }
 
       await uploadKztForeignCardReceipt(form);
-      toast.success("Заявка на пополнение отправлена. Ожидайте подтверждения администратором.");
+      toast.success(t("deposit.requestSent"));
       reset();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || "Ошибка отправки квитанции";
+      const msg = e?.response?.data?.message || e?.message || t("deposit.receiptSendFailed");
       toast.error(msg);
     }
   };
 
   if (currency !== "KZT") {
     return (
-      <div className={styles.notice}>Метод доступен только для валюты KZT</div>
+      <div className={styles.notice}>{t("deposit.kztOnly")}</div>
     );
   }
 
   return (
     <form className={styles.ForeignKztCardForm} onSubmit={handleSubmit(onSubmit)}>
-      <DepositFormHeading subtitle="Иностранная карта" />
+      <DepositFormHeading subtitle={t("deposit.foreignCard")} />
 
       <div className={styles.timerRow}>
-        <span>Время для перевода:</span>
+        <span>{t("deposit.transferTime")}</span>
         {/* <span className={styles.timer}>{formattedTimer}</span> */}
       </div>
 
       <div className={styles.cardBlock}>
-        <div className={styles.cardLine}><span className={styles.label}>Карта:</span> 5351 7737 9598 4711</div>
-        <div className={styles.cardLine}><span className={styles.label}>Держатель:</span> Ali Kaliyev</div>
+        <div className={styles.cardLine}><span className={styles.label}>{t("deposit.card")}</span> 5351 7737 9598 4711</div>
+        <div className={styles.cardLine}><span className={styles.label}>{t("deposit.cardHolder")}</span> Ali Kaliyev</div>
       </div>
 
       <Input
         {...register("amount", { required: true, min: 3000, setValueAs: Number })}
         className={styles.input}
-        label="Сумма (минимум 3000 KZT)"
-        placeholder="Введите сумму депозита"
+        label={t("deposit.amountMinLabel", { amount: "3000 KZT" })}
+        placeholder={t("deposit.amountPlaceholder")}
         type="number"
       />
       {errors.amount && (
-        <p className={styles.error}>Минимальная сумма — 3000 KZT</p>
+        <p className={styles.error}>{t("deposit.minAmountShort", { amount: "3000 KZT" })}</p>
       )}
 
-      {/* Ввод ваучера для активации депозитного бонуса (по желанию пользователя) */}
+      {/* Optional voucher for deposit bonus activation */}
       <Input
         {...register("voucher")}
         className={styles.input}
-        label="Бонус-код (ваучер) — необязательно"
-        placeholder="Введите ваучер для активации депозитного бонуса"
+        label={t("deposit.bonusCodeOptional")}
+        placeholder={t("deposit.bonusCodePlaceholder")}
         type="text"
       />
 
       <div className={styles.uploadBlock}>
-        <label className={styles.uploadLabel}>Фото перевода (скрин):</label>
+        <label className={styles.uploadLabel}>{t("deposit.uploadPhoto")}</label>
         <input
           {...register("receipt", { required: true })}
           className={styles.fileInput}
@@ -119,12 +121,12 @@ export const ForeignKztCardForm = ({ forceCurrency }: { forceCurrency?: string }
       </div>
 
       <Button className={styles.submit} type="submit" disabled={isSubmitting}>
-        Отправить на проверку
+        {t("deposit.submitReview")}
         {isSubmitting && <LoadingSpinner className={styles.loader} />}
       </Button>
 
       <p className={styles.hint}>
-        После отправки мы проверим перевод и подтвердим пополнение. Статус будет виден администратору.
+        {t("deposit.afterSubmitHint")}
       </p>
     </form>
   );

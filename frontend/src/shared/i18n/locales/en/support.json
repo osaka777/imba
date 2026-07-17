@@ -1,0 +1,19 @@
+{
+  "openChat": "Open chat",
+  "collapseChat": "Minimize chat",
+  "247": "Support 24/7",
+  "welcome": "Hello! Write your question — an agent will reply here.",
+  "statusReading": "Agent is reading…",
+  "statusDelivered": "Delivered",
+  "statusOnline": "Agent online",
+  "operatorOffline": "Agent is offline. Message us on Telegram for a faster reply.",
+  "slaAvg": "Average reply time ~{mins} min",
+  "slaAvgPct": "Average reply time ~{mins} min · {pct}% <5 min",
+  "onlineChat": "Live chat",
+  "authOnly": "Sign in to message support",
+  "authOnlyPage": "Chat on this page is available to signed-in users only.",
+  "loginCta": "Sign in",
+  "csatTitle": "Rate support",
+  "messagePlaceholder": "Your message...",
+  "screenshotAlt": "Screenshot"
+}

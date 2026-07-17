@@ -34,6 +34,9 @@ import {
 } from './affiliate-subs.util';
 import { AffiliatePostbackService } from './affiliate-postback.service';
 import type { PostbackPayload } from './affiliate-postback.service';
+import { KickLiveTrafficNotifyService } from '~/integrations/kick-dev/kick-live-traffic-notify.service';
+import { KickConnectBonusService } from '~/integrations/kick-dev/kick-connect-bonus.service';
+import { KickChallengeService } from '~/integrations/kick-dev/kick-challenge.service';
 
 @Injectable()
 export class PartnersService {
@@ -43,6 +46,9 @@ export class PartnersService {
     private readonly prismaService: PrismaService,
     private readonly operationService: OperationService,
     private readonly affiliatePostbackService: AffiliatePostbackService,
+    private readonly kickLiveTrafficNotify: KickLiveTrafficNotifyService,
+    private readonly kickConnectBonus: KickConnectBonusService,
+    private readonly kickChallenge: KickChallengeService,
   ) { }
 
   private getBetMetaId(meta: unknown): number | null {
@@ -329,6 +335,9 @@ export class PartnersService {
         playerEmail: player.email,
       }),
     );
+    void this.kickLiveTrafficNotify.notifyRegistration(player, affiliator);
+    void this.kickLiveTrafficNotify.notifyFirstReferralUnlock(affiliator);
+    void this.kickChallenge.maybeGrantWeeklyChallenge(affiliator.userId);
   }
 
   async notifyFirstDeposit(
@@ -372,6 +381,13 @@ export class PartnersService {
         amount: amount.toString(),
         currency: currencyCode,
       }),
+    );
+
+    void this.kickLiveTrafficNotify.notifyFirstDeposit(
+      player,
+      affiliator,
+      amount.toString(),
+      currencyCode,
     );
   }
 
@@ -432,6 +448,9 @@ export class PartnersService {
       where: { userId: partnerUserId },
     });
 
+    const referralsCount =
+      await this.kickConnectBonus.countPartnerReferrals(partnerUserId);
+
     const summaries = [];
 
     for (const balance of balances) {
@@ -462,13 +481,23 @@ export class PartnersService {
       }
 
       const total = balance.amount.toNumber();
-      const available = Math.max(0, total - Math.max(0, heldNet));
+      const lockedConnectBonus =
+        await this.kickConnectBonus.getLockedConnectBonusAmount(
+          partnerUserId,
+          balance.currencyCode,
+        );
+      const available = Math.max(
+        0,
+        total - Math.max(0, heldNet) - lockedConnectBonus,
+      );
 
       summaries.push({
         currencyCode: balance.currencyCode,
         total,
         available,
         held: Math.max(0, heldNet),
+        lockedConnectBonus,
+        referralsCount,
         minWithdraw: getAffiliateMinWithdraw(balance.currencyCode),
         holdDays: AFFILIATE_HOLD_DAYS,
       });
@@ -500,8 +529,12 @@ export class PartnersService {
     }
 
     const minWithdraw = getAffiliateMinWithdraw(currencyCode);
+    const minLabel =
+      currencyCode.toUpperCase() === 'USD'
+        ? `$${minWithdraw}`
+        : `${minWithdraw} ${currencyCode}`;
     if (amount < minWithdraw) {
-      return `Минимальная сумма вывода: ${minWithdraw} ${currencyCode}`;
+      return `Минимальная сумма вывода: ${minLabel}`;
     }
 
     const summary = await this.getPartnerWithdrawalSummary(partnerUserId);
@@ -514,7 +547,20 @@ export class PartnersService {
     }
 
     if (amount > currencySummary.available) {
-      return `Доступно к выводу: ${currencySummary.available.toFixed(2)} ${currencyCode}. Остальное на hold ${AFFILIATE_HOLD_DAYS} дней после начисления.`;
+      const locked = currencySummary.lockedConnectBonus ?? 0;
+      if (locked > 0 && (currencySummary.referralsCount ?? 0) === 0) {
+        const availLabel =
+          currencyCode.toUpperCase() === 'USD'
+            ? `$${currencySummary.available.toFixed(2)}`
+            : `${currencySummary.available.toFixed(2)} ${currencyCode}`;
+        return `Доступно к выводу: ${availLabel}. Бонус $${locked.toFixed(0)} за подключение Kick разблокируется после первой приведённой регистрации. Минимальный вывод — $50.`;
+      }
+
+      const availLabel =
+        currencyCode.toUpperCase() === 'USD'
+          ? `$${currencySummary.available.toFixed(2)}`
+          : `${currencySummary.available.toFixed(2)} ${currencyCode}`;
+      return `Доступно к выводу: ${availLabel}. Остальное на hold ${AFFILIATE_HOLD_DAYS} дней после начисления.`;
     }
 
     return null;
@@ -1053,11 +1099,9 @@ export class PartnersService {
     }
   }
 
-  type SubDimension = 'sub1' | 'sub2' | 'sub3' | 'sub4' | 'sub5';
-
   async getSubIdStatsForPartner(
     partnerUserId: number,
-    dimension: SubDimension,
+    dimension: 'sub1' | 'sub2' | 'sub3' | 'sub4' | 'sub5',
     currencyCode?: string,
   ) {
     const referred = await this.prismaService.user.findMany({

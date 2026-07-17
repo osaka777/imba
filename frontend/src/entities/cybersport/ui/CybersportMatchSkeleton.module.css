@@ -1,0 +1,119 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.head {
+  height: 36px;
+  border-radius: var(--kick-radius, 10px);
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(83 252 24 / 0.08) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  border-radius: var(--kick-radius, 10px);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: var(--kick-bg-card, #161617);
+}
+
+.teamBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.teamBlock:last-of-type {
+  flex-direction: row-reverse;
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(83 252 24 / 0.1) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.name {
+  height: 12px;
+  flex: 1;
+  max-width: 100px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(83 252 24 / 0.06) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.score {
+  grid-column: 2;
+  grid-row: 1;
+  width: 48px;
+  height: 22px;
+  border-radius: 4px;
+  align-self: center;
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.04) 0%,
+    rgb(83 252 24 / 0.12) 50%,
+    rgb(255 255 255 / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.odds {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.odd {
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.03) 0%,
+    rgb(83 252 24 / 0.06) 50%,
+    rgb(255 255 255 / 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

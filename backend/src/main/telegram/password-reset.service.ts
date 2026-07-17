@@ -96,8 +96,8 @@ export class PasswordResetService {
   }
 
   async resetPassword(rawToken: string, newPassword: string): Promise<void> {
-    if (!newPassword || newPassword.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters');
+    if (!newPassword) {
+      throw new BadRequestException('Password is required');
     }
 
     const tokenHash = this.hashToken(rawToken.trim());

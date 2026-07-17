@@ -16,7 +16,7 @@ export function PartnerPromoCreateForm({ onCreated }: Props) {
   const [percentage, setPercentage] = useState("50");
   const [minDeposit, setMinDeposit] = useState("1000");
   const [available, setAvailable] = useState("100");
-  const [currencyCode, setCurrencyCode] = useState("KZT");
+  const [currencyCode, setCurrencyCode] = useState("USD");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,7 +97,7 @@ export function PartnerPromoCreateForm({ onCreated }: Props) {
           <select value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value)}>
             <option value="KZT">KZT</option>
             <option value="RUB">RUB</option>
-            <option value="USD">USD</option>
+            <option value="USD">$</option>
           </select>
         </label>
         <label className={styles.field}>

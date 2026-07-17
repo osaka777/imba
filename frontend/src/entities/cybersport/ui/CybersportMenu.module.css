@@ -1,40 +1,75 @@
 .menu {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.menu::-webkit-scrollbar {
+  display: none;
 }
 
 .item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   height: 36px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid var(--cy-border, rgb(255 255 255 / 0.1));
-  background: var(--cy-bg-secondary, #1c1d21);
+  padding: 0 12px;
+  border-radius: var(--kick-radius, 10px);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.08));
+  background: var(--kick-bg-card, #161617);
   color: var(--cy-text-secondary, #909090);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .item:hover {
-  background: var(--cy-bg-elevated, #2e3036);
-  border-color: var(--cy-border-active, rgb(255 255 255 / 0.22));
+  background: var(--kick-bg-elevated, #1e1e20);
+  border-color: var(--kick-border-strong, rgb(255 255 255 / 0.14));
   color: var(--cy-text-primary, #e8e8ea);
 }
 
 .item_active {
-  background: var(--cy-bg-card, #25262b);
-  border-color: var(--cy-border-active, rgb(255 255 255 / 0.22));
-  color: var(--cy-text-primary, #e8e8ea);
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.12));
+  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
+  color: var(--kick-green, #53fc18);
+  box-shadow: 0 0 16px rgb(83 252 24 / 0.12);
+}
+
+.item_hub {
+  color: var(--cy-text-muted, #6b6b6f);
 }
 
 .icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   fill: currentColor;
+  flex-shrink: 0;
+}
+
+.count {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--cy-text-primary, #e8e8ea);
+}
+
+.item_active .count {
+  background: rgb(83 252 24 / 0.2);
+  color: var(--kick-green, #53fc18);
 }

@@ -23,10 +23,19 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN: 'imbalance.click'
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_HOST: 'https://imba.bet'
+      NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN: 'imbalance.click'
       BACKEND_URL: 'http://backend:3000'
+      IMBA_BOT_URL: 'http://imba-bot:8088'
+      SUPPORT_TELEGRAM_URL: 'https://t.me/Imbabetsupport_bot'
+      TELEGRAM_BOT_USERNAME: 'imbabetalert_bot'
+      NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: 'imbabetalert_bot'
+      TELEGRAM_SUPPORT_BOT_USERNAME: 'Imbabetsupport_bot'
+      TELEGRAM_NOTIFY_SECRET: '${TELEGRAM_NOTIFY_SECRET}'
     expose:
       - "8000"
 
@@ -46,22 +55,39 @@ services:
       NODE_ENV: production
       DATABASE_URL: 'postgresql://onex_app:${POSTGRES_APP_PASSWORD}@postgres:5432/onex?schema=public&connection_limit=25&pool_timeout=20'
       TELEGRAM_NOTIFY_URL: 'http://imba-bot:8088/notify'
+      TELEGRAM_SUPPORT_NOTIFY_URL: 'http://imba-bot:8088/notify-support'
       TELEGRAM_NOTIFY_SMOKE_URL: 'http://imba-bot:8088/notify-smoke'
       TELEGRAM_USER_NOTIFY_URL: 'http://imba-bot:8088/notify-user'
       TELEGRAM_BOT_USERNAME: 'imbabetalert_bot'
+      TELEGRAM_BOT_TOKEN: '${TELEGRAM_BOT_TOKEN}'
+      SUPPORT_TELEGRAM_URL: 'https://t.me/imbabetchat'
       WC_PROBE_SECRET: '${TELEGRAM_NOTIFY_SECRET}'
       PAYMENT_SETTINGS_PATH: '/data/logs/payment-settings.json'
       PROMO_MODAL_SETTINGS_PATH: '/data/logs/promo-modal-settings.json'
       AFFILIATE_BASE_URL: 'https://imba.bet/'
       BASE_URL: 'https://imba.bet'
+      KICK_SHORT_CLICK_DOMAIN: 'imbalance.click'
+      REDIS_HOST: 'redis'
+      REDIS_PORT: '6379'
+      REDIS_DB: '0'
     volumes:
       - ../data/logs:/data/logs
       - ./uploads:/app/uploads
     expose:
       - "3000"
+    # Docker's embedded DNS proxy (127.0.0.11) was intermittently returning
+    # SERVFAIL for external lookups (confirmed via packet capture 2026-07-14),
+    # which surfaced as UND_ERR_CONNECT_TIMEOUT calling olimpbet.kz. Point it
+    # at fast public resolvers directly; container-name resolution (postgres,
+    # redis, imba-bot) still goes through the embedded resolver first.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
       imba-bot:
         condition: service_started
 
@@ -84,10 +110,13 @@ services:
       args:
         NEXT_PUBLIC_HOST: 'https://partners.imba.bet'
         NEXT_PUBLIC_MAIN_SITE: 'https://imba.bet'
+        NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN: 'imbalance.click'
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_HOST: 'https://partners.imba.bet'
       NEXT_PUBLIC_MAIN_SITE: 'https://imba.bet'
+      NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN: 'imbalance.click'
+      BACKEND_URL: 'http://backend:3000'
     expose:
       - "8001"
 
@@ -100,12 +129,23 @@ services:
       - ../imba-bot/.env
     environment:
       PORT: "8088"
+      SUPPORT_TELEGRAM_URL: 'https://t.me/imbabetchat'
       TELEGRAM_LINK_API: 'http://backend:3000/api/telegram/complete-link'
       TELEGRAM_BOT_API: 'http://backend:3000/api/telegram/bot/command'
       TELEGRAM_USE_WEBHOOK: 'true'
       TELEGRAM_WEBHOOK_URL: 'https://imba.bet/tg/webhook'
+      TELEGRAM_SUPPORT_WEBHOOK_URL: 'https://imba.bet/tg/support/webhook'
+    volumes:
+      - imba_bot_data:/app/data
     expose:
       - "8088"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no
+    expose:
+      - "6379"
 
   postgres:
     image: postgres:16.2
@@ -139,3 +179,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  imba_bot_data:

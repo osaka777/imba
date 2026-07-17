@@ -5,14 +5,19 @@ export type EvenOddPairRow = {
   odd?: WcMarketOutcome;
 };
 
+function normalizeEvenOddText(value: string): string {
+  return value.trim().toLowerCase().replace(/ё/g, "е");
+}
+
 function isEvenOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey === "EVEN") return true;
-  return /чет/i.test(outcome.name) && !/нечет/i.test(outcome.name);
+  const name = normalizeEvenOddText(outcome.name);
+  return /чет/.test(name) && !/нечет/.test(name);
 }
 
 function isOddOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey === "ODD") return true;
-  return /нечет/i.test(outcome.name);
+  return /нечет/.test(normalizeEvenOddText(outcome.name));
 }
 
 export function findEvenOddPair(group: WcMarketGroup): EvenOddPairRow {

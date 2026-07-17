@@ -25,6 +25,13 @@ import type {
   WcStatListItem,
 } from './wc-odds-statistics.types';
 
+import type { SoccerGamePhase } from './wc-soccer-phase.util';
+import {
+  applySoccerPhaseRefinement,
+  refineSoccerGamePhase,
+  resolveSoccerGamePhaseFromMatchPhase,
+} from './wc-soccer-phase.util';
+
 const PERIOD_SPORTS = new Set([
   'soccer',
   'hockey',
@@ -149,13 +156,6 @@ function resolveSoccerPeriod(matchPhase: string | null): string | number | undef
   if (LEGACY_SOCCER_PERIOD[matchPhase] != null) return LEGACY_SOCCER_PERIOD[matchPhase];
   return undefined;
 }
-
-import type { SoccerGamePhase } from './wc-soccer-phase.util';
-import {
-  applySoccerPhaseRefinement,
-  refineSoccerGamePhase,
-  resolveSoccerGamePhaseFromMatchPhase,
-} from './wc-soccer-phase.util';
 
 const SOCCER_FIRST_HALF_PHASES = new Set(['3', '6']);
 const SOCCER_SECOND_HALF_PHASES = new Set(['4', '7']);
@@ -431,9 +431,7 @@ function buildParsedScore(
     if (isSoccerLikeSport(sport)) {
       const extraTime = calcSoccerExtraTime(timer, matchPhase);
       if (extraTime !== null) parsed.extraTime = extraTime;
-      const gamePhase = resolveSoccerGamePhaseFromMatchPhase(matchPhase);
-      if (gamePhase) parsed.gamePhase = gamePhase;
-      applySoccerPhaseRefinement(parsed, matchPhase);
+      applySoccerPhaseRefinement(parsed, matchPhase, details.length);
       // When Olimpbet doesn't send match_phase but 5 periods exist → penalties already started
       if (!parsed.gamePhase && details.length >= 5) {
         parsed.gamePhase = 'penalties';

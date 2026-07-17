@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { getRequestLocale } from '~/common/locale/locale.context';
 
 @Injectable()
 export class LanguageService {
@@ -7,6 +8,13 @@ export class LanguageService {
 
   constructor(private readonly configService: ConfigService) {
     this.defaultLanguage = this.configService.get<string>('BETAPI_DEFAULT_LANGUAGE') || 'ru';
+  }
+
+  /**
+   * Язык текущего HTTP-запроса (из Accept-Language / X-Locale) или fallback на env.
+   */
+  getActiveLanguage(): string {
+    return this.getLanguageWithFallback(getRequestLocale());
   }
 
   /**

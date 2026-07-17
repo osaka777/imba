@@ -104,6 +104,12 @@ body,
   padding: 12px;
 }
 
+.Toastify__toast-container--top-right,
+.Toastify__toast-container--top-center,
+.Toastify__toast-container--top-left {
+  top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+}
+
 .custom-toast {
   background: rgb(14, 20, 36) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -184,12 +190,17 @@ body,
 }
 
 @media (max-width: 768px) {
-  .Toastify__toast-container--top-right {
-    top: 10px !important;
+  .Toastify__toast-container--top-right,
+  .Toastify__toast-container--top-center,
+  .Toastify__toast-container--top-left {
+    top: calc(10px + env(safe-area-inset-top, 0px)) !important;
     right: 0 !important;
     left: 0 !important;
     margin: 0 auto !important;
-    width: min(calc(100vw - 20px), 360px) !important;
+    width: min(
+      calc(100vw - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)),
+      360px
+    ) !important;
     padding: 0 10px !important;
   }
 
@@ -201,4 +212,11 @@ body,
   .custom-toast .Toastify__toast-body {
     padding: 12px 10px 12px 13px !important;
   }
+}
+
+/* Android WebView: env(safe-area-inset-top) is often 0 under the status bar */
+html[data-native-app="true"] .Toastify__toast-container--top-right,
+html[data-native-app="true"] .Toastify__toast-container--top-center,
+html[data-native-app="true"] .Toastify__toast-container--top-left {
+  top: calc(10px + var(--app-safe-area-top, 28px)) !important;
 }

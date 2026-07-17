@@ -40,26 +40,77 @@ function formatHandicapLine(value: number): string {
   return String(value);
 }
 
+function formatSignedHandicapLine(line: number): string {
+  const abs = formatHandicapLine(Math.abs(line));
+  if (line > 0) return `+${abs}`;
+  if (line < 0) return `−${abs}`;
+  return "0";
+}
+
+function compactTeamLabel(teamName: string | null | undefined, fallback: string): string {
+  const team = teamName?.trim();
+  if (!team) return fallback;
+  if (team.length <= 14) return team;
+  return `${team.slice(0, 12).trim()}…`;
+}
+
+/** Pivot-area label: team (or Ф1/Ф2) + signed handicap line. */
+export function handicapOutcomeSideLabel(
+  outcome: WcMarketOutcome,
+  teamName?: string | null,
+): string {
+  return handicapRowSideLabel(outcome, teamName);
+}
+
+/** Row label for classic or cyber (kick) handicap buttons / pivot captions. */
+export function handicapRowSideLabel(
+  outcome: WcMarketOutcome,
+  teamName?: string | null,
+  options?: {
+    kickChip?: boolean;
+    pivot?: number | string;
+    side?: "home" | "away";
+  },
+): string {
+  const side = handicapSideLabel(outcome);
+  const head = compactTeamLabel(teamName, side);
+
+  if (options?.kickChip) return head;
+
+  const pivotNum = Number(options?.pivot);
+  if (options?.side && Number.isFinite(pivotNum)) {
+    const line = options.side === "home" ? pivotNum : pivotNum === 0 ? 0 : -pivotNum;
+    return `${head} (${formatSignedHandicapLine(line)})`;
+  }
+
+  const line = lineFromHandicapOutcome(outcome);
+  if (line == null) return head;
+  return `${head} (${formatSignedHandicapLine(line)})`;
+}
+
+/** @deprecated use handicapOutcomeSideLabel with outcome + team */
 export function handicapPairSideLabel(
   side: "home" | "away",
   pivot: number | string,
+  teams?: { home?: string; away?: string },
 ): string {
   const value = Number(pivot);
-  if (!Number.isFinite(value) || value === 0) {
-    return side === "away" ? "больше" : "меньше";
-  }
-  if (value < 0) {
-    return side === "away" ? "больше" : "меньше";
-  }
-  return side === "away" ? "меньше" : "больше";
+  const head = side === "home"
+    ? compactTeamLabel(teams?.home, "Ф1")
+    : compactTeamLabel(teams?.away, "Ф2");
+
+  if (!Number.isFinite(value)) return head;
+  if (side === "home") return `${head} (${formatSignedHandicapLine(value)})`;
+
+  const awayLine = value === 0 ? 0 : -value;
+  return `${head} (${formatSignedHandicapLine(awayLine)})`;
 }
 
 export function handicapDirectionLabel(outcome: WcMarketOutcome): string {
   const line = lineFromHandicapOutcome(outcome);
-  if (line == null) return handicapSideLabel(outcome);
-  if (line > 0) return "Больше";
-  if (line < 0) return "Меньше";
-  return "Больше";
+  const side = handicapSideLabel(outcome);
+  if (line == null) return side;
+  return `${side} (${formatSignedHandicapLine(line)})`;
 }
 
 export function handicapSideLabel(outcome: WcMarketOutcome): string {

@@ -118,6 +118,8 @@ model User {
   withdrawRequests WithdrawRequest[]
   wcOddsBets       WcOddsBet[]
   wcOddsExpressBets WcOddsExpressBet[]
+  snakeRounds      SnakeRound[]
+  btcUpdownBets    BtcUpdownBet[]
   telegramLinkTokens       TelegramLinkToken[]
   passwordResetTokens      PasswordResetToken[]
   trustedDevices           UserTrustedDevice[]
@@ -299,23 +301,29 @@ model PasswordResetToken {
 }
 
 model Affilator {
-  userId            Int             @id
-  type              AffilatorType
-  status            AffilatorStatus @default(PENDING)
-  meta              Json?
-  trafficSource     String          @unique
-  uid               String          @unique @default(uuid())
-  percent           Decimal         @default(50) @db.Decimal(16, 2)
-  affilatorsPercent Decimal         @default(10) @db.Decimal(16, 2)
-  cpaPayoutAmount   Decimal?        @db.Decimal(16, 2)
-  cpaCurrencyCode   String?
-  user              User            @relation("affilatorData", fields: [userId], references: [id])
-  users             User[]          @relation("affilatedBy")
-  postbackLogs      AffiliatePostbackLog[]
-  landings          PartnerLanding[]
+  userId                Int             @id
+  type                  AffilatorType
+  status                AffilatorStatus @default(PENDING)
+  meta                  Json?
+  trafficSource         String          @unique
+  uid                   String          @unique @default(uuid())
+  percent               Decimal         @default(50) @db.Decimal(16, 2)
+  affilatorsPercent     Decimal         @default(10) @db.Decimal(16, 2)
+  cpaPayoutAmount       Decimal?        @db.Decimal(16, 2)
+  cpaCurrencyCode       String?
+  kickChannelSlug       String?
+  kickBroadcasterUserId Int?
+  user                  User            @relation("affilatorData", fields: [userId], references: [id])
+  users                 User[]          @relation("affilatedBy")
+  postbackLogs          AffiliatePostbackLog[]
+  landings              PartnerLanding[]
+  kickSessions          KickPartnerSession[]
+  kickCredential        KickPartnerCredential?
 
   @@index([userId])
   @@index([status])
+  @@index([kickChannelSlug])
+  @@index([kickBroadcasterUserId])
 }
 
 model AffiliatePostbackLog {
@@ -709,7 +717,7 @@ model PartnerBonusAccount {
 model BonusHistory {
   id                      Int         @id @default(autoincrement())
   userId                  Int
-  promoId                 Int
+  promoId                 Int?
   promoCode               String
   promoType               PromoType
   promoValue              Json
@@ -729,7 +737,7 @@ model BonusHistory {
   currencyCode            String
   notes                   String?
   currency                Currency    @relation(fields: [currencyCode], references: [isoCode])
-  promo                   Promo       @relation(fields: [promoId], references: [id])
+  promo                   Promo?      @relation(fields: [promoId], references: [id])
   user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -947,6 +955,8 @@ enum OperationSource {
   AFFILIATE
   AFFILIATE_BONUS
   WC_BET
+  SNAKE
+  BTC_UPDOWN
 }
 
 model WcOddsEvent {
@@ -1073,6 +1083,135 @@ model PartnerLanding {
 
   @@index([partnerUserId])
   @@index([slug])
+}
+
+model KickPartnerSession {
+  id                String    @id @default(uuid())
+  partnerUserId     Int
+  kickChannel       String
+  broadcasterUserId Int?
+  startedAt         DateTime  @default(now())
+  endedAt           DateTime?
+  peakViewers       Int       @default(0)
+  hadBranding       Boolean   @default(false)
+  lastStreamTitle   String?
+  welcomeSentAt     DateTime?
+  streamRaceGrantedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  partner           Affilator @relation(fields: [partnerUserId], references: [userId], onDelete: Cascade)
+
+  @@index([partnerUserId, startedAt])
+  @@index([endedAt])
+  @@index([kickChannel])
+}
+
+model KickWebhookDelivery {
+  messageId  String   @id
+  eventType  String
+  receivedAt DateTime @default(now())
+}
+
+model KickPartnerCredential {
+  partnerUserId          Int       @id
+  payloadEnc             String    @db.Text
+  tokenExpiresAt         DateTime?
+  tokenRefreshFailedAt   DateTime?
+  tokenAlertSentAt       DateTime?
+  updatedAt              DateTime  @updatedAt
+  partner                Affilator @relation(fields: [partnerUserId], references: [userId], onDelete: Cascade)
+}
+
+model SnakeRound {
+  id              Int             @id @default(autoincrement())
+  userId          Int
+  stake           Decimal         @db.Decimal(16, 2)
+  currencyCode    String
+  status          SnakeRoundStatus @default(PENDING)
+  multiplier      Decimal?        @db.Decimal(10, 2)
+  payout          Decimal?        @db.Decimal(16, 2)
+  lengthAtEnd     Int?
+  killsAtEnd      Int?
+  boostMs         Int?
+  elapsedMs       Int?
+  startedAt       DateTime        @default(now())
+  settledAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([status, startedAt])
+}
+
+enum SnakeRoundStatus {
+  PENDING
+  CASHED_OUT
+  LOST
+  VOID
+}
+
+enum BtcUpdownRoundStatus {
+  OPEN
+  LOCKED
+  SETTLED
+  VOID
+}
+
+enum BtcUpdownSide {
+  UP
+  DOWN
+}
+
+enum BtcUpdownBetStatus {
+  PENDING
+  WIN
+  LOSE
+  VOID
+}
+
+model BtcUpdownRound {
+  id         Int                  @id @default(autoincrement())
+  symbol     String               @default("BTCUSDT")
+  /// Round length in ms (60000 / 300000 / 900000). Part of unique key for multi-TF.
+  roundMs    Int                  @default(300000)
+  startsAt   DateTime
+  endsAt     DateTime
+  openPrice  Decimal?             @db.Decimal(18, 8)
+  closePrice Decimal?             @db.Decimal(18, 8)
+  status     BtcUpdownRoundStatus @default(OPEN)
+  result     BtcUpdownSide?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  bets       BtcUpdownBet[]
+
+  @@unique([symbol, startsAt, roundMs])
+  @@index([status, endsAt])
+  @@index([endsAt])
+  @@index([symbol, roundMs, startsAt])
+}
+
+model BtcUpdownBet {
+  id              Int                @id @default(autoincrement())
+  userId          Int
+  roundId         Int
+  side            BtcUpdownSide
+  stake           Decimal            @db.Decimal(16, 2)
+  currencyCode    String
+  odds            Decimal            @db.Decimal(8, 2)
+  potentialPayout Decimal            @db.Decimal(16, 2)
+  /// Price at the moment the user placed the bet (1win / FuelTech style).
+  entryPrice      Decimal?           @db.Decimal(18, 8)
+  status          BtcUpdownBetStatus @default(PENDING)
+  settledAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  user            User               @relation(fields: [userId], references: [id])
+  round           BtcUpdownRound     @relation(fields: [roundId], references: [id])
+
+  @@index([userId, status])
+  @@index([roundId, status])
+  @@index([userId, createdAt])
 }
 
 enum GameBetApiType {

@@ -21,6 +21,16 @@ export const ProfileNavigation = () => {
                 Рефералы
             </div>
             <div
+                onClick={e => router.push("/profile/landings")}
+                className={`${header.nav_item} ${pathName === "/profile/landings" ? header.nav_item_active : ""}`}>
+                Лендинги
+            </div>
+            <div
+                onClick={e => router.push("/profile/stream")}
+                className={`${header.nav_item} ${pathName === "/profile/stream" ? header.nav_item_active : ""}`}>
+                Стрим
+            </div>
+            <div
                 onClick={e => router.push("/profile/commissions")}
                 className={`${header.nav_item} ${pathName === "/profile/commissions" ? header.nav_item_active : ""}`}>
                 Комиссии

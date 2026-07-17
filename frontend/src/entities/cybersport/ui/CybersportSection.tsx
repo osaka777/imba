@@ -7,19 +7,27 @@ import {
   DEFAULT_CYBER_SPORT,
   resolveCyberSportLabel,
 } from "~/entities/cybersport/lib/cyberSportsList";
+import { useCyberSportPreference } from "~/entities/cybersport/hooks/useCyberSportPreference";
+import {
+  liveHrefForApiSport,
+  lineHrefForApiSport,
+} from "~/entities/cybersport/lib/cyberDisciplineSlugs";
+import { CybersportDisciplineCards } from "~/entities/cybersport/ui/CybersportDisciplineCards";
+import { CybersportFeaturedLive } from "~/entities/cybersport/ui/CybersportFeaturedLive";
 import { CybersportGamesPanel } from "~/entities/cybersport/ui/CybersportGamesPanel";
+import { CybersportHubHero } from "~/entities/cybersport/ui/CybersportHubHero";
 import { CybersportSportFilter } from "~/entities/cybersport/ui/CybersportSportFilter";
 import { cn } from "~/shared/lib";
 
 import styles from "./CybersportSection.module.css";
 
-const MOBILE_HOME_MQ = "(max-width: 1024px)";
+import { MQ_PHONE } from "~/shared/lib/layoutBreakpoints";
 
 function useMobileLayout() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia(MOBILE_HOME_MQ);
+    const mq = window.matchMedia(MQ_PHONE);
     const update = () => setIsMobile(mq.matches);
     update();
     mq.addEventListener("change", update);
@@ -35,67 +43,47 @@ type CybersportPanelProps = {
   variant: "live" | "prematch";
   href: string;
   sport: string;
-  onSportChange: (sport: string) => void;
   className?: string;
   isMobile: boolean;
-  onMobilePanelToggle?: () => void;
 };
-
-function resolveSportLabel(sport: string): string {
-  return resolveCyberSportLabel(sport);
-}
 
 function CybersportPanel({
   variant,
   href,
   sport,
-  onSportChange,
   className,
   isMobile,
-  onMobilePanelToggle,
 }: CybersportPanelProps) {
   const isLive = variant === "live";
-  const sportLabel = resolveSportLabel(sport);
+  const sportLabel = resolveCyberSportLabel(sport);
 
-  const tabPrimaryContent = isLive ? (
+  const tabLabel = isLive ? (
     <>
       <span className={styles.liveDot} />
       Live
     </>
   ) : (
-    <>Prematch</>
+    <>Линия</>
   );
 
   return (
     <section className={cn(styles.panel, className)}>
       <div className={cn(styles.panelStack, isMobile && styles.panelStack_mobile)}>
-        <div className={styles.topRow}>
-          <div className={cn(styles.tabGroup, isMobile && styles.tabGroup_mobile)}>
-            {isMobile && onMobilePanelToggle ? (
-              <button
-                aria-label={isLive ? "Переключить на Prematch" : "Переключить на Live"}
-                className={styles.tabPrimary}
-                onClick={onMobilePanelToggle}
-                type="button"
-              >
-                {tabPrimaryContent}
-              </button>
-            ) : (
-              <div className={styles.tabPrimary}>{tabPrimaryContent}</div>
-            )}
-
+        <div className={styles.panelHeader}>
+          <div className={styles.tabRail}>
+            <div
+              className={cn(styles.tabPrimary, !isLive && styles.tabPrimary_prematch)}
+            >
+              {tabLabel}
+            </div>
             <Link className={styles.tabSecondary} href={href}>
-              Все
+              Все →
             </Link>
-          </div>
-
-          <div className={cn(styles.panelToolbar, isMobile && styles.panelToolbar_mobile)}>
-            <CybersportSportFilter onChange={onSportChange} sport={sport} />
           </div>
         </div>
 
         <div className={cn(styles.card, isMobile && styles.card_mobile)}>
-          <div className={cn(styles.cyberScope, styles.tableBody)}>
+          <div className={styles.tableBody}>
             <CybersportGamesPanel
               href={href}
               sport={sport}
@@ -112,29 +100,61 @@ function CybersportPanel({
 export function CybersportSection() {
   const isMobile = useMobileLayout();
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("live");
-  const [liveSport, setLiveSport] = useState(DEFAULT_CYBER_SPORT);
-  const [lineSport, setLineSport] = useState(DEFAULT_CYBER_SPORT);
+  const { sport: preferredSport, setSport: persistSport } = useCyberSportPreference();
+  const [sport, setSport] = useState(DEFAULT_CYBER_SPORT);
 
-  const handleLiveSportChange = useCallback((sport: string) => {
-    setLiveSport(sport);
-  }, []);
+  useEffect(() => {
+    setSport(preferredSport);
+  }, [preferredSport]);
 
-  const handleLineSportChange = useCallback((sport: string) => {
-    setLineSport(sport);
-  }, []);
+  const handleSportChange = useCallback(
+    (nextSport: string) => {
+      setSport(nextSport);
+      persistSport(nextSport);
+    },
+    [persistSport],
+  );
 
   return (
     <div className={styles.wrap}>
-      <header className={styles.hero}>
-        <div className={styles.heroGlow} aria-hidden />
-        <div className={styles.heroContent}>
-          <p className={styles.heroEyebrow}>Imba.bet</p>
-          <h1 className={styles.heroTitle}>Киберспорт</h1>
-          <p className={styles.heroSubtitle}>
-            CS2, Dota 2 и другие дисциплины — live и линия в одном месте
-          </p>
+      <CybersportHubHero />
+      <CybersportFeaturedLive />
+      <CybersportDisciplineCards />
+
+      <div className={styles.feedToolbar}>
+        {isMobile ? (
+          <div className={styles.mobileFeedTabs} role="tablist">
+            <button
+              aria-selected={mobilePanel === "live"}
+              className={cn(
+                styles.mobileFeedTab,
+                mobilePanel === "live" && styles.mobileFeedTab_active,
+              )}
+              onClick={() => setMobilePanel("live")}
+              role="tab"
+              type="button"
+            >
+              <span className={styles.liveDot} />
+              Live
+            </button>
+            <button
+              aria-selected={mobilePanel === "prematch"}
+              className={cn(
+                styles.mobileFeedTab,
+                mobilePanel === "prematch" && styles.mobileFeedTab_active,
+              )}
+              onClick={() => setMobilePanel("prematch")}
+              role="tab"
+              type="button"
+            >
+              Линия
+            </button>
+          </div>
+        ) : null}
+        <div className={styles.sharedSportFilter}>
+          <CybersportSportFilter onChange={handleSportChange} sport={sport} />
         </div>
-      </header>
+      </div>
 
       <div className={cn(styles.grid, isMobile && styles.grid_mobile)}>
         <CybersportPanel
@@ -145,15 +165,9 @@ export function CybersportSection() {
                 : styles.panel_mobileHidden
               : undefined
           }
-          href={`/cybersport/live?sport=${encodeURIComponent(liveSport)}`}
+          href={liveHrefForApiSport(sport)}
           isMobile={isMobile}
-          onMobilePanelToggle={
-            isMobile
-              ? () => setMobilePanel((panel) => (panel === "live" ? "prematch" : "live"))
-              : undefined
-          }
-          onSportChange={handleLiveSportChange}
-          sport={liveSport}
+          sport={sport}
           variant="live"
         />
         <CybersportPanel
@@ -164,15 +178,9 @@ export function CybersportSection() {
                 : styles.panel_mobileHidden
               : undefined
           }
-          href={`/cybersport/line/${lineSport}`}
+          href={lineHrefForApiSport(sport)}
           isMobile={isMobile}
-          onMobilePanelToggle={
-            isMobile
-              ? () => setMobilePanel((panel) => (panel === "live" ? "prematch" : "live"))
-              : undefined
-          }
-          onSportChange={handleLineSportChange}
-          sport={lineSport}
+          sport={sport}
           variant="prematch"
         />
       </div>

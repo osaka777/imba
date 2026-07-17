@@ -15,6 +15,7 @@ import {
   initUsdtTrc20Order,
 } from "~/entities/finance/api/deposit";
 import { trackDepositOrder, untrackDepositOrder } from "~/shared/lib/appNotifications";
+import { useLocale } from "~/shared/model/useLocale";
 import styles from "./NirvanaPayForm.module.css";
 import usdtStyles from "./UsdtTrc20Form.module.css";
 import { DepositFormHeading } from "../DepositFormHeading";
@@ -42,6 +43,8 @@ const IconInfo = () => (
 
 type UsdtTrc20InitFormProps = {
   forceCurrency?: string;
+  defaultAmount?: number;
+  presetAmounts?: number[];
   embedded?: boolean;
   depositSource?: string;
   onDepositComplete?: () => void;
@@ -50,11 +53,14 @@ type UsdtTrc20InitFormProps = {
 
 export const UsdtTrc20InitForm = ({
   forceCurrency,
+  defaultAmount,
+  presetAmounts,
   embedded = false,
   depositSource = "deposit-modal",
   onDepositComplete,
   onPaymentStepChange,
 }: UsdtTrc20InitFormProps) => {
+  const { t } = useLocale();
   const defaultCurrency = useReadLocalStorage<string>("currency") || "USDT";
   const currency = forceCurrency || defaultCurrency;
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -72,7 +78,18 @@ export const UsdtTrc20InitForm = ({
   const [secondsLeft, setSecondsLeft] = useState(PAYMENT_WINDOW_SEC);
   const [orderCreatedAt, setOrderCreatedAt] = useState<string | undefined>();
 
-  const quickSetAmounts = useMemo(() => [50, 100, 500], []);
+  const quickSetAmounts = useMemo(
+    () => (presetAmounts?.length ? presetAmounts : [50, 100, 500]),
+    [presetAmounts],
+  );
+
+  const closeDepositUi = useCallback(() => {
+    if (embedded) {
+      onDepositComplete?.();
+      return;
+    }
+    closeRef.current?.click();
+  }, [embedded, onDepositComplete]);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormShape>({
     defaultValues: { amount: undefined as unknown as number },
@@ -89,6 +106,12 @@ export const UsdtTrc20InitForm = ({
   }, []);
 
   useEffect(() => {
+    if (defaultAmount && defaultAmount >= minAmount) {
+      setValue("amount", defaultAmount);
+    }
+  }, [defaultAmount, minAmount, setValue]);
+
+  useEffect(() => {
     onPaymentStepChange?.(paymentOpen);
     return () => onPaymentStepChange?.(false);
   }, [onPaymentStepChange, paymentOpen]);
@@ -100,8 +123,8 @@ export const UsdtTrc20InitForm = ({
       setSecondsLeft(Math.max(0, PAYMENT_WINDOW_SEC - elapsed));
     };
     tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
+    const intervalId = setInterval(tick, 1000);
+    return () => clearInterval(intervalId);
   }, [paymentOpen, orderCreatedAt]);
 
   const pollOrderStatus = useCallback(async () => {
@@ -109,21 +132,20 @@ export const UsdtTrc20InitForm = ({
     try {
       const data = await getUsdtTrc20OrderStatus(orderId);
       if (data?.status === "approved" || data?.status === "SUCCESS") {
-        toast.success(`Зачислено ${data.amount} USDT`);
+        toast.success(t("deposit.credited", { amount: data.amount }));
         untrackDepositOrder(orderId);
         setPaymentOpen(false);
-        onDepositComplete?.();
-        closeRef.current?.click();
+        closeDepositUi();
       }
     } catch {
       // ignore polling errors
     }
-  }, [orderId, onDepositComplete]);
+  }, [orderId, closeDepositUi, t]);
 
   useEffect(() => {
     if (!paymentOpen || !orderId) return;
-    const t = setInterval(() => void pollOrderStatus(), 12000);
-    return () => clearInterval(t);
+    const intervalId = setInterval(() => void pollOrderStatus(), 12000);
+    return () => clearInterval(intervalId);
   }, [paymentOpen, orderId, pollOrderStatus]);
 
   const resetPayment = () => {
@@ -138,7 +160,7 @@ export const UsdtTrc20InitForm = ({
   const onSubmit = async (data: FormShape) => {
     const amount = Number(data.amount);
     if (!amount || amount < minAmount) {
-      toast.warn(`Минимальная сумма — ${minAmount} USDT`);
+      toast.warn(t("deposit.minAmountShort", { amount: `${minAmount} USDT` }));
       return;
     }
     setInitLoading(true);
@@ -161,7 +183,7 @@ export const UsdtTrc20InitForm = ({
         });
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Не удалось создать заявку";
+      const msg = err instanceof Error ? err.message : t("deposit.createFailed");
       toast.error(String(msg));
     } finally {
       setInitLoading(false);
@@ -171,9 +193,9 @@ export const UsdtTrc20InitForm = ({
   const copy = async (text: string, label?: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${label ? `${label} ` : ""}Скопировано`);
+      toast.success(label ? t("deposit.copiedLabel", { label }) : t("deposit.copied"));
     } catch {
-      toast.error("Не удалось скопировать");
+      toast.error(t("deposit.copyFailed"));
     }
   };
 
@@ -214,19 +236,17 @@ export const UsdtTrc20InitForm = ({
       untrackDepositOrder(orderId);
       resetPayment();
     } catch {
-      toast.error("Не удалось отменить заявку");
+      toast.error(t("deposit.cancelFailed"));
     } finally {
       setCancelling(false);
     }
   };
 
   if (currency !== "USDT") {
-    return <div className={styles.formSection_empty}>Метод доступен только для USDT</div>;
+    return <div className={styles.formSection_empty}>{t("deposit.usdtOnly")}</div>;
   }
 
   if (paymentOpen && payAmount && walletAddress) {
-    const payAmountLabel = `${payAmount} USDT`;
-
     return (
       <div className={usdtStyles.inlinePanel} data-usdt-payment-step="active">
         <button
@@ -235,7 +255,7 @@ export const UsdtTrc20InitForm = ({
           onClick={() => void handleCancel()}
           disabled={cancelling}
         >
-          ← Назад
+          {t("deposit.back")}
         </button>
 
         <div className={usdtStyles.paymentCard}>
@@ -244,8 +264,8 @@ export const UsdtTrc20InitForm = ({
               <div className={usdtStyles.brand}>
                 <div className={usdtStyles.usdtLogo} aria-hidden>₮</div>
                 <div className={usdtStyles.brandText}>
-                  <p className={usdtStyles.brandTitle}>Пополнение USDT</p>
-                  <p className={usdtStyles.brandSub}>Сеть TRC-20 · Tron</p>
+                  <p className={usdtStyles.brandTitle}>{t("deposit.titleUsdt")}</p>
+                  <p className={usdtStyles.brandSub}>{t("deposit.usdtNetwork")}</p>
                 </div>
               </div>
               {publicOrderId ? (
@@ -262,14 +282,14 @@ export const UsdtTrc20InitForm = ({
               ) : null}
               <div className={usdtStyles.amountBlock}>
                 <p className={usdtStyles.amountLabel}>
-                  {qrSrc ? "Отсканируйте QR или переведите точную сумму" : "Переведите точную сумму"}
+                  {qrSrc ? t("deposit.scanOrTransfer") : t("deposit.transferExact")}
                 </p>
                 <p className={usdtStyles.payAmount}>
                   {payAmount}
                   <span>USDT</span>
                 </p>
                 <p className={usdtStyles.creditLine}>
-                  Зачислится на баланс: <strong>{creditAmount ?? "—"} USDT</strong>
+                  {t("deposit.willCredit")} <strong>{creditAmount ?? "—"} USDT</strong>
                 </p>
                 <span className={usdtStyles.networkTag}>TRC-20 (Tron)</span>
               </div>
@@ -279,53 +299,53 @@ export const UsdtTrc20InitForm = ({
           <div className={usdtStyles.alertStrip}>
             <span className={usdtStyles.alertIcon} aria-hidden><IconInfo /></span>
             <p className={usdtStyles.alertText}>
-              Переводите только в сети TRC-20 и ровно указанную сумму — иначе зачисление не произойдёт автоматически.
+              {t("deposit.usdtNetworkHint")}
             </p>
           </div>
 
           <section className={usdtStyles.details}>
             <div>
-              <span className={usdtStyles.fieldLabel}>Адрес кошелька</span>
+              <span className={usdtStyles.fieldLabel}>{t("deposit.walletAddress")}</span>
               <div className={usdtStyles.addressField}>
                 <span className={usdtStyles.addressValue} title={walletAddress}>
                   {walletAddress}
                 </span>
                 <button
                   className={usdtStyles.copyBtn}
-                  onClick={() => copy(walletAddress, "Адрес")}
+                  onClick={() => copy(walletAddress, t("deposit.walletAddress"))}
                   type="button"
                 >
                   <IconCopy />
-                  Копировать
+                  {t("deposit.copy")}
                 </button>
               </div>
             </div>
 
             <div className={usdtStyles.statsGrid}>
               <div className={usdtStyles.statCard}>
-                <span className={usdtStyles.statLabel}>Сеть</span>
+                <span className={usdtStyles.statLabel}>{t("deposit.network")}</span>
                 <span className={usdtStyles.statValue}>TRC-20</span>
               </div>
               <div
                 className={`${usdtStyles.statCard} ${usdtStyles.statCardClickable}`}
                 role="button"
                 tabIndex={0}
-                onClick={() => copy(String(payAmount), "Сумму")}
+                onClick={() => copy(String(payAmount), t("deposit.amount"))}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    void copy(String(payAmount), "Сумму");
+                    void copy(String(payAmount), t("deposit.amount"));
                   }
                 }}
-                title="Скопировать сумму"
+                title={t("deposit.copy")}
               >
-                <span className={usdtStyles.statLabel}>К переводу</span>
+                <span className={usdtStyles.statLabel}>{t("deposit.toTransfer")}</span>
                 <span className={`${usdtStyles.statValue} ${usdtStyles.statValueMono}`}>
                   {payAmount}
                 </span>
               </div>
               <div className={usdtStyles.statCard}>
-                <span className={usdtStyles.statLabel}>На баланс</span>
+                <span className={usdtStyles.statLabel}>{t("deposit.toBalance")}</span>
                 <span className={`${usdtStyles.statValue} ${usdtStyles.statValueMono}`}>
                   {creditAmount ?? "—"}
                 </span>
@@ -337,7 +357,7 @@ export const UsdtTrc20InitForm = ({
             <div className={usdtStyles.statusRow}>
               <div className={usdtStyles.statusLeft}>
                 <span className={usdtStyles.pulseDot} aria-hidden />
-                <h2 className={usdtStyles.statusTitle}>Ожидаем перевод</h2>
+                <h2 className={usdtStyles.statusTitle}>{t("deposit.waitingTransfer")}</h2>
               </div>
               <div className={usdtStyles.timerChip} aria-live="polite">
                 <FiClock size={13} aria-hidden />
@@ -345,7 +365,7 @@ export const UsdtTrc20InitForm = ({
               </div>
             </div>
             <p className={usdtStyles.statusHint}>
-              После подтверждения в блокчейне средства зачислятся автоматически — обычно 1–5 минут.
+              {t("deposit.waitingHint")}
             </p>
             <div className={usdtStyles.timerProgress}>
               <div
@@ -359,19 +379,19 @@ export const UsdtTrc20InitForm = ({
               onClick={() => void handleCancel()}
               type="button"
             >
-              {cancelling ? "Отмена..." : "Отменить платёж"}
+              {cancelling ? t("deposit.cancelling") : t("deposit.cancelPayment")}
             </button>
           </footer>
         </div>
 
-        <DialogClose ref={closeRef} style={{ display: "none" }} />
+        {!embedded ? <DialogClose ref={closeRef} style={{ display: "none" }} /> : null}
       </div>
     );
   }
 
   return (
     <form className={styles.NirvanaPayForm} onSubmit={handleSubmit(onSubmit)}>
-      <DepositFormHeading subtitle="USDT TRC-20" />
+      {!embedded ? <DepositFormHeading subtitle="USDT TRC-20" /> : null}
 
       <div className={styles.amountField}>
         <Input
@@ -382,8 +402,8 @@ export const UsdtTrc20InitForm = ({
             validate: (value) => !!value && value >= minAmount,
           })}
           className={styles.input}
-          label="Сумма"
-          placeholder="Введите сумму в USDT"
+          label={t("deposit.amount")}
+          placeholder={t("deposit.amountUsdtPlaceholder")}
           type="number"
         />
       </div>
@@ -403,14 +423,14 @@ export const UsdtTrc20InitForm = ({
 
       {errors.amount ? (
         <p className={styles.error}>
-          Минимальная сумма пополнения — {minAmount} USDT
+          {t("deposit.minAmount", { amount: `${minAmount} USDT` })}
         </p>
       ) : null}
 
-      <DialogClose ref={closeRef} style={{ display: "none" }} />
+      {!embedded ? <DialogClose ref={closeRef} style={{ display: "none" }} /> : null}
 
       <Button className={styles.submit} disabled={initLoading} type="submit">
-        {initLoading ? "Создание заявки..." : "Пополнить"}
+        {initLoading ? t("deposit.creatingRequest") : t("deposit.topUp")}
       </Button>
     </form>
   );

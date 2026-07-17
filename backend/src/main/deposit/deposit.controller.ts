@@ -197,7 +197,13 @@ export class DepositController {
   @UseGuards(AuthenticationGuard)
   async getManualDepositConfigEndpoint(@Query('currency') currency: string) {
     const code = String(currency || 'KZT').toUpperCase();
-    if (code !== 'KZT' && code !== 'KZT_KASPI' && code !== 'RUB' && code !== 'RUB_SBERBANK') {
+    if (
+      code !== 'KZT' &&
+      code !== 'KZT_KASPI' &&
+      code !== 'RUB' &&
+      code !== 'RUB_SBERBANK' &&
+      code !== 'RUB_YANDEX_BANK'
+    ) {
       throw new BadRequestException('Unsupported currency');
     }
     return getManualDepositConfig(code as ManualDepositCurrency);
@@ -224,7 +230,11 @@ export class DepositController {
     }
     const currency = String(
       body?.currency ||
-        (method === 'RUB_FOREIGN_CARD' || method === 'RUB_SBERBANK' ? 'RUB' : 'KZT'),
+        (method === 'RUB_FOREIGN_CARD' ||
+        method === 'RUB_SBERBANK' ||
+        method === 'RUB_YANDEX_BANK'
+          ? 'RUB'
+          : 'KZT'),
     ).toUpperCase();
     const voucherInput = String(body?.voucher ?? '').trim() || undefined;
     if (voucherInput) {
@@ -666,6 +676,63 @@ export class DepositController {
   @UseGuards(AuthenticationGuard)
   async getMyRubSberbank(@Req() req: any) {
     return this.getMyManualForeignCard(req, 'RUB_SBERBANK');
+  }
+
+  @Post('rub-yandex-bank')
+  @UseGuards(AuthenticationGuard)
+  @HttpCode(200)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'receipt', maxCount: 1 },
+        { name: 'file', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: (req, file, cb) => {
+            const dir = join(process.cwd(), 'uploads', 'receipts');
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+          },
+          filename: (req, file, cb) => {
+            const unique = `${Date.now()}_${Math.round(Math.random() * 1e9)}`;
+            const safeExt = extname(file.originalname || '')
+              .replace(/[^a-zA-Z0-9.]/g, '')
+              .slice(0, 10);
+            cb(null, `${unique}${safeExt || '.jpg'}`);
+          },
+        }),
+        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+          const ok = (file.mimetype || '').startsWith('image/');
+          cb(null, ok);
+        },
+      },
+    ),
+  )
+  async uploadRubYandexBank(
+    @Req() req: any,
+    @UploadedFiles()
+    files: {
+      receipt?: Express.Multer.File[];
+      file?: Express.Multer.File[];
+      image?: Express.Multer.File[];
+    },
+    @Res({ passthrough: true }) res: any,
+  ) {
+    return this.handleManualForeignCardUpload(req, res, files, {
+      paymentSystem: 'RUB_YANDEX_BANK',
+      defaultCurrency: 'RUB',
+      minAmount: getManualDepositConfig('RUB_YANDEX_BANK').minAmount,
+      externalPrefix: 'rub_yandex_bank_rcpt',
+    });
+  }
+
+  @Get('rub-yandex-bank/me')
+  @UseGuards(AuthenticationGuard)
+  async getMyRubYandexBank(@Req() req: any) {
+    return this.getMyManualForeignCard(req, 'RUB_YANDEX_BANK');
   }
 
   @Get('usdt-trc20/config')

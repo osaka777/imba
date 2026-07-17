@@ -21,10 +21,12 @@ import {
   WC_LIVE_PAGE_SIZE,
 } from "~/entities/wc-odds/live/wcLivePagination";
 import { filterVisibleWcLiveEvents, isWcLiveListTerminal } from "~/entities/wc-odds/lib/wcLineEvents";
+import { isEsportsSport } from "~/entities/cybersport/lib/isEsportsSport";
 import { useWcListPaginationLimits } from "~/entities/wc-odds/lib/useWcListPaginationLimits";
 import { useWcOddsLiveStream } from "~/entities/wc-odds/lib/useWcOddsStream";
 
 export function useOlimpbetLive(sport?: string) {
+  const esportsOnly = Boolean(sport && isEsportsSport(sport));
   const searchParams = useSearchParams();
   const tournamentFilter = searchParams.get("tournament");
   const leagueFilter = searchParams.get("league");
@@ -82,6 +84,12 @@ export function useOlimpbetLive(sport?: string) {
       setInitialLoading(true);
       setHasMore(true);
       loadedOffsetRef.current = 0;
+      if (esportsOnly) {
+        setEnabled(false);
+        setEvents([]);
+        setInitialLoading(false);
+        return;
+      }
       try {
         const status = await fetchWcStatus();
         if (cancelled) return;
@@ -98,10 +106,16 @@ export function useOlimpbetLive(sport?: string) {
 
     void bootstrap();
 
+    const onLocale = () => {
+      void bootstrap();
+    };
+    window.addEventListener("localeChanged", onLocale);
+
     return () => {
       cancelled = true;
+      window.removeEventListener("localeChanged", onLocale);
     };
-  }, [broadcastOnly, initialLimit, loadPage, setEvents, sport, tournamentFilter, leagueFilter]);
+  }, [broadcastOnly, esportsOnly, initialLimit, loadPage, setEvents, sport, tournamentFilter, leagueFilter]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || initialLoading || enabled === false) return;

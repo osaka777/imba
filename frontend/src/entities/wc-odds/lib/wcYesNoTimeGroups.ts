@@ -1,28 +1,13 @@
 import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/wc-odds/api/client";
 import { resolveLiveMatchMinute } from "~/entities/wc-odds/lib/wcLiveClock";
+import { findYesNoOutcomes, isYesOutcome, isNoOutcome } from "~/entities/wc-odds/lib/wcYesNoOutcomes";
+
+export { findYesNoOutcomes } from "~/entities/wc-odds/lib/wcYesNoOutcomes";
 
 function yesNoLabel(outcome: WcMarketOutcome): "Да" | "Нет" | null {
-  if (outcome.outcomeKey === "YES" || /^да$/i.test(outcome.name.trim())) return "Да";
-  if (outcome.outcomeKey === "NO" || /^нет$/i.test(outcome.name.trim())) return "Нет";
+  if (isYesOutcome(outcome)) return "Да";
+  if (isNoOutcome(outcome)) return "Нет";
   return null;
-}
-
-export function findYesNoOutcomes(group: WcMarketGroup): {
-  yes?: WcMarketOutcome;
-  no?: WcMarketOutcome;
-} {
-  const yes = group.outcomes.find(
-    (outcome) =>
-      outcome.outcomeKey === "YES"
-      || /^да$/i.test(outcome.name.trim()),
-  );
-  const no = group.outcomes.find(
-    (outcome) =>
-      outcome.outcomeKey === "NO"
-      || /^нет$/i.test(outcome.name.trim()),
-  );
-
-  return { yes, no };
 }
 
 export function extractTimeWindowMinutes(group: WcMarketGroup): number {

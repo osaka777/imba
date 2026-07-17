@@ -13,8 +13,22 @@ declare global {
       native: boolean;
       notifications: boolean;
       fcmToken: string;
+      statusBarHeight?: number;
     };
   }
+}
+
+const DEFAULT_NATIVE_STATUS_BAR_PX = 28;
+
+export function applyNativeViewportInsets(statusBarPx?: number) {
+  if (typeof document === "undefined" || !isNativeApp()) return;
+
+  document.documentElement.dataset.nativeApp = "true";
+  const top =
+    typeof statusBarPx === "number" && statusBarPx > 0
+      ? statusBarPx
+      : DEFAULT_NATIVE_STATUS_BAR_PX;
+  document.documentElement.style.setProperty("--app-safe-area-top", `${top}px`);
 }
 
 export function isNativeApp(): boolean {
@@ -39,4 +53,9 @@ export function hasNativeNotificationPermission(): boolean {
 
 export function requestNativeNotificationPermission(): void {
   window.ImbaApp?.requestNotificationPermission?.();
+}
+
+/** Native app with push enabled — FCM handles alerts, skip duplicate in-app toasts. */
+export function shouldDeferToNativePush(): boolean {
+  return isNativeApp() && hasNativeNotificationPermission();
 }

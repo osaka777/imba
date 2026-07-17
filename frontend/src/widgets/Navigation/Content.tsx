@@ -11,10 +11,12 @@ import { Button } from "~/shared/ui";
 import { Dialog, DialogContent } from "~/shared/ui/Dialog";
 import { deleteSessionClient } from "~/entities/user";
 import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
+import { MQ_PHONE } from "~/shared/lib/layoutBreakpoints";
 import {
   LazyDepositForm,
   MODAL_BY_ID,
 } from "~/shared/lib/lazyModals";
+import { useLocale } from "~/shared/model/useLocale";
 import { Auth } from "./Auth";
 import styles from "./Content.module.css";
 import depositStyles from "./Deposit.module.css";
@@ -29,6 +31,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [headerDepositOpen, setHeaderDepositOpen] = useState(false);
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
+  const { t } = useLocale();
   const router = useRouter();
   const { data: userData } = useQuery({
     queryKey: ["user"],
@@ -42,17 +45,17 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   }, [armGuard]);
 
   const MENU_ORDER = [
-    { id: "voucher", name: "Ваучер" },
-    { id: "withdraw", name: "Вывод средств" },
-    { id: "history", name: "История ставок" },
-    { id: "bonus-history", name: "История бонусов" },
-    { id: "settings", name: "Настройки" },
-    { id: "details", name: "Детализация" },
-    { id: "logout", name: "Выйти" }
+    { id: "voucher", name: t("menu.voucher") },
+    { id: "withdraw", name: t("menu.withdraw") },
+    { id: "history", name: t("menu.betsHistory") },
+    { id: "bonus-history", name: t("menu.bonusHistory") },
+    { id: "settings", name: t("menu.settings") },
+    { id: "details", name: t("menu.details") },
+    { id: "logout", name: t("menu.logout") },
   ];
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const mediaQuery = window.matchMedia(MQ_PHONE);
 
     const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
       setIsMobile(e.matches);
@@ -135,21 +138,6 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
       <List />
       {isAuth ? (
         <div className={styles.actionsDesctop}>
-          {/* <div className={styles.telegram}>
-            <a
-              href="https://t.me/thelattafa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-opacity duration-200"
-              title="Связаться в Telegram"
-            >
-              <TelegramSvgrepoIcon
-                width="24"
-                height="24"
-                className="hover:scale-110 transition-transform duration-200"
-              />
-            </a>
-          </div> */}
           <Deposit onOpenDeposit={openHeaderDeposit} />
           <NotificationsBell />
           <div className={styles.profile_wrapper}>
@@ -192,22 +180,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
           </div>
         </div>
       ) : (
-        <div className={styles.actionsDesctop} >
-          {/* <div className={styles.telegram}>
-            <a
-              href="https://t.me/thelattafa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-opacity duration-200"
-              title="Связаться в Telegram"
-            >
-              <TelegramSvgrepoIcon
-                width="24"
-                height="24"
-                className="hover:scale-110 transition-transform duration-200"
-              />
-            </a>
-          </div> */}
+        <div className={styles.actionsDesctop}>
           <Auth />
         </div>
       )}
@@ -221,7 +194,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
       <Dialog open={headerDepositOpen} onOpenChange={setHeaderDepositOpen}>
         <DialogContent
           className={depositStyles.dialog}
-          title="Пополнение счета"
+          title={t("deposit.title")}
           onInteractOutside={blockIfArmed}
           onPointerDownOutside={blockIfArmed}
         >

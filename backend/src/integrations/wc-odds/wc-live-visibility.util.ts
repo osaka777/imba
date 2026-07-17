@@ -17,6 +17,14 @@ export function isWcValidListOdd(value: number | null | undefined): boolean {
   return value != null && Number.isFinite(value) && value > 1;
 }
 
+/** Производные stat-события Olimpbet (угловые, карточки) — не показывать в live-списке как матч. */
+export function isWcDerivativeStatsEvent(
+  event: Pick<WcOddsEventDto, 'leagueName'>,
+): boolean {
+  const league = (event.leagueName ?? '').toLowerCase();
+  return league.includes('статистик') || league.includes('statistic');
+}
+
 export function wcEventHasActiveListBets(event: Pick<
   WcOddsEventDto,
   | 'marketsCount'
@@ -63,9 +71,11 @@ export function isWcEventVisibleInLiveList(
     | 'homeScore'
     | 'awayScore'
     | 'statList'
+    | 'leagueName'
   >,
   nowMs: number = Date.now(),
 ): boolean {
+  if (isWcDerivativeStatsEvent(event)) return false;
   if (event.completed || event.phase === 'finished') return false;
   if (event.phase !== 'live') return false;
 

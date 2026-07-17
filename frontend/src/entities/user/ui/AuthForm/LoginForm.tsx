@@ -11,6 +11,7 @@ import { safeToast } from "~/shared/lib/safeToast";
 import { verifyUser, login, verifyTelegram2fa } from "../../api";
 import styles from "./AuthForm.module.css";
 import { EmailIcon, LockIcon } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
 
 type AuthFormState = {
   email: string;
@@ -20,32 +21,33 @@ type AuthFormState = {
 export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void }) => {
   const [twoFaToken, setTwoFaToken] = useState<string | null>(null);
   const [twoFaCode, setTwoFaCode] = useState("");
+  const { t } = useLocale();
 
   const onError = (error: unknown) => {
     console.error("Login error:", error);
     const message = error instanceof Error ? error.message : "";
     if (message.toLowerCase().includes("password") || message.toLowerCase().includes("unauthorized")) {
-      safeToast.error("Неверная почта или пароль");
+      safeToast.error(t("auth.errorInvalidCredentials"));
       return;
     }
     if (message.toLowerCase().includes("2fa") || message.toLowerCase().includes("code")) {
-      safeToast.error("Неверный код из Telegram");
+      safeToast.error(t("auth.errorInvalidTgCode"));
       return;
     }
-    safeToast.error("Ошибка при запросе входа, попробуйте повторить позже");
+    safeToast.error(t("auth.errorLoginRequest"));
   };
 
   const finishLogin = async () => {
-    safeToast.success("Вход выполнен успешно!");
+    safeToast.success(t("auth.successLogin"));
     try {
       const isVerified = await verifyUser();
       if (isVerified) {
         window.location.reload();
       } else {
-        safeToast.warning("Вход выполнен, но проверка не прошла. Обновите страницу.");
+        safeToast.warning(t("auth.warnLoginVerifyFailed"));
       }
     } catch {
-      safeToast.warning("Вход выполнен, но возникла ошибка проверки. Обновите страницу.");
+      safeToast.warning(t("auth.warnLoginVerifyError"));
     }
   };
 
@@ -62,7 +64,7 @@ export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void 
     onSuccess: async (result) => {
       if (result.kind === "2fa") {
         setTwoFaToken(result.twoFaToken);
-        safeToast.info("Введите код из Telegram");
+        safeToast.info(t("auth.infoEnterTgCode"));
         return;
       }
       await finishLogin();
@@ -93,7 +95,7 @@ export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void 
         </p>
         <Input
           className={styles.input}
-          placeholder="Код из Telegram"
+          placeholder={t("auth.tgCode")}
           type="text"
           inputMode="numeric"
           variant="pill"
@@ -101,10 +103,10 @@ export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void 
           onChange={(e) => setTwoFaCode(e.target.value)}
         />
         <Button className={styles.authButton} disabled={verifying2fa || twoFaCode.trim().length < 4} type="submit">
-          {verifying2fa ? "Проверка..." : "Подтвердить"}
+          {verifying2fa ? "..." : t("auth.confirm")}
         </Button>
         <button className={styles.forgotBackLink} type="button" onClick={() => { setTwoFaToken(null); setTwoFaCode(""); }}>
-          Назад
+          {t("auth.back")}
         </button>
       </form>
     );
@@ -123,14 +125,14 @@ export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void 
       <Input
         className={styles.input}
         icon={<LockIcon className={styles.fieldIcon} />}
-        placeholder="Пароль"
+        placeholder={t("auth.password")}
         type="password"
         variant="pill"
         {...register("password", { required: true })}
       />
       {onForgotPassword ? (
         <button className={styles.forgotBackLink} type="button" onClick={onForgotPassword}>
-          Забыли пароль?
+          {t("auth.forgot")}
         </button>
       ) : null}
       <Button
@@ -138,7 +140,7 @@ export const LoginForm = ({ onForgotPassword }: { onForgotPassword?: () => void 
         disabled={isPending || isSuccess}
         type="submit"
       >
-        {isPending || isSuccess ? "Авторизация..." : "Войти"}
+        {isPending || isSuccess ? t("auth.signingIn") : t("auth.signIn")}
       </Button>
     </form>
   );

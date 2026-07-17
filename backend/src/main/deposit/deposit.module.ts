@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthenticationModule } from '~/main/user/authentication/authentication.module';
@@ -7,6 +7,7 @@ import { PartnersModule } from '~/main/partners/partners.module';
 import { PrismaModule } from '~/prisma/prisma.module';
 import { OperationModule } from '~/main/operation/operation.module';
 import { EventModule } from '~/main/event/event.module';
+import { BonusBalanceModule } from '~/main/bonus-balance/bonus-balance.module';
 
 import { DepositController } from './deposit.controller';
 import { DepositService } from './deposit.service';
@@ -16,6 +17,7 @@ import { DepositCreditService } from './deposit-credit.service';
 import { UsdtTrc20MonitorService } from './usdt-trc20-monitor.service';
 import { PromoModalModule } from '../promo-modal/promo-modal.module';
 import { TelegramModule } from '../telegram/telegram.module';
+import { PushModule } from '../push/push.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { TelegramModule } from '../telegram/telegram.module';
     PromoModalModule,
     PartnersModule,
     TelegramModule,
+    PushModule,
+    forwardRef(() => BonusBalanceModule),
   ],
   controllers: [DepositController],
   providers: [

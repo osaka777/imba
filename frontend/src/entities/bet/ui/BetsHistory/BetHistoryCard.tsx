@@ -26,6 +26,8 @@ import type { WcHistoryExpressBet } from "~/entities/wc-odds/lib/mapWcExpressFor
 import type { WcHistoryOrdinarBet } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
 import { gamesList } from "~/entities/game";
 import { components } from "~/shared/api";
+import type { MessageKey } from "~/shared/i18n/messages";
+import { useLocale } from "~/shared/model/useLocale";
 
 import {
   OpenBetSlipCard,
@@ -33,6 +35,12 @@ import {
 } from "../Coupon/OpenBetSlipCard";
 import openStyles from "../Coupon/OpenTab.module.css";
 import styles from "./BetsHistoryPage.module.css";
+
+function pluralEvents(count: number, t: (key: MessageKey) => string): string {
+  if (count === 1) return t("coupon.eventWord1");
+  if (count < 5) return t("coupon.eventWord2");
+  return t("coupon.eventWord5");
+}
 
 type BetDto = components["schemas"]["BetDto"];
 type ExpressBetDto = components["schemas"]["ExpressBetDto"];
@@ -53,6 +61,7 @@ function getBetStatus(bet: AnyHistoryBet): BetHistoryStatus {
 }
 
 function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
+  const { t } = useLocale();
   const router = useRouter();
   const status = getBetStatus(bet);
   const gameStatus = getBetGameStatus(bet as Record<string, unknown>);
@@ -96,7 +105,7 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
           footerRightWin={footer.footerRightWin}
           headerDate={formatOpenBetHeaderDate(wcBet.createdAt)}
           isLive={gameStatus.isLive}
-          kindLabel="Ординар"
+          kindLabel={t("coupon.ordinar")}
           league={
             wcBet.leagueName ? truncateLeagueName(wcBet.leagueName) : null
           }
@@ -150,7 +159,7 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
             ? formatOpenBetKickoff(String(kickoffRaw))
             : null
         }
-        kindLabel="Ординар"
+        kindLabel={t("coupon.ordinar")}
         league={
           game?.leagueName ? truncateLeagueName(String(game.leagueName)) : null
         }
@@ -171,6 +180,7 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
 }
 
 function WcExpressBetHistoryCard({ bet }: { bet: WcHistoryExpressBet }) {
+  const { t } = useLocale();
   const router = useRouter();
   const legs = bet.bets;
   const status = bet.status as BetHistoryStatus;
@@ -207,9 +217,9 @@ function WcExpressBetHistoryCard({ bet }: { bet: WcHistoryExpressBet }) {
         footerRightWin={footer.footerRightWin}
         headerDate={formatOpenBetHeaderDate(bet.createdAt)}
         isLive={isLive}
-        kindLabel="Экспресс"
+        kindLabel={t("coupon.express")}
         matchHref={firstHref}
-        outcome={`${legs.length} ${legs.length === 1 ? "событие" : legs.length < 5 ? "события" : "событий"}`}
+        outcome={`${legs.length} ${pluralEvents(legs.length, t)}`}
         placedAt={formatCouponPlacedAt(bet.createdAt)}
         ribbon={ribbon}
         stakeLabel={formatCouponMoney(amount, currencyCode)}
@@ -252,6 +262,7 @@ function WcExpressBetHistoryCard({ bet }: { bet: WcHistoryExpressBet }) {
 }
 
 function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
+  const { t } = useLocale();
   const router = useRouter();
   const legs = bet.bets ?? [];
   const status = getBetStatus(bet);
@@ -294,9 +305,9 @@ function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
         footerRightWin={footer.footerRightWin}
         headerDate={formatOpenBetHeaderDate(String(bet.createdAt ?? ""))}
         isLive={isLive}
-        kindLabel="Экспресс"
+        kindLabel={t("coupon.express")}
         matchHref={firstHref}
-        outcome={`${legs.length} ${legs.length === 1 ? "событие" : legs.length < 5 ? "события" : "событий"}`}
+        outcome={`${legs.length} ${pluralEvents(legs.length, t)}`}
         placedAt={formatCouponPlacedAt(String(bet.createdAt ?? ""))}
         ribbon={ribbon}
         stakeLabel={formatCouponMoney(amount, currencyCode)}

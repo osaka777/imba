@@ -1,10 +1,14 @@
 import { Controller, Get, Post, Body, Query, UseGuards, Param } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { AdminWelcomeBonusAnalyticsService } from './admin-welcome-bonus-analytics.service';
 import { SuperuserGuard } from '../user/authentication/superuser.guard';
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly welcomeBonusAnalytics: AdminWelcomeBonusAnalyticsService,
+  ) {}
 
   @Get('test')
   @UseGuards(SuperuserGuard)
@@ -140,6 +144,67 @@ export class AdminController {
     }
   }
 
+  @Get('kick-partners')
+  @UseGuards(SuperuserGuard)
+  async getKickPartners(@Query('limit') limit?: string) {
+    try {
+      return await this.adminService.getKickPartnersOverview(
+        limit ? Number(limit) : 200,
+      );
+    } catch (error) {
+      console.error('Error in getKickPartners:', error);
+      return { error: error.message, total: 0, liveCount: 0, connectedCount: 0, items: [] };
+    }
+  }
+
+  @Get('kick-partners/sessions')
+  @UseGuards(SuperuserGuard)
+  async getRecentKickSessions(@Query('limit') limit?: string) {
+    try {
+      return await this.adminService.getRecentKickSessions(
+        limit ? Number(limit) : 50,
+      );
+    } catch (error) {
+      console.error('Error in getRecentKickSessions:', error);
+      return { error: error.message, total: 0, items: [] };
+    }
+  }
+
+  @Post('kick-partners/:userId/brand-bonus')
+  @UseGuards(SuperuserGuard)
+  async grantKickBrandBonus(
+    @Param('userId') userId: string,
+    @Body() body: { tier?: 'pro'; currency?: string },
+  ) {
+    try {
+      return await this.adminService.grantKickBrandBonus(
+        Number(userId),
+        body?.tier ?? 'pro',
+        body?.currency,
+      );
+    } catch (error) {
+      console.error('Error in grantKickBrandBonus:', error);
+      throw error;
+    }
+  }
+
+  @Get('kick-partners/:userId/sessions')
+  @UseGuards(SuperuserGuard)
+  async getKickPartnerSessions(
+    @Param('userId') userId: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      return await this.adminService.getKickPartnerSessions(
+        Number(userId),
+        limit ? Number(limit) : 50,
+      );
+    } catch (error) {
+      console.error('Error in getKickPartnerSessions:', error);
+      return { error: error.message, items: [] };
+    }
+  }
+
   @Get('users-stats')
   @UseGuards(SuperuserGuard)
   async getUsersStatistics(@Query('period') period: string = 'day') {
@@ -188,6 +253,26 @@ export class AdminController {
     } catch (error) {
       console.error('Error in getAllBonuses:', error);
       return { error: error.message, bonuses: [] };
+    }
+  }
+
+  @Get('bonuses/expiring')
+  @UseGuards(SuperuserGuard)
+  async getExpiringBonuses(@Query('hours') hours?: string) {
+    const withinHours = hours ? parseInt(hours, 10) : 24;
+    return this.welcomeBonusAnalytics.getExpiring(
+      Number.isFinite(withinHours) ? withinHours : 24,
+    );
+  }
+
+  @Get('bonuses/analytics')
+  @UseGuards(SuperuserGuard)
+  async getWelcomeBonusAnalytics(@Query('period') period?: string) {
+    try {
+      return await this.welcomeBonusAnalytics.getAnalytics(period ?? 'week');
+    } catch (error) {
+      console.error('Error in getWelcomeBonusAnalytics:', error);
+      return { error: error.message };
     }
   }
 

@@ -4,13 +4,16 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 
 import { AuthForm } from "~/entities/user";
+import type { BroadcastAuthMode } from "~/entities/wc-odds/lib/wcBroadcastAuth";
 import { PlusIcon } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 import { Dialog, DialogContent } from "~/shared/ui/Dialog";
 
 import styles from "./Auth.module.css";
 
 export const Auth = () => {
+  const { t } = useLocale();
   const [authModalType, setAuthModalType] = useState<
     "closed" | "login" | "register"
   >("closed");
@@ -26,6 +29,18 @@ export const Auth = () => {
     } catch (_) {
       // noop
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const onOpenAuth = (event: Event) => {
+      const mode = (event as CustomEvent<{ mode?: BroadcastAuthMode }>).detail?.mode;
+      setAuthModalType(mode === "login" ? "login" : "register");
+    };
+
+    window.addEventListener("imba:open-auth", onOpenAuth);
+    return () => window.removeEventListener("imba:open-auth", onOpenAuth);
   }, []);
 
   const openAuthModal =
@@ -50,7 +65,9 @@ export const Auth = () => {
       <Button
         className={clsx(styles.authButton, styles.authLogin)}
         onClick={openAuthModal("login")}
-      >{`Вход`}</Button>
+      >
+        {t("auth.login")}
+      </Button>
 
       <Button
         className={clsx(styles.authButton, styles.authSignIn)}
@@ -59,13 +76,17 @@ export const Auth = () => {
         <span className={styles.icon_wrapper}>
           <PlusIcon className={styles.authSignInIcon} />
         </span>
-        {`Регистрация`}
+        {t("auth.register")}
       </Button>
 
       <Dialog onOpenChange={closeModal} open={authModalType !== "closed"}>
         <DialogContent
           className={styles.authDialog}
-          title={authModalType === "login" ? "Вход в систему" : "Регистрация"}
+          title={
+            authModalType === "login"
+              ? t("auth.loginTitle")
+              : t("auth.registerTitle")
+          }
           onInteractOutside={preventCloseOnRegistrationPicker}
           onPointerDownOutside={preventCloseOnRegistrationPicker}
         >

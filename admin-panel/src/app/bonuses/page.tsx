@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { AuthGuard } from '@/shared/components/AuthGuard'
 import { bonusAPI, Bonus } from '@/shared/api/bonuses'
+import { BonusAnalyticsDashboard } from '@/widgets/bonuses/BonusAnalyticsDashboard'
 import { adminAffiliatePartnersAPI } from '@/shared/api/affiliatePartners'
 
 interface EnhancedBonusForm {
@@ -270,6 +271,10 @@ export default function BonusesPage() {
             <p className="text-gray-600">
               Создание и управление бонусами для пользователей
             </p>
+          </div>
+
+          <div className="mb-8">
+            <BonusAnalyticsDashboard period="week" showExpiringTable />
           </div>
 
           {/* Create Bonus Form */}

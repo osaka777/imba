@@ -11,9 +11,17 @@ import { fingerprintWcEventDetail, fingerprintWcListCache, fingerprintWcListEven
 import { filterVisibleWcLiveListEvents, isWcEventVisibleInLiveList, isWcLiveListTerminal } from './wc-live-visibility.util';
 import type { WcEventStatsPayload } from './wc-odds-statistics.types';
 import { mergeWcParsedScore, pickRicherStatList, statListNeedsEnrichment, enrichTennisParsedScoreLiveGame } from './wc-odds-statistics.util';
-import { mergeFullGroupedMarketsPreservingOdds, markGroupedMarketsSuspended, patchGroupedMarketsOdds, type WcGroupedMarkets } from './wc-odds-markets.util';
+import {
+  findOutcomeOdds,
+  mergeFullGroupedMarketsPreservingOdds,
+  markGroupedMarketsSuspended,
+  patchGroupedMarketsOdds,
+  type WcGroupedMarkets,
+} from './wc-odds-markets.util';
+import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
 import { filterFinalizedScopeMarkets } from './wc-scope-market-filter.util';
 import type { WcOddsEventDetailDto, WcOddsEventDto } from './wc-odds.types';
+import { overlayEventDetailFromList } from './wc-event-detail-overlay.util';
 import { WcOddsGateway } from './wc-odds.gateway';
 import { WcOddsSettlementService } from './wc-odds-settlement.service';
 import { WcEventMatchStateService } from './wc-event-match-state.service';
@@ -22,13 +30,14 @@ import { resolveEventRef, toPublicEventId } from './wc-public.util';
 import { wcSportKeyToSlug } from './wc-sport.util';
 
 const BROADCAST_TICK_MS = 500;
-const INGEST_TICK_MS = 500;
+const INGEST_TICK_MS = 2_000;
 /** Match detail page (`SUB_EVENT`): fast Olimpbet pull + immediate WS push. */
-const FOCUSED_INGEST_TICK_MS = 250;
+const FOCUSED_INGEST_TICK_MS = 1_000;
+const FOCUSED_ODDS_MIN_MS = 1_500;
 const LINE_DB_REFRESH_MS = 3000;
-const LIVE_DB_REFRESH_MS = 1500;
-const LIVE_INGEST_BATCH = 20;
-const LINE_INGEST_BATCH = 3;
+const LIVE_DB_REFRESH_MS = 2_000;
+const LIVE_INGEST_BATCH = 3;
+const LINE_INGEST_BATCH = 2;
 const STATS_REFRESH_MS = 5_000;
 const SUBSCRIBED_STATS_REFRESH_MS = 500;
 
@@ -43,6 +52,14 @@ type RefreshEventOptions = {
   statsOnly?: boolean;
   skipStructuredStats?: boolean;
   persistOdds?: boolean;
+  /** Bypass Olimpbet event-detail cache (focused match page). */
+  forceFetch?: boolean;
+};
+
+export type WcBetPlacementSnapshot = {
+  groupedMarkets: WcGroupedMarkets;
+  bettingOpen: boolean;
+  main: OlimpbetEventDetail | null;
 };
 
 function mergeLiveStatsFields(
@@ -117,6 +134,7 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
   private focusedHeavyTick = 0;
   private readonly oddsRefreshInFlight = new Set<string>();
   private readonly heavyRefreshInFlight = new Set<string>();
+  private readonly lastFocusedOddsRefreshMs = new Map<string, number>();
 
   private lineSubscribers = 0;
   private liveSubscribers = 0;
@@ -141,6 +159,19 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
   private lineIngestCursor = 0;
   private lastLineDbRefreshMs = 0;
   private lastLiveDbRefreshMs = 0;
+  private oddsUpdatedHandler: ((eventId: string) => void) | null = null;
+
+  registerOddsUpdatedHandler(handler: (eventId: string) => void): void {
+    this.oddsUpdatedHandler = handler;
+  }
+
+  private notifyOddsUpdated(eventId: string): void {
+    if (this.oddsUpdatedHandler) {
+      this.oddsUpdatedHandler(eventId);
+    }
+  }
+
+  private ingestReadyAt = 0;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -152,6 +183,8 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     this.gateway.bindRealtimeService(this);
+    // Avoid boot storm against Olimpbet right after container start/deploy.
+    this.ingestReadyAt = Date.now() + 45_000;
     this.tickTimer = setInterval(() => this.broadcastTick(), BROADCAST_TICK_MS);
     this.ingestTimer = setInterval(() => void this.ingestStep(), INGEST_TICK_MS);
     this.focusedOddsTimer = setInterval(() => void this.focusedOddsStep(), FOCUSED_INGEST_TICK_MS);
@@ -212,23 +245,23 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
 
   subscribeEvent(ref: string): void {
     this.eventSubscribers.set(ref, (this.eventSubscribers.get(ref) ?? 0) + 1);
-    const cached = this.eventCache.get(ref);
-    if (cached) {
-      const structured = this.structuredStatsCache.get(cached.id);
-      let snapshot = cached;
-      if (structured) {
-        const merged = mergeLiveStatsFields(undefined, cached, null, structured);
-        snapshot = {
-          ...cached,
-          statList: merged.statList,
-          parsedScore: merged.parsedScore,
-          homeScore: merged.homeScore,
-          awayScore: merged.awayScore,
-        };
-      }
+    const snapshot = this.getEventDetailSnapshot(ref);
+    if (snapshot) {
       this.gateway.sendEventSnapshot(ref, snapshot);
     }
-    void this.refreshEvent(ref, true, { fullMarkets: true, persistOdds: true });
+    // Odds-only force for unlock speed — skip heavy Prisma/settle (force=false).
+    // Linked fullMarkets catch up in background without blocking UPD.
+    void this.refreshEvent(ref, false, {
+      oddsOnly: true,
+      forceFetch: true,
+      skipStructuredStats: true,
+      persistOdds: true,
+    }).then(() => {
+      void this.refreshEvent(ref, false, {
+        fullMarkets: true,
+        persistOdds: true,
+      });
+    });
   }
 
   unsubscribeEvent(ref: string): void {
@@ -244,6 +277,36 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
 
   getEventCache(ref: string): WcOddsEventDetailDto | null {
     return this.eventCache.get(ref) ?? null;
+  }
+
+  /** List-cache overlay for first paint — keeps match page aligned with live/line cards. */
+  getEventDetailSnapshot(ref: string): WcOddsEventDetailDto | null {
+    const cached = this.eventCache.get(ref);
+    if (!cached) return null;
+    return this.overlayDetailFromListCaches(cached);
+  }
+
+  findListCacheEvent(eventId: string): WcOddsEventDto | null {
+    const fromLive = this.liveCache.find((event) => event.id === eventId);
+    if (fromLive) return fromLive;
+    return this.lineCache.find((event) => event.id === eventId) ?? null;
+  }
+
+  private overlayDetailFromListCaches(detail: WcOddsEventDetailDto): WcOddsEventDetailDto {
+    const list = this.findListCacheEvent(detail.id);
+    const structured = this.structuredStatsCache.get(detail.id);
+    let next = overlayEventDetailFromList(detail, list);
+    if (structured) {
+      const merged = mergeLiveStatsFields(undefined, next, null, structured);
+      next = {
+        ...next,
+        statList: merged.statList,
+        parsedScore: merged.parsedScore,
+        homeScore: merged.homeScore,
+        awayScore: merged.awayScore,
+      };
+    }
+    return next;
   }
 
   private hashPayload(payload: unknown): string {
@@ -531,6 +594,76 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  /**
+   * Lightweight odds read for bet placement — one Olimpbet detail fetch + line snapshot,
+   * without stats ingest, match-state refresh, or DB writes.
+   */
+  async resolveBetPlacementSnapshot(
+    ref: string,
+    dbEvent: {
+      id: string;
+      marketsJson: unknown;
+      completed: boolean;
+      commenceTime: Date;
+    },
+    options?: {
+      marketKey?: string;
+      outcomeKey?: string | null;
+      line?: string | null;
+      groupKey?: string | null;
+    },
+  ): Promise<WcBetPlacementSnapshot | null> {
+    const cached = this.eventCache.get(ref) ?? this.eventCache.get(dbEvent.id);
+    let groupedMarkets = (cached?.groupedMarkets ?? dbEvent.marketsJson ?? {}) as WcGroupedMarkets;
+    const fallbackBettingOpen = isWcBettingOpen(dbEvent.completed, dbEvent.commenceTime);
+
+    if (!this.olimpbet.isEnabled()) {
+      return { groupedMarkets, bettingOpen: fallbackBettingOpen, main: null };
+    }
+
+    const olimpbetId = olimpbetIdFromWcEventId(dbEvent.id);
+    if (!olimpbetId) {
+      return { groupedMarkets, bettingOpen: fallbackBettingOpen, main: null };
+    }
+
+    const main = await this.olimpbet.fetchEventDetail(olimpbetId, {
+      force: true,
+      locale: 'ru',
+    });
+    if (!main) {
+      return { groupedMarkets, bettingOpen: fallbackBettingOpen, main: null };
+    }
+
+    const bettingOpen = this.olimpbet.isFeedBettingOpen(main);
+    const lineSnapshot = await this.olimpbet.buildLineSnapshotFromDetail(main, olimpbetId, { skipLogos: true });
+    groupedMarkets = patchGroupedMarketsOdds(groupedMarkets, lineSnapshot.groupedMarkets);
+
+    const needsFullMarkets =
+      Boolean(options?.outcomeKey)
+      && Boolean(options?.marketKey)
+      && findOutcomeOdds(
+        groupedMarkets,
+        options!.marketKey!,
+        options!.outcomeKey!,
+        options?.line ?? null,
+        options?.groupKey ?? null,
+      ) == null;
+
+    if (needsFullMarkets) {
+      const fullSnapshot = await this.olimpbet.buildFullSnapshotFromDetail(main, olimpbetId);
+      groupedMarkets = mergeFullGroupedMarketsPreservingOdds(fullSnapshot.groupedMarkets, groupedMarkets);
+    }
+
+    if (main.live && !dbEvent.completed) {
+      groupedMarkets = filterFinalizedScopeMarkets(groupedMarkets, main);
+    }
+    if (!bettingOpen && Object.keys(groupedMarkets).length > 0) {
+      groupedMarkets = markGroupedMarketsSuspended(groupedMarkets);
+    }
+
+    return { groupedMarkets, bettingOpen, main };
+  }
+
   async refreshEvent(
     ref: string,
     force = false,
@@ -550,7 +683,10 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
     if (this.olimpbet.isEnabled()) {
       const olimpbetId = olimpbetIdFromWcEventId(dbEvent.id);
       if (olimpbetId) {
-        const main = await this.olimpbet.fetchEventDetail(olimpbetId);
+        const main = await this.olimpbet.fetchEventDetail(olimpbetId, {
+          force: options?.forceFetch === true,
+          locale: 'ru',
+        });
         const sportSlug = wcSportKeyToSlug(dbEvent.sportKey);
         const hasEventSubscribers = this.hasEventSubscriber(ref, dbEvent);
         const statsOnly = options?.statsOnly === true;
@@ -559,7 +695,12 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
         const skipStructuredStats =
           options?.skipStructuredStats === true
           || oddsOnly;
-        const statsInterval = hasEventSubscribers ? SUBSCRIBED_STATS_REFRESH_MS : STATS_REFRESH_MS;
+        const statsInterval = dbEvent.completed
+          ? 10 * 60_000
+          : hasEventSubscribers
+            ? SUBSCRIBED_STATS_REFRESH_MS
+            : STATS_REFRESH_MS;
+        const lastStatsRefresh = this.lastStatsRefreshMs.get(dbEvent.id) ?? 0;
         const cachedStructuredBefore = this.structuredStatsCache.get(dbEvent.id) ?? null;
         const cacheEmpty = statListNeedsEnrichment(
           sportSlug,
@@ -568,9 +709,9 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
         const fetchStructuredStats =
           !skipStructuredStats
           && (
-            force
-            || cacheEmpty
-            || Date.now() - (this.lastStatsRefreshMs.get(dbEvent.id) ?? 0) >= statsInterval
+            (force && !dbEvent.completed)
+            || (cacheEmpty && lastStatsRefresh === 0)
+            || Date.now() - lastStatsRefresh >= statsInterval
           );
 
         const statsPayload = main
@@ -614,20 +755,27 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
 
         if (snapshot) {
           const latestGrouped = readLatestGrouped();
-          groupedMarkets = useFullMarkets
-            ? mergeFullGroupedMarketsPreservingOdds(snapshot.groupedMarkets, latestGrouped)
-            : patchGroupedMarketsOdds(latestGrouped, snapshot.groupedMarkets);
+          const snapshotEmpty = Object.keys(snapshot.groupedMarkets).length === 0;
+          // Feed suspend often returns zero tradable markets — keep the last
+          // known markets (they get marked suspended below) instead of wiping.
+          if (
+            snapshotEmpty
+            && !dbEvent.completed
+            && Object.keys(latestGrouped).length > 0
+          ) {
+            groupedMarkets = latestGrouped;
+          } else {
+            groupedMarkets = useFullMarkets
+              ? mergeFullGroupedMarketsPreservingOdds(snapshot.groupedMarkets, latestGrouped)
+              : patchGroupedMarketsOdds(latestGrouped, snapshot.groupedMarkets);
+          }
           bookmakerKey = 'olimpbet';
           bookmakerTitle = 'Olimpbet';
-          if (useFullMarkets && prevCached?.oddsHome != null) {
-            oddsHome = new Decimal(prevCached.oddsHome);
-            oddsDraw = prevCached.oddsDraw != null ? new Decimal(prevCached.oddsDraw) : oddsDraw;
-            oddsAway = prevCached.oddsAway != null ? new Decimal(prevCached.oddsAway) : oddsAway;
-          } else {
-            if (snapshot.oddsHome) oddsHome = new Decimal(snapshot.oddsHome);
-            if (snapshot.oddsDraw) oddsDraw = new Decimal(snapshot.oddsDraw);
-            if (snapshot.oddsAway) oddsAway = new Decimal(snapshot.oddsAway);
-          }
+          // Always take scalar 1X2 from the Olimpbet snapshot — never freeze
+          // prevCached odds here (that made live prices flash old ↔ new).
+          if (snapshot.oddsHome) oddsHome = new Decimal(snapshot.oddsHome);
+          if (snapshot.oddsDraw) oddsDraw = new Decimal(snapshot.oddsDraw);
+          if (snapshot.oddsAway) oddsAway = new Decimal(snapshot.oddsAway);
           if (snapshot.live && !dbEvent.completed) phase = 'live';
         }
 
@@ -684,6 +832,7 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
                 dbEvent.sportKey,
                 main,
                 dbEvent.matchStateJson,
+                statsPayload,
               );
               if (statsPayload?.parsedScore && matchState) {
                 enrichTennisParsedScoreLiveGame(statsPayload.parsedScore, main, matchState);
@@ -784,14 +933,46 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
           }
         } else if (snapshot) {
           const latestGrouped = readLatestGrouped();
-          groupedMarkets = useFullMarkets
-            ? mergeFullGroupedMarketsPreservingOdds(snapshot.groupedMarkets, latestGrouped)
-            : patchGroupedMarketsOdds(latestGrouped, snapshot.groupedMarkets);
-          if (!useFullMarkets) {
+          if (useFullMarkets) {
+            // Structure from full snapshot; prices from full (not stale cache).
+            groupedMarkets = mergeFullGroupedMarketsPreservingOdds(
+              snapshot.groupedMarkets,
+              latestGrouped,
+            );
+            const concurrent = this.eventCache.get(ref) ?? this.eventCache.get(dbEvent.id);
+            const startedAt = prevCached?.oddsUpdatedAt
+              ? Date.parse(prevCached.oddsUpdatedAt)
+              : 0;
+            const concurrentAt = concurrent?.oddsUpdatedAt
+              ? Date.parse(concurrent.oddsUpdatedAt)
+              : 0;
+            // If oddsOnly landed fresher prices while fullMarkets was in flight, keep them.
+            if (
+              concurrent?.groupedMarkets
+              && concurrentAt > startedAt
+            ) {
+              groupedMarkets = patchGroupedMarketsOdds(
+                groupedMarkets,
+                concurrent.groupedMarkets as WcGroupedMarkets,
+              );
+              if (concurrent.oddsHome != null) oddsHome = new Decimal(concurrent.oddsHome);
+              if (concurrent.oddsDraw != null) oddsDraw = new Decimal(concurrent.oddsDraw);
+              if (concurrent.oddsAway != null) oddsAway = new Decimal(concurrent.oddsAway);
+            } else {
+              if (snapshot.oddsHome) oddsHome = new Decimal(snapshot.oddsHome);
+              if (snapshot.oddsDraw) oddsDraw = new Decimal(snapshot.oddsDraw);
+              if (snapshot.oddsAway) oddsAway = new Decimal(snapshot.oddsAway);
+            }
+          } else {
+            groupedMarkets = patchGroupedMarketsOdds(latestGrouped, snapshot.groupedMarkets);
             if (snapshot.oddsHome) oddsHome = new Decimal(snapshot.oddsHome);
             if (snapshot.oddsDraw) oddsDraw = new Decimal(snapshot.oddsDraw);
             if (snapshot.oddsAway) oddsAway = new Decimal(snapshot.oddsAway);
           }
+          mergedDto.oddsHome = oddsHome != null ? Number(oddsHome) : null;
+          mergedDto.oddsDraw = oddsDraw != null ? Number(oddsDraw) : null;
+          mergedDto.oddsAway = oddsAway != null ? Number(oddsAway) : null;
+          mergedDto.oddsUpdatedAt = new Date().toISOString();
         }
 
         if (main && !feedBettingOpen && Object.keys(groupedMarkets).length > 0) {
@@ -806,6 +987,10 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
         this.eventCache.set(ref, detail);
         this.eventCache.set(dbEvent.id, detail);
         if (dbEvent.slug) this.eventCache.set(dbEvent.slug, detail);
+
+        if (snapshot && !statsOnly) {
+          this.notifyOddsUpdated(dbEvent.id);
+        }
 
         if (hasEventSubscribers) {
           this.pushEventIfChanged(ref, detail);
@@ -901,6 +1086,8 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
 
   private async ingestStep(): Promise<void> {
     if (!this.olimpbet.isEnabled()) return;
+    if (Date.now() < this.ingestReadyAt) return;
+    if (this.olimpbet.isFetchBlocked()) return;
 
     const now = Date.now();
     if (now - this.lastLineDbRefreshMs >= LINE_DB_REFRESH_MS) {
@@ -961,15 +1148,26 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Odds from Olimpbet main event — skip only overlapping odds requests per match. */
+  /** Odds from Olimpbet main event — skip when odds or heavy refresh already in flight. */
   private focusedOddsStep(): void {
     if (!this.olimpbet.isEnabled() || this.eventSubscribers.size === 0) return;
+    if (Date.now() < this.ingestReadyAt) return;
+    if (this.olimpbet.isFetchBlocked()) return;
 
+    const now = Date.now();
     for (const ref of this.eventSubscribers.keys()) {
-      if (this.oddsRefreshInFlight.has(ref)) continue;
+      // Don't race a fullMarkets/stats refresh — that was flashing stale ↔ fresh odds.
+      if (this.oddsRefreshInFlight.has(ref) || this.heavyRefreshInFlight.has(ref)) continue;
+      const last = this.lastFocusedOddsRefreshMs.get(ref) ?? 0;
+      if (now - last < FOCUSED_ODDS_MIN_MS) continue;
 
+      this.lastFocusedOddsRefreshMs.set(ref, now);
       this.oddsRefreshInFlight.add(ref);
-      void this.refreshEvent(ref, false, { oddsOnly: true, skipStructuredStats: true })
+      void this.refreshEvent(ref, false, {
+        oddsOnly: true,
+        skipStructuredStats: true,
+        forceFetch: true,
+      })
         .catch((err) => {
           this.logger.warn(`WC focused odds failed for ${ref}: ${(err as Error).message}`);
         })
@@ -982,6 +1180,8 @@ export class WcOddsRealtimeService implements OnModuleInit, OnModuleDestroy {
   /** Stats / full linked markets — never runs concurrently with odds refresh for same ref. */
   private focusedHeavyStep(): void {
     if (!this.olimpbet.isEnabled() || this.eventSubscribers.size === 0) return;
+    if (Date.now() < this.ingestReadyAt) return;
+    if (this.olimpbet.isFetchBlocked()) return;
 
     this.focusedHeavyTick += 1;
     const fullMarkets = this.focusedHeavyTick % 4 === 0;

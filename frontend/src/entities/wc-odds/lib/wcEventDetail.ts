@@ -5,6 +5,7 @@ import type {
 } from "~/entities/wc-odds/api/client";
 import { mergeWcParsedScore } from "~/entities/wc-odds/lib/wcLiveScore";
 import { mergeStatListForEvent } from "~/entities/wc-odds/lib/wcStatsMerge";
+import { isWcOddsFresher } from "~/entities/wc-odds/lib/wcEventDetailOverlay";
 
 function marketsEqual(a: WcGroupedMarkets, b: WcGroupedMarkets): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -17,20 +18,27 @@ function mergeMarketGroup(prev: WcMarketGroup, incoming: WcMarketGroup): WcMarke
   const outcomes = incoming.outcomes.map((incomingOutcome) => {
     const prevOutcome = prevByKey.get(incomingOutcome.outcomeKey);
     if (!prevOutcome) return incomingOutcome;
-    if (prevOutcome.price === incomingOutcome.price) return prevOutcome;
-    if (Math.abs(prevOutcome.price - incomingOutcome.price) < 0.005) return prevOutcome;
-    if (JSON.stringify(prevOutcome) === JSON.stringify(incomingOutcome)) {
+    if (prevOutcome.price === incomingOutcome.price
+      && prevOutcome.name === incomingOutcome.name
+      && prevOutcome.suspended === incomingOutcome.suspended) {
       return prevOutcome;
     }
-    return incomingOutcome;
+    // Keep HTTP-localized names; WS carries RU labels + fresh prices.
+    return {
+      ...incomingOutcome,
+      name: prevOutcome.name || incomingOutcome.name,
+    };
   });
 
-  const merged: WcMarketGroup = { ...incoming, outcomes };
+  const merged: WcMarketGroup = {
+    ...incoming,
+    label: prev.label || incoming.label,
+    outcomes,
+  };
   if (JSON.stringify(merged) === JSON.stringify(prev)) return prev;
   return merged;
 }
 
-/** Incoming WS snapshot is authoritative — drop categories/groups absent from the feed. */
 function isMatchMarketsClosed(
   event: Pick<WcEventDetail, "completed" | "phase" | "feedStatus">,
 ): boolean {
@@ -39,6 +47,7 @@ function isMatchMarketsClosed(
   return false;
 }
 
+/** Incoming WS snapshot updates prices; keep previous category/label structure (locale-aware). */
 function mergeGroupedMarkets(
   prev: WcGroupedMarkets,
   incoming: WcGroupedMarkets | undefined,
@@ -52,17 +61,29 @@ function mergeGroupedMarkets(
     return isMatchMarketsClosed(event) ? {} : safePrev;
   }
 
-  const merged: WcGroupedMarkets = {};
+  // Prefer existing (HTTP/locale) structure — only patch odds from WS.
+  if (Object.keys(safePrev).length > 0) {
+    const incomingByKey = new Map<string, WcMarketGroup>();
+    for (const groups of Object.values(incoming)) {
+      for (const group of groups) incomingByKey.set(group.key, group);
+    }
 
-  for (const [name, incomingGroups] of Object.entries(incoming)) {
-    const prevGroups = safePrev[name] ?? [];
-    merged[name] = incomingGroups.map((incomingGroup) => {
-      const prevGroup = prevGroups.find((group) => group.key === incomingGroup.key);
-      if (!prevGroup) return incomingGroup;
-      return mergeMarketGroup(prevGroup, incomingGroup);
-    });
+    const merged: WcGroupedMarkets = {};
+    for (const [category, prevGroups] of Object.entries(safePrev)) {
+      merged[category] = prevGroups.map((prevGroup) => {
+        const inc = incomingByKey.get(prevGroup.key);
+        if (!inc) return prevGroup;
+        return mergeMarketGroup(prevGroup, inc);
+      });
+    }
+    return merged;
   }
 
+  // Cold start: accept WS structure as-is.
+  const merged: WcGroupedMarkets = {};
+  for (const [name, incomingGroups] of Object.entries(incoming)) {
+    merged[name] = incomingGroups;
+  }
   return merged;
 }
 
@@ -95,14 +116,39 @@ function eventScalarsEqual(a: WcEventDetail, b: WcEventDetail): boolean {
   );
 }
 
-/** Patch odds/score in place — keep stable refs for unchanged outcomes (BetAPI WS-style). */
+/** Patch odds/score — WS frames omit names (stripped in feed store); HTTP may refresh labels. */
 export function mergeWcEventDetail(prev: WcEventDetail, incoming: WcEventDetail): WcEventDetail {
+  // Stale SNAP_EVENT from cold eventCache must not overwrite a fresher list overlay.
+  if (isWcOddsFresher(prev.oddsUpdatedAt, incoming.oddsUpdatedAt)) {
+    const parsedScore = mergeWcParsedScore(prev.parsedScore, incoming.parsedScore);
+    const statList = mergeStatListForEvent(incoming.id, prev.statList, incoming.statList);
+    const merged: WcEventDetail = {
+      ...prev,
+      homeTeam: incoming.homeTeam || prev.homeTeam,
+      awayTeam: incoming.awayTeam || prev.awayTeam,
+      leagueName: incoming.leagueName || prev.leagueName,
+      parsedScore,
+      statList,
+      homeScore: incoming.homeScore ?? prev.homeScore,
+      awayScore: incoming.awayScore ?? prev.awayScore,
+      homeTeamIcon: incoming.homeTeamIcon ?? prev.homeTeamIcon,
+      awayTeamIcon: incoming.awayTeamIcon ?? prev.awayTeamIcon,
+      hasBroadcast: incoming.hasBroadcast ?? prev.hasBroadcast,
+      hasHeadToHead: incoming.hasHeadToHead ?? prev.hasHeadToHead,
+    };
+    if (eventScalarsEqual(prev, merged)) return prev;
+    return merged;
+  }
+
   const groupedMarkets = mergeGroupedMarkets(prev.groupedMarkets, incoming.groupedMarkets, incoming);
   const parsedScore = mergeWcParsedScore(prev.parsedScore, incoming.parsedScore);
   const statList = mergeStatListForEvent(incoming.id, prev.statList, incoming.statList);
 
   const merged: WcEventDetail = {
     ...incoming,
+    homeTeam: incoming.homeTeam || prev.homeTeam,
+    awayTeam: incoming.awayTeam || prev.awayTeam,
+    leagueName: incoming.leagueName || prev.leagueName,
     groupedMarkets,
     parsedScore,
     statList,

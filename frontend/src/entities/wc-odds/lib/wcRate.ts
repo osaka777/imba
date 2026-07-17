@@ -1,6 +1,12 @@
 import type { Rate } from "~/entities/bet/types";
 import type { WcEvent, WcEventDetail, WcMarketOutcome } from "~/entities/wc-odds/api/client";
 import { formatWcRowLiveTime } from "~/entities/wc-odds/lib/wcLiveScore";
+import {
+  isWcBetPlacementBlockedMarket,
+  isWcBetPlacementBlockedOutcome,
+} from "~/entities/wc-odds/lib/wcBetPlacementBlocklist";
+import { applySportPeriodScopeLabels } from "~/entities/wc-odds/lib/wcPeriodScopeLabels";
+import { isJunkSpecialtyMarketKey } from "~/entities/wc-odds/lib/wcJunkMarkets";
 
 export const WC_ODDS_SOURCE = "wc-odds" as const;
 
@@ -36,15 +42,20 @@ export function isWcBettableMarketKey(marketKey: string): boolean {
     || isTotalsMarketKey(marketKey)
     || normalized === "even_odd"
     || normalized === "btts"
+    || normalized === "goals_team"
     || normalized === "double_chance"
     || normalized === "handicap"
     || normalized === "goals_both_min"
+    || normalized === "goals_both_half"
+    || normalized === "goals_both_teams_both_halves"
     || normalized === "handicap_3way"
   );
 }
 
 /** Canonical + selected display markets that accept bets in the coupon. */
 export function isWcMarketBettable(marketKey: string, outcomeKey?: string): boolean {
+  if (isWcBetPlacementBlockedMarket(marketKey)) return false;
+  if (isWcBetPlacementBlockedOutcome(marketKey, outcomeKey)) return false;
   if (isWcBettableMarketKey(marketKey)) return true;
   if (!marketKey.startsWith("display_") || !outcomeKey) return false;
   if (outcomeKey.startsWith("DISPLAY_")) return true;
@@ -52,7 +63,8 @@ export function isWcMarketBettable(marketKey: string, outcomeKey?: string): bool
   const normalized = normalizeWcMarketKey(marketKey);
   const canonicalKeys = new Set([
     "h2h", "totals", "totals_home", "totals_away", "even_odd",
-    "btts", "double_chance", "handicap", "goals_both_min", "handicap_3way",
+    "btts", "goals_team", "double_chance", "handicap", "goals_both_min",
+    "goals_both_half", "goals_both_teams_both_halves", "handicap_3way",
   ]);
   if (!canonicalKeys.has(normalized)) return false;
 
@@ -71,6 +83,7 @@ export function isWcMarketBettable(marketKey: string, outcomeKey?: string): bool
 }
 
 export function isWcVisibleMarketKey(marketKey: string): boolean {
+  if (isJunkSpecialtyMarketKey(marketKey)) return false;
   return isWcBettableMarketKey(marketKey) || isWcDisplayMarketKey(marketKey);
 }
 
@@ -106,13 +119,16 @@ export function normalizeWcMarketKey(marketKey: string): string {
     || baseKey === "double_chance"
     || baseKey === "handicap"
     || baseKey === "goals_both_min"
+    || baseKey === "goals_both_half"
+    || baseKey === "goals_both_teams_both_halves"
+    || baseKey === "goals_team"
     || baseKey === "handicap_3way"
   ) {
     return baseKey;
   }
   if (isHandicap3WayMarketKey(baseKey)) return "handicap_3way";
-  if (/^display_GOALS_TEAM1/i.test(baseKey)) return "btts";
-  if (/^display_GOALS_TEAM2/i.test(baseKey)) return "btts";
+  if (/^display_GOALS_TEAM1/i.test(baseKey)) return "goals_team";
+  if (/^display_GOALS_TEAM2/i.test(baseKey)) return "goals_team";
   if (/^display_WINNER_/i.test(baseKey)) return baseKey;
   if (baseKey.startsWith("display_DOUBLE_CHANCE")) return "double_chance";
   if (/display_INDIVIDUAL_TOTAL_TEAM1/i.test(baseKey) || /display_TEAM_TOTAL_1/i.test(baseKey)) {
@@ -121,17 +137,27 @@ export function normalizeWcMarketKey(marketKey: string): string {
   if (/display_INDIVIDUAL_TOTAL_TEAM2/i.test(baseKey) || /display_TEAM_TOTAL_2/i.test(baseKey)) {
     return "totals_away";
   }
-  if (baseKey.startsWith("display_TOTAL") || /display_INDIVIDUAL_TOTAL/i.test(baseKey)) {
+  // Match totals only — not specialty display_TOTAL_GOALS_MINUTES / TOTAL_FOULS_* etc.
+  if (
+    /^display_TOTAL(_ASIAN)?(_HALF)?(_3WAY)?$/i.test(baseKey)
+    || /^display_TOTAL_(MAP|ROUNDS|SET|ADD_TIME(_HALF)?)$/i.test(baseKey)
+    || /display_INDIVIDUAL_TOTAL/i.test(baseKey)
+  ) {
     return "totals";
   }
   if (baseKey.startsWith("display_EVEN_ODD") || /display_EVEN_ODD/i.test(baseKey)) {
     return "even_odd";
   }
+  if (/display_TEAM[12]_EVEN_ODD/i.test(baseKey) || /EVEN_ODD/i.test(baseKey) && baseKey.startsWith("display_")) {
+    return "even_odd";
+  }
+  if (baseKey.startsWith("display_GOALS_BOTH_BOTHHALF")) return "goals_both_teams_both_halves";
+  if (baseKey.startsWith("display_GOALS_BOTHHALF")) return "goals_both_half";
+  if (baseKey.startsWith("display_GOALS_BOTH_HALF")) return "goals_both_half";
   if (baseKey === "display_GOALS_BOTH" || baseKey.startsWith("display_GOALS_BOTH_")) {
     if (/GOALS_BOTH_MIN/i.test(baseKey)) return "goals_both_min";
     return "btts";
   }
-  if (baseKey.startsWith("display_GOALS_BOTHHALF")) return "btts";
   if (baseKey.startsWith("display_HANDICAP")) return "handicap";
   return baseKey;
 }
@@ -479,6 +505,7 @@ export function buildWcMarketRate(
 ): Rate {
   const line = outcome.point != null ? String(outcome.point) : undefined;
   const bettingOpen = isWcEventBettingOpen(event);
+  const displayGroupLabel = applySportPeriodScopeLabels(groupLabel, event.sport);
   return {
     source: WC_ODDS_SOURCE,
     wcMarketKey: marketKey,
@@ -489,7 +516,7 @@ export function buildWcMarketRate(
     eventId: event.id,
     eventName: `${event.homeTeam} — ${event.awayTeam}`,
     market: wcMarketId(marketKey, outcome.outcomeKey, groupKey),
-    title: buildWcMarketRateTitle(marketKey, groupLabel, outcome),
+    title: buildWcMarketRateTitle(marketKey, displayGroupLabel, outcome),
     isOpen: bettingOpen,
     isAvailable: bettingOpen,
     ...wcEventContextFields(event),
@@ -500,11 +527,15 @@ export function getWcBetLabel(bet: {
   pick?: WcPick | null;
   outcomeName?: string | null;
   marketKey?: string;
+  sport?: string;
 }): string {
-  if (bet.outcomeName) return sanitizeWcBetLabel(bet.outcomeName);
+  if (bet.outcomeName) {
+    return sanitizeWcBetLabel(applySportPeriodScopeLabels(bet.outcomeName, bet.sport));
+  }
   if (bet.pick && WC_PICK_LABEL[bet.pick]) return WC_PICK_LABEL[bet.pick];
   if (bet.marketKey === "totals") return "Тотал";
   if (bet.marketKey === "btts") return "Обе забьют";
+  if (bet.marketKey === "goals_team") return "Забьёт";
   if (bet.marketKey === "handicap") return "Фора";
   return "Ставка";
 }

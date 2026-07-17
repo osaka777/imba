@@ -124,4 +124,26 @@ describe("mergeWcEventDetail groupedMarkets", () => {
 
     expect(merged.groupedMarkets).toEqual({});
   });
+
+  it("keeps fresher prev odds when SNAP is older", () => {
+    const prev = {
+      ...baseEvent({
+        "1X2": [marketGroup("h2h", [{ outcomeKey: "HOME", name: "П1", price: 1.9 }])],
+      }),
+      oddsHome: 1.9,
+      oddsUpdatedAt: "2026-06-28T12:00:20.000Z",
+    };
+    const incoming = {
+      ...baseEvent({
+        "1X2": [marketGroup("h2h", [{ outcomeKey: "HOME", name: "П1", price: 2.4 }])],
+      }),
+      oddsHome: 2.4,
+      oddsUpdatedAt: "2026-06-28T12:00:00.000Z",
+    };
+
+    const merged = mergeWcEventDetail(prev, incoming);
+
+    expect(merged.oddsHome).toBe(1.9);
+    expect(merged.groupedMarkets["1X2"][0].outcomes[0].price).toBe(1.9);
+  });
 });

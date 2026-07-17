@@ -4,6 +4,7 @@ import { PartnerStatusBanner } from "@/widgets/PartnerStatusBanner/PartnerStatus
 import { verifySession } from "@/entities/user";
 import { redirect } from "next/navigation";
 import shell from "./profile-shell.module.css";
+import "./profile-light.css";
 
 export default async function RootLayout({
   children,
@@ -17,7 +18,7 @@ export default async function RootLayout({
   return (
     <>
       <ProfileHeader />
-      <div className={shell.canvas}>
+      <div className={shell.canvas} data-profile-light>
         <div className={shell.sheet}>
           <ProfileNavigation />
           <PartnerStatusBanner />

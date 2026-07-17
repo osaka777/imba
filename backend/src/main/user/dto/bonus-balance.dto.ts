@@ -50,6 +50,24 @@ export class BonusBalanceDto extends Dto<BonusBalanceDto> {
   @ApiProperty()
   isTokenBased: boolean;
 
+  @ApiProperty()
+  requiresDeposit: boolean;
+
+  @ApiProperty()
+  depositActivated: boolean;
+
+  @ApiProperty({ required: false, type: 'string' })
+  maxCashout?: Decimal | null;
+
+  @ApiProperty()
+  wagerMultiplier: number;
+
+  @ApiProperty({ required: false, type: 'string', format: 'date-time' })
+  expiresAt?: Date | null;
+
+  @ApiProperty()
+  currencyCode: string;
+
   @ApiProperty({ required: false })
   promoId?: number;
 
@@ -61,7 +79,4 @@ export class BonusBalanceDto extends Dto<BonusBalanceDto> {
 
   @Exclude()
   userId: number;
-
-  @Exclude()
-  currencyCode: string;
 } 

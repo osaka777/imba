@@ -1,0 +1,98 @@
+.card {
+  background: #fff;
+  border: 1px solid rgba(37, 47, 75, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 12px 32px rgba(15, 14, 39, 0.06);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.roi {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f0e27;
+}
+
+.currency {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(111, 72, 167, 0.12);
+  color: #6f48a7;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stat {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.statLabel {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f0e27;
+}
+
+.muted {
+  margin: 0;
+  color: #64748b;
+}
+
+.channelsTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f0e27;
+}
+
+.channelsTableWrap {
+  overflow-x: auto;
+}
+
+.channelsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.channelsTable th,
+.channelsTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(37, 47, 75, 0.08);
+  text-align: left;
+}
+
+.channelsTable th {
+  color: #64748b;
+  font-weight: 700;
+}

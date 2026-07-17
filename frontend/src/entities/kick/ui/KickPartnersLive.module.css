@@ -1,0 +1,117 @@
+.section {
+  margin-bottom: 28px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #f5f7ff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.livePill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(125deg, #53fc18, #2ea812);
+}
+
+.track {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(24, 25, 64, 0.92), rgba(12, 13, 32, 0.96));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.channel {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.viewers {
+  font-size: 12px;
+  font-weight: 700;
+  color: #53fc18;
+}
+
+.streamTitle {
+  margin: 0;
+  min-height: 40px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(245, 247, 255, 0.78);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primary {
+  color: #0b1020;
+  background: linear-gradient(125deg, #53fc18, #9dff73);
+}
+
+.secondary {
+  color: #f5f7ff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.branding {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9dff73;
+}
+
+.muted {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(245, 247, 255, 0.62);
+}

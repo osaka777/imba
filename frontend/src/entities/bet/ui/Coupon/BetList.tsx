@@ -1,6 +1,9 @@
+"use client";
+
 import type { Rate, Rates } from "../../types";
 import { BetItem } from "./BetItem";
 import styles from "./BetTab.module.css";
+import { useLocale } from "~/shared/model/useLocale";
 
 type BetListProps = {
   deleteButtonOnClickHandler: (item: Rate) => void;
@@ -17,12 +20,14 @@ export const BetList: React.FC<BetListProps> = ({
   stakeAmount = 0,
   currencyCode,
 }) => {
+  const { t } = useLocale();
+
   if (!rates.length) {
     return (
       <div className={styles.totalCoefficient}>
         <div className={styles.CouponTotalCoefficientRoot}>
           <div className={styles.CouponTotalCoefficientText}>
-            Выберите ставку
+            {t("coupon.selectBet")}
           </div>
         </div>
       </div>
@@ -51,7 +56,7 @@ export const BetList: React.FC<BetListProps> = ({
             {isNaN(totalCf) ? "-" : totalCf.toFixed(2)}
           </div>
           <div className={styles.CouponTotalCoefficientText}>
-            {variant === "express" ? "Итоговый коэффициент" : "Коэффициент"}
+            {variant === "express" ? t("coupon.totalOdds") : t("coupon.odds")}
           </div>
         </div>
       </div>

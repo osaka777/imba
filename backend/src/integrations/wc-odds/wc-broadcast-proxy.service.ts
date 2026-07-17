@@ -7,8 +7,88 @@ const CACHE_TTL_MS = 5 * 60_000;
 // Olimpbet API host needs the auth cookie; the live-video CDN hosts are public
 // but geo-restricted (only reachable from the server, not the user's browser),
 // so we proxy them. They rotate frequently (beterstream.xyz, smytdryt.live, …).
-const ALLOWED_HOSTS =
-  /\.(olimpbet\.kz|beterstream\.xyz|smytdryt\.live|statsalmastream\.net|sportboom\.tv|sportradar\.com|akamaized\.net|cloudfront\.net|llnwd\.net|almastream\.net)$/i;
+const ALLOWED_HOST_SUFFIXES = [
+  'olimpbet.kz',
+  'beterstream.xyz',
+  'smytdryt.live',
+  'dmdvw.live',
+  'statsalmastream.net',
+  'sportboom.tv',
+  'sportradar.com',
+  'akamaized.net',
+  'cloudfront.net',
+  'llnwd.net',
+  'almastream.net',
+  'kick.com',
+] as const;
+
+function isAllowedBroadcastHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return ALLOWED_HOST_SUFFIXES.some(
+    (suffix) => host === suffix || host.endsWith(`.${suffix}`),
+  );
+}
+
+import {
+  buildKickPlayerUrl,
+  extractKickChannelFromPlayerUrl,
+  isKickPlayerUrl,
+  kickParentDomains,
+} from './kick-broadcast.util';
+
+function rewriteTwitchParentsInHtml(
+  html: string,
+  requestHost?: string,
+  muted = true,
+): string {
+  const parents = kickParentDomains(requestHost);
+  return html.replace(
+    /(<iframe[^>]+src=["'])(https:\/\/player\.twitch\.tv\/\?[^"']+)(["'])/gi,
+    (_match, prefix: string, src: string, suffix: string) => {
+      try {
+        const url = new URL(src);
+        url.searchParams.delete('parent');
+        for (const parent of parents) {
+          url.searchParams.append('parent', parent);
+        }
+        url.searchParams.set('muted', String(muted));
+        return `${prefix}${url.toString()}${suffix}`;
+      } catch {
+        return `${prefix}${src}${suffix}`;
+      }
+    },
+  );
+}
+
+function buildKickEmbedPage(playerUrl: string, muted = true): string {
+  const src = playerUrl.includes('player.kick.com')
+    ? playerUrl
+    : buildKickPlayerUrl(
+      playerUrl.replace(/^https?:\/\/(?:www\.)?kick\.com\//i, '').split(/[/?#]/)[0] ?? '',
+      undefined,
+      muted,
+    );
+  const srcUrl = new URL(src);
+  srcUrl.searchParams.set('muted', String(muted));
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>html,body{margin:0;padding:0;height:100%;background:#000;}</style>
+</head>
+<body>
+  <iframe
+    allow="autoplay; fullscreen; picture-in-picture"
+    allowfullscreen
+    referrerpolicy="no-referrer-when-downgrade"
+    src="${srcUrl.toString().replace(/"/g, '&quot;')}"
+    style="width:100%;height:100%;border:0"
+    title="Kick stream"
+  ></iframe>
+</body>
+</html>`;
+}
 
 function isOlimpbetHost(raw: string): boolean {
   try {
@@ -64,7 +144,8 @@ export class WcBroadcastProxyService {
   private isAllowedUrl(raw: string): boolean {
     try {
       const url = new URL(raw);
-      return url.protocol === 'https:' && ALLOWED_HOSTS.test(url.hostname);
+      if (/twitch\.tv/i.test(url.hostname)) return false;
+      return url.protocol === 'https:' && isAllowedBroadcastHost(url.hostname);
     } catch {
       return false;
     }
@@ -131,8 +212,13 @@ export class WcBroadcastProxyService {
     await this.serveUrl(src, ref, res);
   }
 
-  /** Serve proxied iframe player HTML (video embed CDN). */
-  async proxyEmbed(ref: string, res: Response): Promise<void> {
+  /** Serve proxied iframe player HTML (Kick embed only for esports). */
+  async proxyEmbed(
+    ref: string,
+    res: Response,
+    requestHost?: string,
+    muted = true,
+  ): Promise<void> {
     const entry = this.embedCache.get(ref);
     if (!entry || entry.expiresAt < Date.now()) {
       res.status(404).send('Stream not ready');
@@ -140,6 +226,18 @@ export class WcBroadcastProxyService {
     }
     if (!this.isAllowedUrl(entry.upstreamUrl)) {
       res.status(400).send('Invalid stream URL');
+      return;
+    }
+
+    if (isKickPlayerUrl(entry.upstreamUrl)) {
+      const channel = extractKickChannelFromPlayerUrl(entry.upstreamUrl);
+      const playerUrl = channel
+        ? buildKickPlayerUrl(channel, requestHost, muted)
+        : entry.upstreamUrl;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      res.send(buildKickEmbedPage(playerUrl, muted));
       return;
     }
 
@@ -156,7 +254,10 @@ export class WcBroadcastProxyService {
         return;
       }
       const contentType = upstream.headers.get('content-type') ?? 'text/html; charset=utf-8';
-      const body = await upstream.text();
+      let body = await upstream.text();
+      if (/dmdvw\.live|sportboom|almastream/i.test(entry.upstreamUrl)) {
+        body = rewriteTwitchParentsInHtml(body, requestHost, muted);
+      }
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');

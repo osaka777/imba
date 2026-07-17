@@ -1,3 +1,8 @@
+import {
+  CYBER_OLIMP_SPORT_ID_TO_SLUG,
+  DEFAULT_CYBER_OLIMP_SPORT_IDS,
+} from '../cybersport/cybersport-catalog';
+
 /** Olimpbet sport IDs → frontend line slug (gamesList). */
 export const OLIMPBET_SPORT_ID_TO_SLUG: Record<number, string> = {
   100: 'soccer',
@@ -9,7 +14,14 @@ export const OLIMPBET_SPORT_ID_TO_SLUG: Record<number, string> = {
   124: 'cyber-basketball',
   126: 'cyber-football',
   1001: 'mma',
+  ...CYBER_OLIMP_SPORT_ID_TO_SLUG,
 };
+
+export const OLIMPBET_ESPORTS_SPORT_IDS = new Set(DEFAULT_CYBER_OLIMP_SPORT_IDS);
+
+export function isOlimpbetEsportsSportId(sportId: number | null | undefined): boolean {
+  return sportId != null && OLIMPBET_ESPORTS_SPORT_IDS.has(sportId);
+}
 
 export const DEFAULT_OLIMPBET_SPORT_IDS = [100, 101, 102, 103, 104, 110, 124, 126, 1001];
 

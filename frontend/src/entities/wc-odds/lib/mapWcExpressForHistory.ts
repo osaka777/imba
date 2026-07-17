@@ -40,7 +40,7 @@ export function mapWcExpressForHistory(
     payout: Number(parent.potentialPayout).toFixed(0),
     currencyCode: parent.currencyCode,
     bets: parent.legs.map((leg) => {
-      const label = getWcBetLabel(leg);
+      const label = getWcBetLabel({ ...leg, sport: leg.event.sport });
       const hasScore =
         leg.event.homeScore != null && leg.event.awayScore != null;
       return {

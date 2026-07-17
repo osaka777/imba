@@ -8,6 +8,8 @@ export type WithdrawalSummaryItem = {
   total: number;
   available: number;
   held: number;
+  lockedConnectBonus?: number;
+  referralsCount?: number;
   minWithdraw: number;
   holdDays: number;
 };

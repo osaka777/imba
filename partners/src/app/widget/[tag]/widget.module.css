@@ -1,0 +1,141 @@
+.root {
+  min-height: 100vh;
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px 16px;
+  box-sizing: border-box;
+}
+
+.bar {
+  width: min(920px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: linear-gradient(125deg, rgba(15, 14, 39, 0.92), rgba(111, 72, 167, 0.88));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.brand {
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.brandAccent {
+  color: #c4b5fd;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #53fc18;
+  letter-spacing: 0.02em;
+}
+
+.race {
+  margin-top: 8px;
+}
+
+.raceLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fcd34d;
+  margin-bottom: 4px;
+}
+
+.raceBar {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.raceFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #53fc18);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+.raceDone {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #53fc18;
+}
+
+.guessLine {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #c4b5fd;
+  line-height: 1.35;
+}
+
+.cta {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f0e27;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.empty {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}

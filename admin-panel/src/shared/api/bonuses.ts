@@ -144,6 +144,62 @@ export class BonusAPI {
     if (!response.ok) throw new Error(`Failed to cancel promo usage: ${response.status}`)
     return await response.json()
   }
+
+  async getExpiringBonuses(hours = 24): Promise<ExpiringBonusRow[]> {
+    const url = new URL(`${this.baseUrl}/api/admin/bonuses/expiring`)
+    url.searchParams.set('hours', String(hours))
+    const response = await fetch(url.toString(), { headers: this.getHeaders() })
+    if (!response.ok) throw new Error(`Failed to fetch expiring bonuses: ${response.status}`)
+    return await response.json()
+  }
+
+  async getWelcomeBonusAnalytics(period: 'day' | 'week' | 'month' = 'week'): Promise<WelcomeBonusAnalytics> {
+    const url = new URL(`${this.baseUrl}/api/admin/bonuses/analytics`)
+    url.searchParams.set('period', period)
+    const response = await fetch(url.toString(), { headers: this.getHeaders() })
+    if (!response.ok) throw new Error(`Failed to fetch bonus analytics: ${response.status}`)
+    return await response.json()
+  }
+}
+
+export interface ExpiringBonusRow {
+  id: number
+  userId: number
+  email: string | null
+  currency: string
+  amount: number
+  phase: 'awaiting_deposit' | 'wagering'
+  expiresAt: string | null
+  remainingHours: number | null
+  totalWagered: number
+  requiredWager: number
+  telegramLinked: boolean
+}
+
+export interface WelcomeBonusFunnelStep {
+  step: string
+  label: string
+  count: number
+  conversionPct: number
+}
+
+export interface WelcomeBonusAnalytics {
+  period: string
+  offersInPeriod: number
+  activatedInPeriod: number
+  depositConversionPct: number
+  registrationToWelcomePct: number
+  lockedNow: number
+  wageringActive: number
+  wageringCompleted: number
+  wageringStartedNow: number
+  wageringStartedInPeriod: number
+  completedInPeriod: number
+  expiringSoon: number
+  expiredLocked: number
+  telegramWarnings: number
+  newUsersInPeriod: number
+  funnel: WelcomeBonusFunnelStep[]
 }
 
 export const bonusAPI = new BonusAPI()

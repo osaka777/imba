@@ -20,6 +20,8 @@ interface AdminWcBet {
   currencyCode: string;
   createdAt: string;
   settledAt?: string | null;
+  marketKey?: string;
+  outcomeKey?: string | null;
   user?: { id: number; email: string | null };
   event: {
     homeTeam: string;
@@ -29,6 +31,19 @@ interface AdminWcBet {
     awayScore: number | null;
     completed: boolean;
   };
+}
+
+interface BetHealthStats {
+  hours: number;
+  voidLastPeriod: Array<{ marketKey: string; count: number }>;
+  pendingOnCompleted: number;
+  stalePending: Array<{
+    id: number;
+    marketKey: string;
+    outcomeKey: string | null;
+    event: { slug: string | null; homeTeam: string; awayTeam: string };
+  }>;
+  statusTotals: Record<string, number>;
 }
 
 const PICK_LABEL: Record<string, string> = {
@@ -48,6 +63,7 @@ const baseUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function WcBetsAdminPage() {
   const [items, setItems] = useState<AdminWcBet[]>([]);
+  const [health, setHealth] = useState<BetHealthStats | null>(null);
   const [status, setStatus] = useState<WcBetStatus | "ALL">("PENDING");
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -57,9 +73,15 @@ export default function WcBetsAdminPage() {
     setLoading(true);
     try {
       const q = status === "ALL" ? "" : `?status=${status}`;
-      const res = await apiCall(`${baseUrl()}/api/feed/admin/bets${q}`);
-      if (!res.ok) throw new Error(await res.text());
-      setItems(await res.json());
+      const [betsRes, healthRes] = await Promise.all([
+        apiCall(`${baseUrl()}/api/feed/admin/bets${q}`),
+        apiCall(`${baseUrl()}/api/feed/admin/bets/health?hours=24`),
+      ]);
+      if (!betsRes.ok) throw new Error(await betsRes.text());
+      setItems(await betsRes.json());
+      if (healthRes.ok) {
+        setHealth(await healthRes.json());
+      }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Ошибка загрузки");
     } finally {
@@ -151,11 +173,37 @@ export default function WcBetsAdminPage() {
           ))}
         </div>
 
-        <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
+        <div className="mb-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
           <div className="rounded-lg bg-gray-800 p-3">Ожидают: {stats.pending}</div>
           <div className="rounded-lg bg-gray-800 p-3 text-green-400">Выигрыши: {stats.win}</div>
           <div className="rounded-lg bg-gray-800 p-3 text-red-400">Проигрыши: {stats.lose}</div>
+          <div className="rounded-lg bg-gray-800 p-3 text-gray-300">
+            VOID 24ч: {health?.voidLastPeriod.reduce((sum, row) => sum + row.count, 0) ?? "—"}
+          </div>
         </div>
+
+        {health && (health.pendingOnCompleted > 0 || health.voidLastPeriod.length > 0) ? (
+          <div className="mb-4 rounded-lg border border-amber-700/40 bg-amber-950/30 p-4 text-sm">
+            <p className="mb-2 font-medium text-amber-200">Мониторинг расчёта (24ч)</p>
+            {health.pendingOnCompleted > 0 ? (
+              <p className="text-amber-100">
+                Зависло после матча: <strong>{health.pendingOnCompleted}</strong>
+              </p>
+            ) : null}
+            {health.voidLastPeriod.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {health.voidLastPeriod.map((row) => (
+                  <span
+                    key={row.marketKey}
+                    className="rounded bg-gray-900 px-2 py-1 text-xs text-gray-300"
+                  >
+                    {row.marketKey}: {row.count}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {loading && <p className="text-gray-400">Загрузка...</p>}
 
@@ -166,6 +214,7 @@ export default function WcBetsAdminPage() {
                 <th className="px-3 py-2 text-left">ID</th>
                 <th className="px-3 py-2 text-left">Пользователь</th>
                 <th className="px-3 py-2 text-left">Матч</th>
+                <th className="px-3 py-2 text-left">Рынок</th>
                 <th className="px-3 py-2 text-left">Исход</th>
                 <th className="px-3 py-2 text-left">Сумма</th>
                 <th className="px-3 py-2 text-left">Кф</th>
@@ -185,7 +234,10 @@ export default function WcBetsAdminPage() {
                   <td className="px-3 py-2">
                     {b.event.homeTeam} — {b.event.awayTeam}
                   </td>
-                  <td className="px-3 py-2">{PICK_LABEL[b.pick]}</td>
+                  <td className="px-3 py-2 max-w-[140px] truncate" title={b.marketKey}>
+                    {b.marketKey ?? "h2h"}
+                  </td>
+                  <td className="px-3 py-2">{PICK_LABEL[b.pick] ?? b.outcomeKey ?? "—"}</td>
                   <td className="px-3 py-2">
                     {Number(b.stake).toFixed(0)} {b.currencyCode}
                   </td>
@@ -220,7 +272,7 @@ export default function WcBetsAdminPage() {
               ))}
               {!loading && items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-gray-500">
+                  <td colSpan={12} className="px-3 py-8 text-center text-gray-500">
                     Ставок нет
                   </td>
                 </tr>

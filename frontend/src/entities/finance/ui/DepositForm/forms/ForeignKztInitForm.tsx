@@ -17,6 +17,9 @@ import {
 } from "~/entities/finance/api/deposit";
 import { ManualForeignCardPage } from "~/entities/finance/ui/ManualForeignCardPage/ManualForeignCardPage";
 import { trackDepositOrder, untrackDepositOrder } from "~/shared/lib/appNotifications";
+import { useLocale } from "~/shared/model/useLocale";
+import type { MessageKey } from "~/shared/i18n/locales";
+import type { TranslateParams } from "~/shared/i18n/messages";
 import paymentModalStyles from "./PaymentModal.module.css";
 import styles from "./NirvanaPayForm.module.css";
 import { DepositFormHeading } from "../DepositFormHeading";
@@ -28,31 +31,25 @@ interface FormShape {
 
 type ForeignKztVariant = "card" | "kaspi";
 
-const VARIANT_CONFIG: Record<
-  ForeignKztVariant,
-  {
-    method: ManualForeignCardMethod;
-    subtitle: string;
-    title: string;
-    getMyOrder: typeof getMyKztForeignCardOrder;
-    uploadReceipt: typeof uploadKztForeignCardReceipt;
-  }
-> = {
-  card: {
-    method: "KZT_FOREIGN_CARD",
-    subtitle: "Иностранная карта",
-    title: "Пополнение — Перевод в KZT",
-    getMyOrder: getMyKztForeignCardOrder,
-    uploadReceipt: uploadKztForeignCardReceipt,
-  },
-  kaspi: {
-    method: "KZT_KASPI",
-    subtitle: "Kaspi",
-    title: "Пополнение — Kaspi",
-    getMyOrder: getMyKztKaspiOrder,
-    uploadReceipt: uploadKztKaspiReceipt,
-  },
-};
+type Translate = (key: MessageKey, params?: TranslateParams) => string;
+
+const getVariantConfig = (t: Translate) =>
+  ({
+    card: {
+      method: "KZT_FOREIGN_CARD" as ManualForeignCardMethod,
+      subtitle: t("deposit.foreignCard"),
+      title: t("deposit.titleTransferKzt"),
+      getMyOrder: getMyKztForeignCardOrder,
+      uploadReceipt: uploadKztForeignCardReceipt,
+    },
+    kaspi: {
+      method: "KZT_KASPI" as ManualForeignCardMethod,
+      subtitle: "Kaspi",
+      title: t("deposit.titleKaspi"),
+      getMyOrder: getMyKztKaspiOrder,
+      uploadReceipt: uploadKztKaspiReceipt,
+    },
+  }) as const;
 
 type ForeignKztInitFormProps = {
   forceCurrency?: string;
@@ -77,7 +74,8 @@ export const ForeignKztInitForm = ({
   embedded = false,
   onDepositComplete,
 }: ForeignKztInitFormProps) => {
-  const config = VARIANT_CONFIG[variant];
+  const { t } = useLocale();
+  const config = getVariantConfig(t)[variant];
   const defaultCurrency = useReadLocalStorage<string>("currency") || "KZT";
   const currency = forceCurrency || defaultCurrency;
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -90,7 +88,7 @@ export const ForeignKztInitForm = ({
 
   const minAmount = 3000;
   const quickSetAmounts = useMemo(
-    () => presetAmounts?.length ? presetAmounts : [3000, 6000, 9000],
+    () => (presetAmounts?.length ? presetAmounts : [3000, 6000, 9000]),
     [presetAmounts],
   );
 
@@ -123,7 +121,11 @@ export const ForeignKztInitForm = ({
     if (currency !== "KZT") return;
     const amount = Number(data.amount);
     if (!amount || amount < minAmount) {
-      toast.warn(`Минимальная сумма — ${minAmount.toLocaleString()} KZT`);
+      toast.warn(
+        t("deposit.minAmountShort", {
+          amount: `${minAmount.toLocaleString()} KZT`,
+        }),
+      );
       return;
     }
     setInitLoading(true);
@@ -141,7 +143,7 @@ export const ForeignKztInitForm = ({
       setPaymentOpen(true);
       if (embedded) onDepositComplete?.();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Не удалось создать заявку";
+      const msg = err instanceof Error ? err.message : t("deposit.createFailed");
       toast.error(String(msg));
     } finally {
       setInitLoading(false);
@@ -152,7 +154,7 @@ export const ForeignKztInitForm = ({
 
   if (currency !== "KZT") {
     return (
-      <div className={styles.formSection_empty}>Метод доступен только для KZT</div>
+      <div className={styles.formSection_empty}>{t("deposit.kztOnly")}</div>
     );
   }
 
@@ -167,7 +169,7 @@ export const ForeignKztInitForm = ({
             resetPayment();
           }}
         >
-          ← Назад
+          {t("deposit.back")}
         </button>
         <ManualForeignCardPage
           asModal
@@ -223,8 +225,8 @@ export const ForeignKztInitForm = ({
             validate: (value) => !!value && value >= minAmount,
           })}
           className={styles.input}
-          label="Сумма"
-          placeholder="Введите сумму депозита"
+          label={t("deposit.amount")}
+          placeholder={t("deposit.amountPlaceholder")}
           type="number"
         />
       </div>
@@ -244,15 +246,16 @@ export const ForeignKztInitForm = ({
 
       {errors.amount && (
         <p className={styles.error}>
-          Минимальная сумма пополнения - {minAmount.toLocaleString()}{" "}
-          {getSymbolFromCurrency(currency)}
+          {t("deposit.minAmount", {
+            amount: `${minAmount.toLocaleString()} ${getSymbolFromCurrency(currency)}`,
+          })}
         </p>
       )}
 
       {!embedded ? <DialogClose ref={closeRef} style={{ display: "none" }} /> : null}
 
       <Button className={styles.submit} disabled={initLoading} type="submit">
-        {initLoading ? "Создание заявки..." : "Пополнить"}
+        {initLoading ? t("deposit.creatingRequest") : t("deposit.topUp")}
       </Button>
     </form>
   );

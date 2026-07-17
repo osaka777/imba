@@ -13,8 +13,17 @@ describe("wcBetErrorMessage", () => {
   });
 
   it("formats stake range errors", () => {
-    expect(formatWcBetErrorMessage("Stake must be between 100 and 500000")).toBe(
-      "Сумма ставки — от 100 до 500 000",
+    expect(formatWcBetErrorMessage("Stake must be between 100 and 1000000")).toBe(
+      "Сумма ставки — от 100 до 1 000 000",
+    );
+    expect(formatWcBetErrorMessage("Stake must be between 100 and 1000000", "en")).toBe(
+      "Stake must be between 100 and 1,000,000",
+    );
+  });
+
+  it("keeps English output for en locale", () => {
+    expect(formatWcBetErrorMessage("Odds unavailable for this outcome", "en")).toBe(
+      "Betting closed for this outcome",
     );
   });
 

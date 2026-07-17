@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale } from "~/shared/model/useLocale";
+
 import styles from "./forms/NirvanaPayForm.module.css";
 
 type DepositFormHeadingProps = {
@@ -6,16 +10,19 @@ type DepositFormHeadingProps = {
 };
 
 export const DepositFormHeading = ({
-  title = "Пополнение",
+  title,
   subtitle,
 }: DepositFormHeadingProps) => {
+  const { t } = useLocale();
+  const resolvedTitle = title ?? t("deposit.heading");
+
   if (!subtitle) {
-    return <h2 className={styles.heading}>{title}</h2>;
+    return <h2 className={styles.heading}>{resolvedTitle}</h2>;
   }
 
   return (
     <div className={styles.headingGroup}>
-      <h2 className={styles.heading}>{title}</h2>
+      <h2 className={styles.heading}>{resolvedTitle}</h2>
       <p className={styles.headingSubline}>{subtitle}</p>
     </div>
   );

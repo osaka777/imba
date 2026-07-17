@@ -22,6 +22,7 @@ import {
   stripCardNumber,
   type CardBrand,
 } from "~/shared/lib/cardNumber";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { withdraw } from "../../api";
 import { CardBrandIcon } from "./CardBrandIcon";
@@ -42,16 +43,6 @@ interface WithdrawResponse {
   data?: WithdrawResponseDto;
   error?: WithdrawError;
 }
-
-const METHODS = [
-  { label: "Карта", value: "card" },
-  { label: "Криптовалюта", value: "crypto" },
-] as const;
-
-const CARD_TYPES = [
-  { label: "Казахстанская", value: "cards_kz", currency: "auto" },
-  { label: "Иностранная", value: "cards_foreign", currency: "auto" },
-] as const;
 
 const CRYPTO_TYPES = [
   { label: "TRC-20", value: "usdt_trc20", currency: "USDT" },
@@ -87,11 +78,29 @@ const isDuplicateRequest = (data: FormData): boolean => {
 };
 
 export const BovaForm = () => {
+  const { t } = useLocale();
   const { currency } = useCurrency();
   const displayCurrency = currency === "USDT" ? "USDT" : currency;
-  const [selectValue, setSelectValue] = useState<(typeof METHODS)[number]>(METHODS[0]);
-  const [selectCardType, setSelectCardType] = useState<(typeof CARD_TYPES)[number]>(
-    CARD_TYPES[0],
+
+  const methods = useMemo(
+    () => [
+      { label: t("deposit.methodCard"), value: "card" as const },
+      { label: t("deposit.crypto"), value: "crypto" as const },
+    ],
+    [t],
+  );
+
+  const cardTypes = useMemo(
+    () => [
+      { label: t("deposit.cardKz"), value: "cards_kz" as const, currency: "auto" as const },
+      { label: t("deposit.cardForeign"), value: "cards_foreign" as const, currency: "auto" as const },
+    ],
+    [t],
+  );
+
+  const [selectValue, setSelectValue] = useState<(typeof methods)[number]>(methods[0]);
+  const [selectCardType, setSelectCardType] = useState<(typeof cardTypes)[number]>(
+    cardTypes[0],
   );
   const [selectCryptoType, setSelectCryptoType] = useState<(typeof CRYPTO_TYPES)[number]>(
     CRYPTO_TYPES[0],
@@ -100,12 +109,20 @@ export const BovaForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cardBrand, setCardBrand] = useState<CardBrand>("unknown");
 
+  useEffect(() => {
+    setSelectValue((prev) => methods.find((m) => m.value === prev.value) ?? methods[0]);
+  }, [methods]);
+
+  useEffect(() => {
+    setSelectCardType((prev) => cardTypes.find((c) => c.value === prev.value) ?? cardTypes[0]);
+  }, [cardTypes]);
+
   const availableCardTypes = useMemo(() => {
     if (SUPPORTED_CURRENCIES.includes(currency as (typeof SUPPORTED_CURRENCIES)[number])) {
-      return CARD_TYPES;
+      return cardTypes;
     }
-    return [CARD_TYPES[1]];
-  }, [currency]);
+    return [cardTypes[1]];
+  }, [currency, cardTypes]);
 
   useEffect(() => {
     if (
@@ -118,9 +135,9 @@ export const BovaForm = () => {
 
   useEffect(() => {
     if (currency === "USDT" && selectValue.value !== "crypto") {
-      setSelectValue(METHODS[1]);
+      setSelectValue(methods[1]);
     }
-  }, [currency, selectValue.value]);
+  }, [currency, selectValue.value, methods]);
 
   const currentMethod = useMemo(() => {
     if (selectValue.value === "card") return selectCardType?.value || "";
@@ -170,7 +187,7 @@ export const BovaForm = () => {
     method: z.string(),
     wallet: z
       .string()
-      .min(1, "Поле обязательно для заполнения")
+      .min(1, t("deposit.fieldRequired"))
       .refine(
         (val) => {
           if (selectValue.value === "card") {
@@ -183,8 +200,8 @@ export const BovaForm = () => {
         {
           message:
             selectValue.value === "card"
-              ? "Номер карты должен содержать 13–19 цифр"
-              : "Адрес кошелька должен содержать 30-50 символов",
+              ? t("deposit.invalidCard")
+              : t("deposit.invalidUsdt"),
         },
       ),
     bank: z.number().optional(),
@@ -217,7 +234,7 @@ export const BovaForm = () => {
 
       const now = Date.now();
       if (now - lastSubmitTimeRef.current < SUBMIT_COOLDOWN || isDuplicateRequest(dto)) {
-        setError("Подождите немного перед повторной попыткой");
+        setError(t("deposit.withdrawWait"));
         return;
       }
 
@@ -253,12 +270,12 @@ export const BovaForm = () => {
           const message = Array.isArray(response.error.message)
             ? response.error.message[0]
             : response.error.message;
-          setError(message || "Произошла ошибка при выводе средств");
+          setError(message || t("deposit.withdrawError"));
         } else {
-          setError("Неожиданный ответ от сервера");
+          setError(t("deposit.withdrawError"));
         }
       } catch (err: any) {
-        setError(err?.message || "Произошла неизвестная ошибка");
+        setError(err?.message || t("deposit.withdrawError"));
       } finally {
         pendingRequestRef.current = null;
         setTimeout(() => {
@@ -268,7 +285,7 @@ export const BovaForm = () => {
         }, 2000);
       }
     },
-    [isPending, currentMethod, currency, mutateAsync, reset, getValues, selectValue.value],
+    [isPending, currentMethod, currency, mutateAsync, reset, getValues, selectValue.value, t],
   );
 
   const quickSet = useCallback(
@@ -283,21 +300,21 @@ export const BovaForm = () => {
 
   return (
     <form className={styles.BovaForm} onSubmit={handleSubmit(onSubmit)}>
-      <h2 className={styles.heading}>{`Вывод ${displayCurrency}`}</h2>
+      <h2 className={styles.heading}>{t("deposit.withdrawHeading", { currency: displayCurrency })}</h2>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>Метод вывода</label>
+        <label className={styles.label}>{t("deposit.withdrawMethod")}</label>
         <div className={styles.selectWrap}>
           <Select
             disabled={isLoading}
-            onValueChange={(event) => setSelectValue(METHODS.find((m) => m.value === event)!)}
+            onValueChange={(event) => setSelectValue(methods.find((m) => m.value === event)!)}
             value={selectValue.value}
           >
             <SelectTrigger className={styles.select}>
               <SelectValue placeholder={selectValue.label} />
             </SelectTrigger>
             <SelectContent className={styles.selectContent} position="popper">
-              {METHODS.map((m) => (
+              {methods.map((m) => (
                 <SelectItem className={styles.selectItem} key={m.value} value={m.value}>
                   {m.label}
                 </SelectItem>
@@ -309,12 +326,12 @@ export const BovaForm = () => {
 
       {selectValue.value === "card" && (
         <div className={styles.formGroup}>
-          <label className={styles.label}>Тип карты</label>
+          <label className={styles.label}>{t("deposit.cardType")}</label>
           <div className={styles.selectWrap}>
             <Select
               disabled={isLoading}
               onValueChange={(event) =>
-                setSelectCardType(availableCardTypes.find((t) => t.value === event)!)
+                setSelectCardType(availableCardTypes.find((ctype) => ctype.value === event)!)
               }
               value={selectCardType?.value || ""}
             >
@@ -339,12 +356,12 @@ export const BovaForm = () => {
 
       {selectValue.value === "crypto" && (
         <div className={styles.formGroup}>
-          <label className={styles.label}>Тип криптовалюты</label>
+          <label className={styles.label}>{t("deposit.cryptoType")}</label>
           <div className={styles.selectWrap}>
             <Select
               disabled={isLoading}
               onValueChange={(event) =>
-                setSelectCryptoType(CRYPTO_TYPES.find((t) => t.value === event)!)
+                setSelectCryptoType(CRYPTO_TYPES.find((ctype) => ctype.value === event)!)
               }
               value={selectCryptoType.value}
             >
@@ -367,7 +384,7 @@ export const BovaForm = () => {
 
       <div className={styles.formGroup}>
         <label className={styles.label}>
-          {selectValue.value === "card" ? "Номер карты" : "USDT адрес"}
+          {selectValue.value === "card" ? t("deposit.cardNumber") : t("deposit.usdtAddress")}
         </label>
         <div className={styles.inputField}>
           {selectValue.value === "card" ? (
@@ -399,7 +416,7 @@ export const BovaForm = () => {
             <Input
               {...register("wallet")}
               disabled={isLoading}
-              placeholder="Введите USDT адрес (TRC20)"
+              placeholder={t("deposit.usdtAddressPlaceholder")}
               type="text"
               variant="pill"
             />
@@ -408,7 +425,7 @@ export const BovaForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>{`Сумма в ${displayCurrency}`}</label>
+        <label className={styles.label}>{t("deposit.amountIn", { currency: displayCurrency })}</label>
         <div className={styles.inputField}>
           <Input
             {...register("amount", { valueAsNumber: true })}
@@ -421,7 +438,7 @@ export const BovaForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>Быстрый выбор суммы</label>
+        <label className={styles.label}>{t("deposit.quickAmount")}</label>
         <div className={styles.quickSetAmount}>
           {quickSetAmounts.map((val) => (
             <Button
@@ -438,13 +455,15 @@ export const BovaForm = () => {
       </div>
 
       {errors.amount && (
-        <p className={styles.error}>{`Сумма должна быть от ${minAmount} до ${maxAmount}`}</p>
+        <p className={styles.error}>
+          {t("deposit.amountRange", { min: minAmount, max: maxAmount })}
+        </p>
       )}
       {errors.wallet && (
         <p className={styles.error}>
           {selectValue.value === "crypto"
-            ? "Некорректный USDT адрес"
-            : "Номер карты должен содержать 13-19 цифр"}
+            ? t("deposit.invalidUsdt")
+            : t("deposit.invalidCard")}
         </p>
       )}
       {error && <p className={styles.error}>{error}</p>}
@@ -454,7 +473,7 @@ export const BovaForm = () => {
         disabled={isLoading || !isValid || submitCountRef.current > 0}
         type="submit"
       >
-        {isLoading ? "Вывод..." : "Вывести"}
+        {isLoading ? t("deposit.withdrawing") : t("deposit.withdrawSubmit")}
       </Button>
     </form>
   );

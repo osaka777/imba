@@ -1,0 +1,331 @@
+.board {
+  position: relative;
+  margin-bottom: 0.875rem;
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
+  border-radius: var(--kick-radius-lg, 14px);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgb(83 252 24 / 0.1) 0%, transparent 55%),
+    linear-gradient(180deg, var(--kick-bg-card, #161617) 0%, var(--kick-bg-surface, #0f0f10) 100%);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.42);
+}
+
+/* Верхняя зелёная линия */
+.board::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--kick-green, #53fc18), transparent);
+  opacity: 0.75;
+  z-index: 2;
+}
+
+/* ── Meta ──────────────────────────────────────────── */
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: rgb(0 0 0 / 0.28);
+  border-bottom: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+.league {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--kick-text, #fff);
+}
+
+.metaRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--kick-live-dim, rgb(255 70 70 / 0.14));
+  border: 1px solid var(--kick-live-border, rgb(255 70 70 / 0.42));
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.liveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--kick-live, #ff4646);
+  box-shadow: 0 0 6px var(--kick-live, #ff4646);
+  animation: cyberScorePulse 1.2s ease-in-out infinite;
+}
+
+.finishedBadge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
+  color: var(--kick-text-secondary, #b6b6bc);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.broadcastBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: var(--kick-green, #53fc18);
+  color: #000;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.broadcastBtn:hover {
+  background: var(--kick-green-hover, #6aff2e);
+  box-shadow: 0 0 16px var(--kick-green-glow, rgb(83 252 24 / 0.4));
+}
+
+.broadcastIcon {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
+/* ── Current map bar (наверху) ─────────────────────── */
+.mapBar {
+  display: flex;
+  justify-content: center;
+  padding: 0.7rem 0.9rem 0.2rem;
+}
+
+.mapPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.32rem 0.85rem;
+  border-radius: 999px;
+  background: var(--kick-bg-elevated, #1e1e20);
+  border: 1px solid var(--kick-green-border, rgb(83 252 24 / 0.45));
+  box-shadow: 0 0 18px rgb(83 252 24 / 0.12);
+}
+
+.mapPulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kick-live, #ff4646);
+  box-shadow: 0 0 7px var(--kick-live, #ff4646);
+  animation: cyberScorePulse 1.2s ease-in-out infinite;
+}
+
+.mapPillLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kick-text-secondary, #b6b6bc);
+}
+
+.mapPillRound {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  color: var(--kick-green, #53fc18);
+  text-shadow: 0 0 16px var(--kick-green-glow, rgb(83 252 24 / 0.4));
+}
+
+/* ── Hero: team | score | team ─────────────────────── */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem 0.9rem;
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.teamLogo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--kick-bg-elevated, #1e1e20);
+  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
+  overflow: hidden;
+}
+
+.teamName {
+  max-width: 100%;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--kick-text, #fff);
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-width: 6.5rem;
+}
+
+.scoreRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.scoreNum {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: rgb(255 255 255 / 0.55);
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease;
+}
+
+.scoreNum_lead {
+  color: var(--kick-green, #53fc18);
+  text-shadow: 0 0 20px var(--kick-green-glow, rgb(83 252 24 / 0.4));
+}
+
+.scoreSep {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.3);
+}
+
+.scoreCaption {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kick-text-muted, #8b8b93);
+}
+
+/* ── Maps breakdown chips ──────────────────────────── */
+.maps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.7rem 0.9rem 0.85rem;
+  border-top: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: rgb(0 0 0 / 0.18);
+}
+
+.mapChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  background: var(--kick-bg-elevated, #1e1e20);
+  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+}
+
+.mapChip_done {
+  opacity: 0.62;
+}
+
+.mapChip_active {
+  opacity: 1;
+  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
+  background: var(--kick-green-dim, rgb(83 252 24 / 0.14));
+  box-shadow: 0 0 14px rgb(83 252 24 / 0.16);
+}
+
+.mapChipLabel {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--kick-text-muted, #8b8b93);
+}
+
+.mapChip_active .mapChipLabel {
+  color: var(--kick-green, #53fc18);
+}
+
+.mapChipScore {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--kick-text, #fff);
+}
+
+.mapChipColon {
+  color: rgb(255 255 255 / 0.4);
+}
+
+.mapWin {
+  color: var(--kick-green, #53fc18);
+}
+
+@keyframes cyberScorePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .hero {
+    padding: 0.6rem 0.75rem 0.8rem;
+    gap: 0.5rem;
+  }
+
+  .scoreNum {
+    font-size: 1.8rem;
+  }
+
+  .teamName {
+    font-size: 0.8125rem;
+  }
+}

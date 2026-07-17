@@ -1,0 +1,1278 @@
+/* Hyperliquid / FrontDEX-inspired crypto terminal — dense, calm, one accent. */
+
+.page {
+  --btc-bg: #0b0e11;
+  --btc-panel: #14181f;
+  --btc-panel-2: #1a1f27;
+  --btc-line: #2a2e37;
+  --btc-text: #eaecef;
+  --btc-text-dim: #848e9c;
+  --btc-up: #1fa67d;
+  --btc-up-dim: rgba(31, 166, 125, 0.14);
+  --btc-down: #f24a67;
+  --btc-down-dim: rgba(242, 74, 103, 0.14);
+  --btc-accent: #50d2c1;
+
+  position: relative;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 12px 16px 64px;
+  min-height: 100vh;
+  color: var(--btc-text);
+  background: var(--btc-bg);
+  font-family: var(--w3-font, Inter, system-ui, sans-serif);
+  font-feature-settings: "tnum" 1;
+}
+
+.up { color: var(--btc-up) !important; }
+.down { color: var(--btc-down) !important; }
+.urgentClock { color: #f0b90b !important; }
+
+.btcIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.marketBar {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(200px, 1.2fr) repeat(3, minmax(108px, auto)) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--btc-line);
+  border-radius: 8px;
+  background: var(--btc-panel);
+}
+
+.marketIdentity,
+.marketMetric {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.marketName {
+  color: var(--btc-text);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.marketName span {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(80, 210, 193, 0.12);
+  color: var(--btc-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-family: var(--w3-mono, monospace);
+}
+
+.marketSource,
+.marketMetric span,
+.chartHead p,
+.positionRow span,
+.ticketHead span,
+.dailyStats span {
+  color: var(--btc-text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.marketSource {
+  margin-top: 2px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-family: var(--w3-mono, monospace);
+}
+
+.marketSource i {
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--btc-accent);
+}
+
+.marketMetric {
+  min-width: 112px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.marketMetric strong {
+  color: var(--btc-text);
+  font-size: 14px;
+  font-weight: 650;
+  font-family: var(--w3-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.marketState {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: end;
+  padding: 5px 8px;
+  border: 1px solid var(--btc-line);
+  border-radius: 4px;
+  color: var(--btc-text-dim);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+  background: var(--btc-panel-2);
+}
+
+.marketState i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.stateOpen { background: var(--btc-up); }
+.stateLocked { background: #f0b90b; }
+
+.marketSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.switchGroup,
+.chartControls {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--btc-line);
+  border-radius: 6px;
+  background: #0d1015;
+}
+
+.switchBtn,
+.switchOn,
+.chartControl,
+.chartControlOn {
+  min-width: 48px;
+  min-height: 28px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 9px;
+  color: var(--btc-text-dim);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  font-family: var(--w3-mono, monospace);
+}
+
+.switchOn,
+.chartControlOn {
+  color: #0b0e11;
+  background: var(--btc-accent);
+}
+
+.dailyStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid var(--btc-line);
+  border-radius: 8px;
+  background: var(--btc-line);
+}
+
+.dailyStats > div {
+  padding: 10px 12px;
+  background: var(--btc-panel);
+}
+
+.dailyStats strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-family: var(--w3-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 10px;
+  align-items: start;
+}
+
+.leftCol { min-width: 0; }
+
+.chartHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin: 0 0 8px;
+}
+
+.chartHead p { margin: 0 0 4px; }
+
+.chartHead h1 {
+  margin: 0;
+  color: var(--btc-text);
+  font-size: clamp(16px, 1.8vw, 20px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 650;
+}
+
+.chartCard {
+  height: 480px;
+  margin: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--btc-line);
+  background: #0d1015;
+}
+
+.positionRow {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--btc-line);
+  border-radius: 8px;
+  background: var(--btc-panel);
+}
+
+.positionRow span,
+.positionRow strong { display: block; }
+.positionRow strong {
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: var(--w3-mono, monospace);
+}
+.positionPositive strong:last-child { color: var(--btc-up); }
+.positionNegative strong:last-child { color: var(--btc-down); }
+
+.betDesk {
+  position: sticky;
+  top: 10px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--btc-line);
+  background: var(--btc-panel);
+}
+
+.ticketHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.ticketHead span,
+.ticketHead strong { display: block; }
+.ticketHead strong { margin-top: 3px; font-size: 14px; }
+
+.ticketHead b {
+  padding: 3px 7px;
+  border-radius: 3px;
+  background: rgba(80, 210, 193, 0.12);
+  color: var(--btc-accent);
+  font-size: 11px;
+  font-family: var(--w3-mono, monospace);
+}
+
+.directionTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.directionUp,
+.directionDown {
+  min-height: 40px;
+  border: 1px solid var(--btc-line);
+  border-radius: 6px;
+  background: #0d1015;
+  color: var(--btc-text-dim);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.directionUp span,
+.directionDown span { margin-right: 5px; }
+
+.directionUp:hover:not(:disabled) { color: var(--btc-up); border-color: rgba(31, 166, 125, 0.45); }
+.directionDown:hover:not(:disabled) { color: var(--btc-down); border-color: rgba(242, 74, 103, 0.45); }
+
+.directionUp.directionOn {
+  color: #fff;
+  border-color: var(--btc-up);
+  background: var(--btc-up);
+}
+.directionDown.directionOn {
+  color: #fff;
+  border-color: var(--btc-down);
+  background: var(--btc-down);
+}
+
+.payoutBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--btc-line);
+  border-bottom: 1px solid var(--btc-line);
+  background: transparent;
+}
+
+.payoutBanner span { display: block; }
+.payoutBanner strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--w3-mono, monospace);
+}
+
+.profitTag {
+  flex-shrink: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--btc-up);
+  font-family: var(--w3-mono, monospace);
+}
+
+.stakeBlock { margin-bottom: 10px; }
+.stakeHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--btc-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.stakeCur { color: var(--btc-accent); }
+
+.stakeControls {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.stakeBtn,
+.stakeInput {
+  height: 42px;
+  border-radius: 6px;
+  border: 1px solid var(--btc-line);
+  background: #0d1015;
+  color: var(--btc-text);
+}
+
+.stakeBtn { font-size: 18px; font-weight: 600; }
+.stakeBtn:hover {
+  border-color: rgba(80, 210, 193, 0.45);
+  color: var(--btc-accent);
+}
+
+.stakeInput {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--w3-mono, monospace);
+}
+
+.stakeInput:focus {
+  outline: none;
+  border-color: var(--btc-accent);
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.preset {
+  height: 30px;
+  border-radius: 5px;
+  border: 1px solid var(--btc-line);
+  background: #0d1015;
+  color: var(--btc-text-dim);
+  font-size: 11px;
+  font-weight: 650;
+  font-family: var(--w3-mono, monospace);
+}
+
+.preset:hover { border-color: #3d4450; color: var(--btc-text); }
+.presetOn {
+  border-color: rgba(80, 210, 193, 0.5);
+  background: rgba(80, 210, 193, 0.1);
+  color: var(--btc-accent);
+}
+
+.submitBet {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--btc-up);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.submitBet:hover:not(:disabled) { filter: brightness(1.08); }
+.submitBet:disabled { cursor: not-allowed; opacity: 0.35; }
+.submitBetDown {
+  color: #fff;
+  background: var(--btc-down);
+}
+
+.lockNote,
+.urgentNote,
+.hint,
+.authNote,
+.error,
+.flash {
+  margin: 10px 0 0;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lockNote,
+.hint { color: var(--btc-text-dim); }
+.urgentNote { color: #f0b90b; }
+.authNote { color: var(--btc-accent); }
+.error { color: var(--btc-down); font-weight: 600; }
+.flash { color: var(--btc-up); font-weight: 700; }
+
+.recentStrip,
+.myBets,
+.historyPanel {
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--btc-line);
+  background: var(--btc-panel);
+  overflow: hidden;
+}
+
+.recentStrip,
+.myBets { padding: 12px; }
+
+.recentHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.recentHead h2,
+.myBets h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--btc-text-dim);
+}
+
+.recentHead span {
+  font-size: 11px;
+  color: var(--btc-text-dim);
+  font-family: var(--w3-mono, monospace);
+}
+
+.recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dotUp,
+.dotDown {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dotUp {
+  background: var(--btc-up-dim);
+  color: var(--btc-up);
+  border: 1px solid rgba(31, 166, 125, 0.28);
+}
+
+.dotDown {
+  background: var(--btc-down-dim);
+  color: var(--btc-down);
+  border: 1px solid rgba(242, 74, 103, 0.28);
+}
+
+.myBets ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.myBets li {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 5px;
+  background: #0d1015;
+  border: 1px solid var(--btc-line);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--w3-mono, monospace);
+}
+
+.st_PENDING { color: #f0b90b; }
+.st_WIN { color: var(--btc-up); }
+.st_LOSE { color: var(--btc-down); }
+.st_VOID { color: var(--btc-text-dim); }
+
+.historyToggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 0;
+  color: var(--btc-text);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.historyToggle span:last-child {
+  color: var(--btc-accent);
+  font-size: 11px;
+  font-family: var(--w3-mono, monospace);
+}
+
+.historyTable { border-top: 1px solid var(--btc-line); }
+
+.historyHead,
+.historyItem {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-family: var(--w3-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.historyHead {
+  color: var(--btc-text-dim);
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.historyItem {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--btc-text-dim);
+}
+
+.historyItem strong { font-weight: 700; }
+.historyEmpty {
+  margin: 0;
+  padding: 14px;
+  color: var(--btc-text-dim);
+  font-size: 12px;
+}
+
+.auditReason {
+  display: block;
+  margin-top: 3px;
+  color: rgba(80, 210, 193, 0.65);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.footerNote {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--btc-text-dim);
+  line-height: 1.45;
+  font-family: var(--w3-mono, monospace);
+}
+
+.dialogBackdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+}
+
+.confirmDialog {
+  width: min(100%, 420px);
+  padding: 16px;
+  border: 1px solid var(--btc-line);
+  border-radius: 10px;
+  background: #14181f;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.confirmTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirmTop span {
+  color: var(--btc-text-dim);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.confirmTop h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.confirmTop button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--btc-line);
+  border-radius: 5px;
+  color: var(--btc-text-dim);
+  background: #0d1015;
+  font-size: 18px;
+}
+
+.confirmGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0 12px;
+}
+
+.confirmGrid span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--btc-line);
+  border-radius: 6px;
+  color: var(--btc-text-dim);
+  font-size: 10px;
+  background: #0d1015;
+}
+
+.confirmGrid b {
+  color: var(--btc-text);
+  font-size: 11px;
+  font-family: var(--w3-mono, monospace);
+}
+
+.confirmDialog > p {
+  margin: 0;
+  color: var(--btc-text-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.confirmActions {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cancelConfirm,
+.confirmUp,
+.confirmDown {
+  min-height: 42px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.cancelConfirm {
+  border: 1px solid var(--btc-line);
+  color: var(--btc-text);
+  background: transparent;
+}
+
+.confirmUp {
+  border: 0;
+  color: #fff;
+  background: var(--btc-up);
+}
+
+.confirmDown {
+  border: 0;
+  color: #fff;
+  background: var(--btc-down);
+}
+
+@media (max-width: 900px) {
+  .marketBar { grid-template-columns: 1fr repeat(2, auto); }
+  .marketState { display: none; }
+  .mainGrid { grid-template-columns: minmax(0, 1fr) 290px; }
+}
+
+@media (max-width: 720px) {
+  .page { padding: 10px 10px 120px; }
+  .marketBar { grid-template-columns: 1fr auto; }
+  .marketMetric:nth-of-type(2) { display: none; }
+  .dailyStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mainGrid { display: block; }
+  .chartCard { height: 320px; }
+  .chartHead h1 { font-size: 17px; }
+  .betDesk {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+  .ticketHead,
+  .payoutBanner,
+  .stakeBlock,
+  .hint,
+  .urgentNote,
+  .lockNote,
+  .authNote,
+  .error,
+  .flash { display: none; }
+  .directionTabs {
+    margin: 0;
+    display: inline-grid;
+    width: calc(45% - 5px);
+    vertical-align: middle;
+  }
+  .submitBet {
+    width: calc(55% - 5px);
+    min-height: 42px;
+    margin: 0 0 0 6px;
+    vertical-align: middle;
+  }
+  .positionRow { grid-template-columns: repeat(2, 1fr); }
+  .historyHead { display: none; }
+  .historyItem { grid-template-columns: 1fr 1.4fr; }
+}
+
+/* Professional market workspace (pre-Web3 design). */
+.page {
+  --btc-bg: #090b0f;
+  --btc-panel: #101319;
+  --btc-panel-2: #151922;
+  --btc-line: #242a35;
+  --btc-text: #f1f4f8;
+  --btc-text-dim: #8993a4;
+  --btc-up: #0ecb81;
+  --btc-up-dim: rgba(14, 203, 129, 0.14);
+  --btc-down: #f6465d;
+  --btc-down-dim: rgba(246, 70, 93, 0.14);
+  --btc-accent: #4b7cff;
+  max-width: 1280px;
+  padding: 20px 24px 56px;
+  background: #090b0f;
+  font-family: inherit;
+}
+
+.page::before { display: none; }
+
+.marketBar {
+  min-height: 64px;
+  grid-template-columns: minmax(230px, 1fr) repeat(3, minmax(120px, auto)) auto;
+  gap: 28px;
+  padding: 10px 0 18px;
+  border: 0;
+  border-bottom: 1px solid var(--btc-line);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.btcIcon {
+  width: 28px;
+  height: 28px;
+  box-shadow: none;
+}
+
+.marketName {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.marketName span {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--btc-text-dim);
+  background: transparent;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.marketSource,
+.marketMetric span,
+.chartHead p,
+.positionRow span,
+.ticketHead span,
+.dailyStats span {
+  font-family: inherit;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+}
+
+.marketSource {
+  margin-top: 3px;
+  letter-spacing: 0;
+}
+
+.marketSource i {
+  background: var(--btc-up);
+  box-shadow: none;
+}
+
+.marketMetric {
+  min-width: 128px;
+}
+
+.marketMetric strong {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.marketState {
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: #0d1016;
+}
+
+.stateOpen,
+.stateLocked { box-shadow: none; }
+.urgentClock { color: #f0b90b !important; }
+
+.marketSwitch {
+  gap: 10px;
+  margin: 14px 0 10px;
+}
+
+.switchGroup,
+.chartControls {
+  gap: 3px;
+  padding: 3px;
+  border-radius: 7px;
+  background: #0d1016;
+  backdrop-filter: none;
+}
+
+.switchBtn,
+.switchOn,
+.chartControl,
+.chartControlOn {
+  min-width: 52px;
+  min-height: 30px;
+  border-radius: 5px;
+  padding: 0 10px;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+.switchOn,
+.chartControlOn {
+  color: #dfe7ff;
+  background: rgba(75, 124, 255, 0.18);
+  box-shadow: none;
+}
+
+.dailyStats {
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: var(--btc-panel);
+  backdrop-filter: none;
+}
+
+.dailyStats strong {
+  margin-top: 4px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.mainGrid {
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 22px;
+  padding-top: 22px;
+}
+
+.chartHead { margin-bottom: 12px; }
+
+.chartHead h1 {
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.chartCard {
+  position: relative;
+  height: 440px;
+  border-color: var(--btc-line);
+  border-radius: 8px;
+  background: #0c0f15;
+  box-shadow: none;
+}
+
+.resultMoment {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  background: rgba(7, 9, 13, 0.9);
+  backdrop-filter: blur(7px);
+  animation: resultReveal 420ms ease-out both;
+}
+
+.resultMoment::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.resultWin::before {
+  background: radial-gradient(circle, rgba(14, 203, 129, 0.2), transparent 68%);
+}
+
+.resultLose::before {
+  background: radial-gradient(circle, rgba(246, 70, 93, 0.2), transparent 68%);
+}
+
+.resultEyebrow,
+.resultTitle,
+.resultMoment p,
+.resultMoment b,
+.repeatBet,
+.resultClose {
+  position: relative;
+  z-index: 1;
+}
+
+.resultEyebrow {
+  color: var(--btc-text-dim);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.resultTitle {
+  margin-top: 8px;
+  font-size: clamp(44px, 8vw, 76px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.resultWin .resultTitle,
+.resultWin > b { color: var(--btc-up); }
+.resultLose .resultTitle,
+.resultLose > b { color: var(--btc-down); }
+
+.resultMoment p {
+  margin: 13px 0 5px;
+  color: var(--btc-text-dim);
+  font-size: 12px;
+}
+
+.resultMoment > b {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.repeatBet {
+  min-width: 180px;
+  min-height: 40px;
+  margin-top: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: var(--btc-text);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.repeatBet:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.repeatBet:disabled { opacity: 0.45; }
+
+.resultClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  color: var(--btc-text-dim);
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 18px;
+}
+
+@keyframes resultReveal {
+  from {
+    opacity: 0;
+    transform: scale(1.025);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.betDesk {
+  top: 18px;
+  padding: 16px;
+  border-color: var(--btc-line);
+  border-radius: 8px;
+  background: var(--btc-panel);
+  backdrop-filter: none;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+}
+
+.ticketHead b {
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(75, 124, 255, 0.14);
+  color: #aebfff;
+  font-family: inherit;
+}
+
+.directionTabs {
+  border-radius: 7px;
+  background: #0b0e14;
+}
+
+.directionUp,
+.directionDown {
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+.directionUp.directionOn {
+  color: var(--btc-up);
+  border-color: rgba(14, 203, 129, 0.34);
+  background: rgba(14, 203, 129, 0.1);
+  box-shadow: none;
+}
+
+.directionDown.directionOn {
+  color: var(--btc-down);
+  border-color: rgba(246, 70, 93, 0.34);
+  background: rgba(246, 70, 93, 0.1);
+  box-shadow: none;
+}
+
+.payoutBanner {
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--btc-line);
+  border-bottom: 1px solid var(--btc-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.payoutBanner strong {
+  font-family: inherit;
+  font-size: 20px;
+}
+
+.profitTag {
+  padding: 4px 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.stakeControls {
+  grid-template-columns: 38px 1fr 38px;
+  gap: 4px;
+}
+
+.stakeBtn,
+.stakeInput {
+  height: 42px;
+  border-radius: 5px;
+  background: #0d1016;
+  font-family: inherit;
+}
+
+.stakeBtn:hover {
+  border-color: #40516a;
+  background: #111622;
+  box-shadow: none;
+}
+
+.presets { gap: 4px; }
+
+.preset {
+  height: 30px;
+  border-radius: 4px;
+  background: #0d1016;
+  font-family: inherit;
+}
+
+.presetOn {
+  border-color: #547fff;
+  background: rgba(75, 124, 255, 0.12);
+}
+
+.submitBet {
+  min-height: 46px;
+  border: 1px solid rgba(14, 203, 129, 0.45);
+  border-radius: 6px;
+  color: #07140e;
+  background: var(--btc-up);
+  font-family: inherit;
+  box-shadow: none;
+}
+
+.submitBet:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: none;
+}
+
+.submitBetDown {
+  border-color: rgba(246, 70, 93, 0.45);
+  color: #1a0507;
+  background: var(--btc-down);
+  box-shadow: none;
+}
+
+.positionRow,
+.recentStrip,
+.myBets,
+.historyPanel {
+  border-radius: 7px;
+  background: var(--btc-panel);
+  backdrop-filter: none;
+}
+
+.positionRow {
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 16px;
+  padding: 12px 14px;
+}
+
+.positionRow strong,
+.recentHead span,
+.myBets li,
+.historyHead,
+.historyItem,
+.footerNote {
+  font-family: inherit;
+}
+
+.dotUp,
+.dotDown,
+.myBets li { border-radius: 5px; }
+.auditReason { color: rgba(223, 231, 255, 0.55); }
+
+.dialogBackdrop {
+  background: rgba(2, 5, 10, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.confirmDialog {
+  border-color: var(--btc-line);
+  border-radius: 8px;
+  background: #101319;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
+}
+
+.confirmTop button,
+.confirmGrid span,
+.cancelConfirm,
+.confirmUp,
+.confirmDown {
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+.confirmGrid span { background: #0d1016; }
+.confirmUp { background: var(--btc-up); }
+.confirmDown { background: var(--btc-down); }
+
+@media (max-width: 900px) {
+  .page { padding-inline: 16px; }
+  .marketBar { grid-template-columns: 1fr repeat(2, auto); gap: 16px; }
+  .marketMetric:last-of-type { display: none; }
+  .mainGrid { grid-template-columns: minmax(0, 1fr) 310px; gap: 14px; }
+}
+
+@media (max-width: 720px) {
+  .page { padding: 12px 12px 118px; }
+  .marketBar { grid-template-columns: 1fr auto; padding: 4px 0 14px; }
+  .mainGrid { padding-top: 16px; }
+  .chartCard { height: 330px; border-radius: 8px; }
+  .betDesk {
+    border-radius: 0;
+    background: rgba(16, 19, 25, 0.96);
+  }
+}

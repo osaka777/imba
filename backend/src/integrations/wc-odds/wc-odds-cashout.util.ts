@@ -27,7 +27,7 @@ export function roundCashoutAmount(amount: number): number {
   return Math.round(amount * 100) / 100;
 }
 
-/** Fair cashout from live odds: stake × (currentOdds / placedOdds) × (1 − margin), capped by potential payout. */
+/** Fair cashout from live odds: stake × (placedOdds / currentOdds) × (1 − margin), capped by potential payout. */
 export function calculateWcCashoutOffer(
   input: WcCashoutCalculationInput,
 ): WcCashoutCalculationResult {
@@ -99,7 +99,7 @@ export function calculateWcCashoutOffer(
     return { available: false, reason: 'Некорректные данные ставки', code: 'invalid_bet' };
   }
 
-  const fairValue = stake * (currentOdds / placedOdds);
+  const fairValue = stake * (placedOdds / currentOdds);
   let amount = fairValue * (1 - margin);
   amount = Math.min(potentialPayout, amount);
   amount = Math.max(0, amount);

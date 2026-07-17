@@ -9,21 +9,36 @@ import type { WcEventDetail, WcMarketGroup } from "~/entities/wc-odds/api/client
 import {
   buildMarketTabs,
   filterGroupedMarketsByTab,
+  formatWcCategoryCompactName,
   formatWcCategoryDisplayName,
+  is1X2Category,
+  isMainMatch1X2Category,
   isWcMobileDefaultOpenCategory,
-  packSmallGroups,
+  mergeEntriesByDisplayName,
   regroupEntriesForDisplay,
   type WcMarketTabId,
 } from "~/entities/wc-odds/lib/wcOddsCategories";
-import { expandYesNoLineCategories } from "~/entities/wc-odds/lib/wcYesNoLineTitle";
+import { expandDoubleChanceScopeCategories } from "~/entities/wc-odds/lib/wcDoubleChanceScope";
+import { expandWinnerScopeCategories } from "~/entities/wc-odds/lib/wcWinScope";
+import { expandGoalsTeamCategories } from "~/entities/wc-odds/lib/wcGoalsTeamScope";
+import { expandBundledYesNoCategories, expandYesNoLineCategories, expandYesNoScopedCategories } from "~/entities/wc-odds/lib/wcYesNoLineTitle";
+import { expandEvenOddScopeCategories } from "~/entities/wc-odds/lib/wcEvenOddScope";
 import { expandTimeWindowYesNoCategories } from "~/entities/wc-odds/lib/wcYesNoTimeGroups";
 import { expandScopedMarketEntries } from "~/entities/wc-odds/lib/wcScopedMarketSplit";
 import { filterDisplayableGroups, deduplicateGroupsByOdds } from "~/entities/wc-odds/lib/wcMarketVisibility";
 import { filterFinalizedScopeMarketEntries } from "~/entities/wc-odds/lib/wcScopeMarketFilter";
+import { isJunkMarketCategoryName } from "~/entities/wc-odds/lib/wcJunkMarkets";
 import { isWcVisibleMarketKey } from "~/entities/wc-odds/lib/wcRate";
 import { useWcBettingOpen } from "~/entities/wc-odds/lib/useWcBettingOpen";
 import { useWcMatchMobileLayout } from "~/entities/wc-odds/lib/useWcMatchMobileLayout";
 import { useWcFreshMarketEntries } from "~/entities/wc-odds/lib/useWcFreshMarketEntries";
+import {
+  countEntriesByTab,
+  dedupeCyberMapCategoryEntries,
+  formatCyberTabCompactLabel,
+  groupEntriesByCyberSection,
+  shouldDefaultFoldCyberCategory,
+} from "~/entities/wc-odds/lib/wcCyberOddsLayout";
 import { WcOddsItem } from "~/entities/wc-odds/ui/WcOddsItem";
 import FireIcon from "~/shared/assets/icons/fire.svg?component";
 
@@ -37,6 +52,8 @@ type WcOddsTableProps = {
   bettingOpen: boolean;
   defaultFolded: boolean;
   lazyMount: boolean;
+  title?: string;
+  kickChip?: boolean;
 };
 
 const WcOddsTable = memo(function WcOddsTable({
@@ -47,6 +64,8 @@ const WcOddsTable = memo(function WcOddsTable({
   bettingOpen,
   defaultFolded,
   lazyMount,
+  title,
+  kickChip = false,
 }: WcOddsTableProps) {
   const [isFolded, setIsFolded] = useState(defaultFolded);
 
@@ -65,11 +84,13 @@ const WcOddsTable = memo(function WcOddsTable({
   const showContent = isParentExpanded && !isFolded;
   const mountContent = showContent || !lazyMount;
 
+  const headerTitle = title ?? name;
+
   if (!isParentExpanded) {
     return (
       <div>
-        <Button className={matchStyles.oddFold} onClick={() => setIsFolded(false)}>
-          <p className="text-sm font-medium text-white">{name}</p>
+        <Button className={matchStyles.oddFold} onClick={() => setIsFolded(false)} title={headerTitle}>
+          <p className={matchStyles.oddGroupName}>{name}</p>
           <ArrowIcon className="size-3 fill-white" />
         </Button>
       </div>
@@ -81,19 +102,21 @@ const WcOddsTable = memo(function WcOddsTable({
       <Button
         className={matchStyles.oddFold}
         onClick={() => setIsFolded((folded) => !folded)}
+        title={headerTitle}
         type="button"
       >
-        <p className="text-sm font-medium text-white">{name}</p>
+        <p className={matchStyles.oddGroupName}>{name}</p>
         <ArrowIcon className={cn("size-3 fill-white transition-transform", !isFolded && "rotate-180")} />
       </Button>
       {mountContent ? (
         <div className={cn(matchStyles.oddsList, isFolded && matchStyles.oddsList_hidden)}>
           {showContent ? (
             <WcOddsItem
+              bettingOpen={bettingOpen}
+              categoryName={title ?? name}
               event={event}
               groups={groups}
-              categoryName={name}
-              bettingOpen={bettingOpen}
+              kickChip={kickChip}
             />
           ) : null}
         </div>
@@ -106,6 +129,7 @@ const WcOddsTable = memo(function WcOddsTable({
   if (prev.isParentExpanded !== next.isParentExpanded) return false;
   if (prev.defaultFolded !== next.defaultFolded) return false;
   if (prev.lazyMount !== next.lazyMount) return false;
+  if (prev.title !== next.title) return false;
   if (prev.event.id !== next.event.id) return false;
   if (prev.groups === next.groups) return true;
   return JSON.stringify(prev.groups) === JSON.stringify(next.groups);
@@ -113,9 +137,17 @@ const WcOddsTable = memo(function WcOddsTable({
 
 type WcOddsSectionProps = {
   event: WcEventDetail;
+  /** Одна колонка рынков — для узкой боковой панели (cybersport game page). */
+  layout?: "default" | "stack";
 };
 
-export function WcOddsSection({ event }: WcOddsSectionProps) {
+function stackEntryPriority(name: string): number {
+  if (is1X2Category(name)) return 0;
+  if (/основ/i.test(name)) return 1;
+  return 2;
+}
+
+export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps) {
   const isMobile = useWcMatchMobileLayout();
   const [allExpanded, setAllExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<WcMarketTabId>("all");
@@ -132,12 +164,15 @@ export function WcOddsSection({ event }: WcOddsSectionProps) {
           ),
         ),
       ] as [string, WcMarketGroup[]])
-      .filter(([, groups]) => groups.length > 0);
+      .filter(([name, groups]) => groups.length > 0 && !isJunkMarketCategoryName(name));
 
     return filterFinalizedScopeMarketEntries(prepared, event);
   }, [event.groupedMarkets, event]);
 
-  const marketTabs = useMemo(() => buildMarketTabs(visibleEntries), [visibleEntries]);
+  const marketTabs = useMemo(
+    () => buildMarketTabs(visibleEntries, event.sport),
+    [visibleEntries, event.sport],
+  );
 
   useEffect(() => {
     setActiveTab("all");
@@ -149,17 +184,39 @@ export function WcOddsSection({ event }: WcOddsSectionProps) {
     }
   }, [activeTab, marketTabs]);
 
+  const categoryOptions = {
+    sport: event.sport,
+    homeTeam: event.homeTeam,
+    awayTeam: event.awayTeam,
+  };
+
   const sortedEntries = useMemo(() => {
     const filtered = filterGroupedMarketsByTab(visibleEntries, activeTab);
     const regrouped = regroupEntriesForDisplay(filtered, activeTab);
     const expandedYesNo = expandYesNoLineCategories(regrouped);
-    const expandedTimeWindows = expandTimeWindowYesNoCategories(expandedYesNo);
-    return expandScopedMarketEntries(expandedTimeWindows, {
+    const expandedYesNoScoped = expandYesNoScopedCategories(expandedYesNo, {
+      homeTeam: event.homeTeam,
+      awayTeam: event.awayTeam,
+    });
+    const expandedBundled = expandBundledYesNoCategories(expandedYesNoScoped);
+    const expandedTimeWindows = expandTimeWindowYesNoCategories(expandedBundled);
+    const expandedDoubleChance = expandDoubleChanceScopeCategories(expandedTimeWindows);
+    const expandedWinner = expandWinnerScopeCategories(expandedDoubleChance);
+    const expandedGoalsTeam = expandGoalsTeamCategories(expandedWinner);
+    const expandedEvenOdd = expandEvenOddScopeCategories(expandedGoalsTeam);
+
+    // Cyber sidebar: scopes render inside WcOddsItem — no extra accordion split.
+    if (layout === "stack") {
+      const merged = mergeEntriesByDisplayName(expandedEvenOdd, event.sport);
+      return dedupeCyberMapCategoryEntries(merged);
+    }
+
+    return expandScopedMarketEntries(expandedEvenOdd, {
       homeTeam: event.homeTeam,
       awayTeam: event.awayTeam,
       sport: event.sport,
     });
-  }, [visibleEntries, activeTab, event.homeTeam, event.awayTeam, event.sport]);
+  }, [visibleEntries, activeTab, event.homeTeam, event.awayTeam, event.sport, layout]);
 
   const freshEntries = useWcFreshMarketEntries(sortedEntries, {
     enabled: event.phase === "live",
@@ -170,20 +227,63 @@ export function WcOddsSection({ event }: WcOddsSectionProps) {
     [freshEntries, event],
   );
 
-  const rowBlocks = useMemo(
-    () => packSmallGroups(scopeFilteredEntries, 15),
-    [scopeFilteredEntries],
+  const orderedEntries = useMemo(() => {
+    if (layout !== "stack") return scopeFilteredEntries;
+    return [...scopeFilteredEntries].sort(
+      (a, b) => stackEntryPriority(a[0]) - stackEntryPriority(b[0]),
+    );
+  }, [scopeFilteredEntries, layout]);
+
+  const { pinnedEntries, regularEntries } = useMemo(() => {
+    if (layout !== "stack") {
+      return { pinnedEntries: [] as typeof orderedEntries, regularEntries: orderedEntries };
+    }
+
+    const pinned: typeof orderedEntries = [];
+    const regular: typeof orderedEntries = [];
+
+    for (const entry of orderedEntries) {
+      if (isMainMatch1X2Category(entry[0], event.sport)) {
+        pinned.push(entry);
+      } else {
+        regular.push(entry);
+      }
+    }
+
+    return { pinnedEntries: pinned, regularEntries: regular };
+  }, [orderedEntries, layout, event.sport]);
+
+  const mergedEntries = useMemo(
+    () => mergeEntriesByDisplayName(scopeFilteredEntries, event.sport),
+    [scopeFilteredEntries, event.sport],
+  );
+
+  const rowBlocks = useMemo(() => {
+    if (layout === "stack") {
+      return regularEntries.length
+        ? groupEntriesByCyberSection(regularEntries, event)
+        : [];
+    }
+    return [];
+  }, [regularEntries, layout, event]);
+
+  const tabCounts = useMemo(
+    () => (layout === "stack" ? countEntriesByTab(visibleEntries) : new Map<string, number>()),
+    [visibleEntries, layout],
   );
 
   const categoryMeta = useMemo(() => {
     const map = new Map<string, { defaultFolded: boolean }>();
     freshEntries.forEach(([name, groups]) => {
       map.set(name, {
-        defaultFolded: isMobile && !isWcMobileDefaultOpenCategory(name, groups),
+        defaultFolded:
+          layout === "stack"
+            ? shouldDefaultFoldCyberCategory(name, event)
+            : isMobile && !isWcMobileDefaultOpenCategory(name, groups),
       });
     });
     return map;
-  }, [freshEntries, isMobile]);
+  }, [freshEntries, isMobile, layout, event]);
 
   if (!Object.keys(event.groupedMarkets || {}).length) {
     return (
@@ -193,33 +293,71 @@ export function WcOddsSection({ event }: WcOddsSectionProps) {
     );
   }
 
+  const isStack = layout === "stack";
+
   return (
     <>
-      <div className={matchStyles.TournamentOddsHeader}>
-        <div className={matchStyles.oddMenuList}>
-          {marketTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={activeTab === tab.id ? matchStyles.activeButton : ""}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.isFastEvents ? (
-                <FireIcon className={matchStyles.fireIcon} />
-              ) : null}
-              {tab.label}
-            </button>
-          ))}
+      <div className={cn(isStack && matchStyles.oddsStickyHead)} data-cyber-odds-sticky-head={isStack || undefined}>
+        <div className={matchStyles.TournamentOddsHeader}>
+          <div className={matchStyles.oddMenuList}>
+            {marketTabs.map((tab) => {
+              const count =
+                tab.id === "all"
+                  ? visibleEntries.length
+                  : tabCounts.get(tab.id) ?? 0;
+              const compactLabel =
+                isStack && tab.id !== "all"
+                  ? formatCyberTabCompactLabel(tab.label)
+                  : tab.label;
+              const tabLabel =
+                isStack && count > 0 ? `${compactLabel} (${count})` : compactLabel;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={activeTab === tab.id ? matchStyles.activeButton : ""}
+                  onClick={() => setActiveTab(tab.id)}
+                  title={tab.label}
+                >
+                  {tab.isFastEvents ? (
+                    <FireIcon className={matchStyles.fireIcon} />
+                  ) : null}
+                  {tabLabel}
+                </button>
+              );
+            })}
+          </div>
+          <div className={matchStyles.TournamentOddsHeaderButton} onClick={() => setAllExpanded((v) => !v)}>
+            <Button>
+              <ArrowTopIcon
+                className={cn("transition-transform duration-300", {
+                  "rotate-180": allExpanded,
+                })}
+              />
+            </Button>
+          </div>
         </div>
-        <div className={matchStyles.TournamentOddsHeaderButton} onClick={() => setAllExpanded((v) => !v)}>
-          <Button>
-            <ArrowTopIcon
-              className={cn("transition-transform duration-300", {
-                "rotate-180": allExpanded,
-              })}
-            />
-          </Button>
-        </div>
+
+        {isStack && pinnedEntries.length > 0 ? (
+          <div className={matchStyles.oddsPinnedBar} data-cyber-odds-pinned>
+            {pinnedEntries.map(([name, groups]) => {
+              const fullName = formatWcCategoryDisplayName(name, categoryOptions);
+              return (
+                <div className={matchStyles.oddsPinnedBlock} key={name}>
+                  <p className={matchStyles.oddsPinnedLabel}>{fullName}</p>
+                  <WcOddsItem
+                    bettingOpen={bettingOpen}
+                    categoryName={fullName}
+                    event={event}
+                    groups={groups}
+                    kickChip
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
       {sortedEntries.length === 0 ? (
@@ -230,27 +368,69 @@ export function WcOddsSection({ event }: WcOddsSectionProps) {
         <h3 className="py-4 font-medium text-center text-md text-slate-400">
           Ожидание обновления рынков…
         </h3>
+      ) : isStack ? (
+        <div
+          className={cn(matchStyles.oddsTables, matchStyles.oddsTables_stack)}
+          data-odds-layout="stack"
+        >
+          <div className={matchStyles.oddsTable}>
+            {rowBlocks.map((section) => (
+              <div className={matchStyles.oddsCyberSection} data-cyber-section={section.id} key={section.id}>
+                <div
+                  className={matchStyles.oddsCyberSectionHead}
+                  data-active={section.isActive || undefined}
+                >
+                  <span className={matchStyles.oddsCyberSectionLabel}>{section.label}</span>
+                  {section.isActive ? (
+                    <span className={matchStyles.oddsCyberSectionLive}>LIVE</span>
+                  ) : null}
+                </div>
+                {section.entries.map(([name, groups]) => {
+                  const meta = categoryMeta.get(name);
+                  const fullName = formatWcCategoryDisplayName(name, categoryOptions);
+                  const displayName = formatWcCategoryCompactName(fullName);
+                  return (
+                    <WcOddsTable
+                      bettingOpen={bettingOpen}
+                      defaultFolded={meta?.defaultFolded ?? false}
+                      event={event}
+                      groups={groups}
+                      isParentExpanded={allExpanded}
+                      kickChip
+                      key={name}
+                      lazyMount={isMobile}
+                      name={displayName}
+                      title={displayName !== fullName ? fullName : undefined}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
-        <div className={matchStyles.oddsTables}>
-          {rowBlocks.map((row, rowIndex) => (
-            <div className={matchStyles.oddsTable} key={rowIndex}>
-              {row.map(([name, groups]) => {
-                const meta = categoryMeta.get(name);
-                return (
-                  <WcOddsTable
-                    key={name}
-                    event={event}
-                    name={formatWcCategoryDisplayName(name, event.sport)}
-                    groups={groups}
-                    isParentExpanded={allExpanded}
-                    bettingOpen={bettingOpen}
-                    defaultFolded={meta?.defaultFolded ?? false}
-                    lazyMount={isMobile}
-                  />
-                );
-              })}
-            </div>
-          ))}
+        <div className={matchStyles.oddsTablesBalanced}>
+          <div className={matchStyles.oddsTableBalancedColumns}>
+            {mergedEntries.map(([name, groups]) => {
+              const meta = categoryMeta.get(name);
+              const fullName = formatWcCategoryDisplayName(name, categoryOptions);
+              return (
+                <div className={matchStyles.oddsCategorySlot} key={name}>
+                  <div className={matchStyles.oddsTable}>
+                    <WcOddsTable
+                      event={event}
+                      name={fullName}
+                      groups={groups}
+                      isParentExpanded={allExpanded}
+                      bettingOpen={bettingOpen}
+                      defaultFolded={meta?.defaultFolded ?? false}
+                      lazyMount={isMobile}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </>

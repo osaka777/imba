@@ -21,6 +21,16 @@ export const PARTNER_SELF_PROMO_MAX_USES = 500;
 /** Срок действия self-service промо (дней) */
 export const PARTNER_SELF_PROMO_VALID_DAYS = 90;
 
+/** Макс. лендингов на партнёра */
+export const PARTNER_LANDING_MAX = 5;
+
+/** Лимит матчей по шаблону лендинга */
+export const PARTNER_LANDING_EVENT_LIMITS: Record<string, number> = {
+  HERO_MATCH: 1,
+  EVENTS_GRID: 6,
+  PROMO_FOCUS: 2,
+};
+
 /** Дефолтный CPA если не задан в админке */
 export const AFFILIATE_DEFAULT_CPA: Record<string, number> = {
   KZT: 15000,

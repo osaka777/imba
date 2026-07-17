@@ -7,7 +7,7 @@ import {
   secondsToLiveClock,
 } from "./wcLiveClock";
 import { isBasketballLikeSport, isSoccerLikeSport } from "./wcSportKinds";
-import { refineWcParsedScorePhase } from "./wcSoccerPhase";
+import { isStaleSoccerBreak, refineWcParsedScorePhase } from "./wcSoccerPhase";
 
 /** Olimpbet encodes tennis advantage as 50 — display as A (40:50 → 40:A). */
 export function formatTennisGameScore(raw: string | null | undefined): string | null {
@@ -118,7 +118,9 @@ export function mergeWcParsedScore(
   }
 
   const mergedDetails = incoming.details?.length ? incoming.details : prev.details;
-  const mergedGamePhase = incoming.gamePhase ?? prev.gamePhase;
+  const matchPhaseRaw = incoming.matchPhaseRaw ?? prev.matchPhaseRaw ?? null;
+  const hasIncomingGamePhase = Object.prototype.hasOwnProperty.call(incoming, "gamePhase");
+  const mergedGamePhase = hasIncomingGamePhase ? incoming.gamePhase : prev.gamePhase;
   const mergedPeriod = incoming.period ?? prev.period;
 
   // When Olimpbet doesn't send match_phase but 5+ period details exist → penalties started
@@ -152,9 +154,10 @@ export function mergeWcParsedScore(
     overtimeNumber: incoming.overtimeNumber ?? prev.overtimeNumber,
     penaltyRisk: incoming.penaltyRisk ?? prev.penaltyRisk,
     gamePhase: inferredGamePhase,
+    matchPhaseRaw,
     currentScore: incoming.currentScore ?? prev.currentScore,
     liveScore: incoming.liveScore ?? prev.liveScore,
-  });
+  }, matchPhaseRaw);
 }
 
 /**
@@ -167,7 +170,9 @@ export function formatWcRowLiveTime(
   sport?: string,
 ): string | null {
   if (!parsedScore) return null;
-  if (parsedScore.gamePhase === "break") return "Перерыв";
+  if (parsedScore.gamePhase === "break" && !isStaleSoccerBreak(parsedScore)) {
+    return "Перерыв";
+  }
   if (parsedScore.gamePhase === "penalties" || (parsedScore.details?.length ?? 0) >= 5) return "Пен";
 
   const isSetSport =
@@ -282,8 +287,6 @@ export function sportIsTwoWay(sport: string): boolean {
     || sport === "table-tennis"
     || sport === "volleyball"
     || sport === "mma"
-    || sport === "esports.cs"
-    || sport === "esports.dota2"
-    || sport === "esports.valorant"
+    || sport.startsWith("esports.")
   );
 }

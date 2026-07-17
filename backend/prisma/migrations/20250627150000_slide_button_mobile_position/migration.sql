@@ -1,3 +1,6 @@
 -- AlterTable
 ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "buttonMobilePosXPct" INTEGER;
 ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "buttonMobilePosYPct" INTEGER;
+-- AlterTable
+ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "buttonMobilePosXPct" INTEGER;
+ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "buttonMobilePosYPct" INTEGER;

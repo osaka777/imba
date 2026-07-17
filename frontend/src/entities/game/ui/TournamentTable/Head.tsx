@@ -1,4 +1,6 @@
 import React from "react";
+
+import { isEsportsApiSport } from "~/entities/cybersport/lib/cyberDisciplineCatalog";
 import styles from "./Head.module.css";
 
 type HeadProps = {
@@ -22,9 +24,6 @@ const headSportRows: { [key: string]: React.ReactElement } = {
   basketball: createHeadFieldsRow([`1`, `X`, `2`]),
   "cyber-basketball": createHeadFieldsRow([`1`, `X`, `2`]),
   "cyber-football": createHeadFieldsRow([`1`, `X`, `2`, `1X`, `12`, `X2`]),
-  "esports.cs": createHeadFieldsRow([`1`, `2`]),
-  "esports.dota2": createHeadFieldsRow([`1`, `2`]),
-  "esports.valorant": createHeadFieldsRow([`1`, `2`]),
   hockey: createHeadFieldsRow([`1`, `X`, `2`]),
   soccer: createHeadFieldsRow([
     `1`,
@@ -46,7 +45,7 @@ export const Head: React.FC<HeadProps> = ({ Icon, name, sport }) => {
         {Icon && <Icon className={styles.sportIcon} />}
         <p className={styles.name}>{name}</p>
       </div>
-      {headSportRows[sport]}
+      {headSportRows[sport] ?? (isEsportsApiSport(sport) ? createHeadFieldsRow([`1`, `2`]) : null)}
     </div>
   );
 };

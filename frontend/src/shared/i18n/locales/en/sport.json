@@ -1,0 +1,11 @@
+{
+  "soccer": "Football",
+  "hockey": "Hockey",
+  "basketball": "Basketball",
+  "tableTennis": "Table tennis",
+  "tennis": "Tennis",
+  "volleyball": "Volleyball",
+  "mma": "UFC/MMA",
+  "cyberFootball": "eFootball",
+  "cyberBasketball": "eBasketball"
+}

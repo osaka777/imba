@@ -25,6 +25,10 @@ import { useLocale } from "~/shared/model/useLocale";
 import styles from "./WcTopEventListCard.module.css";
 
 type FavoritePick = "HOME" | "DRAW" | "AWAY";
+type BadgeState = "hot" | "social" | "fallback";
+
+/** From this many standalone tickets, the pulse badge switches to its "hot" state. */
+const HOT_BET_THRESHOLD = 8;
 
 type Props = {
   item: TopEventItem;
@@ -89,15 +93,43 @@ function resolveMeta(item: TopEventItem, locale: "ru" | "en") {
   };
 }
 
-function favoriteOutcome(meta: ReturnType<typeof resolveMeta>) {
-  const candidates: Array<{ pick: FavoritePick; odd: number; label: string }> = [
-    { pick: "HOME", odd: meta.oddsHome ?? 0, label: meta.homeTeam },
-    { pick: "DRAW", odd: meta.oddsDraw ?? 0, label: "Ничья" },
-    { pick: "AWAY", odd: meta.oddsAway ?? 0, label: meta.awayTeam },
-  ].filter((candidate) => candidate.odd > 1);
+function pickOdd(meta: ReturnType<typeof resolveMeta>, pick: FavoritePick): number {
+  if (pick === "HOME") return meta.oddsHome ?? 0;
+  if (pick === "AWAY") return meta.oddsAway ?? 0;
+  return meta.oddsDraw ?? 0;
+}
+
+function pickLabel(meta: ReturnType<typeof resolveMeta>, pick: FavoritePick, locale: "ru" | "en"): string {
+  if (pick === "HOME") return meta.homeTeam;
+  if (pick === "AWAY") return meta.awayTeam;
+  return locale === "en" ? "Draw" : "Ничья";
+}
+
+/** Bookmaker's shortest-odd favorite — used when no crowd data exists yet. */
+function bookmakerFavorite(
+  meta: ReturnType<typeof resolveMeta>,
+): { pick: FavoritePick; odd: number } | null {
+  const candidates = (["HOME", "DRAW", "AWAY"] as FavoritePick[])
+    .map((pick) => ({ pick, odd: pickOdd(meta, pick) }))
+    .filter((candidate) => candidate.odd > 1);
 
   if (candidates.length === 0) return null;
   return candidates.sort((a, b) => a.odd - b.odd)[0];
+}
+
+/** The outcome the crowd is actually backing right now — real social proof, not implied odds. */
+function crowdFavorite(
+  meta: ReturnType<typeof resolveMeta>,
+  pulse: SocialPulseItem | undefined,
+): { pick: FavoritePick; odd: number; percent: number } | null {
+  if (!pulse) return null;
+  const ranked = [...pulse.outcomes]
+    .filter((outcome) => pickOdd(meta, outcome.pick) > 1)
+    .sort((a, b) => b.percent - a.percent);
+
+  const top = ranked[0];
+  if (!top) return null;
+  return { pick: top.pick, odd: pickOdd(meta, top.pick), percent: top.percent };
 }
 
 function betCountLabel(count: number, locale: "ru" | "en") {
@@ -119,24 +151,35 @@ export const WcTopEventListCard = memo(function WcTopEventListCard({
 }: Props) {
   const { locale } = useLocale();
   const meta = useMemo(() => resolveMeta(item, locale), [item, locale]);
-  const favorite = useMemo(() => favoriteOutcome(meta), [meta]);
-  const probability = favorite ? Math.min(99, Math.round(100 / favorite.odd)) : null;
+  const crowd = useMemo(() => crowdFavorite(meta, pulse), [meta, pulse]);
+  const bookFavorite = useMemo(() => bookmakerFavorite(meta), [meta]);
+  const favorite = crowd ?? bookFavorite;
   const { SportIcon } = meta;
-  const favoriteLabel =
-    favorite?.pick === "DRAW" && locale === "en" ? "Draw" : favorite?.label;
+
+  const favoriteLabel = favorite ? pickLabel(meta, favorite.pick, locale) : null;
+  const impliedProbability = !crowd && bookFavorite
+    ? Math.min(99, Math.round(100 / bookFavorite.odd))
+    : null;
+
+  const badgeState: BadgeState = !pulse
+    ? "fallback"
+    : pulse.betCount >= HOT_BET_THRESHOLD
+      ? "hot"
+      : "social";
 
   return (
-    <article className={styles.card}>
+    <article className={`${styles.card} ${badgeState === "hot" ? styles.card_hot : ""}`}>
       <div className={styles.leagueBar}>
-        <SportIcon className={styles.sportIcon} />
-        <span>{meta.leagueName}</span>
+        <span className={styles.sportIconWrap}>
+          <SportIcon className={styles.sportIcon} />
+        </span>
+        <span className={styles.leagueName}>{meta.leagueName}</span>
         {meta.isLive ? <span className={styles.liveLabel}>LIVE</span> : null}
       </div>
 
       <div className={styles.body}>
         <Link className={styles.matchSide} href={meta.href} prefetch={false}>
           <div className={styles.timeRow}>
-            {meta.isLive ? <span className={styles.liveFlame}>●</span> : null}
             <span className={styles.timePill}>
               {meta.isLive && meta.liveTime
                 ? meta.liveTime
@@ -169,31 +212,34 @@ export const WcTopEventListCard = memo(function WcTopEventListCard({
 
         <div className={styles.pickSide}>
           <div className={styles.metrics}>
-            {pulse ? (
-              <span className={styles.betsMetric}>
-                <FiZap aria-hidden />
-                {betCountLabel(pulse.betCount, locale)}
-              </span>
-            ) : (
-              <span className={styles.topMetric}>
-                <FiTrendingUp aria-hidden />
-                {locale === "en" ? "Top match" : "Топ матч"}
-              </span>
-            )}
-            {probability !== null ? (
+            <span
+              className={`${styles.betsMetric} ${badgeState === "hot" ? styles.betsMetric_hot : ""}`}
+            >
+              {pulse ? <FiZap aria-hidden /> : <FiTrendingUp aria-hidden />}
+              {pulse
+                ? betCountLabel(pulse.betCount, locale)
+                : locale === "en"
+                  ? "Popular match"
+                  : "Популярный матч"}
+            </span>
+            {(crowd || impliedProbability !== null) && (
               <span className={styles.probabilityMetric}>
                 {locale === "en" ? "Probability" : "Вероятность"}{" "}
-                <strong>{probability}%</strong>
+                <strong>{crowd?.percent ?? impliedProbability}%</strong>
               </span>
-            ) : null}
+            )}
           </div>
 
           <div className={styles.selection}>
             <div className={styles.selectionText}>
               <small>
-                {locale === "en"
-                  ? "Match result (regular time)"
-                  : "Результат матча (основное время)"}
+                {crowd
+                  ? locale === "en"
+                    ? "Crowd's pick"
+                    : "Выбор большинства"
+                  : locale === "en"
+                    ? "Match result (regular time)"
+                    : "Результат матча (основное время)"}
               </small>
               <strong>{favoriteLabel ?? "—"}</strong>
             </div>
@@ -202,10 +248,13 @@ export const WcTopEventListCard = memo(function WcTopEventListCard({
                 <WcHomeOddCell
                   event={meta.wcEvent}
                   pick={favorite.pick}
+                  tone="topcard"
                   value={formatWcCompactOdd(favorite.odd, "--")}
                 />
               ) : (
-                <span>{favorite ? formatWcCompactOdd(favorite.odd, "--") : "—"}</span>
+                <span className={styles.oddFallback}>
+                  {favorite ? formatWcCompactOdd(favorite.odd, "--") : "—"}
+                </span>
               )}
             </div>
           </div>

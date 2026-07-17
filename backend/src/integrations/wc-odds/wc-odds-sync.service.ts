@@ -1,5 +1,4 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Decimal } from '@prisma/client/runtime/library';
 import { WcOddsBetStatus } from '@prisma/client';
@@ -16,94 +15,65 @@ import { WcOddsSettlementService } from './wc-odds-settlement.service';
 import { WcTelegramPulseService } from './wc-telegram-pulse.service';
 import { buildUniqueWcSlug, isBrokenWcSlug, olimpbetIdFromWcEventId, wcEventIdFromOlimpbet } from './wc-slug.util';
 
-const LIVE_REFRESH_MIN_MS = 1_000;
-const LIVE_ENRICH_STALE_MS = 5_000;
+const LIVE_REFRESH_MIN_MS = 3_000;
+const LIVE_ENRICH_STALE_MS = 8_000;
 const ENRICH_BATCH_SIZE = 60;
-const ENRICH_CONCURRENCY = 6;
+const ENRICH_CONCURRENCY = 2;
 const ENRICH_STALE_MS = 60_000;
-const LIVE_ENRICH_BATCH_SIZE = 60;
+const LIVE_ENRICH_BATCH_SIZE = 8;
+const LIVE_ROTATING_REFRESH_BATCH = 5;
 
 @Injectable()
 export class WcOddsSyncService implements OnModuleInit {
   private readonly logger = new Logger(WcOddsSyncService.name);
   private syncing = false;
   private liveSyncing = false;
+  private liveRefreshCursor = 0;
   private readonly lastLiveRefreshMs = new Map<string, number>();
+
+  private bootReadyAt = 0;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly olimpbet: OlimpbetWcService,
     private readonly settlement: WcOddsSettlementService,
     private readonly pulse: WcTelegramPulseService,
-    private readonly config: ConfigService,
   ) {}
 
   onModuleInit() {
+    // Delay boot sync — immediate syncOdds+syncLiveOdds was storming Olimpbet after every deploy.
+    this.bootReadyAt = Date.now() + 60_000;
     if (this.olimpbet.isEnabled()) {
-      void this.syncOdds();
-      void this.syncLiveOdds();
+      setTimeout(() => {
+        void this.syncOdds();
+        void this.syncLiveOdds();
+      }, 60_000).unref?.();
     }
   }
 
-  @Cron('*/10 * * * * *')
+  @Cron('*/20 * * * * *')
   async scheduledEnrich() {
     if (!this.olimpbet.isEnabled()) return;
-    await this.enrichStaleBatch(ENRICH_BATCH_SIZE);
+    if (Date.now() < this.bootReadyAt) return;
+    if (this.olimpbet.isFetchBlocked()) return;
+    const enriched = await this.enrichStaleBatch(ENRICH_BATCH_SIZE);
+    if (enriched > 0) {
+      this.logger.log(`WC Olimpbet line enrich: enriched=${enriched}`);
+    }
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async scheduledOddsSync() {
     if (!this.olimpbet.isEnabled()) return;
+    if (Date.now() < this.bootReadyAt) return;
     await this.syncOdds();
   }
 
-  @Cron('*/10 * * * * *')
+  @Cron('*/30 * * * * *')
   async scheduledLiveSync() {
     if (!this.olimpbet.isEnabled()) return;
+    if (Date.now() < this.bootReadyAt) return;
     await this.syncLiveOdds();
-  }
-
-  @Cron(CronExpression.EVERY_HOUR)
-  async scheduledStalePendingAlert() {
-    if (!this.olimpbet.isEnabled()) return;
-
-    const hours = Number(this.config.get<string>('WC_STALE_BET_HOURS', '12'));
-    const notifyUrl = this.config.get<string>('TELEGRAM_NOTIFY_SMOKE_URL', '');
-    if (!notifyUrl) return;
-
-    const cutoff = new Date(Date.now() - hours * 3_600_000);
-    const stale = await this.prisma.wcOddsBet.findMany({
-      where: { status: WcOddsBetStatus.PENDING, createdAt: { lt: cutoff } },
-      select: { id: true, eventId: true, marketKey: true, outcomeKey: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
-      take: 25,
-    });
-
-    if (!stale.length) return;
-
-    const lines = stale.map(
-      (b) => `#${b.id} ${b.marketKey}/${b.outcomeKey ?? '—'} event=${b.eventId}`,
-    );
-    const payload = {
-      message: `${stale.length} WC bet(s) pending longer than ${hours}h`,
-      details: lines.join('\n'),
-    };
-    const secret = this.config.get<string>('NOTIFY_SECRET', '');
-
-    try {
-      await fetch(notifyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(secret ? { 'X-Notify-Secret': secret } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-      this.logger.warn(`Stale WC pending alert sent (${stale.length} bets)`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Stale WC pending alert failed: ${message}`);
-    }
   }
 
   @Cron('*/30 * * * * *')
@@ -160,10 +130,14 @@ export class WcOddsSyncService implements OnModuleInit {
         }
       }
 
+      // Warm EN competitor labels for UI overlay (does not rewrite DB).
+      void this.olimpbet.ensureLocalizedNames('en');
+
       await this.pruneOutsideLineWindow();
 
-      this.logger.log(`WC Olimpbet sync: indexed=${indexed}`);
-      return { indexed, enriched: 0 };
+      const enriched = await this.enrichStaleBatch(ENRICH_BATCH_SIZE);
+      this.logger.log(`WC Olimpbet sync: indexed=${indexed} enriched=${enriched}`);
+      return { indexed, enriched };
     } finally {
       this.syncing = false;
     }
@@ -285,14 +259,18 @@ export class WcOddsSyncService implements OnModuleInit {
     const staleBefore = new Date(Date.now() - ENRICH_STALE_MS);
     const rows = await this.prisma.wcOddsEvent.findMany({
       where: {
-        ...wcLineEventWhere(),
-        OR: [
-          { oddsUpdatedAt: null },
-          { oddsUpdatedAt: { lt: staleBefore } },
-          { marketsJson: { equals: {} } },
+        AND: [
+          wcLineEventWhere(),
+          {
+            OR: [
+              { oddsUpdatedAt: null },
+              { oddsUpdatedAt: { lt: staleBefore } },
+              { marketsJson: { equals: {} } },
+            ],
+          },
         ],
       },
-      orderBy: [{ commenceTime: 'asc' }, { id: 'asc' }],
+      orderBy: [{ oddsUpdatedAt: { sort: 'asc', nulls: 'first' } }, { commenceTime: 'asc' }, { id: 'asc' }],
       take,
       select: { id: true },
     });
@@ -322,10 +300,33 @@ export class WcOddsSyncService implements OnModuleInit {
         }
       }
 
-      await this.reconcileDroppedLiveEvents(liveOlimpbetIds);
+      void this.olimpbet.ensureLocalizedNames('en');
+
+      // Empty list usually means Olimpbet /v2/events failed (rate-limit / network),
+      // not "zero live matches" — never mass-reconcile DB live as dropped in that case.
+      if (liveOlimpbetIds.size > 0) {
+        await this.reconcileDroppedLiveEvents(liveOlimpbetIds);
+      } else {
+        this.logger.warn('WC live list empty — skip reconcileDroppedLiveEvents');
+      }
+      await this.prisma.wcOddsEvent.updateMany({
+        where: {
+          completed: false,
+          OR: [
+            { leagueName: { contains: 'Статистика', mode: 'insensitive' } },
+            { leagueName: { contains: 'Statistic', mode: 'insensitive' } },
+          ],
+        },
+        data: { completed: true },
+      });
+
+      if (this.olimpbet.isFetchBlocked()) {
+        this.logger.warn('WC live sync: Olimpbet circuit open — skip enrich/refresh');
+        return { indexed, refreshed: 0, enriched: 0 };
+      }
 
       const enriched = await this.enrichLiveStaleBatch(LIVE_ENRICH_BATCH_SIZE);
-      const { refreshed } = await this.syncLiveEvents();
+      const refreshed = await this.refreshLiveRotatingBatch();
 
       if (indexed > 0 || refreshed > 0) {
         this.logger.log(`WC Olimpbet live sync: indexed=${indexed} refreshed=${refreshed} enriched=${enriched}`);
@@ -354,7 +355,13 @@ export class WcOddsSyncService implements OnModuleInit {
   }
 
   async syncLiveEvents(): Promise<{ refreshed: number }> {
-    if (!this.olimpbet.isEnabled()) return { refreshed: 0 };
+    const refreshed = await this.refreshLiveRotatingBatch();
+    return { refreshed };
+  }
+
+  /** Rotate through live events — avoid refreshing all 200 every 10s. */
+  private async refreshLiveRotatingBatch(): Promise<number> {
+    if (!this.olimpbet.isEnabled()) return 0;
 
     const live = await this.prisma.wcOddsEvent.findMany({
       where: wcLiveEventWhere(),
@@ -363,12 +370,23 @@ export class WcOddsSyncService implements OnModuleInit {
       orderBy: [{ priorityLevel: 'desc' }, { commenceTime: 'desc' }, { id: 'asc' }],
     });
 
+    if (!live.length) return 0;
+
+    const start = this.liveRefreshCursor % live.length;
+    this.liveRefreshCursor = (start + LIVE_ROTATING_REFRESH_BATCH) % live.length;
+
+    const batch: typeof live = [];
+    const count = Math.min(LIVE_ROTATING_REFRESH_BATCH, live.length);
+    for (let i = 0; i < count; i += 1) {
+      batch.push(live[(start + i) % live.length]!);
+    }
+
     let refreshed = 0;
-    for (const row of live) {
+    for (const row of batch) {
       if (await this.refreshEvent(row.id)) refreshed += 1;
     }
 
-    return { refreshed };
+    return refreshed;
   }
 
   async enrichLiveStaleBatch(take: number): Promise<number> {
@@ -406,7 +424,9 @@ export class WcOddsSyncService implements OnModuleInit {
   }
 
   private async upsertFromOlimpbet(olimpbetEventId: number, fast = false): Promise<boolean> {
-    let snapshot = await this.olimpbet.fetchMatchSnapshot(olimpbetEventId, { includeLinked: true });
+    const snapshot = fast
+      ? await this.olimpbet.fetchQuickLineSnapshot(olimpbetEventId, { locale: 'ru' })
+      : await this.olimpbet.fetchMatchSnapshot(olimpbetEventId, { includeLinked: true, locale: 'ru' });
     if (!snapshot) return false;
 
     const eventId = wcEventIdFromOlimpbet(olimpbetEventId);
@@ -434,7 +454,7 @@ export class WcOddsSyncService implements OnModuleInit {
     });
 
     if (!fast) {
-      main = await this.olimpbet.fetchEventDetail(olimpbetEventId);
+      main = await this.olimpbet.fetchEventDetail(olimpbetEventId, { locale: 'ru' });
       if (!main) return false;
       const score = this.olimpbet.extractScore(main);
       homeScore = score.homeScore;

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { WcMatchPage } from "~/entities/wc-odds/ui/WcMatchPage";
@@ -8,6 +9,7 @@ import {
   stripLegacyHashFromSlug,
 } from "~/entities/wc-odds/lib/wcSlug";
 import { makeMetadata } from "~/shared/lib";
+import { LOCALE_STORAGE_KEY, isAppLocale } from "~/shared/i18n/locale";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -15,10 +17,31 @@ type PageProps = {
 
 export const dynamic = "force-dynamic";
 
-async function fetchWcEvent(ref: string) {
-  const host = process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
-  const res = await fetch(`${host}/api/feed/events/${encodeURIComponent(ref)}`, {
+async function resolveLocaleHeader(): Promise<string> {
+  try {
+    const jar = await cookies();
+    const raw = jar.get(LOCALE_STORAGE_KEY)?.value;
+    if (isAppLocale(raw)) return raw;
+  } catch {
+    // ignore
+  }
+  return "ru";
+}
+
+async function fetchWcEvent(ref: string, options?: { sync?: boolean }) {
+  const host =
+    process.env.BACKEND_URL
+    || process.env.BACKEND_INTERNAL_URL
+    || process.env.NEXT_PUBLIC_HOST
+    || "http://localhost:3000";
+  const locale = await resolveLocaleHeader();
+  const q = options?.sync ? "?sync=1" : "";
+  const res = await fetch(`${host}/api/feed/events/${encodeURIComponent(ref)}${q}`, {
     cache: "no-store",
+    headers: {
+      "X-Locale": locale,
+      "Accept-Language": locale,
+    },
   });
   if (!res.ok) return null;
   return res.json();
@@ -37,6 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
+  // Fast SSR: cache only — client sync unlocks bettable odds.
   const event = await fetchWcEvent(slug);
 
   if (!event) {

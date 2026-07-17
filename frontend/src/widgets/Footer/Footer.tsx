@@ -1,8 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
 import { LogoWhiteIcon } from "~/shared/assets";
-import { ImbaImage } from "~/shared/assets/images";
 
 import {
   ApplePayIcon,
@@ -35,10 +36,13 @@ import {
   WtaIcon,
 } from "~/shared/assets/icons";
 import { ScrollToTopButton } from "~/shared/ui/Button";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./Footer.module.css";
 
 export const Footer = () => {
+  const { t } = useLocale();
+
   return (
     <footer className={styles.Footer}>
       <div className={styles.Footer_logoContainer}>
@@ -56,9 +60,9 @@ export const Footer = () => {
           <div
             className={`${styles.ContactSection_container} ${styles.Footer_contactSection}`}
           >
-            <div className={styles.ContactSection_title}>Поддержка 24/7</div>
+            <div className={styles.ContactSection_title}>{t("footer.support247")}</div>
             <Link className={styles.ContactSection_subtitle} href="#support">
-              Свяжитесь с нами, если у вас остались вопросы
+              {t("footer.supportHint")}
             </Link>
           </div>
           <div
@@ -68,7 +72,7 @@ export const Footer = () => {
               className={`${styles.NavigationSection_block} ${styles.mobileHidden}`}
             >
               <p className={styles.NavigationSection_title}>
-                Контакты поддержки
+                {t("footer.supportContacts")}
               </p>
               <div className={styles.NavigationSection_contacts}>
                 <div className={styles.NavigationSection_contactsRow}>
@@ -76,7 +80,7 @@ export const Footer = () => {
                     className={`${styles.NavigationSection_contactsCellName} ${styles.NavigationSection_contactsCell}`}
                   >
                     <span className={styles.NavigationSection_link}>
-                      Техническая поддержка
+                      {t("footer.techSupport")}
                     </span>
                   </div>
                   <div className={styles.NavigationSection_contactsCell}>
@@ -93,7 +97,7 @@ export const Footer = () => {
                     className={`${styles.NavigationSection_contactsCellName} ${styles.NavigationSection_contactsCell}`}
                   >
                     <span className={styles.NavigationSection_link}>
-                      Служба безопасности
+                      {t("footer.security")}
                     </span>
                   </div>
                   <div className={styles.NavigationSection_contactsCell}>
@@ -110,7 +114,7 @@ export const Footer = () => {
                     className={`${styles.NavigationSection_contactsCellName} ${styles.NavigationSection_contactsCell}`}
                   >
                     <span className={styles.NavigationSection_link}>
-                      Коммерческие предложения
+                      {t("footer.business")}
                     </span>
                   </div>
                   <div className={styles.NavigationSection_contactsCell}>
@@ -122,27 +126,10 @@ export const Footer = () => {
                     </a>
                   </div>
                 </div>
-                {/* <div className={styles.NavigationSection_contactsRow}>
-                   <div
-                    className={`${styles.NavigationSection_contactsCellName} ${styles.NavigationSection_contactsCell}`}
-                  >
-                    <span className={styles.NavigationSection_link}>
-                      Партнерская программа
-                    </span>
-                  </div> 
-                  <div className={styles.NavigationSection_contactsCell}>
-                    <a
-                      className={styles.NavigationSection_link}
-                      href="mailto:partners@imbalance.click"
-                    >
-                      partners@imbalance.click
-                    </a>
-                  </div>
-                </div> */}
               </div>
             </div>
             <div className={styles.NavigationSection_block}>
-              <p className={styles.NavigationSection_title}>Информация</p>
+              <p className={styles.NavigationSection_title}>{t("footer.info")}</p>
               <div className={styles.NavigationInfo}>
                 <div className={styles.NavigationSection_linksRow}>
                   <Link
@@ -151,12 +138,12 @@ export const Footer = () => {
                     rel="noopener noreferrer"
                     target="_blank"
                   >
-                    Правила
+                    {t("footer.rules")}
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
                   <Link className={styles.NavigationSection_link} href="/guides">
-                    Помощь
+                    {t("footer.help")}
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
@@ -166,12 +153,12 @@ export const Footer = () => {
                     rel="noopener noreferrer"
                     target="_blank"
                   >
-                    Контакты
+                    {t("footer.contacts")}
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
                   <Link className={styles.NavigationSection_link} href="/app">
-                    Скачать приложение
+                    {t("footer.downloadApp")}
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
@@ -181,13 +168,13 @@ export const Footer = () => {
                     rel="noopener noreferrer"
                     target="_blank"
                   >
-                    Партнерская программа
+                    {t("footer.partners")}
                   </a>
                 </div>
               </div>
             </div>
             <div className={styles.NavigationSection_block}>
-              <p className={styles.NavigationSection_title}>Категории</p>
+              <p className={styles.NavigationSection_title}>{t("footer.categories")}</p>
               <div className={styles.NavigationSection_listCategories}>
                 <div className={styles.NavigationSection_listCategoriesColumn}>
                   <div className={styles.NavigationSection_contactsRow}>
@@ -200,7 +187,7 @@ export const Footer = () => {
                       className={styles.NavigationSection_link}
                       href="/line"
                     >
-                      Линия
+                      {t("nav.line")}
                     </Link>
                   </div>
                 </div>
@@ -326,34 +313,28 @@ export const Footer = () => {
       </div>
       <div className={styles.Footer_middleSeparator}></div>
       <div className={styles.LicenseSection_container}>
-        <div className={styles.LicenseSection_copyright}>
-          <span className={styles.LicenseSection_bold}>
-            © 2024-2026 IMBA.BET&nbsp;
-          </span>
+        <div className={styles.LicenseSection_legalBlock}>
+          <span className={styles.LicenseSection_bold}>© 2024-2026 IMBA.BET</span>
+          <p className={styles.LicenseSection_notice}>
+            Имба осуществляет деятельность по всему миру через отдельные юридические лица.
+            Сервис ставок на спорт и киберспорт. Доступен пользователям старше 18 лет.
+            Играйте ответственно и в пределах своего бюджета — ставки не являются способом
+            заработка. Если игра перестала приносить удовольствие или вы чувствуете потерю
+            контроля, обратитесь за бесплатной конфиденциальной поддержкой:{" "}
+            <a
+              href="https://www.gamblingtherapy.org/ru/"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Gambling Therapy
+            </a>
+            .
+          </p>
         </div>
         <div className={styles.LicenseSection_leftSection}>
-          {/*<a href="https://vprognoze.ru/bookmakers/imba-bet/" target="_blank" style={{ position: "relative", bottom: "20px", right: "10px", padding: "40px" }}>*/}
-          {/* <a href="https://vprognoze.ru/bookmakers/imba-bet/" target="_blank" style={{ position: "inherit", margin: "0px 0 0 0" }}>
-            <Image
-                className={styles.LicenseSection_image}
-                alt="overlay-image"
-                src="/banner_vp_transparent.png"
-                width={200}
-                height={72}
-            />
-          </a> */}
-
-          <div
-            className={`${styles.Listings_desktop} ${styles.Listings_mobile}`}
-          >
-            {/* <Image
-              src={ImbaImage}
-              alt="IMBA"
-              className={`${styles.icon} ${styles.PaymentSection_icon}`}
-              style={{ height: "25px", width: "auto" }}
-            /> */}
-            {/*<span className={styles.Listings_ageLimit}>18+ </span>*/}
-          </div>
+          <span className={styles.Listings_ageLimit} aria-label="Только 18+">
+            18+
+          </span>
         </div>
       </div>
     </footer>

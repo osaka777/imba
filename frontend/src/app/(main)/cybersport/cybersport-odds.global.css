@@ -1,0 +1,494 @@
+/* ═══════════════════════════════════════════════════════════════
+   Cybersport odds — Kick / HLTV chip style (high contrast)
+   Scope: html[data-cybersport-theme="true"]
+   ═══════════════════════════════════════════════════════════════ */
+
+html[data-cybersport-theme="true"] {
+  --cyber-odd-bg: #252528;
+  --cyber-odd-bg-hover: #2f2f33;
+  --cyber-odd-border: rgb(255 255 255 / 0.14);
+  --cyber-odd-border-hover: rgb(83 252 24 / 0.55);
+  --cyber-odd-coef: #ffffff;
+  --cyber-odd-label: #b0b0b5;
+  --cyber-odd-row-alt: #1c1c1f;
+}
+
+/* ── Market category tabs ── */
+html[data-cybersport-theme="true"] [class*="oddMenuList"] {
+  padding: 10px 0 !important;
+  gap: 8px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  touch-action: pan-x;
+  scrollbar-color: rgb(83 252 24 / 0.55) transparent;
+}
+
+html[data-cybersport-theme="true"] [class*="TournamentOddsHeader"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-sticky-head] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddMenuList"]::-webkit-scrollbar-thumb {
+  background: rgb(83 252 24 / 0.55) !important;
+  border-radius: 999px;
+}
+
+html[data-cybersport-theme="true"] [class*="oddMenuList"] button {
+  height: 36px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  background: var(--cyber-odd-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--cyber-odd-border) !important;
+  border-radius: 999px !important;
+  color: var(--kick-text-secondary) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+html[data-cybersport-theme="true"] [class*="oddMenuList"] button:hover {
+  border-color: var(--cyber-odd-border-hover) !important;
+  color: var(--kick-text) !important;
+  background: var(--cyber-odd-bg-hover) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddMenuList"] [class*="activeButton"] {
+  background: var(--kick-green) !important;
+  border-color: var(--kick-green) !important;
+  color: #000 !important;
+  box-shadow: 0 0 20px rgb(83 252 24 / 0.35);
+}
+
+html[data-cybersport-theme="true"] [class*="oddMenuList"] [class*="fireIcon"] {
+  fill: currentColor !important;
+}
+
+html[data-cybersport-theme="true"] [class*="TournamentOddsHeaderButton"] button,
+html[data-cybersport-theme="true"] [class*="TournamentOddsHeaderButton"] [class*="button"] {
+  background: var(--cyber-odd-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--cyber-odd-border) !important;
+  border-radius: 8px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="TournamentOddsHeaderButton"] svg {
+  fill: var(--kick-green) !important;
+}
+
+/* ── Category accordion headers ── */
+html[data-cybersport-theme="true"] [class*="oddFold"] {
+  background: var(--cyber-odd-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--cyber-odd-border) !important;
+  border-left: 3px solid var(--kick-green) !important;
+  border-radius: 8px !important;
+  margin-bottom: 4px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+}
+
+html[data-cybersport-theme="true"] [class*="oddFold"] p,
+html[data-cybersport-theme="true"] [class*="oddGroupName"] {
+  color: var(--kick-text) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddFold"] svg,
+html[data-cybersport-theme="true"] [class*="oddFoldIcon"] {
+  fill: var(--kick-green) !important;
+}
+
+/* ── Odds containers ── */
+html[data-cybersport-theme="true"] [class*="TournamentOdds"] {
+  background: transparent !important;
+  background-image: none !important;
+  gap: 12px !important;
+  padding: 0 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsTable"] {
+  background: var(--kick-bg-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--kick-border-strong) !important;
+  border-radius: var(--kick-radius) !important;
+  overflow: hidden;
+  gap: 4px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="totalsScopeCaption"] {
+  color: var(--kick-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="totalsPivot"] {
+  background: var(--cyber-odd-bg) !important;
+  border: 2px solid var(--kick-green) !important;
+  color: var(--kick-green) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 12px rgb(83 252 24 / 0.2);
+}
+
+/* Totals / handicap rows — dark zebra, not light blue */
+html[data-cybersport-theme="true"] [class*="oddsTotalsRow"] {
+  background: var(--cyber-odd-row-alt) !important;
+  border-bottom-color: var(--kick-border) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsTotalsGroup"] > [class*="oddsTotalsRow"]:nth-child(even) {
+  background: var(--kick-bg-elevated) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsTotalsRow"] [class*="pairSideLabel"] {
+  color: var(--cyber-odd-label) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsHandicapRow"] {
+  background: var(--cyber-odd-row-alt) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsHandicapRow"] [class*="handicapPivotLabel"] {
+  color: var(--cyber-odd-label) !important;
+}
+
+/* ── Match.module odds cells — chip layout ── */
+html[data-cybersport-theme="true"] [class*="oddsItem"] {
+  border-bottom-color: var(--kick-border) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="oddsItem"] button[class*="odd"] {
+  background: #252528 !important;
+  border: 1px solid rgb(255 255 255 / 0.14) !important;
+  border-radius: 8px !important;
+  margin: 0 !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="oddsItem"] {
+  border-bottom: none !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsItem"] button[class*="odd"] {
+  background: var(--cyber-odd-bg) !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  margin: 1px 0;
+  min-height: 40px;
+}
+
+html[data-cybersport-theme="true"] [class*="oddName"] {
+  color: var(--cyber-odd-label) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Fallback: any label `<p>` inside odd button (legacy tailwind text-black) */
+html[data-cybersport-theme="true"] button[class*="odd"] > p:not([class*="oddCoef"]),
+html[data-cybersport-theme="true"] [class*="odd"] > p:not([class*="oddCoef"]) {
+  color: var(--cyber-odd-label) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="odd_added"] [class*="oddName"],
+html[data-cybersport-theme="true"] button[class*="odd_added"] > p:not([class*="oddCoef"]) {
+  color: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="pairSideLabel"] {
+  color: var(--cyber-odd-label) !important;
+  font-weight: 600 !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsGroupSubLabel"],
+html[data-cybersport-theme="true"] [class*="totalsScopeCaption"] {
+  color: var(--kick-text-secondary) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="oddName"],
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="pairSideLabel"],
+html[data-cybersport-theme="true"] [data-cyber-odds-col] button[class*="odd"] > p:not([class*="oddCoef"]) {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  box-shadow: none !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="oddCoef"],
+html[data-cybersport-theme="true"] [data-cyber-odds-col] button[class*="odd"] [class*="oddCoef"] {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+
+/* Pill coef — только в строках линии (oddCell), не внутри кнопок матча */
+html[data-cybersport-theme="true"] [class*="oddCell"] [class*="oddCoefficient"],
+html[data-cybersport-theme="true"] [class*="oddCell"] [class*="oddCoef"] {
+  color: var(--cyber-odd-coef) !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+  background: rgb(255 255 255 / 0.06) !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  min-width: 2.5rem !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="oddCoef_added"] {
+  background: transparent !important;
+  border: none !important;
+  color: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell_added"] [class*="oddCoef"],
+html[data-cybersport-theme="true"] [class*="oddCell_added"] [class*="oddCoefficient"] {
+  background: var(--kick-green-dim) !important;
+  color: var(--kick-green) !important;
+  border: 1px solid var(--kick-green-border) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] button[class*="odd_added"] {
+  background: var(--kick-green-dim) !important;
+  color: var(--kick-green) !important;
+  border: 1px solid var(--kick-green-border) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsItem"]:hover button[class*="odd"] {
+  background: var(--cyber-odd-bg-hover) !important;
+  border-color: var(--cyber-odd-border-hover) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddsItem"]:hover [class*="oddName"],
+html[data-cybersport-theme="true"] [class*="oddsItem"]:hover button[class*="odd"] > p:not([class*="oddCoef"]) {
+  color: var(--kick-text) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell"]:hover [class*="oddCoefficient"],
+html[data-cybersport-theme="true"] [class*="oddCell"]:hover [class*="oddCoef"] {
+  color: #fff !important;
+  background: rgb(83 252 24 / 0.12) !important;
+}
+
+html[data-cybersport-theme="true"] [data-cyber-odds-col] [class*="oddsItem"]:hover [class*="oddCoef"],
+html[data-cybersport-theme="true"] [data-cyber-odds-col] button[class*="odd"]:hover [class*="oddCoef"] {
+  color: #fff !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ── MatchRow coefficients ── */
+html[data-cybersport-theme="true"] [class*="oddCell"] {
+  background: var(--cyber-odd-bg) !important;
+  border: 1px solid var(--cyber-odd-border) !important;
+  border-radius: 8px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell_special"] {
+  background: var(--cyber-odd-bg-hover) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell"]:hover {
+  border-color: var(--cyber-odd-border-hover) !important;
+  box-shadow: 0 0 14px rgb(83 252 24 / 0.12);
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell"] [class*="oddCoefficient"] {
+  color: var(--cyber-odd-coef) !important;
+  background: rgb(255 255 255 / 0.06) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+  border-radius: 8px !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell"]:hover [class*="oddCoefficient"] {
+  color: #fff !important;
+  background: rgb(83 252 24 / 0.12) !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell_added"] {
+  background: var(--kick-green-dim) !important;
+  border-color: var(--kick-green-border) !important;
+  box-shadow: 0 0 16px rgb(83 252 24 / 0.18);
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell_added"] [class*="oddCoefficient"],
+html[data-cybersport-theme="true"] [class*="oddCoefficient_added"] {
+  color: var(--kick-green) !important;
+  background: rgb(83 252 24 / 0.1) !important;
+  border: 1px solid var(--kick-green-border) !important;
+}
+
+/* ── WcHomeOddCell — fix dark-on-dark + light mobile shell ── */
+html[data-cybersport-theme="true"] button[class*="cell"] {
+  background: var(--cyber-odd-bg) !important;
+  border: 1px solid var(--cyber-odd-border) !important;
+  border-radius: 8px !important;
+}
+
+html[data-cybersport-theme="true"] button[class*="cell"]:hover {
+  background: var(--cyber-odd-bg-hover) !important;
+  border-color: var(--cyber-odd-border-hover) !important;
+  box-shadow: 0 0 12px rgb(83 252 24 / 0.1);
+}
+
+html[data-cybersport-theme="true"] button[class*="cell"] [class*="pick"] {
+  color: var(--cyber-odd-label) !important;
+}
+
+html[data-cybersport-theme="true"] button[class*="cell"] [class*="coef"] {
+  color: var(--cyber-odd-coef) !important;
+  background: rgb(255 255 255 / 0.06) !important;
+  border: none !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2rem;
+  min-height: 26px;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+}
+
+html[data-cybersport-theme="true"] button[class*="cell_added"] {
+  background: var(--kick-green-dim) !important;
+  border-color: var(--kick-green-border) !important;
+}
+
+html[data-cybersport-theme="true"] button[class*="cell_added"] [class*="pick"] {
+  color: var(--kick-green) !important;
+}
+
+html[data-cybersport-theme="true"] button[class*="cell_added"] [class*="coef"] {
+  color: var(--kick-green) !important;
+  background: rgb(83 252 24 / 0.1) !important;
+  border: 1px solid var(--kick-green-border) !important;
+}
+
+html[data-cybersport-theme="true"] span[class*="empty"] {
+  background: var(--cyber-odd-bg) !important;
+  border: 1px solid var(--cyber-odd-border) !important;
+  color: var(--kick-text-muted) !important;
+  border-radius: 8px !important;
+}
+
+/* Desktop WcHomeOddCell resets transparent shell → visible chip */
+@media screen and (min-width: 1025px) {
+  html[data-cybersport-theme="true"] button[class*="cell"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 40px !important;
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+  }
+
+  html[data-cybersport-theme="true"] button[class*="cell_added"] {
+    background: var(--kick-green-dim) !important;
+  }
+}
+
+/* Coef movement — cyber end states (not #101828 / #0f172a) */
+@keyframes cyberCoefPillUp {
+  0%,
+  40% {
+    background-color: rgb(45 184 86 / 0.25);
+    color: #6dff9a;
+  }
+
+  100% {
+    background-color: rgb(255 255 255 / 0.06);
+    color: #fff;
+  }
+}
+
+@keyframes cyberCoefPillDown {
+  0%,
+  40% {
+    background-color: rgb(232 93 93 / 0.22);
+    color: #ff9a9a;
+  }
+
+  100% {
+    background-color: rgb(255 255 255 / 0.06);
+    color: #fff;
+  }
+}
+
+@keyframes cyberCoefPillUpAdded {
+  0%,
+  40% {
+    background-color: rgb(45 184 86 / 0.25);
+    color: #6dff9a;
+  }
+
+  100% {
+    background-color: rgb(83 252 24 / 0.1);
+    color: var(--kick-green);
+    border-color: var(--kick-green-border);
+  }
+}
+
+@keyframes cyberCoefPillDownAdded {
+  0%,
+  40% {
+    background-color: rgb(232 93 93 / 0.22);
+    color: #ff9a9a;
+  }
+
+  100% {
+    background-color: rgb(83 252 24 / 0.1);
+    color: var(--kick-green);
+    border-color: var(--kick-green-border);
+  }
+}
+
+html[data-cybersport-theme="true"] [class*="oddCoefficient_up"],
+html[data-cybersport-theme="true"] [class*="coef_up"] {
+  animation: cyberCoefPillUp 2s ease-out forwards !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCoefficient_down"],
+html[data-cybersport-theme="true"] [class*="coef_down"] {
+  animation: cyberCoefPillDown 2s ease-out forwards !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell_added"] [class*="oddCoefficient_up"],
+html[data-cybersport-theme="true"] [class*="cell_added"] [class*="coef_up"] {
+  animation: cyberCoefPillUpAdded 2s ease-out forwards !important;
+}
+
+html[data-cybersport-theme="true"] [class*="oddCell_added"] [class*="oddCoefficient_down"],
+html[data-cybersport-theme="true"] [class*="cell_added"] [class*="coef_down"] {
+  animation: cyberCoefPillDownAdded 2s ease-out forwards !important;
+}
+
+html[data-cybersport-theme="true"] button[class*="cell_added"][class*="flash_up"],
+html[data-cybersport-theme="true"] button[class*="cell_added"][class*="flash_down"] {
+  background: var(--kick-green-dim) !important;
+}
