@@ -895,6 +895,7 @@
   flex-grow: 1;
   flex-shrink: 1;
   flex-basis: calc(50% - .5px);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Специальный класс для группы 1X2 - отображение в 3 колонки */
@@ -908,17 +909,25 @@
 
 @media (hover: hover) {
   .oddsItem:hover {
-    background: var(--black-blue);
-    color: white;
+    background: #e8f2ff;
+    box-shadow: inset 0 0 0 1px rgb(37 99 235 / 0.18);
   }
 
   .oddsItem:hover .odd {
-    background: var(--black-blue);
-    color: white;
+    background: #e8f2ff;
   }
 
   .oddsItem:hover .odd p {
-    color: white;
+    color: #111827;
+  }
+
+  .oddsItem:hover .odd_added,
+  .oddsItem:hover .oddCoef_added {
+    background: #1d4ed8;
+  }
+
+  .oddsItem:hover .odd_added p {
+    color: #fff;
   }
 }
 
@@ -984,16 +993,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 @media (hover: hover) {
   .odd:hover {
-    background: var(--black-blue);
-    color: white;
+    background: #e8f2ff;
+    box-shadow: inset 0 0 0 1px rgb(37 99 235 / 0.18);
   }
 
   .odd:hover p {
-    color: white;
+    color: #111827;
+  }
+
+  .odd_added:hover {
+    background: #1d4ed8;
+  }
+
+  .odd_added:hover p {
+    color: #fff;
   }
 }
 
