@@ -17,7 +17,6 @@ const tabList: {
   { href: "/", labelKey: "nav.home" },
   { href: "/live", labelKey: "nav.live" },
   { href: "/line", labelKey: "nav.line" },
-  { href: "/results", labelKey: "nav.results" },
   { href: "/cybersport", labelKey: "nav.cybersport", showNewBadge: true },
 ];
 

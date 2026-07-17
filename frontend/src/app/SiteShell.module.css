@@ -5,7 +5,7 @@
   margin-inline: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -26,7 +26,7 @@
 
 @media (min-width: 1081px) {
   .siteShell {
-    gap: var(--layout-gap, 16px);
+    gap: var(--layout-gap, 18px);
   }
 }
 

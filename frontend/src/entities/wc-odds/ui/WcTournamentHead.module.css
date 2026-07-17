@@ -1,10 +1,9 @@
 .Head {
-  min-height: 34px;
+  min-height: 32px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
-  background: linear-gradient(118deg, var(--arena-accent-hot), var(--arena-accent-deep));
-  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  background: var(--light-blue-gradient);
 }
 
 .headRow {

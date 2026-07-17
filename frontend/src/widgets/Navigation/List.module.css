@@ -1,8 +1,9 @@
 .List {
   height: 100%;
+
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 24px;
 }
 
 @media screen and (max-width: 767px) {
@@ -13,26 +14,16 @@
 
 .item {
   height: 100%;
+
   transition: 0.2s;
+
   display: flex;
   align-items: center;
 }
 
 .tabLink {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.tabLink:hover {
-  background: rgb(255 255 255 / 0.05);
-  border-color: var(--arena-border);
+  display: inline-block;
 }
 
 .tabLink_withBadge {
@@ -41,18 +32,18 @@
 
 .newBadge {
   position: absolute;
-  top: -7px;
-  right: -2px;
+  top: -8px;
+  right: 2px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 2px 6px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #818cf8 0%, #6366f1 100%);
+  background: linear-gradient(90deg, #94a3f8 0%, #6366f1 100%);
   color: #ffffff;
   font-size: 8px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.05em;
   line-height: 1.2;
   text-transform: uppercase;
@@ -65,29 +56,26 @@
   position: relative;
 }
 
-.item_current .tabLink {
-  background: rgb(59 130 246 / 0.16);
-  border-color: rgb(59 130 246 / 0.35);
-}
-
 .link {
   transition: 0.2s;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.01em;
-  color: var(--arena-text-muted);
+  font-weight: 600;
   display: block;
 }
 
-.tabLink:hover .link {
-  color: var(--arena-text);
+.link:hover {
+  color: var(--blue-40);
 }
-
-.item_current .link {
-  color: var(--arena-accent-hot);
-  font-weight: 800;
+.item_current > .link {
+  font-weight: 600;
 }
 
 .underline {
-  display: none;
+  position: absolute;
+  bottom: 0;
+
+  background: var(--light-blue-gradient);
+  transition: 0.2s;
+
+  width: 100%;
+  height: 4px;
 }

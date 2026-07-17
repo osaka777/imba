@@ -155,14 +155,12 @@
     overflow: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-    background: var(--arena-surface);
-    border: 1px solid var(--arena-border);
-    border-radius: var(--arena-radius);
+    background-color: var(--blue-20);
+    border-radius: 8px;
     padding: 8px;
     gap: 0;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--arena-shadow-soft);
   }
 
   .sidebarControls {

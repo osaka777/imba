@@ -1,6 +1,6 @@
 /* ── Base row (aligned with homepage compact rows) ─────────────────── */
 .wcRow {
-  border-top: 1px solid var(--arena-border);
+  border-top: 1px solid #e7ebf1;
   border-bottom: none;
   min-height: 48px;
   height: auto;
@@ -12,7 +12,7 @@
 }
 
 .wcRow_odd {
-  background-color: var(--arena-surface-2);
+  background-color: #f5f7fa;
 }
 
 .wcRow_live {
@@ -26,7 +26,7 @@
 
 @media screen and (min-width: 1025px) {
   .wcRow:hover {
-    background-color: rgb(59 130 246 / 0.12) !important;
+    background-color: #eef4ff !important;
   }
 }
 
@@ -56,7 +56,7 @@
 .date {
   font-size: 11px;
   font-weight: 500;
-  color: var(--arena-text-dim);
+  color: #8b93a1;
   white-space: nowrap;
   line-height: 1.15;
 }
@@ -64,7 +64,7 @@
 .clock {
   font-size: 12px;
   font-weight: 600;
-  color: var(--arena-text-muted);
+  color: #374151;
   white-space: nowrap;
   line-height: 1.15;
 }
@@ -74,7 +74,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  border-left: 2px solid var(--arena-accent);
+  border-left: 2px solid #0085ff;
   padding-left: 10px;
 }
 
@@ -114,13 +114,13 @@
   .clock {
     font-size: 11px;
     font-weight: 700;
-    color: var(--arena-text);
+    color: #101828;
   }
 
   .matchBody {
     flex: 1;
     min-width: 0;
-    border-left: 2px solid var(--arena-accent);
+    border-left: 2px solid #0085ff;
     padding-left: 8px;
     padding-top: 0;
   }

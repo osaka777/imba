@@ -40,7 +40,6 @@ import { cn } from "~/shared/lib";
 import { FireIcon } from "~/shared/assets";
 import { useLocale } from "~/shared/model/useLocale";
 import { translateSportLabel } from "~/shared/i18n/messages";
-import { SportsbookPageShell } from "~/shared/ui/sportsbook";
 
 import styles from "~/entities/wc-odds/ui/WcHomeSection.module.css";
 
@@ -351,7 +350,7 @@ export function WcHomeSection() {
   if (enabled === false) return null;
 
   return (
-    <SportsbookPageShell className={cn(styles.wrap, isMobile && styles.wrap_mobile)}>
+    <div className={cn(styles.wrap, isMobile && styles.wrap_mobile)}>
       <div className={cn(styles.grid, isMobile && styles.grid_mobile)}>
         <HomePanel
           className={
@@ -396,6 +395,6 @@ export function WcHomeSection() {
           variant="prematch"
         />
       </div>
-    </SportsbookPageShell>
+    </div>
   );
 }

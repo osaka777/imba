@@ -5,7 +5,6 @@ import InfiniteScroll from "react-infinite-scroller";
 import { cn } from "~/shared/lib";
 import { useLocale } from "~/shared/model/useLocale";
 import { LoadingSpinner } from "~/shared/ui";
-import { SportsbookPageShell } from "~/shared/ui/sportsbook";
 import { transformApiGames } from "../../lib/transformApiGames";
 import { useSportFilter } from "../../lib/useSportFilter";
 import { useWebSocketContext } from "../../lib/WebSocketContext";
@@ -303,7 +302,7 @@ const GamesComponent = ({
     || (olimpbetEnabled === false && !isEsports && isLoading && games.length === 0);
 
   return (
-    <SportsbookPageShell className={cn(styles.Games, className)}>
+    <div className={cn(styles.Games, className)}>
       <div className={shellStyles.pageShell}>
         <div className={shellStyles.pageHeaderSlot}>
           <Header />
@@ -398,7 +397,7 @@ const GamesComponent = ({
         </div>
         </div>
       </div>
-    </SportsbookPageShell>
+    </div>
   );
 };
 

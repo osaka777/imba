@@ -8,8 +8,8 @@
   grid-template-areas:
     "nav nav"
     "content coupon";
-  grid-template-columns: minmax(0, 1fr) var(--layout-coupon-w, 300px);
-  gap: var(--layout-gap, 16px);
+  grid-template-columns: minmax(0, 1fr) var(--layout-coupon-w, 320px);
+  gap: var(--layout-gap, 18px);
   align-items: start;
 }
 
@@ -27,17 +27,17 @@
 
 .coupon {
   grid-area: coupon;
-  width: var(--layout-coupon-w, 300px);
-  min-width: var(--layout-coupon-w, 300px);
+  width: var(--layout-coupon-w, 320px);
+  min-width: var(--layout-coupon-w, 320px);
   align-self: start;
 }
 
 @media screen and (min-width: 1081px) {
   .coupon {
     position: sticky;
-    top: var(--layout-sticky-top, 10px);
+    top: var(--layout-sticky-top, 12px);
     align-self: start;
-    max-height: calc(100vh - var(--layout-sticky-top, 10px) - var(--layout-sticky-bottom, 10px));
+    max-height: calc(100vh - var(--layout-sticky-top, 12px) - var(--layout-sticky-bottom, 12px));
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
@@ -59,7 +59,7 @@
   .main {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     padding-top: 0;
     max-width: 100%;
   }

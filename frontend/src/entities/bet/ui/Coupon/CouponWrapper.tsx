@@ -119,11 +119,10 @@ export const CouponWrapper: React.FC<CouponWrapper> = ({ className }) => {
           </>
         ) : (
           <>
-            <CouponIcon className={styles.icon} />
-            <span className={styles.triggerLabel}>{t("coupon.title")}</span>
-            {rates && rates.length > 0 ? (
+            {rates && rates.length > 0 && (
               <span className={styles.triggerNumber}>{rates.length}</span>
-            ) : null}
+            )}
+            <CouponIcon className={styles.icon} />
             {counter > 0 && <div className={styles.counter}>{counter}</div>}
           </>
         )}

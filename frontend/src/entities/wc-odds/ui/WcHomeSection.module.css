@@ -1,10 +1,10 @@
 .grid {
   --home-font: "SF Pro Display", "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-  --home-blue: var(--arena-accent);
-  --home-blue-hover: var(--arena-accent-deep);
-  --home-tab-bg: var(--arena-surface-3);
-  --home-card-bg: var(--arena-surface);
-  --home-row-alt: var(--arena-surface-2);
+  --home-blue: #0085ff;
+  --home-blue-hover: #0074e0;
+  --home-tab-bg: #e9edf3;
+  --home-card-bg: #ffffff;
+  --home-row-alt: #f5f7fa;
   --tab-slant: 16px;
 
   display: grid;
@@ -151,12 +151,12 @@
   background: var(--home-tab-bg);
   border: none;
   border-radius: 10px 0 0 0;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65);
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--arena-text);
+  color: #121212;
   cursor: default;
   clip-path: polygon(
     0 0,
@@ -219,7 +219,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--arena-live);
+  background: #ff2d2d;
   box-shadow: 0 0 0 2px rgb(255 45 45 / 0.18);
   animation: livePulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
@@ -347,7 +347,7 @@
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: var(--arena-text-muted);
+  color: #4b5563;
   letter-spacing: 0;
 }
 
@@ -355,7 +355,7 @@
   margin: 0;
   font-size: 13px;
   font-weight: 500;
-  color: var(--arena-text-dim);
+  color: #8b93a1;
   letter-spacing: 0;
   max-width: 260px;
 }
@@ -431,7 +431,7 @@
     padding: 0 calc(var(--tab-slant) + 10px) 0 12px;
     font-size: 13px;
     gap: 6px;
-    background: var(--arena-surface);
+    background: #ffffff;
     border-radius: 8px 0 0 0;
     cursor: pointer;
   }

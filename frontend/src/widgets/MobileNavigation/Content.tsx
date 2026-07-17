@@ -29,8 +29,8 @@ const tabList: {
   { Icon: HomeIcon, href: "/", labelKey: "nav.home" },
   { Icon: SoccerBallIcon, href: "/line", labelKey: "nav.line" },
   { Icon: LiveIcon, href: "/live", labelKey: "nav.live", live: true },
-  { Icon: PresentIcon, href: "/results", labelKey: "nav.results" },
   { Icon: CSIcon, href: "/cybersport", labelKey: "nav.cyberShort", showNewBadge: true },
+  { Icon: PresentIcon, href: "#", labelKey: "nav.freeMoney" },
   { Icon: HistoryIcon, href: "/profile/betHistory", labelKey: "nav.history" },
 ];
 
@@ -44,8 +44,8 @@ const tabListNoAuth: {
   { Icon: HomeIcon, href: "/", labelKey: "nav.home" },
   { Icon: SoccerBallIcon, href: "/line", labelKey: "nav.line" },
   { Icon: LiveIcon, href: "/live", labelKey: "nav.live", live: true },
-  { Icon: PresentIcon, href: "/results", labelKey: "nav.results" },
   { Icon: CSIcon, href: "/cybersport", labelKey: "nav.cyberShort", showNewBadge: true },
+  { Icon: PresentIcon, href: "#", labelKey: "nav.freeMoney" },
 ];
 
 export const Content = ({ isAuth }: { isAuth: boolean }) => {

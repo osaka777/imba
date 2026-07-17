@@ -7,7 +7,6 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { cn } from "~/shared/lib";
 import { useLocale } from "~/shared/model/useLocale";
 import { LoadingSpinner } from "~/shared/ui";
-import { SportsbookPageShell } from "~/shared/ui/sportsbook";
 import { Header } from "~/widgets/Header";
 
 import { transformApiGames } from "../../lib/transformApiGames";
@@ -238,7 +237,7 @@ export const GamesPrematch = ({
     || (olimpbetEnabled === false && !isEsports && isLoading && games.length === 0);
 
   return (
-    <SportsbookPageShell className={cn(styles.GamesPrematch, className)}>
+    <div className={cn(styles.GamesPrematch, className)}>
       <div className={shellStyles.pageShell}>
         <div className={shellStyles.pageHeaderSlot}>
           <Header />
@@ -363,6 +362,6 @@ export const GamesPrematch = ({
         </div>
         </div>
       </div>
-    </SportsbookPageShell>
+    </div>
   );
 };

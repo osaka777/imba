@@ -38,10 +38,9 @@
 }
 
 .authLogin {
-  padding: 8px 16px;
-  background: rgb(59 130 246 / 0.18);
-  border: 1px solid rgb(59 130 246 / 0.35);
-  color: var(--arena-accent-hot);
+  padding: 6px 15px;
+
+  background-color: var(--blue-30);
 }
 
 @media screen and (max-width: 768px) {
@@ -58,15 +57,13 @@
 }
 
 .authSignIn {
-  padding: 8px 16px;
+  padding: 6px 15px;
   overflow: hidden;
   background: var(--green-gradient);
-  border: 1px solid rgb(34 197 94 / 0.28);
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 6px 18px rgb(34 197 94 / 0.22);
 }
 
 .authSignIn:before {
