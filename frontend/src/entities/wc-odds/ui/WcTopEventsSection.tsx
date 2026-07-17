@@ -7,7 +7,7 @@ import {
   fetchHomepageWidgets,
   type HomepageWidgetItem,
 } from "~/entities/wc-odds/api/client";
-import { WcTopEventCard } from "~/entities/wc-odds/ui/WcTopEventCard";
+import { WcTopEventListCard } from "~/entities/wc-odds/ui/WcTopEventListCard";
 import { HOMEPAGE_TOP_EVENTS_TOTAL } from "~/entities/wc-odds/ui/topEventsUtils";
 import type { TopEventItem } from "~/entities/wc-odds/ui/topEventsUtils";
 import { useLocale } from "~/shared/model/useLocale";
@@ -100,7 +100,7 @@ function WcTopEventsSectionInner() {
               <div aria-hidden className={styles.skeleton} key={index} />
             ))
           : items.map((item) => (
-              <WcTopEventCard
+              <WcTopEventListCard
                 item={item}
                 key={item.key}
                 pulse={item.kind === "wc" ? pulseByEventId.get(item.event.id) : undefined}

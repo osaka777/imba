@@ -1,0 +1,351 @@
+.card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid #dfe4eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 5px 16px rgb(16 24 40 / 0.06);
+  overflow: visible;
+}
+
+.leagueBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 44px 7px 14px;
+  border-radius: 15px 15px 0 0;
+  color: #475467;
+  background: linear-gradient(180deg, #eef1f5 0%, #e7ebf1 100%);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sportIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: #667085;
+  color: #667085;
+}
+
+.liveLabel {
+  margin-left: auto;
+  color: #f04438;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.body {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) 1px minmax(300px, 1.1fr);
+  gap: 0;
+  min-height: 112px;
+  padding: 12px 18px 12px 14px;
+}
+
+.body::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 1;
+  width: 1px;
+  height: 100%;
+  background: #e4e7ec;
+}
+
+.matchSide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-right: 18px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.timeRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin-bottom: 9px;
+}
+
+.timePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid #e4e7ec;
+  border-radius: 999px;
+  color: #344054;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.liveFlame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #f04438;
+  font-size: 8px;
+  box-shadow: 0 3px 8px rgb(240 68 56 / 0.24);
+}
+
+.score {
+  margin-left: auto;
+  color: #101828;
+  font-size: 14px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.teams {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.teams > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.teams strong {
+  overflow: hidden;
+  color: #101828;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickSide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-left: 18px;
+}
+
+.metrics {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  margin-bottom: 10px;
+}
+
+.betsMetric,
+.topMetric,
+.probabilityMetric {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 9px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.betsMetric,
+.topMetric {
+  gap: 4px;
+  border-radius: 7px 0 0 7px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0090ff 0%, #0077e6 100%);
+  box-shadow: 0 2px 6px rgb(0 119 230 / 0.2);
+}
+
+.betsMetric svg,
+.topMetric svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.6;
+}
+
+.probabilityMetric {
+  position: relative;
+  margin-left: 0;
+  padding-right: 13px;
+  border: 1px solid #e4e7ec;
+  border-left: 0;
+  border-radius: 0 7px 7px 0;
+  color: #475467;
+  background: #f8fafc;
+}
+
+.probabilityMetric strong {
+  margin-left: 3px;
+  color: #101828;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.selection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.selectionText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.selectionText small {
+  overflow: hidden;
+  margin-bottom: 4px;
+  color: #667085;
+  font-size: 9px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectionText strong {
+  overflow: hidden;
+  color: #101828;
+  font-size: 13px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odd {
+  flex: 0 0 68px;
+}
+
+.odd :global(button),
+.odd > span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0090ff 0%, #0077e6 100%) !important;
+  box-shadow: 0 4px 10px rgb(0 119 230 / 0.2);
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+
+.odd :global(button span:first-child) {
+  display: none !important;
+}
+
+.odd :global(button span:last-child) {
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+
+.openButton {
+  position: absolute;
+  top: -18px;
+  right: 13px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #0085ff;
+  box-shadow: 0 3px 9px rgb(0 119 230 / 0.28);
+  transition:
+    transform 140ms ease,
+    background 140ms ease;
+}
+
+.openButton:hover {
+  background: #0074e0;
+  transform: scale(1.06);
+}
+
+.openButton svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5;
+}
+
+@media screen and (max-width: 700px) {
+  .card {
+    border-radius: 13px;
+  }
+
+  .leagueBar {
+    min-height: 33px;
+    padding: 6px 40px 6px 11px;
+    border-radius: 12px 12px 0 0;
+    font-size: 10px;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 10px;
+  }
+
+  .body::after {
+    display: none;
+  }
+
+  .matchSide {
+    padding: 0 0 10px;
+  }
+
+  .pickSide {
+    padding: 10px 0 0;
+    border-top: 1px solid #e4e7ec;
+  }
+
+  .timeRow {
+    margin-bottom: 7px;
+  }
+
+  .timePill {
+    min-height: 24px;
+    font-size: 10px;
+  }
+
+  .teams strong {
+    font-size: 12px;
+  }
+
+  .metrics {
+    margin-bottom: 8px;
+  }
+
+  .selectionText small {
+    white-space: normal;
+  }
+
+  .openButton {
+    top: -17px;
+    right: 9px;
+    width: 30px;
+    height: 30px;
+  }
+}
