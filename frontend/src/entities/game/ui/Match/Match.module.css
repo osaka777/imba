@@ -895,10 +895,6 @@
   flex-grow: 1;
   flex-shrink: 1;
   flex-basis: calc(50% - .5px);
-  transition:
-    background-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
 }
 
 /* Специальный класс для группы 1X2 - отображение в 3 колонки */
@@ -911,25 +907,20 @@
 }
 
 @media (hover: hover) {
-  .oddsItem:hover {
-    background: #cfe5ff;
-    box-shadow:
-      inset 0 0 0 2px rgb(37 99 235 / 0.5),
-      0 3px 10px rgb(37 99 235 / 0.18);
-    transform: translateY(-1px);
-  }
-
   .oddsItem:hover .odd {
-    background: #cfe5ff;
+    background: var(--white-30);
   }
 
   .oddsItem:hover .odd p {
     color: #111827;
   }
 
-  .oddsItem:hover .odd_added,
-  .oddsItem:hover .oddCoef_added {
-    background: #1d4ed8;
+  .oddsItem:hover .odd:not(.odd_added) .oddCoef:not(.oddCoef_added) {
+    background-image: linear-gradient(
+      138deg,
+      rgb(16 141 231 / 0.3) -63%,
+      rgb(8 85 196 / 0.3) 97%
+    );
   }
 
   .oddsItem:hover .odd_added p {
@@ -999,27 +990,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition:
-    background-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
 }
 
 @media (hover: hover) {
   .odd:hover {
-    background: #cfe5ff;
-    box-shadow:
-      inset 0 0 0 2px rgb(37 99 235 / 0.5),
-      0 3px 10px rgb(37 99 235 / 0.18);
-    transform: translateY(-1px);
+    background: var(--white-30);
   }
 
   .odd:hover p {
     color: #111827;
   }
 
-  .odd_added:hover {
-    background: #1d4ed8;
+  .odd:not(.odd_added):hover .oddCoef:not(.oddCoef_added) {
+    background-image: linear-gradient(
+      138deg,
+      rgb(16 141 231 / 0.3) -63%,
+      rgb(8 85 196 / 0.3) 97%
+    );
   }
 
   .odd_added:hover p {
@@ -1040,7 +1027,8 @@
 
 .oddCoef {
   min-width: 25px;
-  padding: 12px 0;
+  padding: 8px 6px;
+  border-radius: 7px;
   background-color: transparent;
   color: var(--black);
   font-size: 13px;
