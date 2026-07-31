@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { usePartnerKickAttribution } from "~/entities/kick/lib/usePartnerKickAttribution";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { MQ_DESKTOP } from "~/shared/lib/layoutBreakpoints";
 
 import styles from "./PartnerKickMobileBanner.module.css";
 
 export function PartnerKickMobileBanner() {
+  const { t } = useLocale();
   const { partner } = usePartnerKickAttribution(true);
   const [isDesktop, setIsDesktop] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -37,16 +39,16 @@ export function PartnerKickMobileBanner() {
       <div className={styles.meta}>
         <span className={styles.live}>LIVE</span>
         <span className={styles.channel}>{channelLabel}</span>
-        <span className={styles.title}>{partner.streamTitle || "Прямой эфир"}</span>
+        <span className={styles.title}>{partner.streamTitle || t("cyber.kickLiveShort")}</span>
       </div>
       <div className={styles.actions}>
         <a className={styles.cta} href={partner.betUrl}>
-          Ставить
+          {t("cyber.kickBetShort")}
         </a>
         <button
           type="button"
           className={styles.close}
-          aria-label="Скрыть"
+          aria-label={t("cyber.kickHide")}
           onClick={() => setDismissed(true)}
         >
           ×

@@ -34,9 +34,19 @@ export function wcLineEventWhere(now: Date = new Date()) {
   };
 }
 
+/**
+ * Max age for live list/enrich/rotate.
+ * Unfinished rows older than this are zombies (Olimp 404) that starve the HTTP queue.
+ * 8h covers ET/pens; anything longer is not a real in-play book.
+ */
+export const WC_LIVE_MAX_AGE_MS = 8 * 60 * 60 * 1000;
+
 export function wcLiveEventWhere(now: Date = new Date()) {
   return {
     completed: false,
-    commenceTime: { lte: now },
+    commenceTime: {
+      lte: now,
+      gt: new Date(now.getTime() - WC_LIVE_MAX_AGE_MS),
+    },
   } as const;
 }

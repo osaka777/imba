@@ -8,11 +8,12 @@ import { PartnersModule } from '../partners/partners.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { AdminWelcomeBonusAnalyticsService } from './admin-welcome-bonus-analytics.service';
+import { AdminMetrikaService } from './admin-metrika.service';
 
 @Module({
   imports: [PrismaModule, AuthenticationModule, OperationModule, EventModule, DepositModule, PartnersModule],
   controllers: [AdminController],
-  providers: [AdminService, AdminWelcomeBonusAnalyticsService],
+  providers: [AdminService, AdminWelcomeBonusAnalyticsService, AdminMetrikaService],
   exports: [AdminService],
 })
 export class AdminModule {}

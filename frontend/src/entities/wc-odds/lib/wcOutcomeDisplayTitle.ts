@@ -50,8 +50,8 @@ function capitalizeWord(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
 
-export function cleanWcOutcomeName(name: string): string {
-  const trimmed = name.trim();
+export function cleanWcOutcomeName(name: string | null | undefined): string {
+  const trimmed = (name ?? "").trim();
   if (!trimmed) return "—";
   if (/^\d+:\d+$/.test(trimmed)) return trimmed;
   if (OUTCOME_ALIASES[trimmed]) return OUTCOME_ALIASES[trimmed]!;

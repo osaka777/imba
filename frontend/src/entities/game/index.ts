@@ -1,4 +1,4 @@
-export { gamesList, visibleGamesList } from "./lib/gamesList";
+export { gamesList, visibleGamesList, getSportLabel } from "./lib/gamesList";
 export type { Games as GamesType, GamesWithLeague } from "./types";
 export * from "./ui";
 export { AllGames, LiveGames, GamesBySport, GamesBySportAndSubcategory } from "./ui/Games";

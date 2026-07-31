@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { compare, hash } from 'bcrypt';
@@ -49,8 +54,8 @@ export class UserService {
     ) {
       age -= 1;
     }
-    if (age < 18) {
-      throw new BadRequestException('You must be at least 18 years old');
+    if (age < 21) {
+      throw new BadRequestException('You must be at least 21 years old');
     }
 
     let hashedPassword;
@@ -164,8 +169,8 @@ export class UserService {
     ) {
       age -= 1;
     }
-    if (age < 18) {
-      throw new BadRequestException('You must be at least 18 years old');
+    if (age < 21) {
+      throw new BadRequestException('You must be at least 21 years old');
     }
 
     const email = telegramAuthEmail(args.telegramUserId);
@@ -258,6 +263,8 @@ export class UserService {
         telegramLinkedAt: true,
         telegramUsername: true,
         avatarPreset: true,
+        avatarUrl: true,
+        nickname: true,
       },
     });
   }
@@ -308,5 +315,68 @@ export class UserService {
       where: { id: userId },
       data: { avatarPreset: preset },
     });
+  }
+
+  async updateAvatarUrl(userId: number, avatarUrl: string) {
+    const prev = await this.prismaService.user.findFirst({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
+
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+
+    const old = prev?.avatarUrl;
+    if (
+      old &&
+      old !== avatarUrl &&
+      old.startsWith('/uploads/avatars/') &&
+      !old.includes('..')
+    ) {
+      try {
+        const { unlinkSync, existsSync } = await import('fs');
+        const { join } = await import('path');
+        const diskPath = join(process.cwd(), old.replace(/^\//, ''));
+        if (existsSync(diskPath)) unlinkSync(diskPath);
+      } catch {
+        /* ignore cleanup errors */
+      }
+    }
+
+    return avatarUrl;
+  }
+
+  async updateNickname(userId: number, nickname: string | null) {
+    if (nickname) {
+      const taken = await this.prismaService.user.findFirst({
+        where: {
+          id: { not: userId },
+          nickname: { equals: nickname, mode: 'insensitive' },
+        },
+        select: { id: true },
+      });
+      if (taken) {
+        throw new ConflictException({ code: 'taken', message: 'taken' });
+      }
+    }
+
+    try {
+      const user = await this.prismaService.user.update({
+        where: { id: userId },
+        data: { nickname },
+        select: { nickname: true },
+      });
+      return user.nickname;
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new ConflictException({ code: 'taken', message: 'taken' });
+      }
+      throw e;
+    }
   }
 }

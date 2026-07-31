@@ -8,7 +8,7 @@ import {
   type CyberDisciplineSlug,
 } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import { CybersportTournamentSection } from "~/entities/cybersport/ui/CybersportTournamentSection";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 type PageProps = {
   params: Promise<{ discipline: string; slug: string }>;
@@ -17,19 +17,20 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { discipline, slug } = await params;
   if (!isCyberDisciplineSlug(discipline)) {
-    return makeMetadata("Киберспорт", { path: "/cybersport" });
+    return makeSeoMetadata("common.seoCyberTitle", { path: "/cybersport" });
   }
 
   const apiSport = disciplineToApiSport(discipline);
   const tournaments = await fetchCybersportTournaments(apiSport);
   const tournament = tournaments.find((row) => row.slug === slug);
   if (!tournament) {
-    return makeMetadata("Турнир киберспорта", { path: `/cybersport/${discipline}` });
+    return makeSeoMetadata("common.seoCyberTournament", { path: `/cybersport/${discipline}` });
   }
 
-  return makeMetadata(`${tournament.name} — ставки на киберспорт`, {
-    description: `Live и линия на ${tournament.name}. Ставки через Imba.bet.`,
+  return makeSeoMetadata("common.seoCyberTournamentTitle", {
+    descriptionKey: "common.seoCyberTournamentDesc",
     path: `/cybersport/${discipline}/tournament/${slug}`,
+    params: { name: tournament.name },
   });
 }
 

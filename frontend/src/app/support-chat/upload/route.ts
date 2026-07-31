@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { tRequest } from '~/shared/i18n/request-locale';
+
 export const dynamic = 'force-dynamic';
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -8,11 +10,11 @@ export async function POST(request: NextRequest) {
   const form = await request.formData().catch(() => null);
   const file = form?.get('file');
   if (!(file instanceof File)) {
-    return NextResponse.json({ ok: false, error: 'Файл не найден' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: tRequest(request, 'common.errFileNotFound') }, { status: 400 });
   }
   if (!file.type.startsWith('image/') || file.size < 1 || file.size > MAX_BYTES) {
     return NextResponse.json(
-      { ok: false, error: 'Допустимы изображения до 5 МБ' },
+      { ok: false, error: tRequest(request, 'common.errImageTooLarge') },
       { status: 400 },
     );
   }
@@ -39,13 +41,13 @@ export async function POST(request: NextRequest) {
     } | null;
     if (!response.ok || !data?.url) {
       return NextResponse.json(
-        { ok: false, error: data?.detail || 'Не удалось загрузить файл' },
+        { ok: false, error: data?.detail || tRequest(request, 'common.errUploadFile') },
         { status: response.status || 502 },
       );
     }
     return NextResponse.json({ ok: true, url: data.url, mediaId: data.mediaId });
   } catch (error) {
     console.error('[support-chat] upload error', error);
-    return NextResponse.json({ ok: false, error: 'Ошибка загрузки' }, { status: 502 });
+    return NextResponse.json({ ok: false, error: tRequest(request, 'common.errUploadGeneric') }, { status: 502 });
   }
 }

@@ -38,8 +38,8 @@
 }
 
 .coef {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   color: #101828;
   line-height: 1;
   letter-spacing: inherit;
@@ -305,8 +305,8 @@
     min-width: 0;
     padding: 0;
     border-radius: 0;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     line-height: 1;
   }
 
@@ -377,7 +377,7 @@
 
   .coef {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
   }
 
@@ -607,8 +607,8 @@
 }
 
 .cell_topcard .coef {
-  font-size: 15px !important;
-  font-weight: 900 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
   font-variant-numeric: tabular-nums;
   line-height: 1.1 !important;
   color: #ffffff !important;

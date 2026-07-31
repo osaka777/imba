@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header, Request, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Bot, BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
 
 import support_meta as sm
@@ -146,7 +146,8 @@ def support_site_keyboard() -> InlineKeyboardMarkup:
 
 
 async def send_support_welcome(chat_id: int) -> None:
-    await bot.send_message(
+    tg = support_chat_bot() if SUPPORT_BOT_TOKEN else bot
+    await tg.send_message(
         chat_id,
         "🛟 Поддержка imba.bet\n\n"
         "Напишите сообщение здесь — оператор увидит его в Telegram.\n"
@@ -893,6 +894,8 @@ async def process_support_update(update_data: dict[str, Any]) -> None:
                 "Оператор пока offline. Напишите позже или на imba.bet в чате поддержки.",
                 disable_web_page_preview=True,
             )
+        except BadRequest as exc:
+            print(f"support user ack failed chat={cid}: {exc}")
         return
 
 
@@ -945,8 +948,6 @@ async def process_update(update_data: dict[str, Any]) -> None:
         return
 
     if text.startswith("/"):
-        if SUPPORT_BOT_TOKEN and is_ops_chat(cid):
-            return
         if is_ops_chat(cid):
             cmd_parts = text.split(maxsplit=2)
             cmd = cmd_parts[0].lower()
@@ -960,6 +961,15 @@ async def process_update(update_data: dict[str, Any]) -> None:
                         disable_web_page_preview=True,
                     )
                 return
+            if SUPPORT_BOT_TOKEN:
+                await alerts_bot().send_message(
+                    cid,
+                    "🛟 Операторы отвечают в @Imbabetsupport_bot\n\n"
+                    "Сюда (@imbabetalert_bot) приходят только SMS/уведомления.\n"
+                    "Откройте @Imbabetsupport_bot → /start → reply на сообщение клиента.",
+                    disable_web_page_preview=True,
+                )
+                return
             return
         cmd = text.split()[0].lower()
         if cmd == "/support":
@@ -969,8 +979,6 @@ async def process_update(update_data: dict[str, Any]) -> None:
         return
 
     if text.strip():
-        if SUPPORT_BOT_TOKEN and is_ops_chat(cid):
-            return
         if is_ops_chat(cid):
             reply_to = message.reply_to_message
             if reply_to and reply_to.text:
@@ -985,6 +993,14 @@ async def process_update(update_data: dict[str, Any]) -> None:
                             disable_web_page_preview=True,
                         )
                     return
+            if SUPPORT_BOT_TOKEN:
+                await alerts_bot().send_message(
+                    cid,
+                    "🛟 Чтобы ответить клиенту с сайта — откройте @Imbabetsupport_bot "
+                    "и сделайте reply на его сообщение (или /r SESSION_ID текст).\n\n"
+                    "Этот бот только для SMS/уведомлений.",
+                    disable_web_page_preview=True,
+                )
             return
         await forward_user_text_to_support(chat, text)
         await bot.send_message(
@@ -1100,11 +1116,40 @@ async def validate_support_operator_on_startup() -> None:
         clear_persisted_chat_id()
 
 
+async def setup_alerts_bot_commands() -> None:
+    await bot.set_my_commands(
+        [
+            BotCommand("start", "Старт / привязка аккаунта"),
+            BotCommand("balance", "Баланс"),
+            BotCommand("bets", "Мои ставки"),
+            BotCommand("unlink", "Отвязать Telegram"),
+            BotCommand("support", "Как связаться с поддержкой"),
+        ]
+    )
+
+
+async def setup_support_bot_commands() -> None:
+    if not SUPPORT_BOT_TOKEN:
+        return
+    await support_chat_bot().set_my_commands(
+        [
+            BotCommand("start", "Подключить оператора / старт"),
+            BotCommand("deposit", "Шаблон: пополнение"),
+            BotCommand("withdraw", "Шаблон: вывод"),
+            BotCommand("bonus", "Шаблон: бонус"),
+            BotCommand("close", "Закрыть диалог"),
+            BotCommand("stats", "Статистика поддержки"),
+            BotCommand("r", "Ответ: /r SESSION_ID текст"),
+        ]
+    )
+
+
 async def setup_webhook() -> None:
     secret = NOTIFY_SECRET or None
     await bot.set_webhook(
         url=TELEGRAM_WEBHOOK_URL,
         secret_token=secret,
+        allowed_updates=["message", "edited_message", "callback_query"],
         drop_pending_updates=True,
     )
     print(f"webhook set: {TELEGRAM_WEBHOOK_URL}")
@@ -1117,6 +1162,7 @@ async def setup_support_webhook() -> None:
     await support_chat_bot().set_webhook(
         url=TELEGRAM_SUPPORT_WEBHOOK_URL,
         secret_token=secret,
+        allowed_updates=["message", "edited_message", "callback_query"],
         drop_pending_updates=False,
     )
     print(f"support webhook set: {TELEGRAM_SUPPORT_WEBHOOK_URL}")
@@ -1133,12 +1179,22 @@ async def warmup_telegram_chat() -> None:
     try:
         me = await bot.get_me()
         print(f"imba-bot ready: @{me.username} (user bot)")
+        try:
+            await setup_alerts_bot_commands()
+            print("alerts bot commands menu set")
+        except Exception as exc:
+            print(f"alerts bot commands error: {exc}")
         if OPS_BOT_TOKEN:
             ops_me = await ops_bot.get_me()
             print(f"ops bot ready: @{ops_me.username}")
         if SUPPORT_BOT_TOKEN:
             support_me = await support_chat_bot().get_me()
             print(f"support bot ready: @{support_me.username}")
+            try:
+                await setup_support_bot_commands()
+                print("support bot commands menu set")
+            except Exception as exc:
+                print(f"support bot commands error: {exc}")
             await validate_support_operator_on_startup()
         persisted = load_persisted_chat_id()
         if persisted:

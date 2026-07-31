@@ -1,6 +1,7 @@
 import React from "react";
 
 import { isEsportsApiSport } from "~/entities/cybersport/lib/cyberDisciplineCatalog";
+import { CyberSportGlyph } from "~/entities/cybersport/ui/CyberSportGlyph";
 import styles from "./Head.module.css";
 
 type HeadProps = {
@@ -42,7 +43,11 @@ export const Head: React.FC<HeadProps> = ({ Icon, name, sport }) => {
   return (
     <div className={styles.Head}>
       <div className={styles.nameCell}>
-        {Icon && <Icon className={styles.sportIcon} />}
+        {isEsportsApiSport(sport) ? (
+          <CyberSportGlyph apiSport={sport} className={styles.sportIcon} label={name} />
+        ) : Icon ? (
+          <Icon className={styles.sportIcon} />
+        ) : null}
         <p className={styles.name}>{name}</p>
       </div>
       {headSportRows[sport] ?? (isEsportsApiSport(sport) ? createHeadFieldsRow([`1`, `2`]) : null)}

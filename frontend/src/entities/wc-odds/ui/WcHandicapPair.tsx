@@ -4,9 +4,11 @@ import type { WcEventDetail, WcMarketGroup, WcMarketOutcome } from "~/entities/w
 import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
 import { handicapRowSideLabel } from "~/entities/wc-odds/lib/wcHandicapPairs";
 import { formatHandicapScopeLabel, isScopeCaptionRedundant } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
+import { localizeWcLabel } from "~/entities/wc-odds/lib/localizeWcLabel";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
 import { usePrevious } from "~/shared/model";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
 
@@ -33,6 +35,7 @@ export function WcHandicapPair({
   showScopeHeader = false,
   kickChip = false,
 }: WcHandicapPairProps) {
+  const { t } = useLocale();
   const { toggle, isSelected, isBettable } = useWcMarketPairToggle(event, group, bettingOpen);
 
   const homeValue = home ? home.price.toFixed(2) : "0";
@@ -48,10 +51,11 @@ export function WcHandicapPair({
     sport: event.sport,
   };
 
-  const scopeLabel = showScopeHeader
+  const scopeLabelRaw = showScopeHeader
     ? formatHandicapScopeLabel(group, categoryName, scopeOptions)
     : null;
-  const showScopeCaption = scopeLabel && !isScopeCaptionRedundant(categoryName, scopeLabel);
+  const scopeLabel = scopeLabelRaw ? localizeWcLabel(scopeLabelRaw, t) : null;
+  const showScopeCaption = scopeLabel && !isScopeCaptionRedundant(categoryName, scopeLabelRaw);
 
   const labelOptions = { kickChip, pivot: point };
   const awayLabel = away

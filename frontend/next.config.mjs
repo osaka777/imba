@@ -65,6 +65,16 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/events",
+        destination: "/markets",
+        permanent: true,
+      },
+      {
+        source: "/events/:slug*",
+        destination: "/markets/:slug*",
+        permanent: true,
+      },
+      {
         source: "/wc",
         destination: "/line/soccer",
         permanent: true,
@@ -140,6 +150,83 @@ const nextConfig = {
         ],
       },
       {
+        source: '/imba-bet.apk',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/vnd.android.package-archive',
+          },
+          {
+            key: 'Content-Disposition',
+            value: 'attachment; filename="imba-bet.apk"',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+        ],
+      },
+      {
+        source: '/imba-bet-windows-setup.exe',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/vnd.microsoft.portable-executable',
+          },
+          {
+            key: 'Content-Disposition',
+            value: 'attachment; filename="imba-bet-windows-setup.exe"',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+        ],
+      },
+      {
+        source: '/latest.yml',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/yaml; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/imba-bet-windows-setup.exe.blockmap',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/octet-stream',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+        ],
+      },
+      {
+        source: '/imba-bet-windows.exe',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/vnd.microsoft.portable-executable',
+          },
+          {
+            key: 'Content-Disposition',
+            value: 'attachment; filename="imba-bet-windows.exe"',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: [
           {
@@ -155,10 +242,17 @@ const nextConfig = {
     ];
   },
   async rewrites() {
+    // Browser /api hits Caddy → backend directly.
+    // This rewrite is for Next server-side fetches only.
+    const backend = (
+      process.env.BACKEND_URL
+      || process.env.NEXT_PUBLIC_HOST
+      || 'http://backend:3000'
+    ).replace(/\/$/, '');
     return [
       {
         source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000/api/:path*',
+        destination: `${backend}/api/:path*`,
       },
     ];
   },

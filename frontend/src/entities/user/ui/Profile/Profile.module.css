@@ -83,7 +83,7 @@
   padding: 16px;
   background:
     radial-gradient(ellipse 120% 80% at 50% -20%, rgba(49, 188, 105, 0.22), transparent 55%),
-    linear-gradient(145deg, #1a2438 0%, #141b2e 100%);
+    linear-gradient(145deg, var(--blue-20) 0%, #141b2e 100%);
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
@@ -398,10 +398,10 @@ div.dialog {
 }
 
 div.dialog:has([data-payment-step="active"]) {
-  background: #13151f !important;
-  background-color: #13151f !important;
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.65) !important;
-  border: 2px solid #13151f !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16) !important;
+  border: 1px solid #eef2f6 !important;
   outline: none !important;
   animation: none !important;
   transform: translate(-50%, -50%) !important;
@@ -419,8 +419,8 @@ div.dialog:has([data-usdt-payment-step="active"]) {
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] {
-  color: rgba(255, 255, 255, 0.88) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  color: #64748b !important;
+  background: #f1f5f9 !important;
   border-radius: 10px;
 }
 
@@ -430,8 +430,8 @@ div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] {
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] svg {
-  color: rgba(255, 255, 255, 0.92) !important;
-  stroke: rgba(255, 255, 255, 0.92) !important;
+  color: #475569 !important;
+  stroke: #475569 !important;
 }
 
 div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] svg {
@@ -454,20 +454,51 @@ div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] svg 
   }
 }
 
-/* ── Desktop tweaks ── */
+/* ── Desktop: wider 1win-style account sheet ── */
 @media (min-width: 769px) {
   .profileContainer {
-    max-width: 720px;
-    padding: 20px 16px 32px;
+    max-width: 960px;
+    padding: 24px 20px 40px;
     gap: 16px;
   }
 
   .currencyGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
   }
 
   .heroAmount {
     font-size: 36px;
+  }
+
+  .walletHero {
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+
+  .quickLinksCard,
+  .servicesLinksCard {
+    border-radius: 12px;
+  }
+
+  .currencyCard {
+    border-radius: 10px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profileContainer {
+    max-width: 1080px;
+  }
+
+  .servicesList {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+
+  .servicesList > :only-child {
+    grid-column: 1 / -1;
   }
 }

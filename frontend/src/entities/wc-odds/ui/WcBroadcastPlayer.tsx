@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { fetchWcEventBroadcast } from "~/entities/wc-odds/api/client";
 import {
@@ -8,14 +9,15 @@ import {
   requestBroadcastAuth,
 } from "~/entities/wc-odds/lib/wcBroadcastAuth";
 import type { WcBroadcastMeta } from "~/entities/wc-odds/lib/WcBroadcastContext";
-import { isEsportsSport } from "~/entities/cybersport/lib/isEsportsSport";
+import { useBroadcastPlayerLayout } from "~/entities/wc-odds/lib/useBroadcastPlayerLayout";
 import { buildKickEmbedUrl, isKickPlayerUrl } from "~/entities/wc-odds/lib/kickEmbedUrl";
-import { resolveLiveEsportsStream } from "~/entities/wc-odds/lib/streamLiveFallback";
 import { buildTwitchEmbedUrl, isTwitchPlayerUrl } from "~/entities/wc-odds/lib/twitchEmbedUrl";
 import { BroadcastIcon, CloseIcon, LockIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
 import { MQ_BELOW_DESKTOP } from "~/shared/lib/layoutBreakpoints";
+import { useLocale } from "~/shared/model/useLocale";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
+import { StreamSocialOverlay } from "~/entities/wc-odds/ui/StreamSocialOverlay";
 
 import styles from "~/entities/wc-odds/ui/WcBroadcastPlayer.module.css";
 
@@ -30,6 +32,10 @@ type WcBroadcastPlayerProps = {
   showFullscreen?: boolean;
   onClose?: () => void;
   onFullscreen?: () => void;
+  /** Start unmuted and try autoplay with audio (browsers may still require a tap). */
+  autoPlayWithSound?: boolean;
+  /** Hide native video controls, mute UI, and stream social overlay. */
+  hideChrome?: boolean;
 };
 
 const MOBILE_CONTROLS_HIDE_MS = 4000;
@@ -40,18 +46,26 @@ function StreamVideoShell({
   controls,
   controlsVisible,
   fallbackBadge,
+  hideChrome = false,
   isMobile,
   onRevealControls,
+  showSocialOverlay = true,
+  streamKey,
+  t,
 }: {
   children: React.ReactNode;
   className?: string;
   controls: React.ReactNode;
   controlsVisible: boolean;
   fallbackBadge?: React.ReactNode;
+  hideChrome?: boolean;
   isMobile: boolean;
   onRevealControls: () => void;
+  showSocialOverlay?: boolean;
+  streamKey?: string | null;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
-  const showControls = !isMobile || controlsVisible;
+  const showControls = !hideChrome && (!isMobile || controlsVisible);
 
   return (
     <div
@@ -63,9 +77,9 @@ function StreamVideoShell({
       )}
     >
       {children}
-      {isMobile && !controlsVisible ? (
+      {!hideChrome && isMobile && !controlsVisible ? (
         <button
-          aria-label="Показать управление трансляцией"
+          aria-label={t("wc.showControls")}
           className={styles.tapCatcher}
           onClick={(event) => {
             event.stopPropagation();
@@ -73,6 +87,9 @@ function StreamVideoShell({
           }}
           type="button"
         />
+      ) : null}
+      {showSocialOverlay && streamKey ? (
+        <StreamSocialOverlay streamKey={streamKey} />
       ) : null}
       {showControls ? controls : null}
       {fallbackBadge}
@@ -86,21 +103,30 @@ function StreamControls({
   onFullscreen,
   onToggleMute,
   showFullscreen,
+  showMute = true,
+  t,
 }: {
   isMuted: boolean;
   isMobile: boolean;
   onFullscreen?: () => void;
   onToggleMute: () => void;
   showFullscreen?: boolean;
+  showMute?: boolean;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
+  const hasFullscreen = Boolean(showFullscreen && onFullscreen);
+  if (!showMute && !hasFullscreen) return null;
+
   return (
     <div className={cn(styles.videoControls, isMobile && styles.videoControlsMobile)}>
-      <button className={styles.soundToggle} onClick={onToggleMute} type="button">
-        {isMuted ? "Включить звук" : "Выключить звук"}
-      </button>
-      {showFullscreen && onFullscreen ? (
+      {showMute ? (
+        <button className={styles.soundToggle} onClick={onToggleMute} type="button">
+          {isMuted ? t("wc.muteOn") : t("wc.muteOff")}
+        </button>
+      ) : null}
+      {hasFullscreen ? (
         <button className={styles.fullscreenToggle} onClick={onFullscreen} type="button">
-          На весь экран
+          {t("wc.fullscreen")}
         </button>
       ) : null}
     </div>
@@ -113,12 +139,14 @@ function BroadcastAuthGate({
   layout = "default",
   onLogin,
   onRegister,
+  t,
 }: {
   meta?: WcBroadcastMeta | null;
   showMatchTitle?: boolean;
   layout?: "default" | "sidebar";
   onLogin: () => void;
   onRegister: () => void;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   const matchLine = meta ? `${meta.homeTeam} – ${meta.awayTeam}` : null;
 
@@ -131,7 +159,7 @@ function BroadcastAuthGate({
             <div className={styles.authGateSidebarIconWrap}>
               <LockIcon className={styles.authGateSidebarIcon} />
             </div>
-            <p className={styles.authGateSidebarTitle}>Чтобы смотреть трансляцию</p>
+            <p className={styles.authGateSidebarTitle}>{t("wc.authWatchTitle")}</p>
           </div>
           <div className={styles.authGateSidebarActions}>
             <button
@@ -139,14 +167,14 @@ function BroadcastAuthGate({
               onClick={onRegister}
               type="button"
             >
-              Регистрация
+              {t("auth.register")}
             </button>
             <button
               className={styles.authGateSidebarSecondary}
               onClick={onLogin}
               type="button"
             >
-              Вход
+              {t("auth.login")}
             </button>
           </div>
         </div>
@@ -183,18 +211,18 @@ function BroadcastAuthGate({
         <div className={styles.authGateIconWrap}>
           <LockIcon className={styles.authGateIcon} />
         </div>
-        <h3 className={styles.authGateTitle}>Чтобы смотреть трансляцию</h3>
+        <h3 className={styles.authGateTitle}>{t("wc.authWatchTitle")}</h3>
         <p className={styles.authGateHint}>
           {showMatchTitle && matchLine
-            ? "Эфир доступен после входа в аккаунт"
-            : "Зарегистрируйтесь или войдите в аккаунт"}
+            ? t("wc.authWatchNeedLogin")
+            : t("wc.authWatchRegisterOrLogin")}
         </p>
         <div className={styles.authGateActions}>
           <button className={styles.authGatePrimary} onClick={onRegister} type="button">
-            Регистрация
+            {t("auth.register")}
           </button>
           <button className={styles.authGateSecondary} onClick={onLogin} type="button">
-            Вход
+            {t("auth.login")}
           </button>
         </div>
       </div>
@@ -214,30 +242,40 @@ function BroadcastMedia({
   onToggleMute,
   onFullscreen,
   showFullscreen,
+  showMute = true,
+  showNativeControls = true,
+  showSocialOverlay = true,
+  hideChrome = false,
   isFallback,
   fallbackLabel,
   isMobile,
   controlsVisible,
   onRevealControls,
   onControlAction,
+  t,
 }: {
   eventRef: string;
   streamUrl: string | null;
   streamType: string | null;
   error: string | null;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoRef: React.Ref<HTMLVideoElement | null>;
   needsTap?: boolean;
   onTapPlay?: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
   onFullscreen?: () => void;
   showFullscreen?: boolean;
+  showMute?: boolean;
+  showNativeControls?: boolean;
+  showSocialOverlay?: boolean;
+  hideChrome?: boolean;
   isFallback?: boolean;
   fallbackLabel?: string | null;
   isMobile: boolean;
   controlsVisible: boolean;
   onRevealControls: () => void;
   onControlAction: (action: () => void) => (event: React.MouseEvent) => void;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   const controls = (
     <StreamControls
@@ -246,13 +284,15 @@ function BroadcastMedia({
       onFullscreen={onFullscreen ? onControlAction(onFullscreen) : undefined}
       onToggleMute={onControlAction(onToggleMute)}
       showFullscreen={showFullscreen}
+      showMute={showMute}
+      t={t}
     />
   );
 
   const fallbackBadge = isFallback ? (
     <span className={styles.fallbackBadge}>
       <span aria-hidden className={styles.fallbackDot} />
-      {fallbackLabel ?? "Резервный эфир · EN"}
+      {fallbackLabel ?? t("wc.fallbackEn")}
     </span>
   ) : null;
 
@@ -268,8 +308,12 @@ function BroadcastMedia({
         controls={controls}
         controlsVisible={controlsVisible}
         fallbackBadge={fallbackBadge}
+        hideChrome={hideChrome}
         isMobile={isMobile}
         onRevealControls={onRevealControls}
+        showSocialOverlay={showSocialOverlay}
+        streamKey={eventRef}
+        t={t}
       >
         <iframe
           allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
@@ -279,7 +323,7 @@ function BroadcastMedia({
           height="100%"
           referrerPolicy="no-referrer-when-downgrade"
           src={streamUrl}
-          title={`Трансляция ${eventRef}`}
+          title={t("wc.broadcastTitle", { ref: eventRef })}
           width="100%"
         />
       </StreamVideoShell>
@@ -291,20 +335,24 @@ function BroadcastMedia({
       <StreamVideoShell
         controls={controls}
         controlsVisible={controlsVisible}
+        hideChrome={hideChrome}
         isMobile={isMobile}
         onRevealControls={onRevealControls}
+        showSocialOverlay={showSocialOverlay}
+        streamKey={eventRef}
+        t={t}
       >
         <video
           ref={videoRef}
           autoPlay
           className={styles.broadcastVideo}
-          controls={!isMobile}
+          controls={showNativeControls && !isMobile}
           muted={isMuted}
           playsInline
         />
         {needsTap && (
           <button className={styles.tapPlayBtn} onClick={onTapPlay} type="button">
-            Смотреть трансляцию
+            {t("wc.watchBroadcast")}
           </button>
         )}
       </StreamVideoShell>
@@ -314,7 +362,7 @@ function BroadcastMedia({
   return (
     <div className={styles.broadcastPlaceholder}>
       <span className={styles.broadcastBadge}>LIVE</span>
-      <p>{error ?? "Видеотрансляция матча"}</p>
+      <p>{error ?? t("wc.broadcastMatch")}</p>
     </div>
   );
 }
@@ -346,8 +394,16 @@ export function WcBroadcastPlayer({
   showFullscreen = false,
   onClose,
   onFullscreen,
+  autoPlayWithSound = false,
+  hideChrome = false,
 }: WcBroadcastPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const { t } = useLocale();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
+  const setVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    setVideoEl(node);
+  }, []);
   const hideControlsTimer = useRef<number | undefined>(undefined);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [streamType, setStreamType] = useState<string | null>(null);
@@ -359,8 +415,7 @@ export function WcBroadcastPlayer({
   const [streamFallback, setStreamFallback] = useState(false);
   const [fallbackLabel, setFallbackLabel] = useState<string | null>(null);
   const [streamResolving, setStreamResolving] = useState(false);
-  const [hlsNoAudio, setHlsNoAudio] = useState(false);
-  const [soundMuted, setSoundMuted] = useState(true);
+  const [soundMuted, setSoundMuted] = useState(!autoPlayWithSound);
   const [isMobile, setIsMobile] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
 
@@ -404,8 +459,10 @@ export function WcBroadcastPlayer({
     const video = videoRef.current;
     if (!video) return;
     setNeedsTap(false);
+    video.muted = soundMuted;
+    video.volume = soundMuted ? 0 : 1;
     void video.play().catch(() => setNeedsTap(true));
-  }, []);
+  }, [soundMuted]);
 
   const toggleSound = useCallback(() => {
     setSoundMuted((current) => {
@@ -465,25 +522,25 @@ export function WcBroadcastPlayer({
       setStreamFallback(Boolean(payload.streamFallback));
       setFallbackLabel(
         payload.provider === "twitch"
-          ? "EN резерв · Twitch"
+          ? t("wc.fallbackTwitch")
           : payload.streamFallback
-            ? "Резервный эфир · EN"
+            ? t("wc.fallbackEn")
             : null,
       );
 
       setStreamUrl(nextUrl);
       setStreamType(nextType);
       if (payload.available && !nextUrl) {
-        setError("Трансляция доступна, поток подключается…");
+        setError(t("wc.connecting"));
       } else if (nextUrl) {
         setError(null);
       }
       return nextUrl;
     } catch {
-      setError("Не удалось загрузить трансляцию");
+      setError(t("wc.loadFailed"));
       return null;
     }
-  }, [eventRef]);
+  }, [eventRef, t]);
 
   useEffect(() => {
     if (!hasBroadcast) return undefined;
@@ -508,7 +565,7 @@ export function WcBroadcastPlayer({
   }, [hasBroadcast, loadStreamUrl]);
 
   useEffect(() => {
-    const video = videoRef.current;
+    const video = videoEl;
     if (streamType === "iframe") return undefined;
     if (!video || !streamUrl) return undefined;
 
@@ -526,17 +583,13 @@ export function WcBroadcastPlayer({
 
     const playNative = () => {
       if (!video.canPlayType("application/vnd.apple.mpegurl")) {
-        setError("Браузер не поддерживает воспроизведение трансляции");
+        setError(t("wc.browserUnsupported"));
         return;
       }
       video.src = streamUrl;
       video.addEventListener("error", refreshOnFailure);
-      video.addEventListener("loadedmetadata", () => {
-        const mozHasAudio = (video as HTMLVideoElement & { mozHasAudio?: boolean }).mozHasAudio;
-        if (mozHasAudio === false) {
-          setHlsNoAudio(true);
-        }
-      }, { once: true });
+      video.muted = soundMuted;
+      video.volume = soundMuted ? 0 : 1;
       void video.play().catch(() => setNeedsTap(true));
     };
 
@@ -552,14 +605,11 @@ export function WcBroadcastPlayer({
         const instance = new Hls({ enableWorker: true, lowLatencyMode: true });
         instance.loadSource(streamUrl);
         instance.attachMedia(video);
-        instance.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (instance.audioTracks.length === 0) {
-            setHlsNoAudio(true);
-          }
-        });
         instance.on(Hls.Events.ERROR, (_event, data) => {
           if (data?.fatal) refreshOnFailure();
         });
+        video.muted = soundMuted;
+        video.volume = soundMuted ? 0 : 1;
         void video.play().catch(() => setNeedsTap(true));
         hls = instance;
       } catch {
@@ -574,42 +624,7 @@ export function WcBroadcastPlayer({
       video.removeEventListener("error", refreshOnFailure);
       hls?.destroy();
     };
-  }, [streamUrl, streamType, loadStreamUrl]);
-
-  const esportsStream = isEsportsSport(sport);
-
-  // Silent HLS in-game feed — switch to Kick/Twitch with commentary audio (esports only).
-  useEffect(() => {
-    if (!esportsStream || !hlsNoAudio || streamType === "iframe" || !sport) return undefined;
-
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const run = async () => {
-      const pick = await resolveLiveEsportsStream(null, sport, controller.signal);
-      if (cancelled || !pick) return;
-      setStreamUrl(pick.embedUrl);
-      setStreamType("iframe");
-      setIframeEmbed(pick.embedUrl);
-      setStreamFallback(pick.isFallback);
-      setFallbackLabel(
-        pick.provider === "twitch"
-          ? "EN резерв · Twitch"
-          : pick.isFallback
-            ? "Резервный эфир · EN"
-            : null,
-      );
-      setHlsNoAudio(false);
-      setError(null);
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [esportsStream, hlsNoAudio, sport, streamType]);
+  }, [videoEl, streamUrl, streamType, loadStreamUrl, soundMuted, t]);
 
   useEffect(() => {
     if (streamType !== "iframe" || !streamUrl) {
@@ -620,74 +635,13 @@ export function WcBroadcastPlayer({
       return undefined;
     }
 
-    if (isTwitchPlayerUrl(streamUrl)) {
-      setIframeEmbed(streamUrl);
-      setStreamResolving(false);
-      return undefined;
-    }
-
-    if (!esportsStream) {
-      setIframeEmbed(streamUrl);
-      setStreamResolving(false);
-      return undefined;
-    }
-
-    let primaryKick: string | null = null;
-    try {
-      if (isKickPlayerUrl(streamUrl)) {
-        primaryKick = new URL(streamUrl).pathname.split("/").filter(Boolean)[0] ?? null;
-      }
-    } catch {
-      primaryKick = null;
-    }
-
-    if (!primaryKick && !isKickPlayerUrl(streamUrl)) {
-      setIframeEmbed(streamUrl);
-      setStreamResolving(false);
-      return undefined;
-    }
-
-    if (streamUrl.startsWith("/api/feed/events/")) {
-      setIframeEmbed(streamUrl);
-      setStreamResolving(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-    let timer: number | undefined;
-    const controller = new AbortController();
-
-    const run = async () => {
-      setStreamResolving(true);
-      const pick = await resolveLiveEsportsStream(primaryKick, sport, controller.signal);
-      if (cancelled) return;
-      setStreamResolving(false);
-      if (pick) {
-        setIframeEmbed(pick.embedUrl);
-        setStreamFallback(pick.isFallback);
-        setFallbackLabel(
-          pick.provider === "twitch"
-            ? "EN резерв · Twitch"
-            : pick.isFallback
-              ? "Резервный эфир · EN"
-              : null,
-        );
-      } else {
-        setIframeEmbed(streamUrl);
-        setStreamFallback(false);
-        setFallbackLabel(null);
-      }
-      timer = window.setTimeout(run, 60_000);
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [esportsStream, streamType, streamUrl, sport]);
+    // Trust backend /play: no client-side ESL/Blast Kick or Twitch re-resolve.
+    setIframeEmbed(streamUrl);
+    setStreamFallback(false);
+    setFallbackLabel(null);
+    setStreamResolving(false);
+    return undefined;
+  }, [streamType, streamUrl]);
 
   if (!hasBroadcast && !available && !authRequired) return null;
 
@@ -695,8 +649,8 @@ export function WcBroadcastPlayer({
   const mediaError =
     streamType === "iframe" && !iframeUrl
       ? streamResolving
-        ? "Подбираем рабочую трансляцию…"
-        : "Трансляция офлайн — рабочего эфира сейчас нет"
+        ? t("wc.pickingStream")
+        : t("wc.offline")
       : error;
 
   const media = authRequired ? (
@@ -706,6 +660,7 @@ export function WcBroadcastPlayer({
       showMatchTitle={variant !== "sidebar"}
       onLogin={() => requestBroadcastAuth("login")}
       onRegister={() => requestBroadcastAuth("register")}
+      t={t}
     />
   ) : (
     <BroadcastMedia
@@ -722,52 +677,28 @@ export function WcBroadcastPlayer({
       onRevealControls={revealControls}
       onTapPlay={tryPlay}
       onToggleMute={toggleSound}
-      showFullscreen={showFullscreen}
+      showFullscreen={hideChrome ? false : showFullscreen}
+      showMute={false}
+      showNativeControls={!hideChrome}
+      showSocialOverlay={!hideChrome}
+      hideChrome={hideChrome}
       streamType={streamType}
       streamUrl={streamType === "iframe" ? iframeUrl : streamUrl}
-      videoRef={videoRef}
+      t={t}
+      videoRef={setVideoRef}
     />
   );
 
   if (variant === "sidebar") {
     return (
-      <div
-        className={cn(
-          styles.broadcastCard,
-          !compactModal && styles.broadcastCardSidebar,
-          compactModal && styles.broadcastCardMobileModal,
-        )}
-      >
-        <div className={styles.broadcastHeader}>
-          <div className={styles.broadcastHeaderMain}>
-            <span className={styles.broadcastHeaderIconWrap}>
-              <BroadcastIcon className={styles.broadcastHeaderIcon} />
-            </span>
-            <div className={styles.broadcastHeaderText}>
-              {meta?.leagueName && (
-                <p className={styles.broadcastLeague}>{meta.leagueName}</p>
-              )}
-              {meta && (
-                <p className={styles.broadcastMatch}>
-                  {meta.homeTeam} – {meta.awayTeam}
-                </p>
-              )}
-              {!meta && <p className={styles.broadcastMatch}>Видеотрансляция</p>}
-            </div>
-          </div>
-          {showClose && onClose && (
-            <button
-              aria-label="Закрыть трансляцию"
-              className={styles.headerCloseBtn}
-              onClick={onClose}
-              type="button"
-            >
-              <CloseIcon className={styles.headerCloseIcon} />
-            </button>
-          )}
-        </div>
-        <div className={styles.broadcastBody}>{media}</div>
-      </div>
+      <SidebarBroadcastChrome
+        compactModal={compactModal}
+        media={media}
+        meta={meta}
+        onClose={onClose}
+        showClose={showClose}
+        t={t}
+      />
     );
   }
 
@@ -775,7 +706,7 @@ export function WcBroadcastPlayer({
     <div className={styles.broadcastWrap}>
       {showClose && onClose && (
         <button
-          aria-label="Закрыть трансляцию"
+          aria-label={t("wc.closeBroadcast")}
           className={styles.closeBtn}
           onClick={onClose}
           type="button"
@@ -786,4 +717,180 @@ export function WcBroadcastPlayer({
       {media}
     </div>
   );
+}
+
+function SidebarBroadcastChrome({
+  compactModal,
+  media,
+  meta,
+  onClose,
+  showClose,
+  t,
+}: {
+  compactModal: boolean;
+  media: ReactNode;
+  meta?: WcBroadcastMeta | null;
+  onClose?: () => void;
+  showClose?: boolean;
+  t: ReturnType<typeof useLocale>["t"];
+}) {
+  const { layout, hydrated, undockToFloat, dock, beginPointerDrag } =
+    useBroadcastPlayerLayout();
+  const [portalReady, setPortalReady] = useState(false);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  const header = (
+    <div
+      className={cn(
+        styles.broadcastHeader,
+        layout.mode === "float" && styles.broadcastHeaderDraggable,
+      )}
+      onPointerDown={
+        layout.mode === "float"
+          ? (event) => {
+              if ((event.target as HTMLElement).closest("button")) return;
+              event.preventDefault();
+              beginPointerDrag({
+                kind: "float-move",
+                startX: event.clientX,
+                startY: event.clientY,
+              });
+            }
+          : undefined
+      }
+    >
+      <div className={styles.broadcastHeaderMain}>
+        <span className={styles.broadcastHeaderIconWrap}>
+          <BroadcastIcon className={styles.broadcastHeaderIcon} />
+        </span>
+        <div className={styles.broadcastHeaderText}>
+          {meta?.leagueName && (
+            <p className={styles.broadcastLeague}>{meta.leagueName}</p>
+          )}
+          {meta && (
+            <p className={styles.broadcastMatch}>
+              {meta.homeTeam} – {meta.awayTeam}
+            </p>
+          )}
+          {!meta && <p className={styles.broadcastMatch}>{t("wc.videoBroadcast")}</p>}
+        </div>
+      </div>
+      <div className={styles.broadcastHeaderActions}>
+        {!compactModal ? (
+          layout.mode === "float" ? (
+            <button
+              aria-label={t("wc.toSidebarAria")}
+              className={styles.headerActionBtn}
+              onClick={dock}
+              title={t("wc.toSidebar")}
+              type="button"
+            >
+              ↙
+            </button>
+          ) : (
+            <button
+              aria-label={t("wc.unpinAria")}
+              className={styles.headerActionBtn}
+              onClick={undockToFloat}
+              title={t("wc.unpinTitle")}
+              type="button"
+            >
+              ↗
+            </button>
+          )
+        ) : null}
+        {showClose && onClose ? (
+          <button
+            aria-label={t("wc.closeBroadcast")}
+            className={styles.headerCloseBtn}
+            onClick={onClose}
+            type="button"
+          >
+            <CloseIcon className={styles.headerCloseIcon} />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const body = (
+    <div
+      className={cn(
+        styles.broadcastBody,
+        hydrated && !compactModal && styles.broadcastBody_sized,
+      )}
+      style={
+        hydrated && !compactModal
+          ? {
+              ["--broadcast-video-h" as string]: `${layout.height}px`,
+            }
+          : undefined
+      }
+    >
+      <div className={styles.broadcastBodyMedia}>{media}</div>
+      {layout.mode === "float" && !compactModal ? (
+        <button
+          aria-label={t("wc.expandAria")}
+          className={styles.resizeCorner}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            beginPointerDrag({
+              kind: "float-resize",
+              startX: event.clientX,
+              startY: event.clientY,
+            });
+          }}
+          type="button"
+        />
+      ) : null}
+    </div>
+  );
+
+  if (compactModal) {
+    return (
+      <div
+        className={cn(
+          styles.broadcastCard,
+          styles.broadcastCardMobileModal,
+        )}
+      >
+        {header}
+        {body}
+      </div>
+    );
+  }
+
+  const card = (
+    <div
+      className={cn(
+        styles.broadcastCard,
+        layout.mode === "float"
+          ? styles.broadcastCardFloat
+          : styles.broadcastCardSidebar,
+      )}
+      style={
+        layout.mode === "float"
+          ? {
+              width: layout.width,
+              top: layout.y,
+              left: layout.x,
+            }
+          : undefined
+      }
+    >
+      {header}
+      {body}
+    </div>
+  );
+
+  // Portal only for float so sticky coupon overflow doesn't clip the window.
+  // HLS re-attaches via videoEl callback ref when <video> remounts in the portal.
+  if (layout.mode === "float" && portalReady) {
+    return createPortal(card, document.body);
+  }
+
+  return card;
 }

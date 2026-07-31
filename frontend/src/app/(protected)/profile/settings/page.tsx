@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getSessionClient } from "~/entities/user/lib";
 import { UserSettings } from "~/entities/user";
+import { useLocale } from "~/shared/model/useLocale";
 
 type SettingsUserData = {
   id: number;
@@ -13,6 +14,8 @@ type SettingsUserData = {
   telegramLinked?: boolean;
   telegramUsername?: string | null;
   avatarPreset?: string | null;
+  avatarUrl?: string | null;
+  nickname?: string | null;
 };
 
 async function fetchSettingsProfile(token: string): Promise<SettingsUserData> {
@@ -35,6 +38,7 @@ async function fetchSettingsProfile(token: string): Promise<SettingsUserData> {
 }
 
 function SettingsPageInner() {
+  const { t } = useLocale();
   const [userData, setUserData] = useState<SettingsUserData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +51,7 @@ function SettingsPageInner() {
         const token = getSessionClient();
         if (!token) {
           if (!cancelled) {
-            setError("Необходима авторизация для просмотра настроек");
+            setError(t("profile.authRequiredSettings"));
             setIsLoading(false);
           }
           return;
@@ -59,9 +63,7 @@ function SettingsPageInner() {
         if (!cancelled) {
           const aborted = err instanceof Error && err.name === "AbortError";
           setError(
-            aborted
-              ? "Сервер долго не отвечает. Обновите страницу."
-              : "Ошибка при загрузке данных пользователя",
+            aborted ? t("profile.settingsTimeout") : t("profile.settingsLoadError"),
           );
         }
       } finally {
@@ -73,12 +75,12 @@ function SettingsPageInner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm">
-        Загрузка настроек...
+        {t("profile.settingsLoading")}
       </div>
     );
   }
@@ -95,7 +97,7 @@ function SettingsPageInner() {
     <Suspense
       fallback={(
         <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm">
-          Загрузка...
+          {t("common.loading")}
         </div>
       )}
     >
@@ -117,11 +119,12 @@ function SettingsWithParams({ userData }: { userData: SettingsUserData }) {
 }
 
 export default function SettingsPage() {
+  const { t } = useLocale();
   return (
     <Suspense
       fallback={(
         <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm">
-          Загрузка...
+          {t("common.loading")}
         </div>
       )}
     >

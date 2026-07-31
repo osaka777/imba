@@ -13,7 +13,7 @@
   border-radius: 20px;
   background: linear-gradient(
     135deg,
-    rgb(30, 40, 63) 0%,
+    var(--blue-20) 0%,
     rgb(8, 85, 196) 55%,
     rgb(16, 141, 231) 100%
   );
@@ -42,7 +42,7 @@
   padding: 5px 12px;
   border-radius: 999px;
   background: linear-gradient(107deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -111,7 +111,7 @@
   margin-bottom: 16px;
   padding: 20px 18px;
   border-radius: 16px;
-  background: var(--blue-20, rgb(30, 40, 63));
+  background: var(--blue-20, var(--blue-20));
   border: 1px solid rgba(177, 209, 255, 0.1);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
@@ -188,7 +188,7 @@
 .limitStat {
   padding: 16px 14px;
   border-radius: 14px;
-  background: var(--blue-25, rgb(42, 54, 78));
+  background: var(--blue-25, var(--blue-25));
   border: 1px solid rgba(177, 209, 255, 0.12);
 }
 
@@ -238,7 +238,7 @@
   gap: 10px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: var(--blue-25, rgb(42, 54, 78));
+  background: var(--blue-25, var(--blue-25));
   border: 1px solid rgba(177, 209, 255, 0.1);
 }
 

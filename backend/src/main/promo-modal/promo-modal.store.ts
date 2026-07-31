@@ -50,22 +50,22 @@ export function getDefaultPromoModalSettings(): PromoModalSettingsFile {
     showOnHome: true,
     showOnLive: true,
     showOnLine: true,
-    bannerTitle: 'World Cup',
-    bannerSubtitle: 'Бонус на первый депозит',
-    modalTitle: 'World Cup 2026',
-    modalSubtitle: 'Зарегистрируйся, пополни счёт и получи бонус на ставки ЧМ',
+    bannerTitle: 'Imba Markets',
+    bannerSubtitle: 'Ставки на исходы событий',
+    modalTitle: 'Imba Markets',
+    modalSubtitle: 'Ставки на исходы событий',
     stepRegisterText: 'Зарегистрируйся на imba.bet',
-    stepDepositText: 'Пополни счёт — бонус активируется автоматически',
-    bonusHighlight: 'до 5 000 ₸',
+    stepDepositText: 'Пополни счёт от 25$ — получи 100 $ на баланс',
+    bonusHighlight: '',
     ctaDeposit: 'Перейти к пополнению',
     ctaClaim: 'Получить бонус',
-    ctaGoToWc: 'Смотреть линию',
+    ctaGoToWc: 'Открыть Imba Markets',
     successTitle: 'Бонус активирован!',
-    successSubtitle: 'Играй с бонусного счёта и отыграй условия перед выводом',
-    heroImageUrl: '/fifa01.png',
-    bannerImageUrl: '/fifa01.png',
-    gradientFrom: '#00c2ff',
-    gradientTo: '#0009da',
+    successSubtitle: 'Добро пожаловать в Imba Markets',
+    heroImageUrl: '/images/markets.png',
+    bannerImageUrl: '/images/markets.png',
+    gradientFrom: '#3b2559',
+    gradientTo: '#1f1535',
     accentColor: '#7AFF6E',
     promoCode: 'IMBAWELCOME',
     promoType: 'DEPOSIT_BONUS',
@@ -77,7 +77,7 @@ export function getDefaultPromoModalSettings(): PromoModalSettingsFile {
     promoAvailable: 100000,
     validUntilDays: 90,
     presetAmounts: [1000, 3000, 5000],
-    wcRedirectPath: '/wc',
+    wcRedirectPath: '/markets',
     autoSyncPromo: true,
   };
 }
@@ -127,7 +127,14 @@ export function toPublicPromoModalSettings(
 > & {
   minDepositLabel: string;
 } {
-  const symbol = settings.minDepositCurrency === 'RUB' ? '₽' : settings.minDepositCurrency === 'KZT' ? '₸' : settings.minDepositCurrency;
+  const symbol =
+    settings.minDepositCurrency === 'RUB'
+      ? '₽'
+      : settings.minDepositCurrency === 'KZT'
+        ? '₸'
+        : settings.minDepositCurrency === 'USDT' || settings.minDepositCurrency === 'USD'
+          ? '$'
+          : settings.minDepositCurrency;
   return {
     enabled: settings.enabled,
     showInHeader: settings.showInHeader,

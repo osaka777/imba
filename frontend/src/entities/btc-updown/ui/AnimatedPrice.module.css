@@ -1,31 +1,83 @@
 .price {
   display: inline-block;
+  white-space: nowrap;
+  font-size: inherit;
+  font-weight: inherit;
   font-variant-numeric: tabular-nums;
-  transition: color 0.15s ease, text-shadow 0.15s ease;
+  font-family: inherit;
+  letter-spacing: inherit;
+  line-height: 1;
+  color: inherit;
+  vertical-align: baseline;
 }
 
-.bump {
-  animation: priceBump 0.28s cubic-bezier(0.22, 1.2, 0.36, 1);
+.sep,
+.digit,
+.slot {
+  display: inline-block;
+  white-space: pre;
+  vertical-align: baseline;
 }
 
-.flashUp {
-  color: #4ade80 !important;
-  text-shadow: 0 0 24px rgba(74, 222, 128, 0.55);
+.digit,
+.slot {
+  width: 0.62em;
+  text-align: center;
 }
 
-.flashDown {
-  color: #ff6b6b !important;
-  text-shadow: 0 0 24px rgba(255, 107, 107, 0.55);
+.sep {
+  width: auto;
+  padding-inline: 0.02em;
 }
 
-@keyframes priceBump {
-  0% {
-    transform: scale(1);
+.slot {
+  height: 1em;
+  overflow: hidden;
+  position: relative;
+}
+
+.reel {
+  display: block;
+  will-change: transform;
+}
+
+.reel > span {
+  display: block;
+  width: 0.62em;
+  height: 1em;
+  line-height: 1em;
+  text-align: center;
+}
+
+.reelUp {
+  animation: flipUp 0.36s cubic-bezier(0.22, 0.8, 0.28, 1) both;
+}
+
+.reelDown {
+  animation: flipDown 0.36s cubic-bezier(0.22, 0.8, 0.28, 1) both;
+}
+
+@keyframes flipUp {
+  from {
+    transform: translateY(-50%);
   }
-  40% {
-    transform: scale(1.045);
+  to {
+    transform: translateY(0);
   }
-  100% {
-    transform: scale(1);
+}
+
+@keyframes flipDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reelUp,
+  .reelDown {
+    animation: none;
   }
 }

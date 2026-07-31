@@ -6,6 +6,7 @@ import styles from "./Match.module.css";
 import { cn } from "~/shared/lib";
 import { AccessIcon } from "~/shared/assets";
 import { createTitleForBet } from "~/entities/bet/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 type MarketDto = components["schemas"]["MarketDto"];
 
@@ -26,6 +27,7 @@ export function PXPair({
     px: MarketDto;
     toggleRate: (item: MarketDto) => () => void;
 }) {
+    const { t } = useLocale();
     // Коэффициенты
     const p1Value = `${p1.cf}`;
     const p2Value = `${p2.cf}`;
@@ -64,7 +66,7 @@ export function PXPair({
                     onClick={toggleRate(p1)}
                 >
                     <p className="text-sm font-medium text-black">
-                        {createTitleForBet(p1)}
+                        {createTitleForBet(p1, undefined, t)}
                     </p>
                     <p className={cn(styles.oddCoef, p1CoefClass)}>
                         {convertToFixed(p1Value)}
@@ -81,7 +83,7 @@ export function PXPair({
                     onClick={toggleRate(px)}
                 >
                     <p className="text-sm font-medium text-black">
-                        {createTitleForBet(px)}
+                        {createTitleForBet(px, undefined, t)}
                     </p>
                     <p className={cn(styles.oddCoef, pxCoefClass)}>
                         {convertToFixed(pxValue)}
@@ -98,7 +100,7 @@ export function PXPair({
                     onClick={toggleRate(p2)}
                 >
                     <p className="text-sm font-medium text-black">
-                        {createTitleForBet(p2)}
+                        {createTitleForBet(p2, undefined, t)}
                     </p>
                     <p className={cn(styles.oddCoef, p2CoefClass)}>
                         {convertToFixed(p2Value)}

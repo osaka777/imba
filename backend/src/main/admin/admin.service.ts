@@ -58,8 +58,9 @@ export class AdminService {
   async getFinancialStatistics(period: string) {
     const dateFilter = this.getDateFilter(period);
 
-    const [deposits, withdrawals, bonuses] = await Promise.all([
-      this.prisma.operation.aggregate({
+    const [depositGroups, withdrawalGroups, bonusGroups] = await Promise.all([
+      this.prisma.operation.groupBy({
+        by: ['currencyCode'],
         where: {
           type: OperationType.INCOME,
           status: OperationStatus.SUCCESS,
@@ -69,7 +70,8 @@ export class AdminService {
         _sum: { amount: true },
         _count: true,
       }),
-      this.prisma.operation.aggregate({
+      this.prisma.operation.groupBy({
+        by: ['currencyCode'],
         where: {
           type: OperationType.OUTCOME,
           status: OperationStatus.SUCCESS,
@@ -79,7 +81,8 @@ export class AdminService {
         _sum: { amount: true },
         _count: true,
       }),
-      this.prisma.operation.aggregate({
+      this.prisma.operation.groupBy({
+        by: ['currencyCode'],
         where: {
           source: OperationSource.BONUS_COMPLETE,
           status: OperationStatus.SUCCESS,
@@ -90,13 +93,42 @@ export class AdminService {
       }),
     ]);
 
-    const totalRevenue = Number(deposits._sum.amount || 0) - Number(withdrawals._sum.amount || 0);
+    const currencies = new Set([
+      ...depositGroups.map((g) => g.currencyCode),
+      ...withdrawalGroups.map((g) => g.currencyCode),
+      ...bonusGroups.map((g) => g.currencyCode),
+    ]);
+
+    const byCurrency = Array.from(currencies).map((currency) => {
+      const deposits = Number(
+        depositGroups.find((g) => g.currencyCode === currency)?._sum.amount || 0,
+      );
+      const withdrawals = Number(
+        withdrawalGroups.find((g) => g.currencyCode === currency)?._sum.amount || 0,
+      );
+      const bonuses = Number(
+        bonusGroups.find((g) => g.currencyCode === currency)?._sum.amount || 0,
+      );
+      return {
+        currency,
+        deposits,
+        withdrawals,
+        bonuses,
+        revenue: deposits - withdrawals,
+      };
+    }).sort((a, b) => b.deposits - a.deposits);
+
+    // Keep legacy totals as KZT-first preferred sum display only when single currency;
+    // multi-currency totals are misleading — prefer primary currency (most deposits).
+    const primary = byCurrency[0];
 
     return {
-      totalDeposits: Number(deposits._sum.amount || 0),
-      totalWithdrawals: Number(withdrawals._sum.amount || 0),
-      totalBonuses: Number(bonuses._sum.amount || 0),
-      totalRevenue,
+      totalDeposits: primary?.deposits ?? 0,
+      totalWithdrawals: primary?.withdrawals ?? 0,
+      totalBonuses: primary?.bonuses ?? 0,
+      totalRevenue: primary?.revenue ?? 0,
+      primaryCurrency: primary?.currency ?? null,
+      byCurrency,
       chartData: await this.getFinancialChartData(period),
     };
   }
@@ -104,8 +136,9 @@ export class AdminService {
   async getGamesStatistics(period: string) {
     const dateFilter = this.getDateFilter(period);
 
-    const [wins, losses, totalGames] = await Promise.all([
-      this.prisma.bet.aggregate({
+    const [winGroups, loseGroups, totalGames] = await Promise.all([
+      this.prisma.bet.groupBy({
+        by: ['currencyCode'],
         where: {
           status: BetStatus.WIN,
           createdAt: dateFilter,
@@ -113,7 +146,8 @@ export class AdminService {
         _sum: { amount: true },
         _count: true,
       }),
-      this.prisma.bet.aggregate({
+      this.prisma.bet.groupBy({
+        by: ['currencyCode'],
         where: {
           status: BetStatus.LOSE,
           createdAt: dateFilter,
@@ -128,10 +162,33 @@ export class AdminService {
       }),
     ]);
 
+    const currencies = new Set([
+      ...winGroups.map((g) => g.currencyCode),
+      ...loseGroups.map((g) => g.currencyCode),
+    ]);
+
+    const byCurrency = Array.from(currencies).map((currency) => {
+      const wins = Number(winGroups.find((g) => g.currencyCode === currency)?._sum.amount || 0);
+      const losses = Number(loseGroups.find((g) => g.currencyCode === currency)?._sum.amount || 0);
+      const winCount = winGroups.find((g) => g.currencyCode === currency)?._count || 0;
+      const loseCount = loseGroups.find((g) => g.currencyCode === currency)?._count || 0;
+      return {
+        currency,
+        wins,
+        losses,
+        ggr: Math.max(0, losses - wins),
+        games: Number(winCount) + Number(loseCount),
+      };
+    }).sort((a, b) => b.games - a.games);
+
+    const primary = byCurrency[0];
+
     return {
-      totalWins: Number(wins._sum.amount || 0),
-      totalLosses: Number(losses._sum.amount || 0),
+      totalWins: primary?.wins ?? 0,
+      totalLosses: primary?.losses ?? 0,
       totalGames,
+      primaryCurrency: primary?.currency ?? null,
+      byCurrency,
       chartData: await this.getGamesChartData(period),
     };
   }
@@ -380,6 +437,9 @@ export class AdminService {
       totalGames: gamesStats.totalGames,
       activePartners: partnersStats.activeCount,
       totalRevenue: financialStats.totalRevenue,
+      primaryCurrency: financialStats.primaryCurrency || gamesStats.primaryCurrency || null,
+      byCurrency: financialStats.byCurrency,
+      gamesByCurrency: gamesStats.byCurrency,
       revenueChart: financialStats.chartData,
       gamesChart: gamesStats.chartData,
       partnersData: partnersStats.data,
@@ -992,17 +1052,26 @@ export class AdminService {
     });
 
     return users.map(user => {
-      // Подсчитываем общий баланс
-      const totalBalance = user.balances.reduce((sum, balance) => 
-        sum + parseFloat(balance.amount.toString()), 0
-      );
+      const balances = user.balances.map((balance) => ({
+        amount: parseFloat(balance.amount.toString()),
+        currency: balance.currencyCode,
+      }));
 
-      // Подсчитываем бонусный баланс
-      const bonusBalance = user.bonusBalances.reduce((sum, bonus) => 
-        sum + parseFloat(bonus.amount.toString()), 0
-      );
+      const bonusBalances = user.bonusBalances.map((bonus) => ({
+        amount: parseFloat(bonus.amount.toString()),
+        currency: bonus.currencyCode,
+      }));
 
-      // Подсчитываем статистику ставок
+      // Prefer default currency, else largest balance, else first.
+      const preferredCurrency =
+        user.defaultCurrencyCode
+        || [...balances].sort((a, b) => b.amount - a.amount)[0]?.currency
+        || balances[0]?.currency
+        || null;
+
+      const totalBalance = balances.reduce((sum, balance) => sum + balance.amount, 0);
+      const bonusBalance = bonusBalances.reduce((sum, bonus) => sum + bonus.amount, 0);
+
       const totalBets = user.bets.length;
       const winningBets = user.bets.filter(bet => bet.status === BetStatus.WIN).length;
       const losingBets = user.bets.filter(bet => bet.status === BetStatus.LOSE).length;
@@ -1011,11 +1080,15 @@ export class AdminService {
       return {
         id: user.id,
         email: user.email,
-        username: user.email.split('@')[0], // Используем часть email как username
+        phone: user.phone,
+        username: user.nickname || user.email.split('@')[0],
+        defaultCurrencyCode: preferredCurrency,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt, // Используем updatedAt вместо lastLogin
+        updatedAt: user.updatedAt,
         totalBalance,
         bonusBalance,
+        balances,
+        bonusBalances,
         totalBets,
         winningBets,
         losingBets,
@@ -1085,9 +1158,13 @@ export class AdminService {
     return {
       id: user.id,
       email: user.email,
-      username: user.email.split('@')[0], // Используем часть email как username
+      phone: user.phone,
+      username: user.nickname || user.email.split('@')[0],
+      defaultCurrencyCode: user.defaultCurrencyCode
+        || user.balances[0]?.currencyCode
+        || null,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt, // Используем updatedAt вместо lastLogin
+      updatedAt: user.updatedAt,
       totalBalance,
       bonusBalance,
       balances: user.balances.map(b => ({
@@ -1118,33 +1195,33 @@ export class AdminService {
       bets: user.bets.map(bet => ({
         id: bet.id,
         amount: parseFloat(bet.amount.toString()),
+        currency: bet.currencyCode,
         cf: parseFloat(bet.cf.toString()),
         status: bet.status,
         betType: bet.betType,
         betInfo: bet.betInfo,
         createdAt: bet.createdAt,
-        currency: (bet as any).currencyCode,
         game: bet.game ? {
           eventId: bet.game.eventId,
-          eventName: bet.game.eventName,
+          eventName: `${bet.game.team1 || ''} vs ${bet.game.team2 || ''}`.trim(),
           team1: bet.game.team1,
           team2: bet.game.team2,
-          status: bet.game.status
-        } : null
+          status: bet.game.status,
+        } : null,
       })),
-      bonusBalances: user.bonusBalances.map(bonus => ({
-        id: bonus.id,
-        amount: parseFloat(bonus.amount.toString()),
-        currency: bonus.currencyCode,
-        createdAt: bonus.createdAt
+      bonusBalances: user.bonusBalances.map(b => ({
+        id: b.id,
+        amount: parseFloat(b.amount.toString()),
+        currency: b.currencyCode,
+        createdAt: b.createdAt,
       })),
-      bonuses: user.promoOnUsers.map(promoOnUser => ({
-        promoId: promoOnUser.promoId,
-        promoCode: promoOnUser.promo.code,
-        status: promoOnUser.status,
-        type: promoOnUser.promo.type,
-        validUntil: promoOnUser.promo.validUntil
-      }))
+      bonuses: user.promoOnUsers.map((p) => ({
+        promoId: p.promoId,
+        promoCode: p.promo?.code || '',
+        status: p.status,
+        type: p.promo?.type || '',
+        validUntil: p.promo?.validUntil || '',
+      })),
     };
   }
 
@@ -1287,6 +1364,32 @@ export class AdminService {
       expiredLocked,
       telegramWarnings,
       newUsersInPeriod,
+    };
+  }
+
+  async getInboxCounts() {
+    const [pendingDeposits, pendingWithdrawals] = await Promise.all([
+      this.prisma.deposit.count({
+        where: {
+          status: {
+            in: [DepositStatus.PENDING, DepositStatus.PROCESSING],
+          },
+        },
+      }),
+      this.prisma.withdrawRequest.count({
+        where: {
+          status: {
+            in: [OperationStatus.WAITING, OperationStatus.PROCESSING],
+          },
+        },
+      }),
+    ]);
+
+    return {
+      pendingDeposits,
+      pendingWithdrawals,
+      pendingPredictionSettles: 0,
+      total: pendingDeposits + pendingWithdrawals,
     };
   }
 

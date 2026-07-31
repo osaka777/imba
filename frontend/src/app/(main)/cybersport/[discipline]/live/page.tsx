@@ -7,7 +7,7 @@ import {
   isCyberDisciplineSlug,
 } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import { CybersportLiveHub } from "~/entities/cybersport/ui/CybersportLiveHub";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 type PageProps = {
   params: Promise<{ discipline: string }>;
@@ -16,12 +16,13 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { discipline } = await params;
   if (!isCyberDisciplineSlug(discipline)) {
-    return makeMetadata("Киберспорт — Live");
+    return makeSeoMetadata("common.seoCyberLiveTitle");
   }
   const config = CYBER_DISCIPLINES[discipline];
-  return makeMetadata(`${config.label} — Live`, {
-    description: `Live-трансляции и ставки на ${config.label} на Imba.bet.`,
+  return makeSeoMetadata("common.seoDisciplineLiveTitle", {
+    descriptionKey: "common.seoDisciplineLiveDesc",
     path: `/cybersport/${discipline}/live`,
+    params: { name: config.label },
   });
 }
 

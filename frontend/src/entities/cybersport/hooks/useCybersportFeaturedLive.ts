@@ -3,30 +3,17 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchCybersportLive, type CyberGame } from "~/entities/cybersport/api/client";
-import { CYBER_TOP_API_SPORTS } from "~/entities/cybersport/lib/cyberDisciplineSort";
-
-const FEATURED_SPORTS = CYBER_TOP_API_SPORTS.slice(0, 5);
-
-/** Live games with Kick/Twitch audio — skip silent Olimpbet HLS-only feeds. */
-function hasAudioCapableBroadcast(game: CyberGame): boolean {
-  const meta = (game.meta ?? {}) as Record<string, unknown>;
-  return Boolean(
-    meta.hasBroadcast
-    || meta.wcHasBroadcast
-    || meta.kickChannel
-    || meta.twitchChannel
-    || meta.streamProvider === "kick"
-    || meta.streamProvider === "twitch",
-  );
-}
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 
 function pickFeaturedGames(games: CyberGame[], limit: number): CyberGame[] {
-  const withAudio = games.filter(hasAudioCapableBroadcast);
-  const pool = withAudio.length > 0 ? withAudio : games;
+  const withStream = games.filter(cyberGameHasVideo);
+  const without = games.filter((g) => !cyberGameHasVideo(g));
+  // Prefer matches with real video, then remaining live.
+  const ordered = [...withStream, ...without];
 
   const seen = new Set<string>();
   const unique: CyberGame[] = [];
-  for (const game of pool) {
+  for (const game of ordered) {
     if (seen.has(game.eventId)) continue;
     seen.add(game.eventId);
     unique.push(game);
@@ -36,21 +23,12 @@ function pickFeaturedGames(games: CyberGame[], limit: number): CyberGame[] {
 }
 
 async function fetchFeaturedLive(limit: number, sport?: string): Promise<CyberGame[]> {
-  if (sport) {
-    const games = await fetchCybersportLive(sport, limit * 3).catch(() => [] as CyberGame[]);
-    return pickFeaturedGames(games, limit);
-  }
-
-  const batches = await Promise.all(
-    FEATURED_SPORTS.map((s) =>
-      fetchCybersportLive(s, 12).catch(() => [] as CyberGame[]),
-    ),
+  // No sport → all disciplines from 1win (not CS2-only / not top-5 batch).
+  const games = await fetchCybersportLive(sport, Math.max(limit * 4, 24)).catch(
+    () => [] as CyberGame[],
   );
-
-  const merged = batches.flat();
-  merged.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
-
-  return pickFeaturedGames(merged, limit);
+  games.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  return pickFeaturedGames(games, limit);
 }
 
 export function useCybersportFeaturedLive(limit = 4, sport?: string) {

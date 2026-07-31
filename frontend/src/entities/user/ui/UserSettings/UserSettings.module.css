@@ -1,4 +1,4 @@
-/* ── 1win-style settings page ── */
+/* Settings — mobile stack + desktop 1win-style two columns */
 
 .page {
   width: 100%;
@@ -9,13 +9,13 @@
 }
 
 .pageHeader {
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 
 .backLink {
   display: inline-flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 13px;
   font-weight: 600;
   color: var(--blue-70);
@@ -29,49 +29,75 @@
 
 .headerTop {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerCopy {
+  min-width: 0;
 }
 
 .headerTitle {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: #fff;
 }
 
 .accountId {
-  font-size: 13px;
-  color: #9299a2;
+  flex-shrink: 0;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-70);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   white-space: nowrap;
 }
 
 .headerSubtitle {
-  margin: 0;
-  padding: 8px 0 16px;
+  margin: 6px 0 0;
   font-size: 14px;
-  color: #9299a2;
+  line-height: 1.4;
+  color: var(--blue-70);
 }
 
-.content {
+.desktopGrid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-/* ── Profile summary ── */
+.identityColumn,
+.settingsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* ── Identity hero ── */
 
 .profileSummary {
+  position: relative;
+  overflow: visible;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 4px;
-  border-radius: 8px;
-  background: var(--blue-20);
+  gap: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--light-black-blue-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 2;
+}
+
+.profileSummaryAvatar {
+  border: 0;
+  box-shadow: none;
 }
 
 .profileSummaryText {
@@ -79,166 +105,188 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .profileSummaryLabel {
   font-size: 12px;
-  color: #9299a2;
+  color: var(--blue-70);
 }
 
 .profileSummaryEmail {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   color: #fff;
   word-break: break-all;
 }
 
-.statusVerified {
+.avatarUploadHint {
+  margin: 2px 0 0;
+  color: #8b9bb4;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.publicProfileLink {
+  margin-top: 4px;
+  color: #7ec4ff;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.publicProfileLink:hover {
+  text-decoration: underline;
+}
+
+.statusBadge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  white-space: nowrap;
+}
+
+.statusDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #52c41a;
+  background: currentColor;
   flex-shrink: 0;
 }
 
-/* ── Validation / field rows ── */
+/* ── Cards ── */
 
-.validationField {
-  padding: 12px;
-  background: var(--blue-20);
-  border-radius: 8px;
+.card {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--light-black-blue-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.fieldRow {
+.cardTitle {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #eaecef;
+}
+
+.cardHint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #8b9bb4;
+}
+
+.nicknameRow {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
 }
 
-.fieldLabel {
-  font-size: 14px;
-  color: #ccc;
-  width: 72px;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-.fieldValue {
-  flex: 1;
+.nicknameInput {
+  flex: 1 1 auto;
   min-width: 0;
-  font-size: 14px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(8, 12, 22, 0.55);
   color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.nicknameInput:focus {
+  outline: none;
+  border-color: rgba(16, 141, 231, 0.55);
+}
+
+.nicknameSave {
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #108de7;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nicknameSave:hover:not(:disabled) {
+  background: #0f7fd0;
+}
+
+.nicknameSave:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* ── Section titles ── */
 
 .sectionTitle {
-  margin: 16px 0 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.sectionTitle:first-of-type {
-  margin-top: 8px;
-}
-
-/* ── Avatar ── */
-
-.avatarPanel {
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--blue-20);
-}
-
-.avatarHint {
-  margin: 0 0 12px;
-  font-size: 12px;
-  color: #9299a2;
-  line-height: 1.4;
-}
-
-.avatarGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.avatarSwatch {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+  gap: 8px;
+  margin: 0 0 2px 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-70);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.avatarSwatch:disabled {
-  opacity: 0.55;
-  cursor: wait;
-}
-
-.avatarSwatchRing {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
+.sectionTitleIcon {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid transparent;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
-.avatarSwatch:hover .avatarSwatchRing {
-  transform: scale(1.04);
-}
-
-.avatarSwatchActive .avatarSwatchRing {
-  border-color: #0095ff;
-  box-shadow: 0 0 0 2px rgba(0, 149, 255, 0.25);
-}
-
-.avatarSwatchColor {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-.avatarSwatchAuto {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6d5cad, #3d7a8c, #a67c3a);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatarSwatchLabel {
-  font-size: 9px;
-  font-weight: 600;
-  color: #9299a2;
-  text-align: center;
-}
-
-.avatarSwatchActive .avatarSwatchLabel {
-  color: #4da3ff;
+.sectionTitleIcon svg {
+  width: 14px;
+  height: 14px;
+  color: var(--blue-70);
+  opacity: 0.9;
 }
 
 /* ── Password ── */
 
 .passwordRow {
   display: flex;
-  align-items: stretch;
-  gap: 8px;
-  margin-top: 4px;
+  align-items: center;
+  gap: 12px;
+}
+
+.passwordIconWrap {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.passwordIconWrap svg {
+  width: 20px;
+  height: 20px;
+  color: var(--blue-70);
 }
 
 .passwordField {
@@ -246,53 +294,59 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 2px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--blue-20);
 }
 
 .passwordFieldLabel {
-  font-size: 12px;
-  color: #9299a2;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .passwordFieldValue {
-  font-size: 14px;
-  color: #9299a2;
-  letter-spacing: 0.12em;
+  font-size: 13px;
+  color: var(--blue-70);
+  letter-spacing: 0.14em;
 }
 
 .changePasswordBtn {
   flex-shrink: 0;
-  align-self: center;
-  padding: 10px 16px;
-  border: none;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  background: #0095ff;
+  background: rgba(255, 255, 255, 0.05);
   color: #fff;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .changePasswordBtn:hover {
-  background: #0077cc;
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.changePasswordBtnActive {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
 }
 
 .passwordPanel {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .inputWrap {
-  padding: 12px;
+  padding: 12px 14px;
   border-radius: 8px;
-  background: var(--blue-20);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .input {
@@ -305,130 +359,106 @@
 }
 
 .input::placeholder {
-  color: #9299a2;
+  color: var(--blue-70);
 }
 
 .passwordActions {
   display: flex;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .primaryBtn {
   flex: 1;
-  padding: 12px;
+  padding: 12px 16px;
   border: none;
   border-radius: 8px;
-  background: #0095ff;
+  background: var(--green-gradient);
   color: #fff !important;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
 .primaryBtn:hover:not(:disabled) {
-  background: #0077cc;
+  filter: brightness(1.06);
 }
 
 .primaryBtn:disabled {
-  background: #3a4558;
-  color: #9299a2 !important;
+  background: rgba(255, 255, 255, 0.08);
+  filter: none;
+  color: var(--blue-70) !important;
   cursor: not-allowed;
 }
 
 .ghostBtn {
+  flex: 1;
   padding: 12px 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  background: transparent;
-  color: #ccc !important;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff !important;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.ghostBtnDanger {
-  border-color: rgba(224, 65, 59, 0.35);
-  color: #e0413b !important;
+.ghostBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Setting blocks (1win otherSettings) ── */
+.ghostBtnDanger {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid rgba(224, 65, 59, 0.35);
+  border-radius: 8px;
+  background: rgba(224, 65, 59, 0.08);
+  color: #ff6b6b !important;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghostBtnDanger:hover:not(:disabled) {
+  background: rgba(224, 65, 59, 0.16);
+  border-color: rgba(224, 65, 59, 0.5);
+}
+
+/* ── Settings group ── */
 
 .settingsGroup {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
-
-.settingBlock {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border: none;
-  border-radius: 8px;
-  background: var(--blue-20);
-  text-align: left;
-  width: 100%;
-  color: inherit;
-  cursor: default;
-  transition: background 0.15s ease;
-}
-
-.settingBlockInteractive {
-  cursor: pointer;
-}
-
-.settingBlockInteractive:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.settingBlockHighlight {
-  box-shadow: 0 0 0 1px rgba(0, 149, 255, 0.35);
-}
-
-.settingBlockBody {
-  flex: 1;
-  min-width: 0;
-}
-
-.settingBlockTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
-  margin-bottom: 4px;
-}
-
-.settingBlockDesc {
-  font-size: 12px;
-  color: #ccc;
-  line-height: 1.4;
-}
-
-.settingBlockAside {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.navArrow {
-  font-size: 22px;
-  font-weight: 300;
-  color: #4da3ff;
-  line-height: 1;
-}
-
-/* ── Toggle (1win checkbox) ── */
 
 .toggleRow {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  border-radius: 8px;
-  background: var(--blue-20);
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--light-black-blue-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
+}
+
+.toggleIconWrap {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.toggleIconWrap svg {
+  width: 20px;
+  height: 20px;
+  color: var(--blue-70);
 }
 
 .toggleCopy {
@@ -438,22 +468,22 @@
 
 .toggleLabel {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #fff;
 }
 
 .toggleDesc {
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 12px;
-  color: #ccc;
+  color: var(--blue-70);
   line-height: 1.4;
 }
 
 .toggle {
   position: relative;
   flex-shrink: 0;
-  width: 52px;
-  height: 28px;
+  width: 46px;
+  height: 26px;
 }
 
 .toggle input {
@@ -466,8 +496,8 @@
   position: absolute;
   inset: 0;
   cursor: pointer;
-  border-radius: 28px;
-  background: #3a4558;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.12);
   transition: background 0.2s ease;
 }
 
@@ -476,28 +506,29 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  left: 4px;
-  top: 4px;
+  left: 3px;
+  top: 3px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   transition: transform 0.2s ease;
 }
 
 .toggle input:checked + .toggleSlider {
-  background: #0095ff;
+  background: #31bc69;
 }
 
 .toggle input:checked + .toggleSlider::before {
-  transform: translateX(24px);
+  transform: translateX(20px);
 }
 
-/* ── Nested blocks (telegram, phone, push) ── */
+/* ── Nested blocks ── */
 
 .nestedBlock {
-  padding: 14px 16px;
-  border-radius: 8px;
-  background: var(--blue-20);
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--light-black-blue-gradient);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .nestedBlock :global([class*="PhoneVerifyBlock_card"]) {
@@ -508,39 +539,31 @@
 }
 
 .nestedBlock :global([class*="PhoneVerifyBlock_title"]) {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 700;
   color: #fff;
 }
 
 .nestedBlock :global([class*="PhoneVerifyBlock_hint"]) {
-  color: #ccc;
+  color: var(--blue-70);
   font-size: 12px;
 }
 
 .nestedBlock :global([class*="PhoneVerifyBlock_input"]) {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-}
-
-.nestedBlock :global([class*="PhoneVerifyBlock_btn"]) {
-  background: #0095ff;
-  border-radius: 8px;
-}
-
-.nestedBlock :global([class*="TelegramLinkBlock_title"]) {
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  color: #fff !important;
 }
 
 .nestedBlockHighlight {
-  box-shadow: 0 0 0 1px rgba(0, 149, 255, 0.35);
+  border-color: rgba(16, 141, 231, 0.55);
+  background:
+    linear-gradient(180deg, rgba(16, 141, 231, 0.1), transparent 48%),
+    var(--light-black-blue-gradient);
 }
 
 .telegramBlock {
-  gap: 12px;
+  gap: 14px;
 }
 
 .telegramHead {
@@ -548,13 +571,13 @@
 }
 
 .telegramDesc {
-  color: #ccc !important;
+  color: var(--blue-70) !important;
   font-size: 12px !important;
 }
 
 .telegramPrefs {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -569,52 +592,150 @@
 }
 
 .telegramActions {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .pushWrap :global(.block) {
   margin-top: 0;
-  padding: 14px 16px;
-  border-radius: 8px;
-  border: none;
-  background: var(--blue-20);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--light-black-blue-gradient);
 }
 
 .pushWrap :global(.title) {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .pushWrap :global(.desc) {
-  color: #ccc;
+  color: var(--blue-70);
 }
 
-.pushWrap :global(.enableBtn) {
-  background: #0095ff;
-  color: #fff;
+.signOutWrapMobile {
+  margin-top: 4px;
 }
 
-.pushWrap :global(.row input) {
-  accent-color: #0095ff;
+.signOutWrapDesktop {
+  display: none;
 }
 
-.signOutWrap {
-  margin-top: 16px;
-}
+/* ── Desktop (≥1024): 1win-like account sheet ── */
 
-.signOutWrap button {
-  border-radius: 8px !important;
-  background: var(--blue-20) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-@media (min-width: 769px) {
+@media (min-width: 1024px) {
   .page {
-    max-width: 480px;
+    max-width: 1080px;
+    padding: 28px 24px 48px;
+  }
+
+  .pageHeader {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .backLink {
+    margin-bottom: 14px;
+  }
+
+  .headerTitle {
+    font-size: 26px;
+  }
+
+  .headerSubtitle {
+    font-size: 14px;
+    max-width: 520px;
+  }
+
+  .desktopGrid {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .identityColumn {
+    position: sticky;
+    top: 16px;
+    gap: 14px;
+  }
+
+  .settingsColumn {
+    gap: 14px;
+  }
+
+  .profileSummary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .profileSummaryText {
+    width: 100%;
+  }
+
+  .statusBadge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+
+  .card {
+    padding: 16px 18px;
+  }
+
+  .sectionTitle {
+    margin-bottom: 4px;
+  }
+
+  .settingsGroup {
+    gap: 12px;
+  }
+
+  .nestedBlock,
+  .toggleRow {
+    padding: 18px;
+  }
+
+  .pushWrap :global(.block) {
+    padding: 18px;
+  }
+
+  .signOutWrapMobile {
+    display: none;
+  }
+
+  .signOutWrapDesktop {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .primaryBtn {
+    max-width: 220px;
+    flex: 0 0 auto;
+  }
+
+  .ghostBtnDanger {
+    max-width: 220px;
+    flex: 0 0 auto;
+  }
+
+  .telegramActions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
+/* Tablet: wider single column, still clean */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .page {
+    max-width: 720px;
     padding: 20px 16px 40px;
   }
 
   .headerTitle {
-    font-size: 22px;
+    font-size: 24px;
   }
 }

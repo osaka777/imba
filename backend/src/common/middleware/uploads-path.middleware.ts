@@ -4,7 +4,10 @@ const ALLOWED_UPLOAD_PREFIXES = [
   '/uploads/receipts/',
   '/uploads/banners/',
   '/uploads/slides/',
+  '/uploads/footer-badges/',
   '/uploads/qr/',
+  '/uploads/avatars/',
+  '/uploads/prediction/',
 ];
 
 export function uploadsPathGuard(

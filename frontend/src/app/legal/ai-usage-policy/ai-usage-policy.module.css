@@ -1,0 +1,53 @@
+.page {
+  max-width: 1008px;
+  margin: 30px auto 48px;
+  padding: 0 20px;
+  color: #c5c5c5;
+}
+
+.article {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.meta {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #8a8a8a;
+}
+
+.h2 {
+  margin: 16px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.article p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #c5c5c5;
+}
+
+.article strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+.article a {
+  color: #c5c5c5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.article a:hover {
+  color: #fff;
+}

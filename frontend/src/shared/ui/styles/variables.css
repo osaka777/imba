@@ -21,7 +21,7 @@
   --blue-00: rgb(9, 15, 30);
   --blue-10-transparent: rgba(20, 27, 46, 0.6);
   --blue-20: rgb(30, 40, 63);
-  --blue-25: rgb(42, 54, 78);  
+  --blue-25: rgb(42, 54, 78);
   --blue-30: rgb(8, 85, 196);
   --blue-40: rgb(16, 141, 231);
   --blue-50: rgb(177, 209, 255);
@@ -29,10 +29,16 @@
   --blue-70: rgb(148, 166, 205);
   --blue-gray: rgb(37, 47, 75);
 
+  /* Extra surfaces used by shell / widgets (theme-aware) */
+  --surface-nav: rgb(35, 45, 69);
+  --surface-nav-hover: rgb(45, 55, 79);
+  --surface-deep: rgb(12, 18, 34);
+  --surface-mid: rgb(18, 24, 41);
+  --surface-toast: rgb(14, 20, 36);
 
   --light-black-blue-gradient: linear-gradient(
     107.15deg,
-    var(--blue-20) ,
+    var(--blue-20),
     var(--black-blue)
   );
 
@@ -82,6 +88,38 @@
   --layout-max-w: none;
   --layout-sticky-top: 12px;
   --layout-sticky-bottom: 12px;
+
+  --theme-meta: #090f1e;
+}
+
+/* Optional charcoal theme */
+html[data-ui-theme="graphite"] {
+  --gray-10-transparent: rgba(160, 160, 165, 0.2);
+  --gray-20-transparent: rgba(170, 170, 175, 0.2);
+  --gray-30-transparent: rgba(110, 110, 118, 0.7);
+  --gray-40-transparent: rgb(158, 158, 165);
+  --gray-40: rgb(153, 153, 160);
+  --gray-50: rgb(210, 210, 215);
+  --gray-60: rgb(175, 175, 182);
+
+  --black-transparent-10: rgba(10, 10, 11, 0.8);
+  --black-blue: rgb(28, 28, 30);
+  --black-20: rgb(38, 38, 40);
+  --blue-00: rgb(12, 12, 14);
+  --blue-10-transparent: rgba(28, 28, 30, 0.6);
+  --blue-20: rgb(37, 37, 40);
+  --blue-25: rgb(46, 46, 50);
+  --blue-60: rgb(160, 160, 168);
+  --blue-70: rgb(148, 148, 155);
+  --blue-gray: rgb(42, 42, 46);
+
+  --surface-nav: rgb(31, 31, 33);
+  --surface-nav-hover: rgb(45, 45, 48);
+  --surface-deep: rgb(17, 17, 19);
+  --surface-mid: rgb(22, 22, 24);
+  --surface-toast: rgb(20, 20, 22);
+
+  --theme-meta: #0c0c0e;
 }
 
 /* Tablet: sport sidebar only (coupon is FAB) */

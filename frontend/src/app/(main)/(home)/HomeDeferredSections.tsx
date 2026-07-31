@@ -5,7 +5,7 @@ import { WcHomeSection } from "~/entities/wc-odds/ui/WcHomeSection";
 
 import styles from "./Home.module.css";
 
-/** Без лишних dynamic() — один чанк, API матчей стартует сразу после гидратации. */
+/** Lucky Drive → live/line. Cyber live strip is not shown on home. */
 export function HomeDeferredSections() {
   return (
     <div className={styles.Home}>

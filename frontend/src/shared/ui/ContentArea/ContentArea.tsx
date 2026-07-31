@@ -3,9 +3,10 @@ import styles from "./ContentArea.module.css";
 
 interface ContentAreaProps {
   selectedCategory: Category | null;
+  emptyText?: string;
 }
 
-const ContentArea: React.FC<ContentAreaProps> = ({ selectedCategory }) => {
+const ContentArea: React.FC<ContentAreaProps> = ({ selectedCategory, emptyText }) => {
   return (
     <div className={styles.wrapper}>
       {selectedCategory ? (
@@ -14,7 +15,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedCategory }) => {
           <div className={styles.content}>{selectedCategory.content}</div>
         </div>
       ) : (
-        <p>Выберите категорию для отображения информации.</p>
+        <p>{emptyText ?? "Выберите категорию для отображения информации."}</p>
       )}
     </div>
   );

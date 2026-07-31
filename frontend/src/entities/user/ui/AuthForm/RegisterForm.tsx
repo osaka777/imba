@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -63,6 +62,7 @@ export const RegisterForm = () => {
         safeToast.error(t("auth.errorEmailTaken"));
         break;
       }
+      case "You must be at least 21 years old":
       case "You must be at least 18 years old": {
         safeToast.error(t("auth.errorUnderage"));
         break;
@@ -76,8 +76,6 @@ export const RegisterForm = () => {
       }
     }
   };
-
-  const searchParams = useSearchParams();
 
   const { isPending, isSuccess, mutateAsync } = useMutation({
     mutationFn: (payload: AuthFormState & { tag?: string; promoCode?: string; subs?: SignUpBody["subs"] }) =>
@@ -104,7 +102,7 @@ export const RegisterForm = () => {
     defaultValues: {
       ageConfirmed: true,
       birthDate: "",
-      currencyCode: "KZT",
+      currencyCode: "USDT",
       email: "",
       password: "",
       phone: "",
@@ -114,7 +112,13 @@ export const RegisterForm = () => {
   });
 
   useEffect(() => {
-    const fromUrl = searchParams.get("promo");
+    // This form is mounted lazily inside the header Dialog. `useSearchParams`
+    // can suspend when that happens without a local Suspense boundary and send
+    // the whole route to app/error.tsx. Reading the browser URL here is enough.
+    const fromUrl =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("promo")
+        : null;
     if (fromUrl) {
       setValue("promo", fromUrl.toUpperCase());
       return;
@@ -123,7 +127,7 @@ export const RegisterForm = () => {
     if (match?.[1]) {
       setValue("promo", decodeURIComponent(match[1]));
     }
-  }, [searchParams, setValue]);
+  }, [setValue]);
 
   const onFormInvalid = () => {
     const vals = getValues();
@@ -256,8 +260,8 @@ export const RegisterForm = () => {
               }}
               {...field}
             >
-              Я подтверждаю, что мой возраст соответствует закону об участии в
-              азартных играх или превышает 18 лет
+              Я подтверждаю, что мне исполнилось 21 год или больше, и мой возраст
+              соответствует закону об участии в азартных играх в моей юрисдикции
             </Checkbox>
           )}
         />

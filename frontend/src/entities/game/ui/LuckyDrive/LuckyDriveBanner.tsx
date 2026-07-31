@@ -2,20 +2,24 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { LiveIcon } from "~/shared/assets";
 import { usePromoModalSettings } from "~/entities/promo-modal/lib/usePromoModalSettings";
 import { cn } from "~/shared/lib";
-import { LazyLuckyDriveModal, LazyUsdtPromoModal } from "~/shared/lib/lazyModals";
+import { LazyUsdtPromoModal } from "~/shared/lib/lazyModals";
 import { Button } from "~/shared/ui";
 
-import { LUCKY_DRIVE_IMAGE } from "./luckyDriveImage";
+import {
+  IMBA_GAMES_PROMO_TITLE,
+  IMBA_MARKETS_HREF,
+  LUCKY_DRIVE_IMAGE,
+} from "./luckyDriveImage";
 import {
   USDT_PROMO_GRADIENT_FROM,
   USDT_PROMO_GRADIENT_TO,
   USDT_PROMO_HIGHLIGHT,
   USDT_PROMO_IMAGE,
-  USDT_PROMO_SUBTITLE,
   USDT_PROMO_TITLE,
 } from "./usdtPromoCopy";
 import {
@@ -24,9 +28,9 @@ import {
   WIMBLEDON_PROMO_HIGHLIGHT,
   WIMBLEDON_PROMO_HREF,
   WIMBLEDON_PROMO_IMAGE,
-  WIMBLEDON_PROMO_SUBTITLE,
   WIMBLEDON_PROMO_TITLE,
 } from "./wimbledonPromoCopy";
+import { useLocale } from "~/shared/model/useLocale";
 import { PromoMiniBanner } from "./PromoMiniBanner";
 import styles from "./LuckyDriveBanner.module.css";
 
@@ -36,7 +40,8 @@ type LuckyDriveBannerProps = {
 };
 
 export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyDriveBannerProps) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { t } = useLocale();
+  const router = useRouter();
   const [isUsdtModalOpen, setIsUsdtModalOpen] = useState(false);
   const { settings, enabled } = usePromoModalSettings();
 
@@ -49,18 +54,20 @@ export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyD
 
   if (!enabled || !placementEnabled) return null;
 
-  const title = settings?.bannerTitle || "World Cup";
-  const subtitle = settings?.bannerSubtitle || "Бонус на первый депозит";
+  const title = settings?.bannerTitle || IMBA_GAMES_PROMO_TITLE;
+  // Always localize — admin settings store Russian copy and would break other locales.
+  const subtitle = t("promo.gameBannerSubtitle");
   const image = settings?.bannerImageUrl || LUCKY_DRIVE_IMAGE;
+  const highlight = settings?.bonusHighlight?.trim() || "";
   const gradientStyle = settings
     ? {
         backgroundImage: `linear-gradient(143deg, ${settings.gradientFrom} 0.74%, ${settings.gradientTo} 141.93%)`,
       }
     : undefined;
 
-  const openModal = (e: React.MouseEvent) => {
+  const goToMarkets = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsModalOpen(true);
+    router.push(settings?.wcRedirectPath || IMBA_MARKETS_HREF);
   };
 
   return (
@@ -68,7 +75,7 @@ export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyD
       <div className={cn(styles.bannerGroup, compact && styles.bannerGroupCompact)}>
         <Button
           className={cn(styles.root, compact && styles.rootCompact)}
-          onClick={openModal}
+          onClick={goToMarkets}
           style={gradientStyle}
         >
           <div className={styles.content}>
@@ -80,18 +87,18 @@ export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyD
             </div>
             <div className={styles.subtitleRow}>
               <p className={styles.subtitle}>{subtitle}</p>
-              {settings?.bonusHighlight ? (
-                <span className={styles.bonusTag}>{settings.bonusHighlight}</span>
+              {highlight ? (
+                <span className={styles.bonusTag}>{highlight}</span>
               ) : null}
             </div>
-            <Image src={image} alt={title} className={styles.image} loading="lazy" width={160} height={80} />
+            <Image src={image} alt={title} className={styles.image} loading="lazy" width={240} height={120} />
           </div>
         </Button>
 
         <div className={styles.promoRow}>
           <PromoMiniBanner
             title={USDT_PROMO_TITLE}
-            subtitle={USDT_PROMO_SUBTITLE}
+            subtitle={t("promo.usdtBannerSubtitle")}
             highlight={USDT_PROMO_HIGHLIGHT}
             onClick={(e) => {
               e.preventDefault();
@@ -103,7 +110,7 @@ export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyD
           />
           <PromoMiniBanner
             title={WIMBLEDON_PROMO_TITLE}
-            subtitle={WIMBLEDON_PROMO_SUBTITLE}
+            subtitle={t("promo.wimbledonSubtitle")}
             highlight={WIMBLEDON_PROMO_HIGHLIGHT}
             href={WIMBLEDON_PROMO_HREF}
             gradientFrom={WIMBLEDON_PROMO_GRADIENT_FROM}
@@ -114,9 +121,6 @@ export const LuckyDriveBanner = ({ compact = false, placement = 'home' }: LuckyD
           />
         </div>
       </div>
-      {isModalOpen ? (
-        <LazyLuckyDriveModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      ) : null}
       {isUsdtModalOpen ? (
         <LazyUsdtPromoModal isOpen={isUsdtModalOpen} onClose={() => setIsUsdtModalOpen(false)} />
       ) : null}

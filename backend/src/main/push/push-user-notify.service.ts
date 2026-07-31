@@ -9,6 +9,8 @@ type PushMessage = {
   body: string;
   url?: string;
   type: string;
+  /** success | error | info — для цвета/канала в APK */
+  tone?: 'success' | 'error' | 'info';
 };
 
 @Injectable()
@@ -19,7 +21,11 @@ export class PushUserNotifyService {
   ) {}
 
   private formatAmount(amount: number, currency?: string): string {
-    const formatted = Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+    const abs = Math.abs(amount);
+    const formatted = new Intl.NumberFormat('ru-RU', {
+      maximumFractionDigits: Number.isInteger(abs) ? 0 : 2,
+      minimumFractionDigits: 0,
+    }).format(abs);
     return currency ? `${formatted} ${currency}` : formatted;
   }
 
@@ -39,6 +45,7 @@ export class PushUserNotifyService {
         body: message.body,
         data: {
           type: message.type,
+          tone: message.tone ?? 'info',
           ...(message.url ? { url: message.url } : {}),
         },
       });
@@ -80,22 +87,44 @@ export class PushUserNotifyService {
     currency?: string;
   }): Promise<void> {
     const orderLabel = input.publicOrderId ?? input.orderId;
-    const amountLine =
-      input.amount != null && input.currency
-        ? ` · ${this.formatAmount(input.amount, input.currency)}`
-        : '';
+    const amount =
+      input.amount != null
+        ? this.formatAmount(input.amount, input.currency)
+        : null;
 
-    const title =
-      input.status === 'approved'
-        ? 'Пополнение зачислено'
-        : input.status === 'rejected'
-          ? 'Пополнение отклонено'
-          : 'Пополнение истекло';
+    if (input.status === 'approved') {
+      await this.sendToUser(input.userId, 'deposit', {
+        type: 'deposit',
+        tone: 'success',
+        title: '💰 Пополнение · IMBA BET',
+        body: amount
+          ? `+${amount} зачислено на ваш счёт`
+          : `Заявка #${orderLabel} успешно зачислена`,
+        url: '/profile/financeHistory',
+      });
+      return;
+    }
+
+    if (input.status === 'rejected') {
+      await this.sendToUser(input.userId, 'deposit', {
+        type: 'deposit',
+        tone: 'error',
+        title: 'Пополнение отклонено · IMBA BET',
+        body: amount
+          ? `Заявка #${orderLabel} · ${amount} не зачислена`
+          : `Заявка #${orderLabel} отклонена`,
+        url: '/profile/financeHistory',
+      });
+      return;
+    }
 
     await this.sendToUser(input.userId, 'deposit', {
       type: 'deposit',
-      title,
-      body: `Заявка #${orderLabel}${amountLine}`,
+      tone: 'info',
+      title: 'Время пополнения истекло · IMBA BET',
+      body: amount
+        ? `Заявка #${orderLabel} · ${amount} больше недействительна`
+        : `Заявка #${orderLabel} больше недействительна`,
       url: '/profile/financeHistory',
     });
   }
@@ -103,22 +132,54 @@ export class PushUserNotifyService {
   async notifyWithdraw(input: {
     userId: number;
     withdrawId: number;
-    status: 'completed' | 'rejected';
+    status: 'completed' | 'rejected' | 'cancelled' | 'processing';
     amount: number;
     currency: string;
     reason?: string;
   }): Promise<void> {
     const amountLine = this.formatAmount(input.amount, input.currency);
-    const title = input.status === 'completed' ? 'Вывод выполнен' : 'Вывод отклонён';
-    const body =
-      input.status === 'completed'
-        ? `Заявка #${input.withdrawId} · ${amountLine}`
-        : `Заявка #${input.withdrawId} · ${amountLine}${input.reason ? ` · ${input.reason}` : ''}`;
 
+    if (input.status === 'completed') {
+      await this.sendToUser(input.userId, 'withdraw', {
+        type: 'withdraw',
+        tone: 'success',
+        title: '✅ Вывод · IMBA BET',
+        body: `${amountLine} отправлены на карту / кошелёк`,
+        url: '/profile/financeHistory',
+      });
+      return;
+    }
+
+    if (input.status === 'processing') {
+      await this.sendToUser(input.userId, 'withdraw', {
+        type: 'withdraw',
+        tone: 'info',
+        title: 'Вывод в обработке · IMBA BET',
+        body: `${amountLine} · заявка #${input.withdrawId}`,
+        url: '/profile/financeHistory',
+      });
+      return;
+    }
+
+    if (input.status === 'cancelled') {
+      await this.sendToUser(input.userId, 'withdraw', {
+        type: 'withdraw',
+        tone: 'info',
+        title: 'Вывод отменён · IMBA BET',
+        body: `${amountLine} снова на вашем счёте`,
+        url: '/profile/financeHistory',
+      });
+      return;
+    }
+
+    const reason = input.reason?.trim();
     await this.sendToUser(input.userId, 'withdraw', {
       type: 'withdraw',
-      title,
-      body,
+      tone: 'error',
+      title: 'Вывод отклонён · IMBA BET',
+      body: reason
+        ? `${amountLine} возвращены на баланс · ${reason}`
+        : `${amountLine} возвращены на баланс`,
       url: '/profile/financeHistory',
     });
   }
@@ -135,10 +196,10 @@ export class PushUserNotifyService {
   }): Promise<void> {
     const title =
       input.status === 'WIN'
-        ? 'Выигрыш!'
+        ? '🏆 Выигрыш · IMBA BET'
         : input.status === 'LOSE'
-          ? 'Ставка проиграла'
-          : 'Возврат по ставке';
+          ? 'Ставка · IMBA BET'
+          : 'Возврат · IMBA BET';
 
     const lines: string[] = [];
     if (input.homeTeam && input.awayTeam) {
@@ -157,6 +218,7 @@ export class PushUserNotifyService {
 
     await this.sendToUser(input.userId, 'bets', {
       type: 'bet_settled',
+      tone: input.status === 'WIN' ? 'success' : input.status === 'LOSE' ? 'error' : 'info',
       title,
       body: lines.join(' · '),
       url: '/profile/betHistory',
@@ -166,6 +228,7 @@ export class PushUserNotifyService {
   async notifyPromo(input: { userId: number; title: string; body: string; url?: string }): Promise<void> {
     await this.sendToUser(input.userId, 'promo', {
       type: 'promo',
+      tone: 'info',
       title: input.title,
       body: input.body,
       url: input.url ?? '/',
@@ -180,6 +243,7 @@ export class PushUserNotifyService {
   }): Promise<void> {
     await this.sendToUser(input.userId, 'liveMatch', {
       type: 'live_match',
+      tone: 'info',
       title: input.title,
       body: input.body,
       url: input.url,

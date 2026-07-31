@@ -1,6 +1,7 @@
 "use client";
 
 import type { WcEventDetail } from "~/entities/wc-odds/api/client";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./WcH2hBlock.module.css";
 
@@ -9,6 +10,7 @@ type WcH2hBlockProps = {
 };
 
 export function WcH2hBlock({ event }: WcH2hBlockProps) {
+  const { t } = useLocale();
   if (!event.hasHeadToHead) return null;
 
   const slug = event.slug?.trim();
@@ -17,9 +19,9 @@ export function WcH2hBlock({ event }: WcH2hBlockProps) {
   const iframeSrc = `/api/feed/embed/h2h/${encodeURIComponent(slug)}`;
 
   return (
-    <section className={styles.wrap} aria-label="Личные встречи">
+    <section className={styles.wrap} aria-label={t("common.h2hMeetings")}>
       <div className={styles.header}>
-        <span className={styles.title}>Личные встречи</span>
+        <span className={styles.title}>{t("common.h2hMeetings")}</span>
         <span className={styles.subtitle}>
           {event.homeTeam} — {event.awayTeam}
         </span>

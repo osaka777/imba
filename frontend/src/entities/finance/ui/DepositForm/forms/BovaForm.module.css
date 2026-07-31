@@ -99,6 +99,10 @@
   width: 12px;
 }
 .BovaForm .selectContent {
+  /* Must beat the Dialog overlay/content stack (z-[10050]/z-[10051] in
+     Dialog.tsx) — otherwise this popper portal renders under the modal
+     backdrop and becomes invisible/unclickable. */
+  z-index: 10100 !important;
 }
 
 .selectItem {

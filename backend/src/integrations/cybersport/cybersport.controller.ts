@@ -1,7 +1,6 @@
 import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { CYBERSPORT_CATALOG } from './cybersport-catalog';
 import { CybersportService } from './cybersport.service';
 
 @ApiTags('Cybersport')
@@ -21,12 +20,7 @@ export class CybersportController {
 
   @Get('disciplines')
   disciplines() {
-    return CYBERSPORT_CATALOG.map(({ olimpbetId, apiSport, pathSlug, label }) => ({
-      olimpbetId,
-      apiSport,
-      pathSlug,
-      label,
-    }));
+    return this.cybersport.disciplines();
   }
 
   @Get('tournaments')

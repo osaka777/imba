@@ -2,8 +2,9 @@
 
 import type { CyberGame } from "~/entities/cybersport/api/client";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
-import { readCyberWcMeta } from "~/entities/cybersport/lib/cyberGameToWcEvent";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 
 import styles from "./CyberStreamPlaceholder.module.css";
@@ -48,7 +49,7 @@ function TrophyIcon({ className }: { className?: string }) {
   );
 }
 
-function FinishedBoard({ game }: { game: CyberGame }) {
+function FinishedBoard({ game, t }: { game: CyberGame; t: ReturnType<typeof useLocale>["t"] }) {
   const team1 = maskCybersportLabel(game.team1);
   const team2 = maskCybersportLabel(game.team2);
 
@@ -81,7 +82,7 @@ function FinishedBoard({ game }: { game: CyberGame }) {
 
       <span className={styles.finishedBadge}>
         <TrophyIcon className={styles.finishedBadgeIcon} />
-        Матч окончен
+        {t("cyber.matchFinished")}
       </span>
 
       <div className={styles.finishedHero}>
@@ -113,13 +114,7 @@ function FinishedBoard({ game }: { game: CyberGame }) {
       </div>
 
       <span className={styles.finishedCaption}>
-        {winnerName ? (
-          <>
-            Победа · <strong className={styles.finishedWinner}>{winnerName}</strong>
-          </>
-        ) : (
-          "Ничья · итог по картам"
-        )}
+        {winnerName ? t("cyber.winBy", { name: winnerName }) : t("cyber.drawMaps")}
       </span>
 
       {details.length > 0 ? (
@@ -129,7 +124,7 @@ function FinishedBoard({ game }: { game: CyberGame }) {
             const awayMap = away > home;
             return (
               <div className={styles.finishedMapChip} key={`fin-map-${index}`}>
-                <span className={styles.finishedMapLabel}>К{index + 1}</span>
+                <span className={styles.finishedMapLabel}>{t("cyber.mapShort", { n: index + 1 })}</span>
                 <span className={styles.finishedMapScore}>
                   <span className={cn(homeMap && styles.finishedMapWin)}>{home}</span>
                   <span className={styles.finishedMapColon}>:</span>
@@ -149,24 +144,21 @@ export function CyberStreamPlaceholder({
   isLive,
   isFinished,
 }: CyberStreamPlaceholderProps) {
+  const { t } = useLocale();
+
   if (isFinished) {
-    return <FinishedBoard game={game} />;
+    return <FinishedBoard game={game} t={t} />;
   }
 
   const team1 = maskCybersportLabel(game.team1);
   const team2 = maskCybersportLabel(game.team2);
-  const meta = readCyberWcMeta(game);
-  const hasBroadcast = Boolean(
-    meta.wcHasBroadcast
-    || meta.hasBroadcast
-    || (game.meta as { hasBroadcast?: boolean } | undefined)?.hasBroadcast,
-  );
+  const hasBroadcast = cyberGameHasVideo(game);
 
   const liveHint = isLive
     ? hasBroadcast
-      ? "Подключаем трансляцию…"
-      : "У поставщика нет эфира для этого турнира"
-    : "Превью матча · трансляция до начала";
+      ? t("cyber.connectingStream")
+      : t("cyber.noProviderStream")
+    : t("cyber.previewBefore");
 
   return (
     <div className={styles.frame} data-sport={game.sport}>

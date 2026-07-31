@@ -1,13 +1,22 @@
 import apiClient from './index'
 
+export interface BalanceRow {
+  amount: number
+  currency: string
+}
+
 export interface User {
   id: number
   email: string
+  phone?: string | null
   username: string
+  defaultCurrencyCode?: string | null
   createdAt: string
   updatedAt: string
   totalBalance: number
   bonusBalance: number
+  balances?: BalanceRow[]
+  bonusBalances?: BalanceRow[]
   totalBets: number
   winningBets: number
   losingBets: number
@@ -17,6 +26,12 @@ export interface User {
 }
 
 export interface UserDetails extends User {
+  balances: Array<{
+    id: number
+    amount: number
+    currency: string
+    createdAt: string
+  }>
   statistics: {
     totalBets: number
     winningBets: number
@@ -39,6 +54,7 @@ export interface UserDetails extends User {
   bets: Array<{
     id: number
     amount: number
+    currency?: string
     cf: number
     status: string
     betType: string
@@ -81,6 +97,22 @@ export class AdminUsersAPI {
   async getUserDetails(userId: string): Promise<UserDetails> {
     const response = await apiClient.get(`/api/admin/users/${userId}`)
     return response.data
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    const all = await this.getAllUsers()
+    const q = query.trim().toLowerCase()
+    if (!q) return all.slice(0, 20)
+    return all
+      .filter((user) => {
+        return (
+          String(user.id).includes(q)
+          || user.email?.toLowerCase().includes(q)
+          || user.username?.toLowerCase().includes(q)
+          || user.phone?.toLowerCase().includes(q)
+        )
+      })
+      .slice(0, 20)
   }
 }
 

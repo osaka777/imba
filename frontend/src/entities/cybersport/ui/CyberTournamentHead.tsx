@@ -1,6 +1,12 @@
 "use client";
 
-import { isEsportsApiSport } from "~/entities/cybersport/lib/cyberDisciplineCatalog";
+import {
+  CYBER_SPORT_LABELS,
+  cyberIconUrlForApiSport,
+  isEsportsApiSport,
+} from "~/entities/cybersport/lib/cyberDisciplineCatalog";
+import { CyberSportGlyph } from "~/entities/cybersport/ui/CyberSportGlyph";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CyberTournamentHead.module.css";
 
@@ -19,15 +25,21 @@ export function CyberTournamentHead({
   matchCount,
   isLive = false,
 }: CyberTournamentHeadProps) {
+  const { t } = useLocale();
+  const sportLabel = CYBER_SPORT_LABELS[sport] ?? (isEsportsApiSport(sport) ? "Esports" : null);
+  const useCatalogGlyph = Boolean(cyberIconUrlForApiSport(sport));
+
   return (
     <div className={styles.head} data-sport={sport}>
       <div className={styles.left}>
-        {Icon ? <Icon className={styles.icon} /> : null}
+        {useCatalogGlyph ? (
+          <CyberSportGlyph apiSport={sport} className={styles.icon} label={sportLabel ?? ""} />
+        ) : Icon ? (
+          <Icon className={styles.icon} />
+        ) : null}
         <div className={styles.text}>
           <p className={styles.league}>{name}</p>
-          {isEsportsApiSport(sport) ? (
-            <p className={styles.sportTag}>Esports</p>
-          ) : null}
+          {sportLabel ? <p className={styles.sportTag}>{sportLabel}</p> : null}
         </div>
       </div>
       <div className={styles.right}>
@@ -40,7 +52,11 @@ export function CyberTournamentHead({
         <span className={styles.countTag}>
           {matchCount}
           {" "}
-          {matchCount === 1 ? "матч" : matchCount < 5 ? "матча" : "матчей"}
+          {matchCount === 1
+            ? t("cyber.matchWord1")
+            : matchCount < 5
+              ? t("cyber.matchWord2")
+              : t("cyber.matchWord5")}
         </span>
       </div>
     </div>

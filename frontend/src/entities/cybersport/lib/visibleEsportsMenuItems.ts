@@ -6,6 +6,7 @@ import { sortCyberSportItems } from "~/entities/cybersport/lib/cyberDisciplineSo
 
 export type SportMenuItem = {
   Icon: React.FC<{ className?: string }>;
+  iconUrl?: string | null;
   label: string;
   name: string;
 };
@@ -15,6 +16,7 @@ export function esportsMenuItems(counts: Record<string, number>): SportMenuItem[
   const items = CYBERSPORT_CATALOG.filter((entry) => (counts[entry.apiSport] ?? 0) > 0).map(
     (entry) => ({
       Icon: cyberIconForApiSport(entry.apiSport),
+      iconUrl: entry.iconUrl ?? null,
       label: entry.label,
       name: entry.apiSport,
     }),

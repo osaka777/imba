@@ -11,6 +11,7 @@ import { lineAllHref, lineSportHref, liveAllHref, liveSportHref } from "~/entiti
 
 import { cn } from "~/shared/lib";
 import { Button } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 import { ArrowIcon, FireIcon } from "~/shared/assets";
 
 import { getSubcategories, getLiveSubcategoryCounts, getPrematchSubcategoryCounts, getSubcategoriesWithCounts } from "../../api";
@@ -34,6 +35,7 @@ const SubcategoryMenuComponent = ({
   type: "live" | "prematch";
   layout?: "horizontal" | "sidebar";
 }) => {
+  const { t } = useLocale();
   const params = useParams();
   const sport = useSportFilter();
   const subcategory = params?.subcategory as string | undefined;
@@ -191,7 +193,7 @@ const SubcategoryMenuComponent = ({
     return (
       <div className={cn(styles.menu, layout === "sidebar" && styles.menu_sidebar)}>
         <div className={styles.wrapper}>
-          <div className={styles.loading}>Загрузка подкатегорий...</div>
+          <div className={styles.loading}>{t("common.loadingSubcats")}</div>
         </div>
       </div>
     );
@@ -203,7 +205,7 @@ const SubcategoryMenuComponent = ({
     return (
       <div className={cn(styles.menu, layout === "sidebar" && styles.menu_sidebar)}>
         <div className={styles.wrapper}>
-          <div className={styles.error}>Ошибка загрузки подкатегорий</div>
+          <div className={styles.error}>{t("common.subcatsLoadError")}</div>
         </div>
       </div>
     );
@@ -237,7 +239,7 @@ const SubcategoryMenuComponent = ({
           href={backPath}
         >
           <ArrowIcon className={styles.backIcon} />
-          <span>Назад</span>
+          <span>{t("common.back")}</span>
         </Button>
 
         {/* Add "All" button */}
@@ -251,7 +253,7 @@ const SubcategoryMenuComponent = ({
           scroll={layout === "sidebar" ? false : undefined}
         >
           <p className={styles.text}>
-            Все
+            {t("common.all")}
             {totalCount > 0 && (
               <span className={styles.count}>{totalCount}</span>
             )}

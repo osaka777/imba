@@ -1,3 +1,5 @@
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
+
 export function getBonusRemainingMs(expiresAt?: string | null): number | null {
   if (!expiresAt) return null;
   return new Date(expiresAt).getTime() - Date.now();
@@ -8,15 +10,24 @@ export function isBonusExpired(expiresAt?: string | null): boolean {
   return remaining !== null && remaining <= 0;
 }
 
-export function formatBonusTimeLeft(expiresAt?: string | null): string | null {
+type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
+
+export function formatBonusTimeLeft(
+  expiresAt?: string | null,
+  t?: TranslateFn,
+): string | null {
   const remaining = getBonusRemainingMs(expiresAt);
   if (remaining === null) return null;
-  if (remaining <= 0) return "истёк";
+  if (remaining <= 0) return t ? t("promo.timeExpired") : "истёк";
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-  if (hours > 0) return `${hours} ч ${minutes} мин`;
-  return `${minutes} мин`;
+  if (hours > 0) {
+    return t
+      ? t("promo.timeHoursMins", { hours, minutes })
+      : `${hours} ч ${minutes} мин`;
+  }
+  return t ? t("promo.timeMins", { minutes }) : `${minutes} мин`;
 }
 
 export function getWagerProgressPercent(

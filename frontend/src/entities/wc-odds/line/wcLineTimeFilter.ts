@@ -1,3 +1,5 @@
+import type { MessageKey } from "~/shared/i18n/locales";
+
 export type WcLineHoursFilter =
   | "all"
   | "1"
@@ -11,20 +13,20 @@ export type WcLineHoursFilter =
 
 export type WcLineTimeOption = {
   id: WcLineHoursFilter;
-  label: string;
-  shortLabel: string;
+  labelKey: MessageKey;
+  shortLabelKey: MessageKey;
 };
 
 export const WC_LINE_TIME_OPTIONS: WcLineTimeOption[] = [
-  { id: "all", label: "Все время", shortLabel: "Все" },
-  { id: "1", label: "В ближайший 1 час", shortLabel: "1 ч" },
-  { id: "2", label: "В ближайшие 2 часа", shortLabel: "2 ч" },
-  { id: "4", label: "В ближайшие 4 часа", shortLabel: "4 ч" },
-  { id: "6", label: "В ближайшие 6 часов", shortLabel: "6 ч" },
-  { id: "12", label: "В ближайшие 12 часов", shortLabel: "12 ч" },
-  { id: "24", label: "В ближайшие сутки", shortLabel: "Сутки" },
-  { id: "72", label: "В ближайшие 3 суток", shortLabel: "3 дня" },
-  { id: "168", label: "В ближайшую неделю", shortLabel: "Неделя" },
+  { id: "all", labelKey: "common.lineTimeAll", shortLabelKey: "common.lineTimeAllShort" },
+  { id: "1", labelKey: "common.lineTime1", shortLabelKey: "common.lineTime1Short" },
+  { id: "2", labelKey: "common.lineTime2", shortLabelKey: "common.lineTime2Short" },
+  { id: "4", labelKey: "common.lineTime4", shortLabelKey: "common.lineTime4Short" },
+  { id: "6", labelKey: "common.lineTime6", shortLabelKey: "common.lineTime6Short" },
+  { id: "12", labelKey: "common.lineTime12", shortLabelKey: "common.lineTime12Short" },
+  { id: "24", labelKey: "common.lineTime24", shortLabelKey: "common.lineTime24Short" },
+  { id: "72", labelKey: "common.lineTime72", shortLabelKey: "common.lineTime72Short" },
+  { id: "168", labelKey: "common.lineTime168", shortLabelKey: "common.lineTime168Short" },
 ];
 
 /** Быстрый выбор в чипах */

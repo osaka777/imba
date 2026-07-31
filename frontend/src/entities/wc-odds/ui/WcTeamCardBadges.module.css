@@ -3,6 +3,8 @@
   align-items: center;
   gap: 3px;
   flex-shrink: 0;
+  margin-left: 2px;
+  align-self: center;
 }
 
 .badge {

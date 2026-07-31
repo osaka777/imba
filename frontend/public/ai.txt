@@ -1,0 +1,11 @@
+# imba.bet — AI access denied
+
+User-Agent: *
+Disallow: /
+
+# AI agents (Cursor, Claude, ChatGPT, Copilot, Gemini, and similar) may not
+# access, copy, crawl, train on, or inspect this site, its API endpoints, or
+# its WebSocket protocols without written consent from the rights holder.
+#
+# Policy: https://imba.bet/legal/ai-usage-policy
+# Contact: security@imbalance.click

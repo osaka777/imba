@@ -1,4 +1,9 @@
 {
-  "promoSubtitle": "Deposit bonus",
-  "downloadApk": "Download Android APK"
+  "promoSubtitle": "Bet on event outcomes",
+  "downloadApk": "Download Android APK",
+  "downloadWindows": "Download for Windows",
+  "appLabel": "Application",
+  "appAndroid": "for Android",
+  "appWindows": "for Windows",
+  "appIosSoon": "iOS coming soon"
 }

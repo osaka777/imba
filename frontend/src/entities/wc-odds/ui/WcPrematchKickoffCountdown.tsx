@@ -16,19 +16,18 @@ type WcPrematchKickoffCountdownProps = {
 };
 
 export function WcPrematchKickoffCountdown({ commenceTime }: WcPrematchKickoffCountdownProps) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const countdown = useKickoffCountdown(commenceTime);
   const { date, time } = formatWcCompactTime(commenceTime, locale);
   const showTicker = shouldShowKickoffTicker(countdown.totalMs);
   const humanHint = formatKickoffCountdownHuman(countdown.totalMs);
+  const startAt = t("wc.kickoffDateAt", { date, time });
 
   if (countdown.totalMs <= 0) {
     return (
       <div className={styles.wrap}>
-        <p className={styles.eyebrow}>Начало события</p>
-        <p className={styles.startAt}>
-          {date} в {time}
-        </p>
+        <p className={styles.eyebrow}>{t("wc.kickoffTitle")}</p>
+        <p className={styles.startAt}>{startAt}</p>
       </div>
     );
   }
@@ -36,10 +35,8 @@ export function WcPrematchKickoffCountdown({ commenceTime }: WcPrematchKickoffCo
   if (!showTicker) {
     return (
       <div className={styles.wrap}>
-        <p className={styles.eyebrow}>Начало события</p>
-        <p className={styles.startAt}>
-          {date} в {time}
-        </p>
+        <p className={styles.eyebrow}>{t("wc.kickoffTitle")}</p>
+        <p className={styles.startAt}>{startAt}</p>
         {humanHint && <p className={styles.soonHint}>{humanHint}</p>}
       </div>
     );
@@ -47,26 +44,24 @@ export function WcPrematchKickoffCountdown({ commenceTime }: WcPrematchKickoffCo
 
   return (
     <div aria-live="polite" className={styles.wrap}>
-      <p className={styles.eyebrow}>Начало события через</p>
+      <p className={styles.eyebrow}>{t("wc.kickoffIn")}</p>
       <div className={styles.timerRow}>
         <div className={styles.unit}>
           <span className={styles.value}>{padCountdownUnit(countdown.hours)}</span>
-          <span className={styles.label}>часов</span>
+          <span className={styles.label}>{t("wc.hours")}</span>
         </div>
         <span aria-hidden className={styles.separator}>:</span>
         <div className={styles.unit}>
           <span className={styles.value}>{padCountdownUnit(countdown.minutes)}</span>
-          <span className={styles.label}>мин</span>
+          <span className={styles.label}>{t("wc.minutes")}</span>
         </div>
         <span aria-hidden className={styles.separator}>:</span>
         <div className={styles.unit}>
           <span className={styles.value}>{padCountdownUnit(countdown.seconds)}</span>
-          <span className={styles.label}>сек</span>
+          <span className={styles.label}>{t("wc.seconds")}</span>
         </div>
       </div>
-      <p className={styles.startHint}>
-        {date} в {time}
-      </p>
+      <p className={styles.startHint}>{startAt}</p>
     </div>
   );
 }

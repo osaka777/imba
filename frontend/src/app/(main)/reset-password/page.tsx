@@ -5,11 +5,13 @@ import { Suspense, useState } from "react";
 
 import { resetPassword } from "~/entities/user/api/telegram";
 import { safeToast } from "~/shared/lib/safeToast";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 
 import styles from "./reset-password.module.css";
 
 function ResetPasswordForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
@@ -21,15 +23,15 @@ function ResetPasswordForm() {
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!token) {
-      safeToast.error("Ссылка недействительна");
+      safeToast.error(t("auth.resetInvalidLink"));
       return;
     }
     if (!password) {
-      safeToast.error("Введите пароль");
+      safeToast.error(t("auth.warnEnterPassword"));
       return;
     }
     if (password !== confirm) {
-      safeToast.error("Пароли не совпадают");
+      safeToast.error(t("auth.errorPasswordMismatch"));
       return;
     }
 
@@ -37,9 +39,9 @@ function ResetPasswordForm() {
     try {
       await resetPassword(token, password);
       setDone(true);
-      safeToast.success("Пароль обновлён");
+      safeToast.success(t("auth.successPasswordUpdated"));
     } catch {
-      safeToast.error("Ссылка устарела или недействительна");
+      safeToast.error(t("auth.resetLinkExpired"));
     } finally {
       setIsPending(false);
     }
@@ -48,10 +50,10 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className={styles.card}>
-        <h1 className={styles.title}>Сброс пароля</h1>
-        <p className={styles.text}>Ссылка недействительна. Запросите новую на странице входа.</p>
+        <h1 className={styles.title}>{t("auth.resetTitle")}</h1>
+        <p className={styles.text}>{t("auth.resetInvalidBody")}</p>
         <Button type="button" onClick={() => router.push("/?auth=login")}>
-          Перейти ко входу
+          {t("auth.goToLogin")}
         </Button>
       </div>
     );
@@ -60,10 +62,10 @@ function ResetPasswordForm() {
   if (done) {
     return (
       <div className={styles.card}>
-        <h1 className={styles.title}>Готово</h1>
-        <p className={styles.text}>Пароль изменён. Теперь можно войти с новым паролем.</p>
+        <h1 className={styles.title}>{t("auth.resetDoneTitle")}</h1>
+        <p className={styles.text}>{t("auth.resetDoneBody")}</p>
         <Button type="button" onClick={() => router.push("/?auth=login")}>
-          Войти
+          {t("auth.signIn")}
         </Button>
       </div>
     );
@@ -71,13 +73,13 @@ function ResetPasswordForm() {
 
   return (
     <div className={styles.card}>
-      <h1 className={styles.title}>Новый пароль</h1>
-      <p className={styles.text}>Придумайте новый пароль для аккаунта imba.bet.</p>
+      <h1 className={styles.title}>{t("auth.newPasswordTitle")}</h1>
+      <p className={styles.text}>{t("auth.newPasswordHint")}</p>
       <form className={styles.form} onSubmit={onSubmit}>
         <input
           className={styles.input}
           type="password"
-          placeholder="Новый пароль"
+          placeholder={t("auth.newPasswordPlaceholder")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
@@ -85,13 +87,13 @@ function ResetPasswordForm() {
         <input
           className={styles.input}
           type="password"
-          placeholder="Повторите пароль"
+          placeholder={t("auth.confirmPasswordPlaceholder")}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
         />
         <Button disabled={isPending} type="submit">
-          {isPending ? "Сохранение..." : "Сохранить пароль"}
+          {isPending ? t("auth.savingPassword") : t("auth.savePassword")}
         </Button>
       </form>
     </div>
@@ -99,9 +101,10 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  const { t } = useLocale();
   return (
     <div className={styles.page}>
-      <Suspense fallback={<div className={styles.card}>Загрузка...</div>}>
+      <Suspense fallback={<div className={styles.card}>{t("auth.loading")}</div>}>
         <ResetPasswordForm />
       </Suspense>
     </div>

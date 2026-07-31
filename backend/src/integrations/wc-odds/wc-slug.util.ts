@@ -1,11 +1,49 @@
 import { PrismaService } from '~/prisma/prisma.service';
 
 const CYRILLIC_TO_LATIN: Record<string, string> = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh', з: 'z',
-  и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
-  с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch',
-  ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
-  ә: 'a', ғ: 'g', қ: 'q', ң: 'n', ө: 'o', ұ: 'u', ü: 'u', ү: 'u', һ: 'h', і: 'i',
+  а: 'a',
+  б: 'b',
+  в: 'v',
+  г: 'g',
+  д: 'd',
+  е: 'e',
+  ё: 'yo',
+  ж: 'zh',
+  з: 'z',
+  и: 'i',
+  й: 'y',
+  к: 'k',
+  л: 'l',
+  м: 'm',
+  н: 'n',
+  о: 'o',
+  п: 'p',
+  р: 'r',
+  с: 's',
+  т: 't',
+  у: 'u',
+  ф: 'f',
+  х: 'kh',
+  ц: 'ts',
+  ч: 'ch',
+  ш: 'sh',
+  щ: 'shch',
+  ъ: '',
+  ы: 'y',
+  ь: '',
+  э: 'e',
+  ю: 'yu',
+  я: 'ya',
+  ә: 'a',
+  ғ: 'g',
+  қ: 'q',
+  ң: 'n',
+  ө: 'o',
+  ұ: 'u',
+  ü: 'u',
+  ү: 'u',
+  һ: 'h',
+  і: 'i',
 };
 
 export function transliterateSlugText(value: string): string {
@@ -80,12 +118,31 @@ export function wcEventIdFromOlimpbet(olimpbetEventId: number): string {
   return `ol-${olimpbetEventId}`;
 }
 
+export function wcEventIdFromOneWin(matchId: number): string {
+  return `ow-${matchId}`;
+}
+
 export function olimpbetIdFromWcEventId(eventId: string): number | null {
   const prefixed = eventId.match(/^ol-(\d+)$/);
   if (prefixed) return Number(prefixed[1]);
 
   if (/^\d+$/.test(eventId)) return Number(eventId);
   return null;
+}
+
+export function oneWinMatchIdFromWcEventId(eventId: string): number | null {
+  const prefixed = eventId.match(/^ow-(\d+)$/i);
+  if (prefixed) return Number(prefixed[1]);
+  return null;
+}
+
+/** Deterministic per-event slug — collision-proof because event ids are unique. */
+export function wcSlugWithEventId(
+  homeTeam: string,
+  awayTeam: string,
+  eventId: string,
+): string {
+  return `${baseWcSlug(homeTeam, awayTeam)}-${eventId.replace(/^(ol|ow)-/i, '')}`;
 }
 
 export async function buildUniqueWcSlug(
@@ -96,11 +153,11 @@ export async function buildUniqueWcSlug(
   eventId: string,
 ): Promise<string> {
   const base = baseWcSlug(homeTeam, awayTeam);
-  const olimpbetSuffix = eventId.replace(/^ol-/, '');
+  const idSlug = wcSlugWithEventId(homeTeam, awayTeam, eventId);
   const candidates = [
     `${base}-${wcSlugDateSuffix(commenceTime)}`,
-    `${base}-${olimpbetSuffix}`,
-    `${base}-${wcSlugDateSuffix(commenceTime)}-${olimpbetSuffix}`,
+    idSlug,
+    `${base}-${wcSlugDateSuffix(commenceTime)}-${eventId.replace(/^(ol|ow)-/i, '')}`,
   ];
 
   for (const slug of candidates) {
@@ -110,11 +167,15 @@ export async function buildUniqueWcSlug(
     if (!clash) return slug;
   }
 
-  return `${base}-${olimpbetSuffix}`;
+  return idSlug;
 }
 
 export function isWcEventId(ref: string): boolean {
-  return /^ol-\d+$/i.test(ref) || /^[a-f0-9]{32}$/i.test(ref);
+  return (
+    /^ol-\d+$/i.test(ref) ||
+    /^ow-\d+$/i.test(ref) ||
+    /^[a-f0-9]{32}$/i.test(ref)
+  );
 }
 
 export function stripLegacyHashFromSlug(slug: string): string {

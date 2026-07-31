@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocalStorage } from "usehooks-ts";
 
 import { DialogContent, Dialog } from "~/shared/ui";
+import { HiddenBalance } from "~/shared/ui/HiddenBalance/HiddenBalance";
 import styles from "./Profile.module.css";
 import { Withdraw } from "./Withdraw";
 import { SignOut } from "./SignOut";
@@ -189,6 +190,9 @@ export const Profile = React.memo(() => {
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const { selectedAccountType, setSelectedAccountType, isClient } = useAccountType();
   const categories = useProfileCategories();
+  const [hideBalance] = useLocalStorage<boolean>("hideBalance", false, {
+    initializeWithValue: false,
+  });
 
   // Автоматическое обновление данных профиля
   const { forceRefresh } = useProfileAutoRefresh();
@@ -264,12 +268,13 @@ export const Profile = React.memo(() => {
 
   const mergedCurrencies = useMemo(() => {
     if (!currencies?.length || !user?.balances?.length) return [];
-    
-    const supportedCurrencies = [...SITE_CURRENCY_CODES];
+
     const balanceMap = new Map(user.balances.map(b => [b.currencyCode, b]));
-    
+
     return currencies
-      .filter((curr: Currency) => supportedCurrencies.includes(curr.isoCode))
+      .filter((curr: Currency) =>
+        (SITE_CURRENCY_CODES as readonly string[]).includes(curr.isoCode),
+      )
       .map((curr: Currency) => {
         const foundBalance = balanceMap.get(curr.isoCode);
         return {
@@ -404,10 +409,18 @@ export const Profile = React.memo(() => {
             {selectedAccountType === 'main' ? t("profile.balance") : t("profile.bonusBalance")}
           </span>
           <div className={styles.heroAmountRow} suppressHydrationWarning>
-            <span className={styles.heroAmount}>
-              {selectedAccountType === 'main' ? formattedBalance : formattedBonusBalance}
-            </span>
-            <span className={styles.heroCurrency}>{getCurrencySymbol(currency)}</span>
+            {hideBalance ? (
+              <span className={styles.heroAmount}>
+                <HiddenBalance length={4} />
+              </span>
+            ) : (
+              <>
+                <span className={styles.heroAmount}>
+                  {selectedAccountType === 'main' ? formattedBalance : formattedBonusBalance}
+                </span>
+                <span className={styles.heroCurrency}>{getCurrencySymbol(currency)}</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -539,8 +552,14 @@ export const Profile = React.memo(() => {
                   </div>
                   <span className={styles.currencyCode}>{item.currencyCode}</span>
                   <span className={styles.currencyAmount}>
-                    {languageService.getNumberFormat().format(+item.amount)}{' '}
-                    {getCurrencySymbol(item.currencyCode)}
+                    {hideBalance ? (
+                      <HiddenBalance length={3} />
+                    ) : (
+                      <>
+                        {languageService.getNumberFormat().format(+item.amount)}{' '}
+                        {getCurrencySymbol(item.currencyCode)}
+                      </>
+                    )}
                   </span>
                 </div>
               );

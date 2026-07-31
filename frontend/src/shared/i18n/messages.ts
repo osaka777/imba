@@ -1,4 +1,5 @@
 import type { AppLocale } from "./locale";
+import { localeFallbackChain } from "./locale";
 import { dictionaries, type MessageKey } from "./locales";
 
 export type { MessageKey } from "./locales";
@@ -10,7 +11,12 @@ export function translate(
   key: MessageKey,
   params?: TranslateParams,
 ): string {
-  let text = dictionaries[locale][key] ?? dictionaries.ru[key] ?? key;
+  let text: string | undefined;
+  for (const candidate of localeFallbackChain(locale)) {
+    text = dictionaries[candidate][key];
+    if (text != null) break;
+  }
+  text = text ?? key;
   if (params) {
     for (const [name, value] of Object.entries(params)) {
       text = text.replaceAll(`{${name}}`, String(value));

@@ -1,9 +1,16 @@
+import type { AppLocale } from "~/shared/i18n/locale";
+import { toIntlLocale } from "~/shared/i18n/format";
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
+import { VISIBLE_SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
+
 export type RegistrationCountry = {
   code: string;
   name: string;
   dialCode: string;
   placeholder: string;
 };
+
+export type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
 
 const REGISTRATION_FLAG_CODES = new Set([
   "KZ", "RU", "UZ", "UA", "AZ", "KG", "TJ", "TR", "US", "AR",
@@ -12,12 +19,13 @@ const REGISTRATION_FLAG_CODES = new Set([
 export function getCountryFlagUrl(code: string): string {
   const normalized = code.toUpperCase();
   if (!REGISTRATION_FLAG_CODES.has(normalized)) {
-    return "/images/flags/kz.svg";
+    return "/images/flags/us.svg";
   }
   return `/images/flags/${normalized.toLowerCase()}.svg`;
 }
 
 export const REGISTRATION_COUNTRIES: RegistrationCountry[] = [
+  { code: "US", name: "США", dialCode: "+1", placeholder: "000 000 0000" },
   { code: "KZ", name: "Казахстан", dialCode: "+7", placeholder: "700 000 00 00" },
   { code: "RU", name: "Россия", dialCode: "+7", placeholder: "900 000 00 00" },
   { code: "UZ", name: "Узбекистан", dialCode: "+998", placeholder: "90 000 00 00" },
@@ -26,11 +34,21 @@ export const REGISTRATION_COUNTRIES: RegistrationCountry[] = [
   { code: "KG", name: "Кыргызстан", dialCode: "+996", placeholder: "700 000 000" },
   { code: "TJ", name: "Таджикистан", dialCode: "+992", placeholder: "90 000 00 00" },
   { code: "TR", name: "Турция", dialCode: "+90", placeholder: "500 000 00 00" },
-  { code: "US", name: "США", dialCode: "+1", placeholder: "000 000 0000" },
   { code: "AR", name: "Аргентина", dialCode: "+54", placeholder: "0 00 0000 000" },
 ];
 
 export const DEFAULT_REGISTRATION_COUNTRY = REGISTRATION_COUNTRIES[0];
+
+export function getCountryName(code: string, locale: AppLocale): string {
+  const fallback =
+    REGISTRATION_COUNTRIES.find((country) => country.code === code.toUpperCase())?.name ?? code;
+  try {
+    const display = new Intl.DisplayNames([toIntlLocale(locale)], { type: "region" });
+    return display.of(code.toUpperCase()) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export function formatPhoneDigits(value: string): string {
   return value.replace(/\D/g, "");
@@ -77,10 +95,33 @@ export function buildInternationalPhone(dialCode: string, localDigits: string): 
   return `+${dialDigits}${local}`;
 }
 
-import { VISIBLE_SITE_CURRENCY_CODES } from "~/shared/lib/siteCurrencies";
-
 export const REGISTRATION_CURRENCY_CODES = VISIBLE_SITE_CURRENCY_CODES;
 
+const REGISTRATION_CURRENCY_REG_KEYS: Record<string, MessageKey> = {
+  KZT: "common.currencyRegKZT",
+  RUB: "common.currencyRegRUB",
+  USDT: "common.currencyRegUSDT",
+  UAH: "common.currencyRegUAH",
+  TRY: "common.currencyRegTRY",
+  UZS: "common.currencyRegUZS",
+  AZN: "common.currencyRegAZN",
+  KGS: "common.currencyRegKGS",
+  TJS: "common.currencyRegTJS",
+};
+
+const REGISTRATION_CURRENCY_SHORT_KEYS: Record<string, MessageKey> = {
+  KZT: "promo.currencyKZT",
+  RUB: "common.currencyShortRUB",
+  USDT: "promo.currencyUSDT",
+  UAH: "promo.currencyUAH",
+  TRY: "promo.currencyTRY",
+  UZS: "promo.currencyUZS",
+  AZN: "promo.currencyAZN",
+  KGS: "promo.currencyKGS",
+  TJS: "promo.currencyTJS",
+};
+
+/** @deprecated Prefer getRegistrationCurrencyLabel(isoCode, t) in UI. */
 export const REGISTRATION_CURRENCY_LABELS: Record<string, string> = {
   KZT: "Тенге (KZT)",
   RUB: "Российский рубль",
@@ -93,6 +134,7 @@ export const REGISTRATION_CURRENCY_LABELS: Record<string, string> = {
   TJS: "Таджикский сомони",
 };
 
+/** @deprecated Prefer getRegistrationCurrencyShortLabel(isoCode, t) in UI. */
 export const REGISTRATION_CURRENCY_SHORT_LABELS: Record<string, string> = {
   KZT: "Тенге",
   RUB: "Рубль",
@@ -123,7 +165,27 @@ export function getCurrencyIconUrl(isoCode: string): string {
   return `/currency/${file}`;
 }
 
-export function getRegistrationCurrencyListName(isoCode: string, fallback?: string): string {
+export function getRegistrationCurrencyLabel(isoCode: string, t: TranslateFn): string {
+  const key = REGISTRATION_CURRENCY_REG_KEYS[isoCode.toUpperCase()];
+  return key ? t(key) : isoCode;
+}
+
+export function getRegistrationCurrencyShortLabel(isoCode: string, t: TranslateFn): string {
+  const key = REGISTRATION_CURRENCY_SHORT_KEYS[isoCode.toUpperCase()];
+  return key ? t(key) : isoCode;
+}
+
+export function getRegistrationCurrencyListName(
+  isoCode: string,
+  t?: TranslateFn,
+  fallback?: string,
+): string {
+  if (t) {
+    const key = REGISTRATION_CURRENCY_REG_KEYS[isoCode.toUpperCase()];
+    if (key) {
+      return t(key).replace(/\s*\([A-Z]{3}\)\s*$/, "").trim();
+    }
+  }
   const label = REGISTRATION_CURRENCY_LABELS[isoCode];
   if (label) {
     return label.replace(/\s*\([A-Z]{3}\)\s*$/, "").trim();
@@ -134,19 +196,22 @@ export function getRegistrationCurrencyListName(isoCode: string, fallback?: stri
 export function filterRegistrationCurrencies<T extends { isoCode: string; name: string }>(
   items: T[],
   query: string,
+  t?: TranslateFn,
 ): T[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return items;
 
   return items.filter((item) => {
-    const listName = getRegistrationCurrencyListName(item.isoCode, item.name);
-    const shortName = REGISTRATION_CURRENCY_SHORT_LABELS[item.isoCode] ?? "";
+    const listName = getRegistrationCurrencyListName(item.isoCode, t, item.name);
+    const shortName = t
+      ? getRegistrationCurrencyShortLabel(item.isoCode, t)
+      : REGISTRATION_CURRENCY_SHORT_LABELS[item.isoCode] ?? "";
     const haystack = [
       item.isoCode,
       item.name,
       listName,
       shortName,
-      REGISTRATION_CURRENCY_LABELS[item.isoCode],
+      t ? getRegistrationCurrencyLabel(item.isoCode, t) : REGISTRATION_CURRENCY_LABELS[item.isoCode],
     ]
       .filter(Boolean)
       .join(" ")

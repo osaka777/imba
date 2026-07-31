@@ -8,6 +8,13 @@ import * as cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { uploadsPathGuard } from './common/middleware/uploads-path.middleware';
+import { aiBotGuard } from './common/middleware/ai-bot-guard.middleware';
+import {
+  apiDocsBlockGuard,
+  softOriginGuard,
+} from './common/middleware/api-surface-guard.middleware';
+import { feedAccessGuard } from './common/middleware/feed-access.middleware';
+import { ALLOWED_WEB_ORIGINS } from './common/security/allowed-origins';
 import { runWithLocale } from './common/locale/locale.context';
 import { parseRequestLocale } from './common/locale/parse-request-locale';
 
@@ -20,26 +27,34 @@ setDefaultResultOrder('ipv4first');
 
 const mainConfig = (app: NestExpressApplication) => {
   app.enableCors({
-    origin: [
-      'http://localhost:9000',
-      'http://localhost:8001',
-      'http://localhost:8000',
-      'http://127.0.0.1:8088',
-      'http://localhost:3000',
-      'https://imba.bet',
-      'https://partners.imba.bet',
-      'https://imba.partners',
-      'https://cdn.imba.bet',
-    ],
+    origin: [...ALLOWED_WEB_ORIGINS],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'X-Locale', 'Origin', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Accept-Language',
+      'X-Locale',
+      'Origin',
+      'X-Requested-With',
+      'X-Imba-Feed-Token',
+    ],
     credentials: true,
   });
 
   // Используем WebSocket адаптер
   app.useWebSocketAdapter(new WsAdapter(app));
 
+  // Refuse AI agents/crawlers before any other middleware or routing runs.
+  app.use(aiBotGuard);
+  // Always hide OpenAPI surface (even if NODE_ENV is mis-set).
+  app.use(apiDocsBlockGuard);
+  // Soft Origin check on mutations only — never touches GET odds polls / WS / webhooks.
+  app.use(softOriginGuard);
+
   app.use(cookieParser());
+  // Anonymous odds catalog requires a short-lived feed session (or native/private).
+  app.use(feedAccessGuard);
   app.use((req, _res, next) => {
     const locale = parseRequestLocale(
       req.headers['x-locale'],

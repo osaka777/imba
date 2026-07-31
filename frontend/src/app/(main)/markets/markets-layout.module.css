@@ -1,0 +1,26 @@
+.root {
+  width: 100%;
+  min-height: calc(100vh - var(--layout-nav-h, 56px));
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.hubRoot {
+  width: 100%;
+  padding: 0 16px 48px;
+  box-sizing: border-box;
+}
+
+.detailRoot {
+  width: 100%;
+  padding: 12px clamp(12px, 2.4vw, 20px) 48px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 720px) {
+  .hubRoot,
+  .detailRoot {
+    padding-inline: 12px;
+    padding-bottom: 40px;
+  }
+}

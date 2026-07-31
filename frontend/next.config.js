@@ -64,6 +64,20 @@ const nextConfig = {
   experimental: {
     optimizeCss: false, // Отключаем оптимизацию CSS в разработке
   },
+  async redirects() {
+    return [
+      {
+        source: "/events",
+        destination: "/markets",
+        permanent: true,
+      },
+      {
+        source: "/events/:slug*",
+        destination: "/markets/:slug*",
+        permanent: true,
+      },
+    ];
+  },
   webpack(config) {
     const fileLoaderRule = config.module.rules.find((rule) =>
       rule.test?.test?.(".svg")

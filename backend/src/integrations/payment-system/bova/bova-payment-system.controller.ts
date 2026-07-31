@@ -27,6 +27,7 @@ import {
   BovaPaymentSystemWithdrawResponseDto,
 } from '~/integrations/payment-system/bova/dto/bova-payment-system-withdraw.dto';
 import { AuthenticationGuard } from '~/main/user/authentication/authentication.guard';
+import { isPaymentMethodEnabled } from '~/main/payment-settings/payment-settings.store';
 
 @ApiTags('BovaPaymentSystem')
 @Controller('payment-system/bova')
@@ -34,6 +35,12 @@ export class BovaPaymentSystemController {
   constructor(
     private readonly bovaPaymentSystemService: BovaPaymentSystemService,
   ) {}
+
+  private assertEnabled() {
+    if (!isPaymentMethodEnabled('Bova')) {
+      throw new BadRequestException('Bova отключён');
+    }
+  }
 
   @Post('/deposit')
   @UseGuards(AuthenticationGuard)
@@ -45,6 +52,7 @@ export class BovaPaymentSystemController {
     @Req() req: { user: { id: number } },
     @Ip() ip,
   ) {
+    this.assertEnabled();
     const data = await this.bovaPaymentSystemService.deposit(
       depositDto,
       req.user.id,
@@ -71,6 +79,7 @@ export class BovaPaymentSystemController {
   @Get('/spb-banks')
   @ApiOkResponse({ type: BovaPaymentSystemSpbBanksDto })
   async spbBanks() {
+    this.assertEnabled();
     return await this.bovaPaymentSystemService.getSbpBanks();
   }
 
@@ -83,6 +92,7 @@ export class BovaPaymentSystemController {
     @Body() withdrawDto: BovaPaymentSystemWithdrawDto,
     @Req() req: Request & { user: { id: number } },
   ) {
+    this.assertEnabled();
 
     // Validate required fields manually for debugging
     if (!withdrawDto.amount || withdrawDto.amount <= 0) {

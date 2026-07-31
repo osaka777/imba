@@ -1,3 +1,5 @@
+import { tOutside } from "~/shared/i18n";
+
 export type PublicPromoModalSettings = {
   enabled: boolean;
   showInHeader: boolean;
@@ -89,7 +91,7 @@ export async function claimPromoModalBonus(token: string) {
     },
   });
   if (!res.ok) {
-    let message = 'Не удалось получить бонус';
+    let message = tOutside("common.errGetBonus");
     try {
       const data = await res.json();
       message = data?.message || data?.detail || message;

@@ -2,6 +2,8 @@
 
 import clsx from "clsx";
 import { useMemo, useState } from "react";
+
+import { useLocale } from "~/shared/model/useLocale";
 import { FiChevronDown } from "react-icons/fi";
 
 import {
@@ -33,6 +35,7 @@ export function RegistrationCurrencySelect({
   onBlur,
   className,
 }: RegistrationCurrencySelectProps) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
 
   const options = useMemo(() => {
@@ -46,10 +49,14 @@ export function RegistrationCurrencySelect({
       );
   }, [currencies]);
 
-  const selected = options.find((item) => item.isoCode === value) ?? options[0];
+  const selected =
+    options.find((item) => item.isoCode === value) ??
+    (value
+      ? { isoCode: value, name: REGISTRATION_CURRENCY_SHORT_LABELS[value] ?? value }
+      : options[0]);
   const label = selected
     ? REGISTRATION_CURRENCY_SHORT_LABELS[selected.isoCode] ?? selected.name
-    : "Выберите валюту";
+    : t("common.selectCurrencyHint");
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);

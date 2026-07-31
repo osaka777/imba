@@ -1,52 +1,47 @@
+"use client";
+
 import Link from "next/link";
 
-import { makeMetadata } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "../guides.module.css";
 
-export const metadata = makeMetadata("Пополнение через Kaspi", {
-  description:
-    "Как пополнить счёт Imba.bet через Kaspi и карты Казахстана: минимальный депозит от 500 ₸, сроки зачисления и типичные ошибки.",
-  path: "/guides/kaspi",
-});
-
 export default function KaspiGuidePage() {
+  const { t } = useLocale();
+
   return (
     <article className={styles.wrapper}>
       <nav className={styles.nav}>
-        <Link href="/guides">← Все инструкции</Link>
+        <Link href="/guides">{t("guides.backGuides")}</Link>
       </nav>
-      <h1 className={styles.title}>Пополнение Imba.bet через Kaspi</h1>
-      <p className={styles.lead}>
-        Для игроков из Казахстана доступно пополнение в тенге (KZT), в том числе через Kaspi.
-        Минимальный депозит — от 500 ₸.
-      </p>
+      <h1 className={styles.title}>{t("guides.kaspiTitle")}</h1>
+      <p className={styles.lead}>{t("guides.kaspiLead")}</p>
 
       <section className={styles.section}>
-        <h2>Как пополнить</h2>
+        <h2>{t("guides.kaspiHowTitle")}</h2>
         <ol>
-          <li>Войдите в аккаунт на imba.bet.</li>
-          <li>Откройте раздел пополнения в профиле.</li>
-          <li>Выберите способ KZT / Kaspi и укажите сумму.</li>
-          <li>Следуйте инструкции на экране и дождитесь зачисления.</li>
+          <li>{t("guides.kaspiHow1")}</li>
+          <li>{t("guides.kaspiHow2")}</li>
+          <li>{t("guides.kaspiHow3")}</li>
+          <li>{t("guides.kaspiHow4")}</li>
         </ol>
       </section>
 
       <section className={styles.section}>
-        <h2>Если деньги не пришли</h2>
+        <h2>{t("guides.kaspiFailTitle")}</h2>
         <ul>
-          <li>Проверьте, что перевод выполнен на реквизиты из формы пополнения.</li>
-          <li>Убедитесь, что сумма не ниже минимального депозита.</li>
-          <li>Обратитесь в поддержку с ID платежа или скрином чека.</li>
+          <li>{t("guides.kaspiFail1")}</li>
+          <li>{t("guides.kaspiFail2")}</li>
+          <li>{t("guides.kaspiFail3")}</li>
         </ul>
       </section>
 
       <div className={styles.actions}>
         <Link className={styles.link} href="/profile">
-          Перейти в профиль
+          {t("guides.goProfile")}
         </Link>
         <Link className={`${styles.link} ${styles.linkSecondary}`} href="/">
-          На главную
+          {t("guides.home")}
         </Link>
       </div>
     </article>

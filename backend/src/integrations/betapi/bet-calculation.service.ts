@@ -65,10 +65,17 @@ export class BetCalculationService {
   }
 
   private async authenticate(): Promise<void> {
-    const response = await axios.post(`${this.baseUrl}/WebServices/BCService.asmx/LogIn/`, {
-      login: this.username,
-      password: this.password,
-    });
+    const response = await axios.post(
+      `${this.baseUrl}/WebServices/BCService.asmx/LogIn/`,
+      {
+        login: this.username,
+        password: this.password,
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10_000,
+      },
+    );
 
     this.logger.log('BetAPI authentication response: ' + JSON.stringify(response.data));
 

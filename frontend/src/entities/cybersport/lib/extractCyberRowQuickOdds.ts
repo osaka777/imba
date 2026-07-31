@@ -23,6 +23,8 @@ export type CyberRowQuickOdds =
     };
 
 function parseMapFromCategory(category: string): number | null {
+  const cardWord = category.match(/карта\s*(\d+)/i);
+  if (cardWord) return Number(cardWord[1]);
   const ordinal = category.match(/(\d+)\s*[-–]?\s*[яЙ]\s*карт/i);
   if (ordinal) return Number(ordinal[1]);
   const compact = category.match(/(?:^|[\s·])К(\d+)/i);
@@ -32,7 +34,12 @@ function parseMapFromCategory(category: string): number | null {
 
 function isWinnerMapGroup(group: WcMarketGroup): boolean {
   const key = group.marketKey ?? "";
-  return key === "h2h" || /WINNER_MAP/i.test(key) || /MATCH_WINNER/i.test(key);
+  return (
+    key === "h2h"
+    || /map_\d+_winner/i.test(key)
+    || /WINNER_MAP/i.test(key)
+    || /MATCH_WINNER/i.test(key)
+  );
 }
 
 function pickP1P2Outcomes(group: WcMarketGroup): {

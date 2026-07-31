@@ -199,14 +199,26 @@ const LIVE_GAME_PHASES = new Set([
   "penalties",
 ]);
 
+/** Explicit finished tokens only — bare "ended"/"итог"/"complete" false-positive mid-match.
+ *  EVENT_ENDED is omitted: Olimpbet flashes it at FT→ET while the match continues. */
+const FEED_FINISHED_RE =
+  /^EVENT_(FINISHED|CLOSED|RESULTED|COMPLETE)$/i;
+const FEED_FINISHED_TEXT_RE =
+  /^(?:заверш[её]?н[аоыйе]?|окончен[аоыйе]?|закончен[аоыйе]?)$/i;
+
 /** Match is over for UI even if the feed still marks it live. */
 export function isWcMatchEffectivelyFinished(event: WcClockEvent): boolean {
   if (event.completed || event.phase === "finished") return true;
-  if (event.feedStatus === "EVENT_FINISHED") return true;
   if (event.phase !== "live") return false;
 
+  // FT→ET / pens: feed may flash EVENT_ENDED while gamePhase is still live.
   const gamePhase = event.parsedScore?.gamePhase;
   if (gamePhase && LIVE_GAME_PHASES.has(gamePhase)) return false;
+
+  const feed = event.feedStatus?.trim() ?? "";
+  if (feed && (FEED_FINISHED_RE.test(feed) || FEED_FINISHED_TEXT_RE.test(feed))) {
+    return true;
+  }
 
   const secs = event.parsedScore?.seconds;
   if (

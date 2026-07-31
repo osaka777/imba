@@ -48,23 +48,23 @@ export const AuthForm = ({
   };
 
   const finishTelegramLogin = async () => {
-    safeToast.success("Вход выполнен успешно!");
+    safeToast.success(t("auth.loginSuccess"));
     try {
       const isVerified = await verifyUser();
       if (isVerified) {
         window.location.reload();
       } else {
-        safeToast.warning("Вход выполнен. Обновите страницу.");
+        safeToast.warning(t("auth.loginRefresh"));
       }
     } catch {
-      safeToast.warning("Вход выполнен. Обновите страницу.");
+      safeToast.warning(t("auth.loginRefresh"));
     }
   };
 
   const handleTelegramAuth = async (raw: Record<string, unknown>) => {
     const user = raw as TelegramWidgetUser;
     if (!user?.id || !user?.hash) {
-      safeToast.error("Некорректный ответ Telegram");
+      safeToast.error(t("auth.tgInvalidResponse"));
       return;
     }
 
@@ -80,7 +80,7 @@ export const AuthForm = ({
       await finishTelegramLogin();
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
-      safeToast.error(message || "Не удалось войти через Telegram");
+      safeToast.error(message || t("auth.tgLoginFailed"));
     } finally {
       setTgLoading(false);
     }

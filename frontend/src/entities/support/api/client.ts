@@ -1,4 +1,5 @@
 import { getSessionClient } from "~/entities/user/lib/getSessionClient";
+import { tOutside } from "~/shared/i18n";
 
 export type SupportConfig = {
   telegramUrl: string;
@@ -73,7 +74,7 @@ export async function fetchSupportConfig(): Promise<SupportConfig> {
   if (!res.ok) {
     return {
       botUsername: "imbabetalert_bot",
-      telegramLabel: "Чат поддержки",
+      telegramLabel: tOutside("support.chatLabel"),
       telegramUrl: process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM_URL || "https://t.me/imbabetchat",
     };
   }
@@ -187,7 +188,7 @@ export async function uploadSupportImage(
     error?: string;
   } | null;
   if (!res.ok || !data?.ok || !data.url) {
-    return { ok: false, error: data?.error || "Не удалось загрузить скрин" };
+    return { ok: false, error: data?.error || tOutside("common.errLoadScreenshot") };
   }
   return { ok: true, url: data.url };
 }
@@ -212,7 +213,7 @@ export async function sendSupportMessage(
     } | null;
     return {
       ok: false,
-      error: data?.error || "Не удалось отправить сообщение",
+      error: data?.error || tOutside("common.errSendMessage"),
       telegramUrl: data?.telegramUrl,
     };
   }

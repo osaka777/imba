@@ -186,4 +186,17 @@ export class BonusBalanceController {
   async getBonusHistoryStats(@Req() req: any) {
     return this.bonusBalanceService.getBonusHistoryStats(req.user.id);
   }
+
+  /**
+   * Отказ от активного бонуса (чтобы снять блок на вывод)
+   */
+  @Post('forfeit')
+  @UseGuards(AuthenticationGuard)
+  async forfeitBonus(
+    @Body() data: { currencyCode?: string },
+    @Req() req: { user: { id: number; defaultCurrencyCode?: string } },
+  ) {
+    const currencyCode = (data?.currencyCode || req.user.defaultCurrencyCode || 'KZT').toUpperCase();
+    return this.bonusBalanceService.forfeitBonus(req.user.id, currencyCode);
+  }
 }

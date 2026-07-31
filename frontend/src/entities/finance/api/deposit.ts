@@ -1,5 +1,23 @@
 import { getSessionClient } from "~/entities/user/lib";
 import { api } from "~/shared/api";
+import { tOutside } from "~/shared/i18n";
+
+async function readUploadErrorMessage(res: Response, fallback: string): Promise<string> {
+  const text = await res.text().catch(() => "");
+  if (!text) return fallback;
+  try {
+    const parsed = JSON.parse(text) as { message?: string | string[] };
+    if (typeof parsed?.message === "string" && parsed.message.trim()) {
+      return parsed.message;
+    }
+    if (Array.isArray(parsed?.message) && parsed.message.length) {
+      return parsed.message.map(String).join(", ");
+    }
+  } catch {
+    // plain text body
+  }
+  return text.length > 280 ? `${text.slice(0, 280)}…` : text;
+}
 
 export interface DepositDto {
   amount: number;
@@ -38,7 +56,8 @@ export type ManualForeignCardMethod =
   | "KZT_KASPI"
   | "RUB_FOREIGN_CARD"
   | "RUB_SBERBANK"
-  | "RUB_YANDEX_BANK";
+  | "RUB_YANDEX_BANK"
+  | "RUB_VTB_BANK";
 
 export type MyKztForeignCardOrder = {
   id: number;
@@ -72,13 +91,13 @@ const apiBase = () =>
 
 const authHeaders = () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return { Authorization: `Bearer ${token}` };
 };
 
-export const getManualDepositConfig = async (currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK' | 'RUB_YANDEX_BANK') => {
+export const getManualDepositConfig = async (currency: 'KZT' | 'KZT_KASPI' | 'RUB' | 'RUB_SBERBANK' | 'RUB_YANDEX_BANK' | 'RUB_VTB_BANK') => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET(`/api/deposit/manual-deposit/config?currency=${currency}`, {
     headers: authHeaders(),
   });
@@ -92,7 +111,7 @@ export const initManualForeignCardOrder = async (body: {
   voucher?: string;
 }) => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   const res = await fetch(`${apiBase()}/api/deposit/manual-foreign-card/init`, {
     method: 'POST',
     headers: {
@@ -103,7 +122,7 @@ export const initManualForeignCardOrder = async (body: {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text || 'Не удалось создать заявку');
+    throw new Error(text || tOutside("common.errCreateRequest"));
   }
   return res.json() as Promise<{
     ok: boolean;
@@ -116,7 +135,7 @@ export const cancelManualForeignCardOrder = async (body: {
   method?: ManualForeignCardMethod;
 }) => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   const res = await fetch(`${apiBase()}/api/deposit/manual-foreign-card/cancel`, {
     method: 'POST',
     headers: {
@@ -127,14 +146,14 @@ export const cancelManualForeignCardOrder = async (body: {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text || 'Не удалось отменить заявку');
+    throw new Error(text || tOutside("common.errCancelRequest"));
   }
   return res.json() as Promise<{ ok: boolean; cancelled: boolean; orderId?: number }>;
 };
 
 export const getManualForeignCardHistory = async () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET('/api/deposit/manual-foreign-card/history', {
     headers: authHeaders(),
   });
@@ -142,7 +161,7 @@ export const getManualForeignCardHistory = async () => {
 
 export const getMyKztForeignCardOrder = async () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET('/api/deposit/kzt-foreign-card/me', {
     headers: authHeaders(),
   });
@@ -150,7 +169,7 @@ export const getMyKztForeignCardOrder = async () => {
 
 export const getMyKztKaspiOrder = async () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET('/api/deposit/kzt-kaspi/me', {
     headers: authHeaders(),
   });
@@ -158,7 +177,7 @@ export const getMyKztKaspiOrder = async () => {
 
 export const getMyRubForeignCardOrder = async () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET('/api/deposit/rub-foreign-card/me', {
     headers: authHeaders(),
   });
@@ -166,7 +185,7 @@ export const getMyRubForeignCardOrder = async () => {
 
 export const getMyRubSberbankOrder = async () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET('/api/deposit/rub-sberbank/me', {
     headers: authHeaders(),
   });
@@ -174,8 +193,16 @@ export const getMyRubSberbankOrder = async () => {
 
 export const getMyRubYandexBankOrder = async () => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET('/api/deposit/rub-yandex-bank/me', {
+    headers: authHeaders(),
+  });
+};
+
+export const getMyRubVtbBankOrder = async () => {
+  const token = getSessionClient();
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
+  return api.GET('/api/deposit/rub-vtb-bank/me', {
     headers: authHeaders(),
   });
 };
@@ -184,7 +211,7 @@ export const getMyRubYandexBankOrder = async () => {
 export const createNirvanaPayDeposit = async (body: NirvanaPayDepositDto) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   return api.POST("/api/nirvanapay-payin/create", {
     body,
@@ -197,7 +224,7 @@ export const createNirvanaPayDeposit = async (body: NirvanaPayDepositDto) => {
 export const createDeposit = async (body: DepositDto) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   return api.POST("/api/deposit", {
     body,
@@ -210,7 +237,7 @@ export const createDeposit = async (body: DepositDto) => {
 export const uploadKztForeignCardReceipt = async (form: FormData) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   const res = await fetch(`${apiBase()}/api/deposit/kzt-foreign-card`, {
     method: 'POST',
@@ -220,8 +247,7 @@ export const uploadKztForeignCardReceipt = async (form: FormData) => {
     } as any,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || 'Ошибка загрузки чека');
+    throw new Error(await readUploadErrorMessage(res, tOutside("common.errUploadReceipt")));
   }
   try {
     return await res.json();
@@ -233,7 +259,7 @@ export const uploadKztForeignCardReceipt = async (form: FormData) => {
 export const uploadKztKaspiReceipt = async (form: FormData) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   const res = await fetch(`${apiBase()}/api/deposit/kzt-kaspi`, {
     method: 'POST',
@@ -243,8 +269,7 @@ export const uploadKztKaspiReceipt = async (form: FormData) => {
     } as any,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || 'Ошибка загрузки чека');
+    throw new Error(await readUploadErrorMessage(res, tOutside("common.errUploadReceipt")));
   }
   try {
     return await res.json();
@@ -256,7 +281,7 @@ export const uploadKztKaspiReceipt = async (form: FormData) => {
 export const uploadRubForeignCardReceipt = async (form: FormData) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   const res = await fetch(`${apiBase()}/api/deposit/rub-foreign-card`, {
     method: 'POST',
@@ -266,8 +291,7 @@ export const uploadRubForeignCardReceipt = async (form: FormData) => {
     } as any,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || 'Ошибка загрузки чека');
+    throw new Error(await readUploadErrorMessage(res, tOutside("common.errUploadReceipt")));
   }
   try {
     return await res.json();
@@ -279,7 +303,7 @@ export const uploadRubForeignCardReceipt = async (form: FormData) => {
 export const uploadRubSberbankReceipt = async (form: FormData) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   const res = await fetch(`${apiBase()}/api/deposit/rub-sberbank`, {
     method: 'POST',
@@ -289,8 +313,7 @@ export const uploadRubSberbankReceipt = async (form: FormData) => {
     } as any,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || 'Ошибка загрузки чека');
+    throw new Error(await readUploadErrorMessage(res, tOutside("common.errUploadReceipt")));
   }
   try {
     return await res.json();
@@ -302,7 +325,7 @@ export const uploadRubSberbankReceipt = async (form: FormData) => {
 export const uploadRubYandexBankReceipt = async (form: FormData) => {
   const token = getSessionClient();
   if (!token) {
-    throw new Error('Не авторизован: отсутствует токен. Пожалуйста, выполните вход.');
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
   }
   const res = await fetch(`${apiBase()}/api/deposit/rub-yandex-bank`, {
     method: 'POST',
@@ -312,8 +335,29 @@ export const uploadRubYandexBankReceipt = async (form: FormData) => {
     } as any,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || 'Ошибка загрузки чека');
+    throw new Error(await readUploadErrorMessage(res, tOutside("common.errUploadReceipt")));
+  }
+  try {
+    return await res.json();
+  } catch {
+    return { ok: true } as any;
+  }
+};
+
+export const uploadRubVtbBankReceipt = async (form: FormData) => {
+  const token = getSessionClient();
+  if (!token) {
+    throw new Error(tOutside("common.errUnauthorizedLogin"));
+  }
+  const res = await fetch(`${apiBase()}/api/deposit/rub-vtb-bank`, {
+    method: 'POST',
+    body: form,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    } as any,
+  });
+  if (!res.ok) {
+    throw new Error(await readUploadErrorMessage(res, tOutside("common.errUploadReceipt")));
   }
   try {
     return await res.json();
@@ -337,7 +381,7 @@ export type AdminDeposit = {
 
 export const adminListDeposits = async (status: 'pending' | 'approved' | 'rejected' = 'pending') => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.GET(`/api/admin/deposits?status=${status}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -345,7 +389,7 @@ export const adminListDeposits = async (status: 'pending' | 'approved' | 'reject
 
 export const adminApproveDeposit = async (id: number) => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.POST(`/api/admin/deposits/${id}/approve`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -353,7 +397,7 @@ export const adminApproveDeposit = async (id: number) => {
 
 export const adminRejectDeposit = async (id: number) => {
   const token = getSessionClient();
-  if (!token) throw new Error('Не авторизован');
+  if (!token) throw new Error(tOutside("common.errUnauthorized"));
   return api.POST(`/api/admin/deposits/${id}/reject`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -399,7 +443,7 @@ export const initUsdtTrc20Order = async (amount: number, source = 'deposit-modal
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text || 'Не удалось создать заявку');
+    throw new Error(text || tOutside("common.errCreateRequest"));
   }
   return res.json() as Promise<{ ok: boolean; order: UsdtTrc20Order }>;
 };
@@ -429,7 +473,7 @@ export const cancelUsdtTrc20Order = async (orderId?: number) => {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text || 'Не удалось отменить заявку');
+    throw new Error(text || tOutside("common.errCancelRequest"));
   }
   return res.json();
 };

@@ -1,9 +1,11 @@
 import { Metadata } from "next";
 
 import { Profile } from "~/entities/user";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
-export const metadata: Metadata = makeMetadata("Профиль");
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoProfile");
+}
 
 export default async function ProfilePage() {
   return <Profile />;

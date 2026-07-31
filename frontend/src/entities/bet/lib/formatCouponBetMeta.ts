@@ -1,18 +1,21 @@
 import type { Rate } from "~/entities/bet/types";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
+import type { AppLocale } from "~/shared/i18n/locale";
+import { toIntlLocale } from "~/shared/i18n/format";
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
 
-export function formatCouponPlacedAt(iso: string): string {
-  return new Date(iso).toLocaleString("ru-RU", {
+/** Время размещения ставки — в локальной таймзоне устройства пользователя. */
+export function formatCouponPlacedAt(iso: string, locale: AppLocale = "ru"): string {
+  return new Date(iso).toLocaleString(toIntlLocale(locale), {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Asia/Almaty",
   }).replace(",", " ·");
 }
 
-export function formatCouponKickoff(iso: string): string {
-  return new Date(iso).toLocaleString("ru-RU", {
+export function formatCouponKickoff(iso: string, locale: AppLocale = "ru"): string {
+  return new Date(iso).toLocaleString(toIntlLocale(locale), {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -21,11 +24,14 @@ export function formatCouponKickoff(iso: string): string {
   });
 }
 
-export function getCouponPhaseBadge(rate: Rate): { label: string; tone: "live" | "line" } {
+export function getCouponPhaseBadge(
+  rate: Rate,
+  t?: (key: MessageKey, params?: TranslateParams) => string,
+): { label: string; tone: "live" | "line" } {
   if (rate.wcPhase === "live" || rate.isLive) {
     return { label: "Live", tone: "live" };
   }
-  return { label: "Линия", tone: "line" };
+  return { label: t ? t("coupon.lineLabel") : "Линия", tone: "line" };
 }
 
 export function getCouponMatchTimeLine(
@@ -45,7 +51,7 @@ export function getCouponMatchTimeLine(
   }
 
   if (rate.wcCommenceTime) {
-    return `Старт ${formatCouponKickoff(rate.wcCommenceTime)}`;
+    return `Старт ${formatCouponKickoff(rate.wcCommenceTime)}`; // callers may wrap with t(coupon.kickoffAt)
   }
 
   return null;
@@ -55,7 +61,7 @@ export function getCouponTeamsLine(rate: Rate): string {
   if (rate.homeTeam && rate.awayTeam) {
     return `${rate.homeTeam} — ${rate.awayTeam}`;
   }
-  return rate.eventName ?? "Матч";
+  return rate.eventName ?? "Match";
 }
 
 export function formatCouponWinLine(
@@ -73,6 +79,10 @@ export function formatCouponWinLine(
 }
 
 export function getCouponMatchHref(rate: Rate): string {
+  const gameId = rate.parentEventId || rate.eventId;
+  if (gameId && /^cyber-\d+$/i.test(String(gameId))) {
+    return `/cybersport/game/${gameId}`;
+  }
   if (rate.source === "wc-odds" || rate.wcPick) {
     return buildWcGameHref({
       id: rate.eventId || "",
@@ -80,7 +90,6 @@ export function getCouponMatchHref(rate: Rate): string {
       awayTeam: rate.awayTeam || "",
     });
   }
-  const gameId = rate.parentEventId || rate.eventId;
   return gameId ? `/game/${gameId}` : "/line/soccer";
 }
 

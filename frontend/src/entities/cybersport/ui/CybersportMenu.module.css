@@ -18,10 +18,10 @@
   gap: 7px;
   height: 36px;
   padding: 0 12px;
-  border-radius: var(--kick-radius, 10px);
-  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.08));
-  background: var(--kick-bg-card, #161617);
-  color: var(--cy-text-secondary, #909090);
+  border-radius: 6px;
+  border: 1px solid #dce3eb;
+  background: #ffffff;
+  color: #667085;
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
@@ -29,33 +29,38 @@
     background 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
-    box-shadow 0.15s ease;
+    color 0.15s ease;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
 .item:hover {
-  background: var(--kick-bg-elevated, #1e1e20);
-  border-color: var(--kick-border-strong, rgb(255 255 255 / 0.14));
-  color: var(--cy-text-primary, #e8e8ea);
+  background: #eef4ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
 .item_active {
-  background: var(--kick-green-dim, rgb(83 252 24 / 0.12));
-  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
-  color: var(--kick-green, #53fc18);
-  box-shadow: 0 0 16px rgb(83 252 24 / 0.12);
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
 }
 
 .item_hub {
-  color: var(--cy-text-muted, #6b6b6f);
+  color: #8b93a1;
 }
 
 .icon {
   width: 15px;
   height: 15px;
   fill: currentColor;
+  color: inherit;
   flex-shrink: 0;
+}
+
+.icon :global(path),
+.icon :global([fill]) {
+  fill: currentColor !important;
 }
 
 .count {
@@ -65,11 +70,11 @@
   font-size: 10px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  background: rgb(255 255 255 / 0.08);
-  color: var(--cy-text-primary, #e8e8ea);
+  background: #eef2f7;
+  color: #475467;
 }
 
 .item_active .count {
-  background: rgb(83 252 24 / 0.2);
-  color: var(--kick-green, #53fc18);
+  background: #bfdbfe;
+  color: #1d4ed8;
 }

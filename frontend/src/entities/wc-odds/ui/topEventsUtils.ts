@@ -23,11 +23,11 @@ export type HomepageTopEventsSlots = {
   cs2: number;
 };
 
-/** Homepage carousel: WC football focus, no tennis. */
+/** Homepage carousel: football first, then tennis / CS2 by priority. */
 export const DEFAULT_HOMEPAGE_TOP_EVENTS_SLOTS: HomepageTopEventsSlots = {
-  soccer: 3,
-  tennis: 0,
-  cs2: 1,
+  soccer: 4,
+  tennis: 1,
+  cs2: 2,
 };
 
 const CS2_SPORT_KEY = CYBER_SPORTS[0]?.name ?? "esports.cs";

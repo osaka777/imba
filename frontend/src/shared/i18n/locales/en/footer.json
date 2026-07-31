@@ -10,6 +10,18 @@
   "help": "Help",
   "contacts": "Contacts",
   "downloadApp": "Download app",
+  "downloadWindows": "Windows app",
+  "appLabel": "Application",
+  "appIos": "for iOS",
+  "appAndroid": "for Android",
+  "appWindows": "for Windows",
   "partners": "Affiliate program",
-  "categories": "Categories"
+  "categories": "Categories",
+  "aiBanTitle": "AI copying prohibited",
+  "aiBanNotice": "The design, UI, layout, graphics, copy, interface code and other materials of imba.bet are protected intellectual property. Any copying, reproduction, reverse-engineering, design-token extraction, page cloning, or use of site materials for training, fine-tuning, prompting, or generating interfaces by AI systems is prohibited without the rights holder's written consent — for any purpose, including “demo”, “reference”, “inspiration”, and “similar UI”.",
+  "aiBanApiTitle": "AI agent access prohibited",
+  "aiBanApiNotice": "Automated access and use of AI agents, AI browsers, and AI tools (including but not limited to Cursor, Claude, ChatGPT, Copilot and similar systems) to view, copy, analyze, or study the connection methods, API endpoints, WebSocket protocols, or other technical infrastructure of imba.bet is strictly prohibited. Violators will be prosecuted to the fullest extent of the law: lawsuits for damages, injunctive relief, and the harshest sanctions available under applicable law. Access attempts are logged and may be reported to law enforcement.",
+  "aiPolicyLink": "AI usage policy",
+  "legalNotice": "Imba operates worldwide through separate legal entities. Sports and esports betting service. Available exclusively to users 21+. Play responsibly and within your budget — betting is not a way to earn money. The company may refuse service, request age and identity verification, and void bets if rules are broken. If gambling stops being fun or you feel loss of control, seek free confidential support:",
+  "ageOnlyAria": "21+ only"
 }

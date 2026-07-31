@@ -1,0 +1,13 @@
+{
+  "colTime": "Saat",
+  "colTeams": "Takımlar",
+  "topEvents": "Şu an popüler",
+  "topEventsLive": "Oyuncu aktivitesi",
+  "topEventsSubtitle": "Trend maçlar ve anlık çoğunluk tercihi",
+  "topEventsLegend": "Yüzde ne kadar yüksekse tercih o kadar popüler",
+  "emptyLive": "{sport} için canlı etkinlik yok",
+  "emptyLine": "{sport} için ön maç etkinliği yok",
+  "emptyHint": "Başka bir spor deneyin veya tüm bölümü açın",
+  "viewAllLive": "Tüm canlıları gör",
+  "goToLine": "Ön maça git"
+}

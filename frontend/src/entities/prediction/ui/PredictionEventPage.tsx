@@ -34,9 +34,7 @@ import {
 } from "../api/client";
 import { resolvePredictionMediaUrl } from "../lib/mediaUrl";
 import { pickPredictionText } from "../lib/i18nText";
-import { spectacleFlags } from "../lib/spectacleFlags";
 import { ChanceChart, type ChanceScrub } from "./ChanceChart";
-import { PredictionActivityFeed } from "./PredictionActivityFeed";
 import { PredictionGifPicker } from "./PredictionGifPicker";
 import styles from "./Prediction.module.css";
 
@@ -278,7 +276,6 @@ export function PredictionEventPage({ slug }: { slug: string }) {
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [pendingGif, setPendingGif] = useState<PredictionGifItem | null>(null);
   const [likeBusyId, setLikeBusyId] = useState<number | null>(null);
-  const [settleOpen, setSettleOpen] = useState(false);
   const shareWrapRef = useRef<HTMLDivElement>(null);
 
   const query = useQuery({
@@ -297,20 +294,6 @@ export function PredictionEventPage({ slug }: { slug: string }) {
 
   const event = query.data?.event;
   const comments = (query.data?.comments || []) as PredictionCommentDto[];
-
-  /* Settle celebration once per session. */
-  useEffect(() => {
-    if (!spectacleFlags.settleDrama) return;
-    if (!event || event.status !== "SETTLED" || !event.winningOutcomeId) return;
-    const key = `imba_settle_seen_${event.id}`;
-    try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
-    } catch {
-      /* ignore */
-    }
-    setSettleOpen(true);
-  }, [event]);
 
   /* Canonical latin slug in the address bar. */
   useEffect(() => {
@@ -379,7 +362,6 @@ export function PredictionEventPage({ slug }: { slug: string }) {
   const hasMoreComments = commentThreads.length > commentsVisible;
   const related = query.data?.related || [];
   const myBets = query.data?.myBets || [];
-  const activity = query.data?.activity || [];
   const minStake =
     query.data?.config?.minStakeByCurrency?.[currencyCode] ?? 100;
   const maxStake =
@@ -779,26 +761,6 @@ export function PredictionEventPage({ slug }: { slug: string }) {
 
   return (
     <div className={styles.detailShell} data-events-detail>
-      {settleOpen && winnerLabel ? (
-        <div className={styles.settleDrama} role="dialog" aria-modal="true">
-          <div className={styles.settleDramaCard}>
-            <p className={styles.settleDramaEyebrow}>
-              {t("prediction.settleDramaTitle")}
-            </p>
-            <h2 className={styles.settleDramaTitle}>
-              {t("prediction.resultWinner", { label: winnerLabel })}
-            </h2>
-            <p className={styles.settleDramaBody}>{eventTitle}</p>
-            <button
-              className={styles.settleDramaBtn}
-              onClick={() => setSettleOpen(false)}
-              type="button"
-            >
-              {t("prediction.settleDramaCta")}
-            </button>
-          </div>
-        </div>
-      ) : null}
       <div className={`${styles.hub} ${styles.detail}`}>
         <div className={styles.detailLayout}>
           <div className={styles.leftCol}>
@@ -1099,10 +1061,6 @@ export function PredictionEventPage({ slug }: { slug: string }) {
                     })}
                   </div>
                 </div>
-              ) : null}
-
-              {spectacleFlags.activityFeed ? (
-                <PredictionActivityFeed activity={activity} />
               ) : null}
 
               <div className={`${styles.pmInfoSection} ${styles.commentSection}`}>

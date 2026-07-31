@@ -89,15 +89,22 @@ export type BtcStateDto = {
     odds: number;
     minStake: number;
     maxStake: number;
+    maxStakeByCurrency?: Record<string, number>;
     currencyDefault: string;
     quoteValidMs?: number;
     slippageBps?: number;
     settleRule?: string;
+    bettingPaused?: boolean;
+    maxSideExposure?: number;
+    maxUserStakePerRound?: number;
+    maxUserBetsPerRound?: number;
+    oddsByRoundMs?: Record<string, number>;
     symbols?: string[];
     roundOptionsMs?: number[];
     markets?: Array<{
       symbol: string;
       roundMs: number;
+      odds?: number;
       lockMs: number;
       label: string;
     }>;
@@ -123,7 +130,7 @@ export type BtcStateDto = {
 
 async function authFetch(path: string, init: RequestInit = {}) {
   const token = getSessionClient();
-  if (!token) throw new Error("Войдите, чтобы сделать ставку");
+  if (!token) throw new Error("TRADING_AUTH_REQUIRED");
   const res = await fetch(`${API()}${path}`, {
     ...init,
     headers: {
@@ -155,7 +162,7 @@ export async function fetchBtcState(
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     cache: "no-store",
   });
-  if (!res.ok) throw new Error("Не удалось загрузить рынок");
+  if (!res.ok) throw new Error("TRADING_MARKET_LOAD_FAILED");
   return res.json();
 }
 
@@ -188,7 +195,7 @@ export function fetchBtcQuote(symbol = "BTCUSDT", roundMs = 300_000) {
   return fetch(`${API()}/api/casino/btc-updown/quote?${qs}`, {
     cache: "no-store",
   }).then(async (res) => {
-    if (!res.ok) throw new Error("Не удалось получить котировку");
+    if (!res.ok) throw new Error("TRADING_QUOTE_FAILED");
     return res.json() as Promise<BtcQuoteDto>;
   });
 }
@@ -203,4 +210,101 @@ export function fetchBtcDailyStats(currencyCode = "KZT") {
   return authFetch(
     `/api/casino/btc-updown/stats/daily?currencyCode=${encodeURIComponent(currencyCode)}`,
   ) as Promise<BtcDailyStatsDto>;
+}
+
+export type BtcPublicPnlPlayerDto = {
+  userId: number;
+  name: string;
+  nickname?: string | null;
+  avatarPreset: string | null;
+  avatarUrl?: string | null;
+  bets: number;
+  wins: number;
+  losses: number;
+  stakeTotal: number;
+  pnl: number;
+  winRate: number | null;
+};
+
+export type BtcPublicPnlDto = {
+  range: "1d" | "1w" | "1m" | "all";
+  currencyCode: string;
+  summary: {
+    players: number;
+    bets: number;
+    wins: number;
+    losses: number;
+    stakeTotal: number;
+    pnl: number;
+    winRate: number | null;
+  };
+  series: Array<{ t: number; v: number }>;
+  players: BtcPublicPnlPlayerDto[];
+};
+
+export async function fetchBtcPublicPnl(
+  range: "1d" | "1w" | "1m" | "all" = "1d",
+  currencyCode = "KZT",
+  limit = 8,
+): Promise<BtcPublicPnlDto> {
+  const qs = new URLSearchParams({
+    range,
+    currencyCode,
+    limit: String(limit),
+  });
+  const res = await fetch(
+    `${API()}/api/casino/btc-updown/stats/public-pnl?${qs}`,
+    { cache: "no-store" },
+  );
+  if (!res.ok) throw new Error("TRADING_PUBLIC_PNL_FAILED");
+  return res.json();
+}
+
+export type BtcPublicTraderDto = {
+  user: {
+    id: number;
+    name: string;
+    nickname?: string | null;
+    avatarPreset: string | null;
+    avatarUrl?: string | null;
+    joinedAt: string;
+  };
+  range: "1d" | "1w" | "1m" | "1y" | "ytd" | "all";
+  currencyCode: string;
+  summary: {
+    bets: number;
+    wins: number;
+    losses: number;
+    stakeTotal: number;
+    pnl: number;
+    biggestWin?: number;
+    winRate: number | null;
+  };
+  series: Array<{ t: number; v: number }>;
+  recent: Array<{
+    id: number;
+    side: string;
+    symbol: string;
+    roundMs: number;
+    stake: number;
+    payout: number;
+    pnl: number;
+    status: string;
+    settledAt: string | null;
+  }>;
+};
+
+export async function fetchBtcPublicTrader(
+  idOrNick: string | number,
+  range: "1d" | "1w" | "1m" | "1y" | "ytd" | "all" = "all",
+  currencyCode = "KZT",
+): Promise<BtcPublicTraderDto> {
+  const qs = new URLSearchParams({ range, currencyCode });
+  const key = encodeURIComponent(String(idOrNick));
+  const res = await fetch(
+    `${API()}/api/casino/btc-updown/traders/${key}?${qs}`,
+    { cache: "no-store" },
+  );
+  if (!res.ok) throw new Error("TRADING_TRADER_NOT_FOUND");
+  return res.json();
 }

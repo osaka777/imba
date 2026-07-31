@@ -1,73 +1,129 @@
 "use client";
 
-import Link from "next/link";
+import InfiniteScroll from "react-infinite-scroller";
+import { useCallback } from "react";
 
-import { resolveCyberSportLabel } from "~/entities/cybersport/lib/cyberSportsList";
 import type { CyberDisciplineSlug } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import { useCyberSportPreference } from "~/entities/cybersport/hooks/useCyberSportPreference";
-import { CybersportFeaturedLive } from "~/entities/cybersport/ui/CybersportFeaturedLive";
-import { CybersportGamesFeed } from "~/entities/cybersport/ui/CybersportGamesFeed";
-import { CybersportMatchSkeleton } from "~/entities/cybersport/ui/CybersportMatchSkeleton";
-import { CybersportMenu } from "~/entities/cybersport/ui/CybersportMenu";
-import { KickPartnersLive } from "~/entities/kick/ui/KickPartnersLive";
-
-import hubStyles from "./CybersportLiveHub.module.css";
-import styles from "./CybersportSection.module.css";
+import { useCybersportFeed } from "~/entities/cybersport/hooks/useCybersportFeed";
+import { CybersportLeagueMenu } from "~/entities/cybersport/ui/CybersportLeagueMenu";
+import { CybersportSidebarMenu } from "~/entities/cybersport/ui/CybersportSidebarMenu";
+import { LuckyDriveBanner } from "~/entities/game/ui/LuckyDrive/LuckyDriveBanner";
+import { Search } from "~/entities/game/ui/Search";
+import { TournamentTable } from "~/entities/game/ui/TournamentTable";
+import gamesStyles from "~/entities/game/ui/Games/Games.module.css";
+import shellStyles from "~/entities/game/ui/SportPageShell.module.css";
+import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
+import { LoadingSpinner } from "~/shared/ui";
+import { Header } from "~/widgets/Header";
 
 type CybersportLiveHubProps = {
   initialSport?: string;
   disciplineSlug?: CyberDisciplineSlug;
 };
 
+/** /cybersport/{discipline}/live — same layout as /live. */
 export function CybersportLiveHub({ initialSport, disciplineSlug }: CybersportLiveHubProps) {
+  const { t } = useLocale();
   const { sport, hydrated } = useCyberSportPreference(initialSport);
-  const sportLabel = resolveCyberSportLabel(sport);
-  const backHref = disciplineSlug ? `/cybersport/${disciplineSlug}` : "/cybersport";
-  const lineHref = disciplineSlug ? `/cybersport/${disciplineSlug}/line` : "/cybersport/line";
+  const sportFilter = sport || undefined;
+
+  const {
+    leagues,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+  } = useCybersportFeed(sportFilter, "live");
+
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const showLoader =
+    isFetchingNextPage
+    || ((isLoading || !hydrated) && leagues.length === 0);
 
   return (
-    <div className={styles.wrap}>
-      <header className={hubStyles.hero}>
-        <div aria-hidden className={hubStyles.glow} />
-        <div className={hubStyles.content}>
-          <p className={hubStyles.eyebrow}>
-            <span className={hubStyles.livePill}>LIVE</span>
-            Streaming Hub
-          </p>
-          <h1 className={hubStyles.title}>Прямой эфир</h1>
-          <p className={hubStyles.subtitle}>
-            Все live-матчи киберспорта — смотри трансляцию и ставь в один клик.
-          </p>
-          <Link className={hubStyles.backLink} href={backHref}>
-            ← {disciplineSlug ? sportLabel : "Киберспорт"}
-          </Link>
+    <div className={gamesStyles.Games}>
+      <div className={shellStyles.pageShell}>
+        <div className={shellStyles.pageHeaderSlot}>
+          <Header />
         </div>
-      </header>
+        <div className={shellStyles.pageFlow}>
+          <div className={shellStyles.sidebarColumn}>
+            <aside className={shellStyles.sportsSidebar}>
+              <div className={shellStyles.sidebarControls}>
+                <div className={shellStyles.sidebarSearchSlot}>
+                  <Search sport={sportFilter} />
+                </div>
+              </div>
+              <div className={shellStyles.sidebarMenuScroll}>
+                <CybersportSidebarMenu
+                  className={cn(sportFilter && shellStyles.sportsMenuSlot_mobileHidden)}
+                  discipline={disciplineSlug}
+                  layout="sidebar"
+                  mode="live"
+                  sport={sportFilter}
+                />
+                {sportFilter ? (
+                  <CybersportLeagueMenu layout="sidebar" type="live" />
+                ) : null}
+              </div>
+            </aside>
+          </div>
 
-      <CybersportFeaturedLive limit={8} sport={sport} title={`Live · ${sportLabel}`} />
+          <div className={shellStyles.pageMain}>
+            <div className={shellStyles.pageMainLead}>
+              <LuckyDriveBanner compact placement="live" />
+            </div>
+            <div className={shellStyles.pageMainBody}>
+              <Search hideOnDesktop sport={sportFilter} />
+              <InfiniteScroll
+                className={gamesStyles.Games}
+                element="div"
+                hasMore={Boolean(hasNextPage) && !isFetchingNextPage}
+                loadMore={loadMore}
+                pageStart={0}
+                threshold={250}
+                useWindow
+              >
+                {error ? (
+                  <div className="p-4 text-center bg-red-500/10 text-red-500">
+                    {t("common.gamesLoadError")}
+                  </div>
+                ) : null}
 
-      <KickPartnersLive />
+                {hydrated
+                  && !isLoading
+                  && !error
+                  && leagues.length === 0 ? (
+                  <p className="p-4 text-center bg-white/5">
+                    {t("common.gamesNotFound")}
+                  </p>
+                ) : null}
 
-      <div className={hubStyles.toolbar}>
-        <CybersportMenu discipline={disciplineSlug} mode="live" sport={sport} />
-      </div>
+                {leagues.map((league, index) => (
+                  <TournamentTable
+                    gameLinkPrefix="/cybersport/game/"
+                    games={league.games}
+                    isLive
+                    key={`${league.leagueName}-${index}`}
+                    league={league.leagueName}
+                    sport={league.games[0]?.sport ?? sportFilter ?? "esports.cs"}
+                  />
+                ))}
 
-      <div className={hubStyles.feedCard}>
-        <div className={hubStyles.feedHead}>
-          <span className={hubStyles.feedPill}>LIVE</span>
-          <h2 className={hubStyles.feedTitle}>{sportLabel}</h2>
-        </div>
-        <div className={hubStyles.feedBody}>
-          {hydrated ? (
-            <CybersportGamesFeed
-              alternateHref={lineHref}
-              sport={sport}
-              sportLabel={sportLabel}
-              variant="live"
-            />
-          ) : (
-            <CybersportMatchSkeleton rows={4} />
-          )}
+                {showLoader ? (
+                  <LoadingSpinner className={gamesStyles.loading} key="cyber-live-hub-loading" />
+                ) : null}
+              </InfiniteScroll>
+            </div>
+          </div>
         </div>
       </div>
     </div>

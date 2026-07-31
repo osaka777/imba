@@ -39,8 +39,6 @@ import { PrismaService } from '~/prisma/prisma.service';
 
 import { HttpException } from '~/common/types/http-exception';
 import { AuthenticationGuard } from '~/main/user/authentication/authentication.guard';
-import { NirvanaPayPayinService } from '~/integrations/payment-system/nirvanapay-payin/nirvanapay-payin.service';
-
 import { CreateDepositDto } from './dto/create-deposit.dto';
 import { DepositService } from './deposit.service';
 import { PromoModalService } from '../promo-modal/promo-modal.service';
@@ -69,7 +67,6 @@ export class DepositController {
   private readonly logger = new Logger(DepositController.name);
 
   constructor(
-    private readonly nirvanaPayPayinService: NirvanaPayPayinService,
     private readonly depositService: DepositService,
     private readonly prisma: PrismaService,
     private readonly promoModalService: PromoModalService,
@@ -85,108 +82,20 @@ export class DepositController {
   async createDeposit(
     @Body() createDepositDto: CreateDepositDto,
     @Req() req: any,
-    @Res() res: any,
   ) {
     this.winstonLogger.info('===== DEPOSIT REQUEST RECEIVED (WINSTON VERSION) =====', { context: 'DepositController' });
     this.winstonLogger.info(`URL: ${req.url}`, { context: 'DepositController' });
     this.winstonLogger.info(`Method: ${req.method}`, { context: 'DepositController' });
     this.winstonLogger.info(`Body: ${JSON.stringify(createDepositDto)}`, { context: 'DepositController' });
-    this.winstonLogger.info(`Headers: ${JSON.stringify(req.headers)}`, { context: 'DepositController' });
-    this.winstonLogger.info(`Cookies: ${JSON.stringify(req.cookies)}`, { context: 'DepositController' });
     this.logger.log(`Creating deposit for user ${req.user.id}, currency: ${createDepositDto.currency}`);
-    
-    // Автоматически направляем KZT депозиты в NirvanaPay
-    if (createDepositDto.currency === 'KZT') {
-      this.winstonLogger.info('Routing KZT deposit to NirvanaPay', { context: 'DepositController' });
-      this.logger.log('Routing KZT deposit to NirvanaPay');
 
-      const externalID = `deposit_${Date.now()}_${req.user.id}`;
-      const frontendBase = process.env.FRONTEND_URL || 'http://localhost:8000';
-      const callbackSecret = process.env.NIRVANAPAY_CALLBACK_SECRET;
-      const backendCallbackBase =
-        (process.env.BETAPI_CALLBACK_URL || 'https://imba.bet') +
-        '/api/nirvanapay-payin/callback';
-      const backendCallback = callbackSecret
-        ? `${backendCallbackBase}?secret=${encodeURIComponent(callbackSecret)}`
-        : backendCallbackBase;
-      const payinRequest = {
-        externalID,
-        amount: createDepositDto.amount,
-        currency: 'KZT' as const,
-        // Передаем externalID в redirectURL, чтобы страница могла отобразить детали
-        redirectURL: `${frontendBase}/deposit/success?externalID=${encodeURIComponent(externalID)}`,
-        siteName: process.env.SITE_NAME || 'Kazik Platform',
-        callbackURL: backendCallback,
-
-        userInfo: {
-          ip: req.ip || req.connection?.remoteAddress || '127.0.0.1',
-          userAgent: req.get('user-agent') || 'Unknown',
-          email: createDepositDto.email || `user${req.user.id}@example.com`,
-          id: req.user.id.toString(),
-        },
-      };
-      
-      this.winstonLogger.info(`Calling NirvanaPay with request: ${JSON.stringify(payinRequest)}`, { context: 'DepositController' });
-      const resp = await this.nirvanaPayPayinService.createPayin(payinRequest);
-      this.winstonLogger.info(`NirvanaPay response: ${JSON.stringify(resp)}`, { context: 'DepositController' });
-
-      // Если провайдер отклонил запрос, возвращаем ошибку 400
-      if (!resp?.success || !resp?.data?.redirectURL) {
-        this.winstonLogger.error(`NirvanaPay rejected deposit: ${resp?.reason}`, { context: 'DepositController' });
-        this.logger.error(`NirvanaPay rejected deposit: ${resp?.reason}`);
-        return res.status(400).json({
-          success: false,
-          status: 'ERROR',
-          reason: resp?.reason || 'NirvanaPay отклонил запрос на создание депозита'
-        });
-      }
-
-      // Сохраняем информацию о депозите в базе данных
-      this.winstonLogger.info(`About to save deposit to database for externalId: ${externalID}`, { context: 'DepositController' });
-      this.logger.log(`[DEBUG] About to save deposit to database for externalId: ${externalID}`);
-      try {
-        const depositData = {
-          userId: parseInt(req.user.id, 10),
-          externalId: externalID,
-          paymentSystem: 'NirvanaPay',
-          amount: createDepositDto.amount,
-          currencyCode: 'KZT',
-          paymentUrl: resp.data.redirectURL,
-        };
-        this.winstonLogger.info(`Calling depositService.createDeposit with data: ${JSON.stringify(depositData)}`, { context: 'DepositController' });
-        this.logger.log(`[DEBUG] Calling depositService.createDeposit with data:`, depositData);
-
-        await this.depositService.createDeposit({
-          userId: parseInt(req.user.id, 10),
-          externalId: externalID,
-          paymentSystem: 'NirvanaPay',
-          amount: new Decimal(createDepositDto.amount),
-          currencyCode: 'KZT',
-          paymentUrl: resp.data.redirectURL,
-          meta: {
-            payinRequest,
-            nirvanaPayResponse: resp,
-          },
-        });
-
-        this.winstonLogger.info(`Deposit record created successfully for externalId: ${externalID}`, { context: 'DepositController' });
-        this.logger.log(`[DEBUG] Deposit record created successfully for externalId: ${externalID}`);
-      } catch (error) {
-        this.winstonLogger.error(`Failed to create deposit record: ${error.message}`, { context: 'DepositController', error: error.stack });
-        this.logger.error(`[DEBUG] Failed to create deposit record: ${error.message}`, error);
-        this.logger.error(`[DEBUG] Error stack:`, error.stack);
-        // Не прерываем процесс, так как платежная ссылка уже создана
-      }
-
-      // Приводим ответ к формату, ожидаемому фронтендом
-      this.winstonLogger.info(`Returning successful response with redirectURL: ${resp.data.redirectURL}`, { context: 'DepositController' });
-      return res.status(200).json({ redirectURL: resp.data.redirectURL });
-    }
-    
-    // Для других валют возвращаем ошибку или направляем к соответствующим платежным системам
-    this.logger.warn(`No payment system configured for currency: ${createDepositDto.currency}`);
+    // NirvanaPay отключён — автоматические redirect-депозиты через POST /deposit больше не создаются.
+    // Используйте manual-foreign-card / USDT / другие активные методы.
+    this.logger.warn(
+      `Automatic deposit endpoint disabled (NirvanaPay off). currency=${createDepositDto.currency}`,
+    );
     throw new BadRequestException(
-      `Валюта ${createDepositDto.currency} не поддерживается для автоматических депозитов. Используйте соответствующую платежную систему.`
+      'Этот способ пополнения больше недоступен. Выберите другой метод в кассе.',
     );
   }
 
@@ -202,7 +111,8 @@ export class DepositController {
       code !== 'KZT_KASPI' &&
       code !== 'RUB' &&
       code !== 'RUB_SBERBANK' &&
-      code !== 'RUB_YANDEX_BANK'
+      code !== 'RUB_YANDEX_BANK' &&
+      code !== 'RUB_VTB_BANK'
     ) {
       throw new BadRequestException('Unsupported currency');
     }
@@ -232,7 +142,8 @@ export class DepositController {
       body?.currency ||
         (method === 'RUB_FOREIGN_CARD' ||
         method === 'RUB_SBERBANK' ||
-        method === 'RUB_YANDEX_BANK'
+        method === 'RUB_YANDEX_BANK' ||
+        method === 'RUB_VTB_BANK'
           ? 'RUB'
           : 'KZT'),
     ).toUpperCase();
@@ -257,6 +168,11 @@ export class DepositController {
     if (amountNum < config.minAmount) {
       throw new BadRequestException(
         `Минимальная сумма пополнения — ${config.minAmount} ${currency}`,
+      );
+    }
+    if (methodKey === 'RUB_VTB_BANK' && amountNum > 40_000) {
+      throw new BadRequestException(
+        'Максимальная сумма пополнения через ВТБ — 40 000 ₽',
       );
     }
 
@@ -733,6 +649,63 @@ export class DepositController {
   @UseGuards(AuthenticationGuard)
   async getMyRubYandexBank(@Req() req: any) {
     return this.getMyManualForeignCard(req, 'RUB_YANDEX_BANK');
+  }
+
+  @Post('rub-vtb-bank')
+  @UseGuards(AuthenticationGuard)
+  @HttpCode(200)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'receipt', maxCount: 1 },
+        { name: 'file', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: (req, file, cb) => {
+            const dir = join(process.cwd(), 'uploads', 'receipts');
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+          },
+          filename: (req, file, cb) => {
+            const unique = `${Date.now()}_${Math.round(Math.random() * 1e9)}`;
+            const safeExt = extname(file.originalname || '')
+              .replace(/[^a-zA-Z0-9.]/g, '')
+              .slice(0, 10);
+            cb(null, `${unique}${safeExt || '.jpg'}`);
+          },
+        }),
+        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+          const ok = (file.mimetype || '').startsWith('image/');
+          cb(null, ok);
+        },
+      },
+    ),
+  )
+  async uploadRubVtbBank(
+    @Req() req: any,
+    @UploadedFiles()
+    files: {
+      receipt?: Express.Multer.File[];
+      file?: Express.Multer.File[];
+      image?: Express.Multer.File[];
+    },
+    @Res({ passthrough: true }) res: any,
+  ) {
+    return this.handleManualForeignCardUpload(req, res, files, {
+      paymentSystem: 'RUB_VTB_BANK',
+      defaultCurrency: 'RUB',
+      minAmount: getManualDepositConfig('RUB_VTB_BANK').minAmount,
+      externalPrefix: 'rub_vtb_bank_rcpt',
+    });
+  }
+
+  @Get('rub-vtb-bank/me')
+  @UseGuards(AuthenticationGuard)
+  async getMyRubVtbBank(@Req() req: any) {
+    return this.getMyManualForeignCard(req, 'RUB_VTB_BANK');
   }
 
   @Get('usdt-trc20/config')

@@ -1,0 +1,21 @@
+# imba.bet — LLM / AI access policy
+
+User-Agent: *
+Disallow: /
+
+# Copyright, API, WebSocket and AI use
+# Design, UI, layout, graphics, copy, interface code, connection methods,
+# API endpoints, WebSocket protocols and other materials / technical
+# infrastructure of imba.bet are protected intellectual property.
+#
+# Automated access by AI agents, AI browsers and AI tools (including Cursor,
+# Claude, ChatGPT, Copilot, Gemini and similar systems) to view, copy,
+# analyze, index, train on, or study this site — including API and WebSocket
+# surfaces — is STRICTLY PROHIBITED without written consent.
+#
+# Violators face civil liability, damages, injunctive relief, and the
+# harshest sanctions available under applicable law.
+#
+# Full policy: https://imba.bet/legal/ai-usage-policy
+# Contact: security@imbalance.click / business@imbalance.click
+# Website: https://imba.bet

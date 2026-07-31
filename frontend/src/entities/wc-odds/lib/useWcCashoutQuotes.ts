@@ -28,8 +28,8 @@ function mergeQuotes(
 export function useWcCashoutQuotes(betIds: number[], enabled = true) {
   const sortedKey = [...betIds].sort((a, b) => a - b).join(",");
   const queryClient = useQueryClient();
-  const { addMessageHandler, removeMessageHandler, isConnected } = useWebSocketContext();
-  const fallbackPoll = useAdaptivePollInterval(30_000);
+  const { addMessageHandler, removeMessageHandler } = useWebSocketContext();
+  const pollInterval = useAdaptivePollInterval(4_000);
   const active = enabled && betIds.length > 0 && Boolean(getSessionClient());
 
   const query = useQuery({
@@ -40,9 +40,9 @@ export function useWcCashoutQuotes(betIds: number[], enabled = true) {
       return fetchWcCashoutQuotes(token, betIds);
     },
     enabled: active,
-    refetchInterval: active && !isConnected ? fallbackPoll : false,
+    refetchInterval: active ? pollInterval : false,
     refetchIntervalInBackground: false,
-    staleTime: 12_000,
+    staleTime: 0,
     placeholderData: (prev) => prev,
   });
 

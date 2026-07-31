@@ -9,6 +9,7 @@ import {
 } from "~/entities/cybersport/api/client";
 import type { CyberDisciplineSlug } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import { cyberTournamentPageHref } from "~/entities/cybersport/lib/cyberTournamentPaths";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CybersportDisciplineCards.module.css";
 
@@ -23,6 +24,7 @@ export function CybersportTopTournaments({
   discipline,
   apiSport,
 }: CybersportTopTournamentsProps) {
+  const { t } = useLocale();
   const [tournaments, setTournaments] = useState<CyberTournament[]>([]);
 
   useEffect(() => {
@@ -46,8 +48,8 @@ export function CybersportTopTournaments({
   return (
     <section className={styles.section}>
       <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Топ турниры</h2>
-        <span className={styles.sectionMeta}>{tournaments.length} активных</span>
+        <h2 className={styles.sectionTitle}>{t("cyber.topTournaments")}</h2>
+        <span className={styles.sectionMeta}>{t("cyber.activeCount", { n: tournaments.length })}</span>
       </div>
 
       <ul className={styles.tournamentList}>
@@ -65,7 +67,7 @@ export function CybersportTopTournaments({
                     <span className={styles.tournamentLive}>{tournament.liveCount} live</span>
                   ) : null}
                   {total > 0 ? (
-                    <span className={styles.tournamentTotal}>{total} матч.</span>
+                    <span className={styles.tournamentTotal}>{t("cyber.matchesShort", { n: total })}</span>
                   ) : null}
                 </span>
               </Link>

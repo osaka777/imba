@@ -34,8 +34,17 @@ import {
   normalizeWcMarketKey,
 } from "~/entities/wc-odds/lib/wcRate";
 import { fetchWcEvents, fetchWcEventDetail } from "~/entities/wc-odds/api/client";
+import {
+  DEFAULT_ODDS_ACCEPT_MODE,
+  ODDS_ACCEPT_MODE_KEY,
+  isOddsAcceptMode,
+  shouldRetryAfterOddsChange,
+  shouldSendAcceptOddsChange,
+  type OddsAcceptMode,
+} from "../../lib/oddsAcceptMode";
 import { Rate, Rates } from "../../types";
 import { BetList } from "./BetList";
+import { CouponOddsSettings } from "./CouponOddsSettings";
 import styles from "./BetTab.module.css";
 
 type BetTabProps = {
@@ -45,7 +54,17 @@ type BetTabProps = {
 };
 type Variant = "express" | "ordinar" | "series";
 
-const STAKE_CHIPS = [500, 1000, 5000, 10000];
+const STAKE_CHIPS_BY_CURRENCY: Record<string, number[]> = {
+  USDT: [1, 5, 10, 50],
+  USD: [1, 5, 10, 50],
+  RUB: [100, 500, 1000, 5000],
+  KZT: [500, 1000, 5000, 10000],
+};
+
+function stakeChipsForCurrency(code?: string | null): number[] {
+  const c = (code || "KZT").toUpperCase();
+  return STAKE_CHIPS_BY_CURRENCY[c] ?? STAKE_CHIPS_BY_CURRENCY.KZT;
+}
 
 function getCurrencySuffix(code?: string | null): string {
   if (!code) return "";
@@ -71,10 +90,20 @@ export const BetTab: React.FC<BetTabProps> = ({
   });
 
   const [variant, setVariant] = useState<Variant>("ordinar");
-  const [agree, setAgree] = useState<boolean>(true);
+  const [oddsAcceptMode, setOddsAcceptMode] = useLocalStorage<OddsAcceptMode>(
+    ODDS_ACCEPT_MODE_KEY,
+    DEFAULT_ODDS_ACCEPT_MODE,
+    { initializeWithValue: false },
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [sum, setSum] = useState("");
   const [kf, setKf] = useState(0);
   const [isCreatingBet, setIsCreatingBet] = useState(false);
+
+  const acceptMode = isOddsAcceptMode(oddsAcceptMode)
+    ? oddsAcceptMode
+    : DEFAULT_ODDS_ACCEPT_MODE;
+  const acceptOddsChange = shouldSendAcceptOddsChange(acceptMode);
 
   const { data, refetch } = useQuery({
     queryFn: getUser,
@@ -402,10 +431,6 @@ export const BetTab: React.FC<BetTabProps> = ({
     setVariant(event.target.value as Variant);
   };
 
-  const agreeOnChangeHandler = () => {
-    setAgree(!agree);
-  };
-
   const trashButtonOnClickHandler = () => {
     setRates([]);
   };
@@ -428,11 +453,6 @@ export const BetTab: React.FC<BetTabProps> = ({
         position: "top-right",
       });
     }
-    if (!agree) {
-      return toast(t("coupon.confirmAgreement"), {
-        position: "top-right",
-      });
-    }
     if (!currency) return;
 
     const wcRates = rates.filter(isWcOddsRate);
@@ -445,10 +465,57 @@ export const BetTab: React.FC<BetTabProps> = ({
     }
 
     if (wcRates.length > 0) {
-      if (selectedAccountType !== "main") {
-        return toast(t("coupon.mainAccountOnly"), {
-          position: "top-right",
-        });
+      if (selectedAccountType === "bonus") {
+        if (wcRates.length > 1 || variant !== "ordinar") {
+          return toast(t("coupon.bonusSinglesOnly"), { position: "top-right" });
+        }
+
+        const bonusBalance = userData?.bonusBalances?.find(
+          ({ currencyCode }) => currencyCode === currency,
+        );
+        if (!bonusBalance) {
+          return toast(t("coupon.noBonusAccount"), { position: "top-right" });
+        }
+
+        const selectedRate = wcRates[0];
+        const bonusMarketKey = normalizeWcMarketKey(getWcMarketKeyFromRate(selectedRate));
+        const allowedBonusMarkets = new Set(["h2h", "totals", "totals_home", "totals_away"]);
+        if (!allowedBonusMarkets.has(bonusMarketKey)) {
+          return toast(t("coupon.bonusH2hOrTotal"), { position: "top-right" });
+        }
+
+        const minOdds = Number(bonusBalance.minOdds) || BONUS_WAGERING_RULES.minOdds;
+        const maxOdds = BONUS_WAGERING_RULES.maxOdds;
+        const coef = Number(selectedRate.coef);
+        if (coef < minOdds) {
+          return toast(t("coupon.bonusMinOdds", { n: minOdds }), { position: "top-right" });
+        }
+        if (coef > maxOdds) {
+          return toast(t("coupon.bonusMaxOdds", { n: maxOdds }), { position: "top-right" });
+        }
+
+        if (bonusBalance.isTokenBased) {
+          if ((bonusBalance.remainingTokens ?? 0) < (bonusBalance.tokensPerBet ?? 1)) {
+            return toast(t("coupon.insufficientTokens"), { position: "top-right" });
+          }
+          if (Number(sum) !== Number(bonusBalance.tokensPerBet)) {
+            return toast(t("coupon.bonusMustStakeAll", { n: bonusBalance.tokensPerBet }), {
+              position: "top-right",
+            });
+          }
+        } else {
+          const maxBetPct = BONUS_WAGERING_RULES.maxBetPercentOfBalance;
+          const maxStake = (Number(bonusBalance.amount) * maxBetPct) / 100;
+          if (Number(sum) > maxStake) {
+            return toast(
+              t("coupon.bonusMaxPct", { pct: maxBetPct, amount: maxStake.toFixed(2) }),
+              { position: "top-right" },
+            );
+          }
+          if (Number(bonusBalance.amount) < Number(sum)) {
+            return toast(t("coupon.insufficientBonus"), { position: "top-right" });
+          }
+        }
       }
 
       if (wcRates.length > 1 && variant === "ordinar") {
@@ -497,14 +564,20 @@ export const BetTab: React.FC<BetTabProps> = ({
         outcomeKey: getWcOutcomeKeyFromRate(wcRate) ?? undefined,
         line: wcRate.wcLine,
         outcomeName: wcRate.title,
-        clientOdds: agree ? undefined : Number(wcRate.coef),
+        clientOdds: acceptOddsChange ? undefined : Number(wcRate.coef),
       });
 
       if (wcRates.length > 1) {
+        if (selectedAccountType === "bonus") {
+          toast.dismiss(toastId);
+          toast(t("coupon.bonusSinglesOnly"), { position: "top-right" });
+          setIsCreatingBet(false);
+          return;
+        }
         const expressBody = {
           stake: Number(sum),
           currencyCode: currency,
-          acceptOddsChange: agree,
+          acceptOddsChange,
           legs: wcRates.map(buildWcLeg),
         };
 
@@ -524,7 +597,8 @@ export const BetTab: React.FC<BetTabProps> = ({
           if (oddsChanged) {
             toast.dismiss(toastId);
             toast.info(t("coupon.oddsUpdated"), { toastId: "wc-bet-odds-updated" });
-            if (agree) {
+            // Express errors rarely expose per-leg prices — only "always" can retry safely.
+            if (shouldRetryAfterOddsChange(acceptMode)) {
               try {
                 await placeWcExpressBet(token, {
                   ...expressBody,
@@ -554,12 +628,12 @@ export const BetTab: React.FC<BetTabProps> = ({
       }
 
       const wcRate = wcRates[0];
-      const marketKey = getWcMarketKeyFromRate(wcRate);
       const wcBetBody = {
         ...buildWcLeg(wcRate),
         stake: Number(sum),
         currencyCode: currency,
-        acceptOddsChange: agree,
+        acceptOddsChange,
+        accountType: selectedAccountType === "bonus" ? ("bonus" as const) : ("main" as const),
       };
 
       try {
@@ -569,6 +643,7 @@ export const BetTab: React.FC<BetTabProps> = ({
         const err = e as Error & {
           coefficientChanged?: boolean;
           actualCoefficient?: number;
+          originalCoefficient?: number;
           statusCode?: number;
           rawMessage?: string;
         };
@@ -577,6 +652,7 @@ export const BetTab: React.FC<BetTabProps> = ({
           || /odds have changed|коэффициент/i.test(err?.message ?? "");
 
         if (oddsChanged) {
+          const originalOdds = err.originalCoefficient ?? Number(wcRate.coef);
           if (err.actualCoefficient != null) {
             setRates((prev) =>
               prev.map((rate) =>
@@ -590,7 +666,7 @@ export const BetTab: React.FC<BetTabProps> = ({
           toast.dismiss(toastId);
           toast.info(t("coupon.oddsUpdated"), { toastId: "wc-bet-odds-updated" });
 
-          if (agree) {
+          if (shouldRetryAfterOddsChange(acceptMode, originalOdds, err.actualCoefficient)) {
             try {
               const placed = await placeWcBet(token, { ...wcBetBody, acceptOddsChange: true, clientOdds: undefined }) as { id?: number };
               await finishWcBetSuccess();
@@ -1139,14 +1215,12 @@ export const BetTab: React.FC<BetTabProps> = ({
         />
 
         <div className={styles.agree}>
-          <Checkbox
-            checked={agree}
-            classNames={{
-              Checkbox: styles.agreeCheckbox,
-              text: styles.agreeText,
-            }}
-            onChange={agreeOnChangeHandler}
-          >{t("coupon.acceptOddsChange")}</Checkbox>
+          <CouponOddsSettings
+            mode={acceptMode}
+            onChange={setOddsAcceptMode}
+            onOpenChange={setSettingsOpen}
+            open={settingsOpen}
+          />
           <Button className={styles.remove} onClick={trashButtonOnClickHandler}>
             <TrashIcon className={styles.removeIcon} />
           </Button>
@@ -1293,7 +1367,7 @@ export const BetTab: React.FC<BetTabProps> = ({
             </div>
             {selectedAccountType === "main" ? (
               <div className={styles.stakeChips}>
-                {STAKE_CHIPS.map((chip) => (
+                {stakeChipsForCurrency(currency).map((chip) => (
                   <Button
                     key={chip}
                     className={cn(
@@ -1313,7 +1387,7 @@ export const BetTab: React.FC<BetTabProps> = ({
 
         <Button
           className={styles.baseCouponSubmit}
-          disabled={Number(sum) <= 0 || !agree || isCreatingBet || (rates.length > 0 && !isAllOpen)}
+          disabled={Number(sum) <= 0 || isCreatingBet || (rates.length > 0 && !isAllOpen)}
           onClick={createBetOnClick}
           type="submit"
         >

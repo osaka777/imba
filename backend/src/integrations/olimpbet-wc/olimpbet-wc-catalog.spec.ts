@@ -211,6 +211,10 @@ describe('olimpbet-wc-catalog tennis labels', () => {
     expect(humanizeCatalogMarketName('PENALTY_MATCH_YES_NO')).toBe('Пенальти в матче');
     expect(humanizeCatalogMarketName('REDCARD_YES_NO')).toBe('Удаление');
 
+    // Table-tennis point-range market used to leak untranslated tokens as
+    // "POINT диапазон SET: да/нет". It must now be fully Russian.
+    expect(humanizeCatalogMarketName('POINT_RANGE_SET_YES_NO')).toBe('Диапазон очков в сете: да/нет');
+
     expect(resolveSpecialBetsGroupLabel('HOW_WILL_GOAL_BE_SCORED', 'Как будет забит первый гол')).toBe('');
     expect(resolveSpecialBetsGroupLabel('HOW_WILL_GOAL_BE_SCORED', 'Специальные ставки')).toBe(
       'Как будет забит гол',
@@ -260,6 +264,35 @@ describe('olimpbet-wc-catalog tennis labels', () => {
     };
 
     expect(formatOutcomeLabel(catalog, 2100, prob)).toBe('40:0');
+  });
+
+  it('relabels SCORE_TIE_BREAK catch-all as Другой счёт instead of set scope', () => {
+    // Real feed: resolved scores carry HOME/AWAY; the "any other" bucket only has
+    // SET_NUMBER. formatOutcomeLabel used to leak "3-м сете" as the outcome name.
+    const catalog = buildCatalog(1839, 'SCORE_TIE_BREAK_SET', [
+      { id: 2944, code: 'Счет[]', name: 'Счет[]' },
+      { id: 2945, code: 'Счет[]', name: 'Счет[]' },
+    ]);
+
+    expect(
+      formatOutcomeLabel(catalog, 1839, {
+        outcomeTypeId: 2944,
+        odd: 2.23,
+        parameters: [
+          { type: 'PARAMETER_SET_NUMBER', value: '3' },
+          { type: 'PARAMETER_HOME_SCORE', value: '10' },
+          { type: 'PARAMETER_AWAY_SCORE', value: '6' },
+        ],
+      }),
+    ).toBe('10:6');
+
+    expect(
+      formatOutcomeLabel(catalog, 1839, {
+        outcomeTypeId: 2945,
+        odd: 13.5,
+        parameters: [{ type: 'PARAMETER_SET_NUMBER', value: '3' }],
+      }),
+    ).toBe('Другой счёт');
   });
 
   it('formats SCORE_SET 40:15 and advantage as 40:A', () => {

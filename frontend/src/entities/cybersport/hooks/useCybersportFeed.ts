@@ -8,6 +8,7 @@ import {
   fetchCybersportLine,
   fetchCybersportLive,
 } from "~/entities/cybersport/api/client";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { isEsportsSport } from "~/entities/cybersport/lib/isEsportsSport";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
 import { transformApiGames } from "~/entities/game/lib/transformApiGames";
@@ -31,12 +32,16 @@ export function useCybersportFeed(sport: string | undefined, mode: "live" | "lin
   const searchParams = useSearchParams();
   const leagueFilter = searchParams.get("league");
   const tournamentFilter = searchParams.get("tournament");
+  const broadcastOnly =
+    searchParams.get("broadcast") === "1" || searchParams.get("broadcast") === "true";
   const tournamentId =
     tournamentFilter && Number.isFinite(Number(tournamentFilter)) && Number(tournamentFilter) > 0
       ? Number(tournamentFilter)
       : undefined;
   const isLive = mode === "live";
-  const enabled = Boolean(sport && isEsportsSport(sport));
+  const allLive = isLive && !sport;
+  const enabled = allLive || Boolean(sport && isEsportsSport(sport));
+  const liveLimit = allLive ? 48 : PAGE_SIZE;
 
   const {
     data,
@@ -46,10 +51,16 @@ export function useCybersportFeed(sport: string | undefined, mode: "live" | "lin
     isFetchingNextPage,
     error,
   } = useInfiniteQuery({
-    queryKey: ["cybersport-main-feed", mode, sport, leagueFilter, tournamentId ?? "all"],
+    queryKey: [
+      "cybersport-main-feed",
+      mode,
+      sport || "all",
+      leagueFilter,
+      tournamentId ?? "all",
+    ],
     queryFn: ({ pageParam = 0 }) =>
       isLive
-        ? fetchCybersportLive(sport!, PAGE_SIZE, tournamentId)
+        ? fetchCybersportLive(allLive ? undefined : sport!, liveLimit, tournamentId)
         : fetchCybersportLine(sport!, PAGE_SIZE, pageParam, tournamentId),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => {
@@ -63,12 +74,15 @@ export function useCybersportFeed(sport: string | undefined, mode: "live" | "lin
   });
 
   const leagues: League[] = useMemo(() => {
-    const flat = maskGames((data?.pages ?? []).flat());
+    let flat = maskGames((data?.pages ?? []).flat());
+    if (broadcastOnly) {
+      flat = flat.filter((game) => cyberGameHasVideo(game));
+    }
     const filtered = leagueFilter
       ? flat.filter((game) => game.leagueName === leagueFilter)
       : flat;
     return transformApiGames(filtered);
-  }, [data?.pages, leagueFilter]);
+  }, [broadcastOnly, data?.pages, leagueFilter]);
 
   return {
     enabled,

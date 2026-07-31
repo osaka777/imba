@@ -40,6 +40,13 @@ describe("normalizeScopedCategoryName", () => {
     const result = normalizeScopedCategoryName("1-й тайм · Обе забьют");
     expect(result.scopedDisplay).toBe("1-й тайм · Обе забьют");
   });
+
+  it("normalizes map correct-score categories", () => {
+    const result = normalizeScopedCategoryName("Счет в 3-й карте");
+    expect(result.display).toBe("Точный счёт");
+    expect(result.tabScope).toBe("3-я карта");
+    expect(result.scopedDisplay).toBe("3-я карта · Точный счёт");
+  });
 });
 
 describe("deriveNormalizedTabScope", () => {

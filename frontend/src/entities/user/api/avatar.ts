@@ -5,20 +5,30 @@ const apiBase = () => {
   return process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
 };
 
-export async function updateAvatarPreset(preset: string | null): Promise<void> {
+export async function uploadAvatar(file: File): Promise<string> {
   const token = getSessionClient();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${apiBase()}/api/user/avatar-preset`, {
-    method: "PATCH",
+  const body = new FormData();
+  body.append("image", file);
+
+  const res = await fetch(`${apiBase()}/api/user/avatar`, {
+    method: "POST",
     headers,
     credentials: "include",
-    body: JSON.stringify({ preset: preset ?? "" }),
+    body,
   });
 
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(typeof data?.message === "string" ? data.message : "Failed to save avatar");
+    throw new Error(
+      typeof data?.message === "string" ? data.message : "Failed to upload avatar",
+    );
   }
+  const url = data?.avatarUrl;
+  if (typeof url !== "string" || !url) {
+    throw new Error("Failed to upload avatar");
+  }
+  return url;
 }

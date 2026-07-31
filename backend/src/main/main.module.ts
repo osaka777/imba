@@ -18,6 +18,7 @@ import { BonusBalanceModule } from './bonus-balance/bonus-balance.module';
 import { BetApiModule } from '../integrations/betapi/betapi.module';
 import { BannerModule } from './banner/banner.module';
 import { SlideModule } from './slide/slide.module';
+import { FooterBadgeModule } from './footer-badge/footer-badge.module';
 import { PromoModalModule } from './promo-modal/promo-modal.module';
 import { PaymentSettingsModule } from './payment-settings/payment-settings.module';
 import { TelegramModule } from './telegram/telegram.module';
@@ -25,6 +26,9 @@ import { SupportModule } from './support/support.module';
 import { PushModule } from './push/push.module';
 import { SnakeModule } from './snake/snake.module';
 import { BtcUpdownModule } from './btc-updown/btc-updown.module';
+import { RaceModule } from './race/race.module';
+import { PredictionModule } from './prediction/prediction.module';
+import { StreamSocialModule } from './stream-social/stream-social.module';
 
 @Module({
   imports: [
@@ -46,6 +50,7 @@ import { BtcUpdownModule } from './btc-updown/btc-updown.module';
     BetApiModule,
     BannerModule,
     SlideModule,
+    FooterBadgeModule,
     PaymentSettingsModule,
     PromoModalModule,
     TelegramModule,
@@ -53,6 +58,9 @@ import { BtcUpdownModule } from './btc-updown/btc-updown.module';
     PushModule,
     SnakeModule,
     BtcUpdownModule,
+    RaceModule,
+    PredictionModule,
+    StreamSocialModule,
   ],
 })
 export class MainModule {}

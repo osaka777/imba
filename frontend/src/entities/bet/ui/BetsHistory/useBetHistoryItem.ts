@@ -3,8 +3,10 @@ import dayjs from "dayjs";
 import { useState } from "react";
 
 import { createTitleForBet } from "~/entities/bet/lib";
-import { gamesList } from "~/entities/game";
+import { gamesList, getSportLabel } from "~/entities/game";
 import { components } from "~/shared/api";
+import { toIntlLocale } from "~/shared/i18n/format";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./BetsHistoryItem.module.css";
 
@@ -14,6 +16,7 @@ type ExpressBetDto = components["schemas"]["ExpressBetDto"];
 export const useBetHistoryItem = (
   bet: BetDto | ExpressBetDto,
 ) => {
+  const { t, locale } = useLocale();
   const date = dayjs(bet.createdAt).format("DD.MM.YY / HH:mm");
 
   let statusClassName = ``;
@@ -21,34 +24,33 @@ export const useBetHistoryItem = (
   switch (bet.status) {
     case "WIN": {
       statusClassName = styles.indicator_win;
-      statusText = `Победа`;
+      statusText = t("coupon.statusVictory");
       break;
     }
     case "LOSE": {
       statusClassName = styles.indicator_lose;
-      statusText = `Проигрыш`;
+      statusText = t("coupon.historyLose");
       break;
     }
     case "PENDING": {
       statusClassName = styles.indicator_pending;
-      statusText = `Ожидание`;
+      statusText = t("coupon.statusWaiting");
       break;
     }
     case "RETURN": {
       statusClassName = styles.indicator_return;
-      statusText = `Возврат`;
+      statusText = t("coupon.historyReturn");
       break;
     }
     default: {
-      // Обработка неизвестных статусов или null
       statusClassName = styles.indicator_unknown || styles.indicator_pending;
-      statusText = bet.status ? `${bet.status}` : `Обработка...`;
+      statusText = bet.status ? `${bet.status}` : t("coupon.statusProcessing");
       break;
     }
   }
-  
+
   const currency = getSymbolFromCurrency(bet.currencyCode);
-  const amount = Intl.NumberFormat("ru-RU", {
+  const amount = Intl.NumberFormat(toIntlLocale(locale), {
     minimumFractionDigits: 2,
   }).format(Number(bet.amount));
 
@@ -56,62 +58,54 @@ export const useBetHistoryItem = (
 
   const [open, setOpen] = useState(false);
 
-  // Проверяем тип ставки
-  const isExpressBet = 'bets' in bet && Array.isArray(bet.bets);
-  const isOrdinariBet = 'game' in bet && bet.game;
+  const isExpressBet = "bets" in bet && Array.isArray(bet.bets);
+  const isOrdinariBet = "game" in bet && bet.game;
 
-  const betTitle =
-    isOrdinariBet ? createTitleForBet(bet.betInfo) : null;
-  const betTitles =
-    isExpressBet
-      ? bet.bets.map((betItem) => createTitleForBet(betItem.betInfo))
-      : [];
+  const betTitle = isOrdinariBet ? createTitleForBet(bet.betInfo, undefined, t) : null;
+  const betTitles = isExpressBet
+    ? bet.bets.map((betItem) => createTitleForBet(betItem.betInfo, undefined, t))
+    : [];
 
-  // Получаем спорт из новых полей backend или fallback на старые
   const getSportFromBet = (betItem: any) => {
     return betItem.sport || betItem.game?.sport;
   };
 
   const BetIcon =
-    isOrdinariBet && getSportFromBet(bet) && gamesList[getSportFromBet(bet)] 
-      ? gamesList[getSportFromBet(bet)].Icon 
-      : null;
-  const betIcons =
-    isExpressBet
-      ? bet.bets
-          .map((betItem) => getSportFromBet(betItem))
-          .map((sport) => gamesList[sport]?.Icon)
-          .filter(Boolean)
-      : [];
-
-  const sport =
     isOrdinariBet && getSportFromBet(bet) && gamesList[getSportFromBet(bet)]
-      ? gamesList[getSportFromBet(bet)].label 
+      ? gamesList[getSportFromBet(bet)].Icon
       : null;
-  const sports =
-    isExpressBet
-      ? bet.bets
-          .map((betItem) => getSportFromBet(betItem))
-          .map((sport) => gamesList[sport]?.label)
-          .filter(Boolean)
-      : [];
+  const betIcons = isExpressBet
+    ? bet.bets
+        .map((betItem) => getSportFromBet(betItem))
+        .map((sport) => gamesList[sport]?.Icon)
+        .filter(Boolean)
+    : [];
 
-  // Получаем счет из новых полей backend или fallback на старые
+  const sportKey = isOrdinariBet ? getSportFromBet(bet) : null;
+  const sport =
+    sportKey && gamesList[sportKey]
+      ? getSportLabel(sportKey, t)
+      : null;
+  const sports = isExpressBet
+    ? bet.bets
+        .map((betItem) => getSportFromBet(betItem))
+        .map((itemSport) =>
+          itemSport && gamesList[itemSport]
+            ? getSportLabel(itemSport, t)
+            : null,
+        )
+        .filter(Boolean)
+    : [];
+
   const getScoreFromBet = (betItem: any) => {
     const score = betItem.score || betItem.game?.score;
-    return score && score !== 'N/A' ? score.split(" ")[0] : 'N/A';
+    return score && score !== "N/A" ? score.split(" ")[0] : "N/A";
   };
 
-  const score =
-    isOrdinariBet 
-      ? getScoreFromBet(bet)
-      : null;
-  const scores =
-    isExpressBet
-      ? bet.bets
-          .map((betItem) => getScoreFromBet(betItem))
-          .filter(Boolean)
-      : [];
+  const score = isOrdinariBet ? getScoreFromBet(bet) : null;
+  const scores = isExpressBet
+    ? bet.bets.map((betItem) => getScoreFromBet(betItem)).filter(Boolean)
+    : [];
   return {
     BetIcon,
     betIcons,

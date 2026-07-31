@@ -1,3 +1,6 @@
+/** Minimum age to register and use Imba.bet betting services. */
+export const MIN_REGISTRATION_AGE = 21;
+
 export function extractBirthDateDigits(value: string): string {
   return value.replace(/\D/g, "").slice(0, 8);
 }
@@ -51,14 +54,19 @@ export function formatBirthDateDisplay(digits: string): string {
 
 export function getBirthDatePickerMax(): string {
   const date = new Date();
-  date.setFullYear(date.getFullYear() - 18);
+  date.setFullYear(date.getFullYear() - MIN_REGISTRATION_AGE);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-export function isBirthDateUnder18(iso: string): boolean {
+export function isBirthDateUnderMinAge(iso: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
   return iso > getBirthDatePickerMax();
+}
+
+/** @deprecated Use isBirthDateUnderMinAge */
+export function isBirthDateUnder18(iso: string): boolean {
+  return isBirthDateUnderMinAge(iso);
 }

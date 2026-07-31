@@ -14,6 +14,7 @@ import {
 } from "~/entities/wc-odds/lib/wcLiveScore";
 
 import styles from "~/entities/wc-odds/ui/WcScoreBoard.module.css";
+import { useLocale } from "~/shared/model/useLocale";
 
 function secondsToTime(totalSec: number, sport?: string): string {
   const clamped = Math.max(0, totalSec);
@@ -107,6 +108,7 @@ export function WcLiveMatchClockBar({
   event,
   periodLabel,
 }: WcLiveMatchClockBarProps) {
+  const { t } = useLocale();
   const time = useLiveMatchClock(event);
   const score = event.parsedScore;
   const showAddedTime = event.sport === "soccer";
@@ -126,7 +128,11 @@ export function WcLiveMatchClockBar({
         {addedMinutes != null ? (
           <span
             className={styles.matchClockExtra}
-            title={wcAddedMinutesIsAnnounced(score) ? "Объявлено судьёй" : "Компенсация"}
+            title={
+              wcAddedMinutesIsAnnounced(score)
+                ? t("wc.addedAnnounced")
+                : t("wc.addedInjury")
+            }
           >
             +{addedMinutes}&apos;
           </span>

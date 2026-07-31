@@ -7,6 +7,7 @@ import {
   Query,
   Req,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -18,6 +19,7 @@ import {
 
 import { HttpException } from '~/common/types/http-exception';
 import { AuthenticationGuard } from '~/main/user/authentication/authentication.guard';
+import { isPaymentMethodEnabled } from '~/main/payment-settings/payment-settings.store';
 
 import {
   NirvanaPayPayinService,
@@ -32,9 +34,15 @@ export class NirvanaPayPayinController {
 
   constructor(private readonly payinService: NirvanaPayPayinService) {}
 
+  private assertEnabled() {
+    if (!isPaymentMethodEnabled('NirvanaPay')) {
+      throw new BadRequestException('NirvanaPay отключён');
+    }
+  }
+
   @Post('create')
   @UseGuards(AuthenticationGuard)
-  @ApiOperation({ summary: 'Создать заявку на пополнение через NirvanaPay' })
+  @ApiOperation({ summary: 'Создать заявку на пополнение через NirvanaPay (отключено)' })
   @ApiOkResponse({ description: 'Заявка на пополнение создана' })
   @ApiUnauthorizedResponse({ type: HttpException })
   @ApiBearerAuth()
@@ -42,6 +50,7 @@ export class NirvanaPayPayinController {
     @Body() request: PayinRequest,
     @Req() req: any,
   ): Promise<PayinResponse> {
+    this.assertEnabled();
     this.logger.log(`Creating payin for user ${req.user.id}`);
     
     // Автоматическое заполнение userInfo с реальным IP-адресом
@@ -82,6 +91,7 @@ export class NirvanaPayPayinController {
     @Query('currency') currency: 'KZT' | 'TRY' | 'UZS' = 'KZT',
     @Req() req: { user: { id: number } },
   ) {
+    this.assertEnabled();
     this.logger.log(`Getting payin status for clientID: ${clientID}, currency: ${currency}`);
     return await this.payinService.getPayinStatus(clientID, currency);
   }
@@ -96,6 +106,7 @@ export class NirvanaPayPayinController {
     @Query('currency') currency: 'KZT' | 'TRY' | 'UZS' = 'KZT',
     @Req() req: { user: { id: number } }
   ) {
+    this.assertEnabled();
     this.logger.log(`Getting NirvanaPay balance for user: ${req.user.id}, currency: ${currency}`);
     return await this.payinService.getBalance(currency);
   }
@@ -110,6 +121,7 @@ export class NirvanaPayPayinController {
     @Query('currency') currency: 'KZT' | 'TRY' | 'UZS' = 'KZT',
     @Req() req: { user: { id: number } }
   ) {
+    this.assertEnabled();
     this.logger.log(`Getting bank limits for user: ${req.user.id}, currency: ${currency}`);
     return this.payinService.getBankLimits(currency);
   }

@@ -110,6 +110,7 @@ function eventScalarsEqual(a: WcEventDetail, b: WcEventDetail): boolean {
     a.homeTeamIcon === b.homeTeamIcon &&
     a.awayTeamIcon === b.awayTeamIcon &&
     a.hasBroadcast === b.hasBroadcast &&
+    a.hasLiveTracker === b.hasLiveTracker &&
     a.hasHeadToHead === b.hasHeadToHead &&
     JSON.stringify(a.parsedScore) === JSON.stringify(b.parsedScore) &&
     JSON.stringify(a.statList) === JSON.stringify(b.statList)
@@ -134,6 +135,7 @@ export function mergeWcEventDetail(prev: WcEventDetail, incoming: WcEventDetail)
       homeTeamIcon: incoming.homeTeamIcon ?? prev.homeTeamIcon,
       awayTeamIcon: incoming.awayTeamIcon ?? prev.awayTeamIcon,
       hasBroadcast: incoming.hasBroadcast ?? prev.hasBroadcast,
+      hasLiveTracker: incoming.hasLiveTracker ?? prev.hasLiveTracker,
       hasHeadToHead: incoming.hasHeadToHead ?? prev.hasHeadToHead,
     };
     if (eventScalarsEqual(prev, merged)) return prev;
@@ -157,6 +159,7 @@ export function mergeWcEventDetail(prev: WcEventDetail, incoming: WcEventDetail)
     homeTeamIcon: incoming.homeTeamIcon ?? prev.homeTeamIcon,
     awayTeamIcon: incoming.awayTeamIcon ?? prev.awayTeamIcon,
     hasBroadcast: incoming.hasBroadcast ?? prev.hasBroadcast,
+    hasLiveTracker: incoming.hasLiveTracker ?? prev.hasLiveTracker,
     hasHeadToHead: incoming.hasHeadToHead ?? prev.hasHeadToHead,
   };
 

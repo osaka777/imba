@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { az, enUS, es, kk, ptBR, ru, tr, uk, uz } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import { getSessionClient } from '~/entities/user/lib';
 import { api } from '~/shared/api';
+import type { AppLocale } from '~/shared/i18n/locale';
+import { useLocale } from '~/shared/model/useLocale';
 import styles from './BonusHistory.module.css';
 
 interface BonusHistoryItem {
@@ -42,7 +45,21 @@ interface BonusStats {
   totalWagered: string;
 }
 
+const DATE_LOCALES: Record<AppLocale, Locale> = {
+  ru,
+  en: enUS,
+  kk,
+  uz,
+  tr,
+  uk,
+  az,
+  es,
+  pt: ptBR,
+};
+
 export const BonusHistory = () => {
+  const { t, locale } = useLocale();
+  const dateLocale = DATE_LOCALES[locale] ?? ru;
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all');
   const token = getSessionClient();
 
@@ -109,79 +126,76 @@ export const BonusHistory = () => {
   if (historyLoading || statsLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>Загрузка истории бонусов...</div>
+        <div className={styles.loading}>{t("profile.bonusHistLoading")}</div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>История бонусов</h1>
+      <h1 className={styles.title}>{t("profile.bonusHistTitle")}</h1>
 
-      {/* Статистика */}
       {bonusStats && (
         <div className={styles.stats}>
           <div className={styles.statCard}>
             <div className={styles.statValue}>{bonusStats.total}</div>
-            <div className={styles.statLabel}>Всего бонусов</div>
+            <div className={styles.statLabel}>{t("profile.bonusHistTotal")}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statValue}>{bonusStats.active}</div>
-            <div className={styles.statLabel}>Активных</div>
+            <div className={styles.statLabel}>{t("profile.bonusHistActive")}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statValue}>{bonusStats.won}</div>
-            <div className={styles.statLabel}>Выигранных</div>
+            <div className={styles.statLabel}>{t("profile.bonusHistWon")}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statValue}>{bonusStats.lost}</div>
-            <div className={styles.statLabel}>Проигранных</div>
+            <div className={styles.statLabel}>{t("profile.bonusHistLost")}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statValue}>{bonusStats.expired}</div>
-            <div className={styles.statLabel}>Истекших</div>
+            <div className={styles.statLabel}>{t("profile.bonusHistExpired")}</div>
           </div>
         </div>
       )}
 
-      {/* Табы */}
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'all' ? styles.active : ''}`}
           onClick={() => setActiveTab('all')}
         >
-          Все ({bonusHistory?.length || 0})
+          {t("profile.bonusHistTabAll", { n: bonusHistory?.length || 0 })}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'active' ? styles.active : ''}`}
           onClick={() => setActiveTab('active')}
         >
-          Активные ({bonusStats?.active || 0})
+          {t("profile.bonusHistTabActive", { n: bonusStats?.active || 0 })}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'completed' ? styles.active : ''}`}
           onClick={() => setActiveTab('completed')}
         >
-          Завершенные ({(bonusStats?.won || 0) + (bonusStats?.lost || 0) + (bonusStats?.expired || 0)})
+          {t("profile.bonusHistTabCompleted", {
+            n: (bonusStats?.won || 0) + (bonusStats?.lost || 0) + (bonusStats?.expired || 0),
+          })}
         </button>
       </div>
 
-      {/* Список бонусов */}
       <div className={styles.bonusList}>
         {filteredHistory.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>🎁</div>
-            <div className={styles.emptyTitle}>История бонусов пуста</div>
-            <div className={styles.emptyText}>
-              У вас пока нет бонусов. Активируйте промокод, чтобы получить бонус!
-            </div>
+            <div className={styles.emptyTitle}>{t("profile.bonusHistEmptyTitle")}</div>
+            <div className={styles.emptyText}>{t("profile.bonusHistEmptyText")}</div>
           </div>
         ) : (
           filteredHistory.map((bonus) => (
             <div key={bonus.id} className={styles.bonusCard}>
               <div className={styles.bonusHeader}>
                 <div className={styles.bonusCode}>
-                  <span className={styles.codeLabel}>Промокод:</span>
+                  <span className={styles.codeLabel}>{t("profile.bonusHistPromo")}</span>
                   <span className={styles.codeValue}>{bonus.promoCode}</span>
                 </div>
                 <div className={`${styles.bonusStatus} ${getStatusColor(bonus.status)}`}>
@@ -191,22 +205,21 @@ export const BonusHistory = () => {
 
               <div className={styles.bonusInfo}>
                 <div className={styles.bonusType}>
-                  <span className={styles.typeLabel}>Тип:</span>
+                  <span className={styles.typeLabel}>{t("profile.bonusHistType")}</span>
                   <span className={styles.typeValue}>{bonus.promoTypeText}</span>
                 </div>
                 <div className={styles.bonusAmount}>
-                  <span className={styles.amountLabel}>Сумма:</span>
+                  <span className={styles.amountLabel}>{t("profile.bonusHistAmount")}</span>
                   <span className={styles.amountValue}>
                     {bonus.totalBonusReceived} {bonus.currencyCode}
                   </span>
                 </div>
               </div>
 
-              {/* Прогресс отыгрыша */}
               {bonus.status === 'PENDING' && (
                 <div className={styles.bonusProgress}>
                   <div className={styles.progressHeader}>
-                    <span>Прогресс отыгрыша</span>
+                    <span>{t("profile.bonusHistProgress")}</span>
                     <span className={styles.progressPercentage}>
                       {bonus.progressPercentage}%
                     </span>
@@ -219,11 +232,18 @@ export const BonusHistory = () => {
                   </div>
                   {bonus.isTokenBased ? (
                     <div className={styles.tokenInfo}>
-                      Жетоны: {bonus.remainingTokens} / {bonus.totalTokens}
+                      {t("profile.bonusHistTokens", {
+                        left: bonus.remainingTokens,
+                        total: bonus.totalTokens,
+                      })}
                     </div>
                   ) : (
                     <div className={styles.wagerInfo}>
-                      Отыграно: {bonus.totalWagered} / {bonus.requiredWager} {bonus.currencyCode}
+                      {t("profile.bonusHistWagered", {
+                        current: bonus.totalWagered,
+                        required: bonus.requiredWager,
+                        currency: bonus.currencyCode,
+                      })}
                     </div>
                   )}
                 </div>
@@ -231,24 +251,24 @@ export const BonusHistory = () => {
 
               <div className={styles.bonusDates}>
                 <div className={styles.dateItem}>
-                  <span className={styles.dateLabel}>Активирован:</span>
+                  <span className={styles.dateLabel}>{t("profile.bonusHistActivated")}</span>
                   <span className={styles.dateValue}>
-                    {format(new Date(bonus.appliedAt), 'dd.MM.yyyy HH:mm', { locale: ru })}
+                    {format(new Date(bonus.appliedAt), 'dd.MM.yyyy HH:mm', { locale: dateLocale })}
                   </span>
                 </div>
                 {bonus.expiredAt && (
                   <div className={styles.dateItem}>
-                    <span className={styles.dateLabel}>Истекает:</span>
+                    <span className={styles.dateLabel}>{t("profile.bonusHistExpires")}</span>
                     <span className={styles.dateValue}>
-                      {format(new Date(bonus.expiredAt), 'dd.MM.yyyy HH:mm', { locale: ru })}
+                      {format(new Date(bonus.expiredAt), 'dd.MM.yyyy HH:mm', { locale: dateLocale })}
                     </span>
                   </div>
                 )}
                 {bonus.completedAt && (
                   <div className={styles.dateItem}>
-                    <span className={styles.dateLabel}>Завершен:</span>
+                    <span className={styles.dateLabel}>{t("profile.bonusHistCompleted")}</span>
                     <span className={styles.dateValue}>
-                      {format(new Date(bonus.completedAt), 'dd.MM.yyyy HH:mm', { locale: ru })}
+                      {format(new Date(bonus.completedAt), 'dd.MM.yyyy HH:mm', { locale: dateLocale })}
                     </span>
                   </div>
                 )}
@@ -256,7 +276,7 @@ export const BonusHistory = () => {
 
               {bonus.notes && (
                 <div className={styles.bonusNotes}>
-                  <span className={styles.notesLabel}>Примечание:</span>
+                  <span className={styles.notesLabel}>{t("profile.bonusHistNotes")}</span>
                   <span className={styles.notesValue}>{bonus.notes}</span>
                 </div>
               )}
@@ -266,4 +286,4 @@ export const BonusHistory = () => {
       </div>
     </div>
   );
-}; 
+};

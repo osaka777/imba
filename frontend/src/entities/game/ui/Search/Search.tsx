@@ -9,6 +9,7 @@ import { isWcPriorityEvent } from "~/entities/wc-odds/lib/wcPriority";
 import { FireIcon, LiveIcon, QuestionIcon } from "~/shared/assets";
 import { Button, Input } from "~/shared/ui";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { gamesList } from "../../lib";
 import styles from "./Search.module.css";
@@ -21,6 +22,7 @@ type SearchProps = {
 };
 
 export const Search: React.FC<SearchProps> = ({ sport, className, layout = "default", hideOnDesktop }) => {
+  const { t } = useLocale();
   const [res, setRes] = useState<WcEvent[] | null>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ export const Search: React.FC<SearchProps> = ({ sport, className, layout = "defa
       <div className={styles.bar}>
         <Input
           onChange={inputOnChangeHandler}
-          placeholder="Поиск..."
+          placeholder={t("common.searchPlaceholder")}
           type="search"
           value={inputValue}
         />
@@ -74,7 +76,7 @@ export const Search: React.FC<SearchProps> = ({ sport, className, layout = "defa
       </div>
 
       {res === null ? (
-        <div className={styles.err}>Матчи по данному запросу не найдены</div>
+        <div className={styles.err}>{t("common.searchNoMatches")}</div>
       ) : res.length > 0 ? (
         <div className={styles.result}>
           {res.map((event) => {

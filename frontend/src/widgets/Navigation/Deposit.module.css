@@ -95,20 +95,60 @@
 
 @media screen and (max-width: 768px) {
   .depositWrapper {
-    padding: 4px 6px 4px 10px;
-    gap: 8px;
+    flex: 0 1 auto;
+    width: auto;
+    margin-left: auto;
+    padding: 3px 4px 3px 8px;
+    gap: 4px;
     border-radius: 8px;
     min-width: 0;
-    max-width: 100%;
+    max-width: min(100%, calc(100vw - 140px));
     align-items: center;
+    justify-content: flex-end;
   }
 
   .balanceBlock {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-width: 0;
-    max-width: calc(100% - 76px);
+    max-width: calc(100% - 100px);
     gap: 0;
-    line-height: 1.1;
+    line-height: 1.15;
+    align-items: flex-start;
+  }
+
+  .balanceLabel {
+    font-size: 10px;
+    line-height: 11px;
+  }
+
+  .balanceAmount {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .balance {
+    padding-right: 0;
+    font-size: 12px;
+    gap: 3px;
+    align-items: baseline;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .balanceTitle {
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .currencyText {
+    font-size: 11px;
+    flex-shrink: 0;
+    line-height: 1;
   }
 
   .Deposit {
@@ -121,24 +161,21 @@
     border-radius: 7px;
     position: relative;
     z-index: 2;
+    flex-shrink: 0;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .balance {
-    padding-right: 0;
-    font-size: 12px;
-    gap: 2px;
+  .eyeBtn {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    align-self: center;
   }
 
-  .balanceTitle {
-    gap: 2px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .currencyText {
-    font-size: 11px;
+  .eyeSvg {
+    width: 15px;
+    height: 15px;
   }
 
   .Deposit:before {
@@ -147,17 +184,37 @@
 }
 
 @media screen and (max-width: 576px) {
+  .balanceLabel {
+    font-size: 9px;
+    line-height: 10px;
+  }
+
   .depositWrapper {
-    padding: 4px 5px 4px 8px;
-    gap: 6px;
+    padding: 3px 4px 3px 8px;
+    gap: 2px;
+    max-width: calc(100% - 84px);
+  }
+
+  .balanceBlock {
+    max-width: calc(100% - 92px);
   }
 
   .Deposit {
     height: 30px;
     min-height: 30px;
     max-height: 30px;
-    padding: 0 10px;
+    padding: 0 9px;
     font-size: 10px;
+  }
+
+  .eyeBtn {
+    width: 24px;
+    height: 24px;
+  }
+
+  .eyeSvg {
+    width: 14px;
+    height: 14px;
   }
 
   .balance {
@@ -172,14 +229,15 @@
 @media screen and (max-width: 480px) {
   .depositWrapper {
     padding: 3px 4px 3px 8px;
-    gap: 6px;
+    gap: 3px;
+    max-width: calc(100% - 80px);
   }
 
   .Deposit {
     height: 30px;
     min-height: 30px;
     max-height: 30px;
-    padding: 0 9px;
+    padding: 0 8px;
     font-size: 10px;
   }
 
@@ -230,13 +288,6 @@
   }
 }
 
-.balance {
-  display: flex;
-  flex-direction: row;
-  gap: 3px;
-  padding-right: 10px;
-}
-
 div.dialog {
   border-radius: 22px;
   padding: 0;
@@ -252,10 +303,10 @@ div.dialog {
 }
 
 div.dialog:has([data-payment-step="active"]) {
-  background: #13151f !important;
-  background-color: #13151f !important;
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.65) !important;
-  border: 2px solid #13151f !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16) !important;
+  border: 1px solid #eef2f6 !important;
   outline: none !important;
   animation: none !important;
   transform: translate(-50%, -50%) !important;
@@ -273,8 +324,8 @@ div.dialog:has([data-usdt-payment-step="active"]) {
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] {
-  color: rgba(255, 255, 255, 0.88) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  color: #64748b !important;
+  background: #f1f5f9 !important;
   border-radius: 10px;
 }
 
@@ -284,8 +335,8 @@ div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] {
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] svg {
-  color: rgba(255, 255, 255, 0.92) !important;
-  stroke: rgba(255, 255, 255, 0.92) !important;
+  color: #475569 !important;
+  stroke: #475569 !important;
 }
 
 div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] svg {
@@ -294,8 +345,8 @@ div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] svg 
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close]:hover {
-  background: rgba(255, 255, 255, 0.14) !important;
-  color: #ffffff !important;
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close]:hover {
@@ -326,45 +377,137 @@ div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close]:hove
   display: flex;
   flex-direction: row;
   align-items: center;
-  background: rgb(35, 45, 69);
+  background: var(--surface-nav);
   border-radius: 10px;
-  padding: 2px 2px 2px 10px;
-  gap: 5px;
+  padding: 3px 3px 3px 10px;
+  gap: 6px;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.eyeBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.eyeBtn:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.eyeBtn:active {
+  transform: scale(0.96);
+}
+
+.eyeBtn[aria-pressed="true"] {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.eyeSvg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 @media screen and (min-width: 769px) {
   .Deposit {
-    height: auto;
-    min-height: 36px;
-    max-height: none;
-    padding: 8px 20px;
+    height: 34px;
+    min-height: 34px;
+    max-height: 34px;
+    padding: 0 18px;
     font-size: 14px;
     font-weight: 500;
-    line-height: 1.25;
+    line-height: 1;
+    align-self: center;
+  }
+
+  .eyeBtn {
+    width: 30px;
+    height: 30px;
+    align-self: center;
+  }
+
+  .eyeSvg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .balanceBlock {
+    gap: 1px;
+    justify-content: center;
+    align-self: center;
+  }
+
+  .balance {
+    line-height: 1.15;
   }
 }
 
 .balanceBlock {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: center;
+  align-self: center;
   min-width: 0;
+  gap: 1px;
+  line-height: 1.15;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.balanceLabel {
+  font-size: 11px;
+  line-height: 12px;
+  font-weight: 600;
+  color: rgb(148, 166, 205);
+  letter-spacing: 0.01em;
 }
 
 .balanceAmount {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.15;
 }
 
 .balanceTitle {
   display: flex;
   gap: 2px;
-  align-items: center;
+  align-items: baseline;
+}
+
+.balance {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3px;
+  padding-right: 6px;
 }
 
 .balanceAnimated {
   /* tabular-nums + casino glow handled in AnimatedBalance.module.css */
+}
+
+.hiddenBalance {
+  /* inherits header balance typography */
 }
 
 .currencyText {

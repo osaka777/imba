@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
 import { components } from "~/shared/api";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button, Input, LoadingSpinner } from "~/shared/ui";
 
 import { changePassword } from "../../api";
@@ -15,15 +16,16 @@ type UpdatePasswordDto = components["schemas"]["UpdatePasswordDto"];
 
 export const ChangePasswordForm = () => {
   const router = useRouter();
+  const { t } = useLocale();
 
   const { isPending, isSuccess, mutateAsync } = useMutation({
     mutationFn: changePassword,
     mutationKey: ["update-password"],
     onError: () => {
-      toast("❌ Старый пароль введён неверно");
+      toast(t("auth.oldPasswordWrong"));
     },
     onSuccess: () => {
-      toast("✅ Пароль успешно изменён");
+      toast(t("auth.passwordChangedOk"));
       router.push("/");
     },
   });
@@ -41,18 +43,18 @@ export const ChangePasswordForm = () => {
       className={styles.ChangePasswordForm}
       onSubmit={handleSubmit(onSubmit)}
     >
-      <h2 className={styles.heading}>{`Смена пароля`}</h2>
+      <h2 className={styles.heading}>{t("auth.changePasswordTitle")}</h2>
       <Input
         className={styles.input}
-        label="Старый пароль"
-        placeholder="Введите старый пароль..."
+        label={t("auth.oldPassword")}
+        placeholder={t("auth.oldPasswordPlaceholder")}
         type="password"
         {...register("oldPassword", { required: true })}
       />
       <Input
         className={styles.input}
-        label="Новый пароль"
-        placeholder="Введите новый пароль..."
+        label={t("auth.newPasswordField")}
+        placeholder={t("auth.newPasswordFieldPlaceholder")}
         type="password"
         {...register("newPassword", { required: true })}
       />
@@ -61,7 +63,7 @@ export const ChangePasswordForm = () => {
         disabled={isPending || isSuccess}
         type="submit"
       >
-        {`Сменить пароль`}
+        {t("auth.changePasswordSubmit")}
         {(isPending || isSuccess) && (
           <LoadingSpinner className={styles.loading} />
         )}

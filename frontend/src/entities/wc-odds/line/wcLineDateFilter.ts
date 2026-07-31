@@ -1,8 +1,18 @@
 export const WC_LINE_DATE_FILTER_STORAGE_KEY = "imba-line-date-filter";
 
-export function formatLineDateLabel(date: string): string {
+export function formatLineDateLabel(date: string, locale = "ru"): string {
   const d = new Date(`${date}T12:00:00Z`);
-  return d.toLocaleDateString("ru-RU", {
+  const bcp47 =
+    locale === "kk" ? "kk-KZ"
+    : locale === "uz" ? "uz-UZ"
+    : locale === "uk" ? "uk-UA"
+    : locale === "tr" ? "tr-TR"
+    : locale === "az" ? "az-AZ"
+    : locale === "es" ? "es-ES"
+    : locale === "pt" ? "pt-PT"
+    : locale === "en" ? "en-US"
+    : "ru-RU";
+  return d.toLocaleDateString(bcp47, {
     weekday: "short",
     day: "numeric",
     month: "short",

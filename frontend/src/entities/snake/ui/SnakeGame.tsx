@@ -39,6 +39,8 @@ import {
 import { useCurrency } from "~/shared/model/useCurrency";
 
 import styles from "./SnakeGame.module.css";
+import { toIntlLocale } from "~/shared/i18n/format";
+import { useLocale } from "~/shared/model/useLocale";
 
 type Phase = "idle" | "playing" | "cashed" | "lost";
 
@@ -52,6 +54,7 @@ function syncWorldClock(world: SnakeWorld, round: SnakeRoundDto) {
 }
 
 export function SnakeGame() {
+  const { t, locale } = useLocale();
   const { isAuth } = useAuth();
   const { currency } = useCurrency();
   const queryClient = useQueryClient();
@@ -412,7 +415,7 @@ export function SnakeGame() {
     setEndStats(null);
     unlockSnakeAudio();
     if (!isAuth) {
-      setError("Войдите, чтобы играть");
+      setError(t("promo.snakeLoginRequired"));
       return;
     }
     if (pendingResume) {
@@ -505,7 +508,7 @@ export function SnakeGame() {
             setSnakeMuted(!next);
             unlockSnakeAudio();
           }}
-          aria-label="Звук"
+          aria-label={t("promo.snakeSoundAria")}
         >
           {soundOn ? "♪" : "🔇"}
         </button>
@@ -594,7 +597,7 @@ export function SnakeGame() {
             <div className={styles.panel}>
               {showResume ? (
                 <div className={styles.resumeBox}>
-                  <p>Незакрытый раунд · {stake.toLocaleString("ru-RU")} {currency || "KZT"}</p>
+                  <p>{t("promo.snakeOpenRound", { stake: stake.toLocaleString(toIntlLocale(locale)), currency: currency || "KZT" })}</p>
                   <div className={styles.resumeActions}>
                     <button
                       type="button"
@@ -625,7 +628,7 @@ export function SnakeGame() {
                       value={stake}
                       disabled={busy}
                       onChange={(e) => setStake(Number(e.target.value))}
-                      aria-label="Ставка"
+                      aria-label={t("promo.snakeStakeAria")}
                     />
                     <span className={styles.ccy}>{currency || "KZT"}</span>
                   </div>

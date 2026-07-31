@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
@@ -30,6 +31,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [headerDepositOpen, setHeaderDepositOpen] = useState(false);
+  const [headerDepositCurrency, setHeaderDepositCurrency] = useState<string | undefined>();
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
   const { t } = useLocale();
   const router = useRouter();
@@ -39,8 +41,9 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
     enabled: isAuth,
   });
 
-  const openHeaderDeposit = useCallback(() => {
+  const openHeaderDeposit = useCallback((currencyCode?: string) => {
     armGuard();
+    setHeaderDepositCurrency(currencyCode);
     scheduleDialogOpen(setHeaderDepositOpen);
   }, [armGuard]);
 
@@ -129,7 +132,7 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
   const renderModalContent = () => {
     if (!modalContent) return null;
     const Modal = MODAL_BY_ID[modalContent];
-    if (!Modal) return <div>Неизвестный тип модального окна</div>;
+    if (!Modal) return <div>{t("common.unknownModal")}</div>;
     return <Modal onClose={closeModal} />;
   };
 
@@ -150,7 +153,13 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
                   <span className={styles.userRound}>
                     <UserAvatar
                       email={userData?.email}
+                      name={userData?.telegramUsername || userData?.email}
                       preset={userData?.avatarPreset}
+                      src={
+                        (userData as { avatarUrl?: string | null } | undefined)
+                          ?.avatarUrl
+                      }
+                      userId={userData?.id}
                       size={32}
                     />
                   </span>
@@ -185,20 +194,35 @@ export const Content: React.FC<{ isAuth: boolean }> = ({ isAuth }) => {
         </div>
       )}
 
-      {modalContent && (
-        <div className={styles.modalOverlay} onClick={closeModal}>
-          {renderModalContent()}
-        </div>
-      )}
+      {typeof document !== "undefined" &&
+        modalContent &&
+        createPortal(
+          <div
+            className={styles.modalOverlay}
+            onClick={closeModal}
+            role="presentation"
+          >
+            {renderModalContent()}
+          </div>,
+          document.body,
+        )}
 
-      <Dialog open={headerDepositOpen} onOpenChange={setHeaderDepositOpen}>
+      <Dialog
+        open={headerDepositOpen}
+        onOpenChange={(open) => {
+          setHeaderDepositOpen(open);
+          if (!open) setHeaderDepositCurrency(undefined);
+        }}
+      >
         <DialogContent
           className={depositStyles.dialog}
           title={t("deposit.title")}
           onInteractOutside={blockIfArmed}
           onPointerDownOutside={blockIfArmed}
         >
-          {headerDepositOpen ? <LazyDepositForm /> : null}
+          {headerDepositOpen ? (
+            <LazyDepositForm forceCurrency={headerDepositCurrency} />
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

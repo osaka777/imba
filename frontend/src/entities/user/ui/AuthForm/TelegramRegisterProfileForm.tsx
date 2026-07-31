@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { safeToast } from "~/shared/lib/safeToast";
 import { api } from "~/shared/api";
 import { Button, Checkbox } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 
 import {
   completeTelegramProfile,
@@ -42,6 +43,7 @@ export function TelegramRegisterProfileForm({
   telegramUser,
   onBack,
 }: TelegramRegisterProfileFormProps) {
+  const { t } = useLocale();
   const { data: currencies = [] } = useQuery<CurrencyOption[]>({
     queryKey: ["currencies"],
     queryFn: async () => {
@@ -56,7 +58,7 @@ export function TelegramRegisterProfileForm({
     defaultValues: {
       ageConfirmed: true,
       birthDate: "",
-      currencyCode: "KZT",
+      currencyCode: "USDT",
       termsAccepted: true,
     },
   });
@@ -84,30 +86,30 @@ export function TelegramRegisterProfileForm({
     onSuccess: (_data, variables) => {
       localStorage.setItem("currency", JSON.stringify(variables.currencyCode));
       window.dispatchEvent(new Event("currencyChanged"));
-      safeToast.success("Регистрация через Telegram успешна!");
+      safeToast.success(t("auth.tgRegisterSuccess"));
       window.location.reload();
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : "";
-      if (message.includes("18")) {
-        safeToast.error("Регистрация доступна только с 18 лет");
+      if (message.includes("21") || message.includes("18")) {
+        safeToast.error(t("auth.errorUnderage"));
         return;
       }
-      safeToast.error(message || "Не удалось завершить регистрацию");
+      safeToast.error(message || t("auth.tgRegisterFailed"));
     },
   });
 
   const onSubmit = async (data: ProfileFormState) => {
     if (!data.ageConfirmed) {
-      safeToast.warning("Необходимо подтвердить возраст");
+      safeToast.warning(t("auth.warnConfirmAge"));
       return;
     }
     if (!data.termsAccepted) {
-      safeToast.warning("Необходимо подтвердить условия соглашения");
+      safeToast.warning(t("auth.warnConfirmTerms"));
       return;
     }
     if (!data.birthDate) {
-      safeToast.warning("Укажите дату рождения");
+      safeToast.warning(t("auth.warnEnterBirthDate"));
       return;
     }
     await mutateAsync(data);
@@ -123,7 +125,7 @@ export function TelegramRegisterProfileForm({
       onSubmit={handleSubmit(onSubmit)}
     >
       <p className={styles.forgotHint}>
-        Telegram: {displayName}. Укажите валюту и дату рождения для завершения регистрации.
+        {t("auth.tgProfileHint", { name: displayName })}
       </p>
 
       <Controller
@@ -167,7 +169,7 @@ export function TelegramRegisterProfileForm({
               }}
               {...field}
             >
-              Мне исполнилось 18 лет
+              {t("auth.ageConfirm21")}
             </Checkbox>
           )}
         />
@@ -186,17 +188,17 @@ export function TelegramRegisterProfileForm({
               }}
               {...field}
             >
-              Принимаю правила imba.bet
+              {t("auth.acceptRules")}
             </Checkbox>
           )}
         />
       </div>
 
       <Button className={styles.authButton} disabled={isPending} type="submit">
-        {isPending ? "Создание аккаунта..." : "Завершить регистрацию"}
+        {isPending ? t("auth.creatingAccount") : t("auth.completeRegistration")}
       </Button>
       <button className={styles.forgotBackLink} onClick={onBack} type="button">
-        Назад
+        {t("auth.back")}
       </button>
     </form>
   );

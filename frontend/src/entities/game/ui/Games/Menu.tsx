@@ -9,6 +9,7 @@ import { liveAllHref, liveSportHref } from "~/entities/game/lib/sportPagePaths";
 import { useSportMenuRows } from "~/entities/cybersport/hooks/useSportMenuRows";
 import { cn } from "~/shared/lib";
 import { Button } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 import { getLiveGameCounts, GameCounts } from "../../api/getGameCounts";
 import { fetchWcLiveCounts } from "~/entities/wc-odds/api/client";
 import { FireIcon } from "~/shared/assets";
@@ -24,6 +25,7 @@ type MenuProps = {
 };
 
 export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
+  const { t } = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -99,12 +101,12 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
             className={cn(styles.broadcastToggle, broadcastOnly && styles.broadcastToggle_active)}
             role="switch"
             aria-checked={broadcastOnly}
-            aria-label="С трансляциями"
+            aria-label={t("common.withBroadcasts")}
             onClick={toggleBroadcast}
           >
             <span className={styles.broadcastKnob} />
           </button>
-          <span className={styles.broadcastLabel}>С трансляциями</span>
+          <span className={styles.broadcastLabel}>{t("common.withBroadcasts")}</span>
         </div>
 
         <span className={styles.divider} aria-hidden />
@@ -117,7 +119,7 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
           key="All"
         >
           <p className={styles.text}>
-            Все
+            {t("common.all")}
             {totalCount > 0 && (
               <span className={styles.count}>{totalCount}</span>
             )}
@@ -151,7 +153,7 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
         {esportsRows.length > 0 ? (
           <>
             <span className={styles.divider} aria-hidden />
-            <span className={styles.groupLabel}>Киберспорт</span>
+            <span className={styles.groupLabel}>{t("common.cybersport")}</span>
             {esportsRows
               .filter((item) => !isSidebar || !countsReady || item.count > 0)
               .map(({ Icon, label, name, count, isPriority }) => (

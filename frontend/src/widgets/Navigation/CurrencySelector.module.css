@@ -1,58 +1,111 @@
-.select>span {
-  font-size: 12px;
-  letter-spacing: 0;
-  line-height: 16px;
-  font-weight: 500;
+.root {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: rgb(148, 166, 205);
-  padding: 0 2px;
+  cursor: pointer;
 }
 
-/* Медиа-запросы для CurrencySelector */
-@media screen and (max-width: 1200px) {
-  .select>span {
-    font-size: 11px;
-    line-height: 15px;
-    padding: 0 1px;
-  }
+.code {
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-@media screen and (max-width: 992px) {
-  .select>span {
-    font-size: 10px;
-    line-height: 14px;
-    padding: 0 1px;
-  }
+.flag,
+.itemFlag {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
+  overflow: hidden;
+  object-fit: cover;
+}
+
+.chevron {
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid rgba(148, 166, 205, 0.7);
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1300;
+  min-width: 180px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 10px;
+  background: var(--surface-nav);
+  border: 1px solid rgba(148, 166, 205, 0.18);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
+.item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.itemActive {
+  background: rgba(16, 141, 231, 0.2);
+}
+
+.itemCode {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  min-width: 36px;
+}
+
+.itemName {
+  font-size: 12px;
+  color: rgba(220, 228, 249, 0.9);
 }
 
 @media screen and (max-width: 768px) {
-  .select {
-    height: auto !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  .select>span {
+  .code {
     font-size: 10px;
     line-height: 12px;
   }
-}
 
-@media screen and (max-width: 576px) {
-  .select>span {
-    font-size: 8px;
-    line-height: 12px;
-    padding: 0;
+  .flag,
+  .itemFlag {
+    width: 14px;
+    height: 14px;
   }
 }
-
-@media screen and (max-width: 480px) {
-  .select>span {
-    font-size: 7px;
-    line-height: 11px;
-    padding: 0;
-  }
-}
-
-

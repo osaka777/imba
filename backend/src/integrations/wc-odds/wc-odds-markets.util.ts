@@ -180,7 +180,10 @@ const BETTABLE_MARKET_KEYS = new Set([
 
 export function isTotalsMarketKey(marketKey: string): boolean {
   const normalized = normalizeWcMarketKey(marketKey);
-  return normalized === 'totals' || normalized === 'totals_home' || normalized === 'totals_away';
+  if (normalized === 'totals' || normalized === 'totals_home' || normalized === 'totals_away') {
+    return true;
+  }
+  return /^map_\d+_totals$/i.test(stripOvertimeMarketSuffix(marketKey));
 }
 
 export function stripOvertimeMarketSuffix(marketKey: string): string {
@@ -195,6 +198,15 @@ export function normalizeWcMarketKey(marketKey: string): string {
   const baseKey = stripOvertimeMarketSuffix(marketKey);
   if (BETTABLE_MARKET_KEYS.has(baseKey)) return baseKey;
   if (/HANDICAP_3WAY/i.test(baseKey)) return 'handicap_3way';
+  // Keep map_N_* keys intact for scoped settlement; only remap legacy aliases.
+  if (baseKey === 'spreads') return 'handicap';
+  if (baseKey === 'total_oe') return 'even_odd';
+  if (/^map_\d+_spreads$/i.test(baseKey)) {
+    return baseKey.replace(/_spreads$/i, '_handicap');
+  }
+  if (/^map_\d+_total_oe$/i.test(baseKey)) {
+    return baseKey.replace(/_total_oe$/i, '_even_odd');
+  }
   if (baseKey.startsWith('display_MATCH_WINNER')) return 'h2h';
   if (/^display_GOALS_TEAM1/i.test(baseKey)) return 'btts';
   if (/^display_GOALS_TEAM2/i.test(baseKey)) return 'btts';
@@ -234,11 +246,32 @@ export function normalizeWcMarketKey(marketKey: string): string {
   return baseKey;
 }
 
+/** True for map-scoped winner books we settle from periodScores. */
+export function isMapWinnerMarketKey(marketKey: string): boolean {
+  return /^map_\d+_winner$/i.test(stripOvertimeMarketSuffix(marketKey));
+}
+
+export function parseMapWinnerNumber(marketKey: string): number | null {
+  const m = stripOvertimeMarketSuffix(marketKey).match(/^map_(\d+)_winner$/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export function isWcBettableMarketKey(marketKey: string): boolean {
   if (!marketKey) return false;
   if (BETTABLE_MARKET_KEYS.has(marketKey)) return true;
+  if (isMapWinnerMarketKey(marketKey)) return true;
+  if (/^map_\d+_(totals|handicap|spreads|even_odd|total_oe)$/i.test(marketKey)) {
+    return true;
+  }
+  if (marketKey === 'spreads' || marketKey === 'total_oe') return true;
   const normalized = normalizeWcMarketKey(marketKey);
-  return BETTABLE_MARKET_KEYS.has(normalized);
+  return (
+    BETTABLE_MARKET_KEYS.has(normalized)
+    || isMapWinnerMarketKey(normalized)
+    || /^map_\d+_(totals|handicap|even_odd)$/i.test(normalized)
+  );
 }
 
 const CANONICAL_OUTCOME_PREFIXES = ['OVER_', 'UNDER_', 'HOME', 'AWAY', 'DRAW', 'DC_', 'YES', 'NO', 'EVEN', 'ODD'];

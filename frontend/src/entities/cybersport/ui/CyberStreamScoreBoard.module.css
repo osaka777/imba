@@ -329,3 +329,70 @@
     font-size: 0.8125rem;
   }
 }
+
+/* Sportsbook light surface */
+.board {
+  margin-bottom: 0;
+  border-color: #e1e6ed;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.board::before {
+  display: none;
+}
+
+.meta {
+  border-bottom-color: #e1e6ed;
+  background: #eef2f7;
+}
+
+.league,
+.teamName {
+  color: #101828;
+}
+
+.finishedBadge,
+.mapPill,
+.teamLogo,
+.mapChip {
+  border-color: #d7dde5;
+  background: #f3f5f8;
+  color: #475467;
+}
+
+.broadcastBtn {
+  background: #0085ff;
+  color: #ffffff;
+}
+
+.broadcastBtn:hover {
+  background: #0075e6;
+  box-shadow: none;
+}
+
+.mapPillLabel,
+.scoreCaption {
+  color: #667085;
+}
+
+.mapPillRound,
+.scoreNum_lead,
+.mapWin {
+  color: #2563eb;
+  text-shadow: none;
+}
+
+.scoreNum {
+  color: #344054;
+}
+
+.scoreSep {
+  color: #98a2b3;
+}
+
+.maps {
+  border-top-color: #e1e6ed;
+  background: #f8fafc;
+}

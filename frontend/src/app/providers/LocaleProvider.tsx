@@ -19,6 +19,7 @@ import {
   persistClientLocale,
 } from "~/shared/i18n/get-client-locale";
 import { translate, type MessageKey, type TranslateParams } from "~/shared/i18n/messages";
+import { languageService } from "~/shared/services/language.service";
 
 type LocaleContextType = {
   locale: AppLocale;
@@ -33,8 +34,11 @@ type LocaleContextType = {
 export const LocaleContext = createContext<LocaleContextType | null>(null);
 
 export const LocaleProvider = ({ children }: { children: React.ReactNode }) => {
-  // Lazy init from localStorage/cookie so reopen remembers EN without toggle.
-  const [locale, setLocaleState] = useState<AppLocale>(() => getClientLocale());
+  // SSR + first client paint must match. Reading localStorage here caused
+  // "Application error" on every reload for users with a non-default locale.
+  const [locale, setLocaleState] = useState<AppLocale>(
+    () => languageService.getDefaultLanguage(),
+  );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {

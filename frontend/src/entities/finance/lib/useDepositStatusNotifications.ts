@@ -2,14 +2,18 @@
 
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
 
 import { useAuth } from "~/app/providers/AuthProvider";
 import { getUser } from "~/entities/user/api";
 import { useWebSocketContext } from "~/entities/game/lib/WebSocketContext";
 import {
+  addDepositNotification,
   emitDepositResult,
   untrackDepositOrder,
 } from "~/shared/lib/appNotifications";
+import { shouldDeferToNativePush, showNativeNotification } from "~/entities/push/lib/nativeApp";
+import { useLocale } from "~/shared/model/useLocale";
 
 type DepositWsPayload = {
   orderId: number;
@@ -19,8 +23,21 @@ type DepositWsPayload = {
   currency?: string;
 };
 
+type CommentReplyWsPayload = {
+  commentId?: number;
+  parentId?: number;
+  eventId?: number;
+  eventSlug?: string;
+  eventTitle?: string;
+  fromUserId?: number;
+  fromName?: string;
+  preview?: string;
+  timestamp?: string;
+};
+
 export const useDepositStatusNotifications = () => {
   const { isAuth } = useAuth();
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const {
     subscribe,
@@ -76,10 +93,39 @@ export const useDepositStatusNotifications = () => {
         return;
       }
 
-      if (message.type !== "deposit_status_changed") return;
-
       const msgEventId = message.eventId as string | undefined;
       if (msgEventId && msgEventId !== eventId) return;
+
+      if (message.type === "prediction_comment_reply") {
+        const payload = message.payload as CommentReplyWsPayload | undefined;
+        if (!payload?.commentId) return;
+        const fromName = String(payload.fromName || "").trim() || "…";
+        const title = t("notify.commentReplyTitle", { name: fromName });
+        const preview = String(payload.preview || "").trim();
+        const eventTitle = String(payload.eventTitle || "").trim();
+        const messageText = preview
+          ? preview
+          : eventTitle
+            ? t("notify.commentReplyBodyEvent", { title: eventTitle })
+            : t("notify.commentReplyBody");
+        const slug = String(payload.eventSlug || "").trim();
+        addDepositNotification({
+          orderId: -Number(payload.commentId),
+          displayId: Number(payload.commentId),
+          title,
+          message: messageText,
+          linkUrl: slug
+            ? `/markets/${encodeURIComponent(slug)}#comment-${payload.parentId ?? payload.commentId}`
+            : undefined,
+        });
+        if (!shouldDeferToNativePush()) {
+          toast.info(title);
+        }
+        showNativeNotification(t("notify.nativeBrand"), title);
+        return;
+      }
+
+      if (message.type !== "deposit_status_changed") return;
 
       const payload = message.payload as DepositWsPayload | undefined;
       if (!payload?.orderId || !payload.status) return;
@@ -113,5 +159,6 @@ export const useDepositStatusNotifications = () => {
     removeMessageHandler,
     queryClient,
     sendJsonMessage,
+    t,
   ]);
 };

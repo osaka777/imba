@@ -1,10 +1,13 @@
-import { makeMetadata } from "~/shared/lib";
+import type { Metadata } from "next";
 
-export const metadata = makeMetadata("Правила и информация", {
-  description:
-    "Условия использования Imba.bet, правила приёма ставок, политика конфиденциальности и контакты службы поддержки.",
-  path: "/info",
-});
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoInfoTitle", {
+    descriptionKey: "common.seoInfoDesc",
+    path: "/info",
+  });
+}
 
 export default function InfoLayout({ children }: { children: React.ReactNode }) {
   return children;

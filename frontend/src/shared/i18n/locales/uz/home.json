@@ -1,0 +1,13 @@
+{
+  "colTime": "Vaqt",
+  "colTeams": "Jamoalar",
+  "topEvents": "Hozir mashhur",
+  "topEventsLive": "Oʻyinchilar faolligi",
+  "topEventsSubtitle": "Trenddagi matchlar va koʻpchilik tanlovi real vaqtda",
+  "topEventsLegend": "Foiz qanchalik yuqori — shunchalik mashhur natija",
+  "emptyLive": "{sport} boʻyicha live yoʻq",
+  "emptyLine": "{sport} boʻyicha liniyada match yoʻq",
+  "emptyHint": "Boshqa sportni tanlang yoki toʻliq boʻlimni oching",
+  "viewAllLive": "Barcha liveʼni koʻrish",
+  "goToLine": "Liniyaga oʻtish"
+}

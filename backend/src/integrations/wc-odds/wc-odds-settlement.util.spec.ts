@@ -379,4 +379,56 @@ describe('resolveWcBetResult', () => {
       ).toBe(WcOddsBetStatus.LOSE);
     });
   });
+
+  describe('map winner (1win between-maps)', () => {
+    it('settles map 1 when series score advanced even before map 2 period appears', () => {
+      expect(
+        resolveWcBetResult(
+          {
+            pick: 'HOME' as never,
+            marketKey: 'map_1_winner',
+            outcomeKey: 'HOME',
+            line: null,
+          },
+          1,
+          0,
+          undefined,
+          {
+            v: 1,
+            updatedAt: new Date().toISOString(),
+            result: {
+              capturedAt: new Date().toISOString(),
+              parsedScore: { currentScore: [1, 0] },
+              periodScores: [{ home: 13, away: 11 }],
+            },
+          } as never,
+        ),
+      ).toBe(WcOddsBetStatus.WIN);
+    });
+
+    it('does not settle map 2 while only map 1 is done', () => {
+      expect(
+        resolveWcBetResult(
+          {
+            pick: 'HOME' as never,
+            marketKey: 'map_2_winner',
+            outcomeKey: 'HOME',
+            line: null,
+          },
+          1,
+          0,
+          undefined,
+          {
+            v: 1,
+            updatedAt: new Date().toISOString(),
+            result: {
+              capturedAt: new Date().toISOString(),
+              parsedScore: { currentScore: [1, 0] },
+              periodScores: [{ home: 13, away: 11 }],
+            },
+          } as never,
+        ),
+      ).toBeNull();
+    });
+  });
 });

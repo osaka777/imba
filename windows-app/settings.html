@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Настройки Imba</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #121a2c;
+        --card: #1a2438;
+        --text: #fff;
+        --muted: #94a6cd;
+        --green: #31bc69;
+        --border: rgba(255, 255, 255, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Segoe UI, system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 22px 22px 18px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .sub {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      label.item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        cursor: pointer;
+      }
+      label.item input {
+        margin-top: 2px;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--green);
+      }
+      .item-title {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .item-desc {
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 650;
+        cursor: pointer;
+      }
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+      }
+      .btn-primary {
+        background: linear-gradient(70deg, #31bc69 -8%, #089e4e 96%);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">Настройки Imba</h1>
+    <p class="sub" id="subtitle">Выберите, как приложение работает на этом ПК.</p>
+
+    <div class="list">
+      <label class="item">
+        <input id="notificationsEnabled" type="checkbox" />
+        <span>
+          <div class="item-title">Пуш-уведомления Windows</div>
+          <div class="item-desc">
+            Оповещения о ставках, депозитах и выводах через центр уведомлений Windows.
+          </div>
+        </span>
+      </label>
+      <label class="item">
+        <input id="minimizeToTray" type="checkbox" />
+        <span>
+          <div class="item-title">Сворачивать в трей</div>
+          <div class="item-desc">
+            При закрытии окна приложение остаётся в панели задач и может показывать уведомления.
+          </div>
+        </span>
+      </label>
+      <label class="item">
+        <input id="launchOnStartup" type="checkbox" />
+        <span>
+          <div class="item-title">Запускать с Windows</div>
+          <div class="item-desc">Автозапуск при входе в систему.</div>
+        </span>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button class="btn-secondary" id="cancelBtn" type="button">Отмена</button>
+      <button class="btn-primary" id="saveBtn" type="button">Сохранить</button>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const isFirst = params.get("first") === "1";
+      if (isFirst) {
+        document.getElementById("title").textContent = "Добро пожаловать в Imba";
+        document.getElementById("subtitle").textContent =
+          "Ярлык уже на рабочем столе. Настройте уведомления и поведение приложения.";
+        document.getElementById("cancelBtn").textContent = "Пропустить";
+        document.getElementById("saveBtn").textContent = "Сохранить и открыть";
+      }
+
+      async function hydrate() {
+        const s = await window.ImbaSettings.get();
+        document.getElementById("notificationsEnabled").checked = Boolean(s.notificationsEnabled);
+        document.getElementById("minimizeToTray").checked = Boolean(s.minimizeToTray);
+        document.getElementById("launchOnStartup").checked = Boolean(s.launchOnStartup);
+      }
+
+      document.getElementById("saveBtn").onclick = async () => {
+        await window.ImbaSettings.save({
+          notificationsEnabled: document.getElementById("notificationsEnabled").checked,
+          minimizeToTray: document.getElementById("minimizeToTray").checked,
+          launchOnStartup: document.getElementById("launchOnStartup").checked,
+          firstRunDone: true,
+        });
+        if (document.getElementById("notificationsEnabled").checked) {
+          // trigger sample/os enable path via main
+        }
+        await window.ImbaSettings.close();
+      };
+
+      document.getElementById("cancelBtn").onclick = async () => {
+        await window.ImbaSettings.save({ firstRunDone: true });
+        await window.ImbaSettings.close();
+      };
+
+      hydrate();
+    </script>
+  </body>
+</html>

@@ -8,6 +8,8 @@ export type TrackedDepositOrder = {
   id: number;
   publicOrderId?: number;
   currency: 'KZT' | 'RUB' | 'USDT';
+  /** Manual deposit method — used to poll the correct /me endpoint. */
+  method?: string;
   createdAt: number;
 };
 
@@ -19,6 +21,7 @@ export type DepositNotification = {
   message: string;
   createdAt: number;
   read: boolean;
+  linkUrl?: string;
 };
 
 export type NotificationKind = 'personal' | 'general';
@@ -69,28 +72,34 @@ export const trackDepositOrder = (input: {
   id: number;
   publicOrderId?: number;
   currency: 'KZT' | 'RUB' | 'USDT';
+  method?: string;
 }) => {
-  if (!canUseStorage()) return;
-  const existing = getTrackedDepositOrders().filter(
-    (item) => Number(item.id) !== Number(input.id),
-  );
-  saveTrackedOrders([
-    {
-      id: Number(input.id),
-      publicOrderId: input.publicOrderId,
-      currency: input.currency,
-      createdAt: Date.now(),
-    },
-    ...existing,
-  ]);
+  try {
+    if (!canUseStorage()) return;
+    const existing = getTrackedDepositOrders().filter(
+      (item) => Number(item.id) !== Number(input.id),
+    );
+    saveTrackedOrders([
+      {
+        id: Number(input.id),
+        publicOrderId: input.publicOrderId,
+        currency: input.currency,
+        method: input.method,
+        createdAt: Date.now(),
+      },
+      ...existing,
+    ]);
 
-  const displayId = Number(input.publicOrderId ?? input.id);
-  addDepositNotification({
-    orderId: Number(input.id),
-    displayId,
-    title: `Заявка #${displayId} отправлена`,
-    message: 'Платеж принят на проверку.',
-  });
+    const displayId = Number(input.publicOrderId ?? input.id);
+    addDepositNotification({
+      orderId: Number(input.id),
+      displayId,
+      title: `Заявка #${displayId} отправлена`,
+      message: 'Платеж принят на проверку.',
+    });
+  } catch (err) {
+    console.error('[deposit] trackDepositOrder failed', err);
+  }
 };
 
 export const getDepositNotifications = (): DepositNotification[] => {
@@ -119,6 +128,7 @@ export const addDepositNotification = (input: {
   displayId: number;
   title: string;
   message: string;
+  linkUrl?: string;
 }) => {
   if (!canUseStorage()) return;
   const exists = getDepositNotifications().some(
@@ -134,6 +144,7 @@ export const addDepositNotification = (input: {
     message: input.message,
     createdAt: Date.now(),
     read: false,
+    linkUrl: input.linkUrl,
   };
   saveDepositNotifications([item, ...getDepositNotifications()]);
   dispatchUpdated();
@@ -205,6 +216,7 @@ export const getPersonalNotifications = (): AppNotification[] =>
     message: n.message,
     createdAt: n.createdAt,
     read: n.read,
+    linkUrl: n.linkUrl,
   }));
 
 export const getGeneralNotifications = (): AppNotification[] => {

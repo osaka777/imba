@@ -37,7 +37,11 @@ export const login = async (body: {
 
   if (data.accessToken) {
     await createSessionClient(data.accessToken);
-    await createSession(data.accessToken);
+    try {
+      await createSession(data.accessToken);
+    } catch (error) {
+      console.warn("createSession httpOnly cookie failed after login:", error);
+    }
     return { kind: "success" };
   }
 
@@ -70,7 +74,11 @@ export const verifyTelegram2fa = async (body: {
 
   if (data.accessToken) {
     await createSessionClient(data.accessToken);
-    await createSession(data.accessToken);
+    try {
+      await createSession(data.accessToken);
+    } catch (error) {
+      console.warn("createSession httpOnly cookie failed after 2FA:", error);
+    }
     return;
   }
 

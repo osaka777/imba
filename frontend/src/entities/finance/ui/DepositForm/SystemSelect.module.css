@@ -36,7 +36,8 @@
 
 .SystemSelect_kaspi,
 .SystemSelect_sberbank,
-.SystemSelect_yandex {
+.SystemSelect_yandex,
+.SystemSelect_vtb {
   min-height: 78px;
   justify-content: center;
 }
@@ -71,6 +72,11 @@
     min-height: 38px;
   }
 
+  .icons_vtb {
+    height: 38px;
+    min-height: 38px;
+  }
+
   .kaspiLogo {
     height: 32px !important;
   }
@@ -80,6 +86,10 @@
   }
 
   .yandexLogo {
+    height: 32px !important;
+  }
+
+  .vtbLogo {
     height: 32px !important;
   }
 }
@@ -99,7 +109,8 @@
 
   .SystemSelect_kaspi,
   .SystemSelect_sberbank,
-  .SystemSelect_yandex {
+  .SystemSelect_yandex,
+  .SystemSelect_vtb {
     min-height: 62px;
     padding: 6px 4px 5px;
     gap: 4px;
@@ -116,7 +127,8 @@
 
   .icons_kaspi,
   .icons_sberbank,
-  .icons_yandex {
+  .icons_yandex,
+  .icons_vtb {
     height: 28px;
     min-height: 28px;
     padding: 0 4px;
@@ -132,6 +144,10 @@
   }
 
   .yandexLogo {
+    height: 28px !important;
+  }
+
+  .vtbLogo {
     height: 28px !important;
   }
 
@@ -153,7 +169,8 @@
 
   .SystemSelect_kaspi,
   .SystemSelect_sberbank,
-  .SystemSelect_yandex {
+  .SystemSelect_yandex,
+  .SystemSelect_vtb {
     min-height: 56px;
   }
 }
@@ -189,6 +206,12 @@
   padding: 4px 6px;
 }
 
+.icons_vtb {
+  height: 42px;
+  min-height: 42px;
+  padding: 4px 6px;
+}
+
 .icons img {
   height: 20px;
   width: auto;
@@ -216,6 +239,13 @@
   max-width: 96% !important;
   object-fit: contain;
 }
+
+.vtbLogo {
+  height: 36px !important;
+  width: auto !important;
+  max-width: 96% !important;
+  object-fit: contain;
+}
 .systemSelectIcon {
   fill: unset;
   color: unset;
@@ -232,5 +262,6 @@
 }
 .systemSelectText,
 .systemSelectTextMini {
-  color: var(--black);
+  color: #111827 !important;
+  font-weight: 600;
 }

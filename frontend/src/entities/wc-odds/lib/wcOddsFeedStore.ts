@@ -3,6 +3,7 @@
 import type { WcEvent, WcEventDetail } from "~/entities/wc-odds/api/client";
 import { mergeWcEventDetail } from "~/entities/wc-odds/lib/wcEventDetail";
 import { FEED_API, SYNC_WS_PATH, SyncMsg } from "~/entities/wc-odds/lib/feedSync.protocol";
+import { getFeedToken } from "~/entities/wc-odds/lib/feedSession";
 import { mergeWcFeedDelta, mergeWcListSnapshot, mergeWcLiveEvents } from "~/entities/wc-odds/lib/wcLineEvents";
 
 type Listener = () => void;
@@ -47,11 +48,17 @@ const PONG_TIMEOUT_MS = 10_000;
 
 function wsUrl(): string | null {
   if (typeof window === "undefined") return null;
+  const token = getFeedToken();
+  const withToken = (base: string) => {
+    if (!token) return base;
+    const join = base.includes("?") ? "&" : "?";
+    return `${base}${join}ft=${encodeURIComponent(token)}`;
+  };
   if (process.env.NEXT_PUBLIC_SYNC_WS_URL) {
-    return process.env.NEXT_PUBLIC_SYNC_WS_URL;
+    return withToken(process.env.NEXT_PUBLIC_SYNC_WS_URL);
   }
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}${SYNC_WS_PATH}`;
+  return withToken(`${protocol}//${window.location.host}${SYNC_WS_PATH}`);
 }
 
 class WcOddsFeedStore {

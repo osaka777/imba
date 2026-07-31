@@ -1,15 +1,46 @@
-html[data-btc-page] main {
-  grid-template-columns: minmax(0, 1fr) !important;
-  grid-template-areas:
-    "nav"
-    "content" !important;
+/* Match bookmaker home typography — redirect target uses same tokens. */
+html[data-btc-page] {
+  --btc-font:
+    "SF Pro Display",
+    "Open Sans",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Helvetica Neue",
+    sans-serif;
+  --btc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --btc-bg: transparent;
+  --btc-surface: transparent;
+  --btc-elevated: rgba(255, 255, 255, 0.04);
+  --btc-line: rgba(255, 255, 255, 0.1);
+  --btc-line-soft: rgba(255, 255, 255, 0.06);
+  --btc-text: #eaecef;
+  --btc-muted: #8b9bb4;
+  --btc-up: #0ecb81;
+  --btc-down: #f6465d;
+  --btc-warn: #f0b90b;
 }
 
-html[data-btc-page] main > *:last-child {
-  display: none !important;
+html[data-btc-page],
+html[data-btc-page] body,
+html[data-btc-page] #root {
+  font-family: var(--btc-font);
 }
 
 html[data-btc-page] main > div:nth-child(2) {
   max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
   padding-inline: 0;
+}
+
+@media (max-width: 640px) {
+  html[data-btc-page] main > div:nth-child(2) {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }

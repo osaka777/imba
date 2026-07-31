@@ -20,6 +20,10 @@ const ALLOWED_HOST_SUFFIXES = [
   'llnwd.net',
   'almastream.net',
   'kick.com',
+  // 1win/top-parser fallback broadcast sources (resolved via onewin-wc).
+  'soft4game.com',
+  'video-translations.top-parser.com',
+  'sportplayer.io',
 ] as const;
 
 function isAllowedBroadcastHost(hostname: string): boolean {
@@ -58,6 +62,42 @@ function rewriteTwitchParentsInHtml(
       }
     },
   );
+}
+
+/** Relative /js /css in upstream player HTML resolve to imba.bet otherwise → SPA HTML, black screen. */
+function rewriteEmbedRelativeAssets(html: string, upstreamUrl: string): string {
+  let origin: string;
+  try {
+    origin = new URL(upstreamUrl).origin;
+  } catch {
+    return html;
+  }
+  return html.replace(
+    /((?:href|src)=["'])\/(?!\/)([^"']*)/gi,
+    (_match, prefix: string, path: string) => `${prefix}${origin}/${path}`,
+  );
+}
+
+function extractEmbedHlsUrl(html: string): string | null {
+  const fromDataSource =
+    /data-source=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i.exec(html)?.[1]
+    ?? /data-src=["'](https?:\/\/[^"']+\.m3u8[^"']*)["']/i.exec(html)?.[1]
+    ?? null;
+  if (fromDataSource) return fromDataSource;
+  return /https?:\/\/[^"'\\\s>]+\.m3u8[^"'\\\s>]*/i.exec(html)?.[0] ?? null;
+}
+
+function rewriteEmbedHlsToProxy(html: string, ref: string): string {
+  const proxied = `/api/feed/events/${encodeURIComponent(ref)}/v?t=${Date.now()}`;
+  return html
+    .replace(
+      /(data-source=["'])(https?:\/\/[^"']+\.m3u8[^"']*)(["'])/gi,
+      `$1${proxied}$3`,
+    )
+    .replace(
+      /(data-src=["'])(https?:\/\/[^"']+\.m3u8[^"']*)(["'])/gi,
+      `$1${proxied}$3`,
+    );
 }
 
 function buildKickEmbedPage(playerUrl: string, muted = true): string {
@@ -127,13 +167,18 @@ export class WcBroadcastProxyService {
     });
   }
 
-  private upstreamHeaders(): Record<string, string> {
+  private upstreamHeaders(upstreamUrl?: string): Record<string, string> {
+    const isOneWinCdn =
+      !!upstreamUrl &&
+      /smytdryt\.live|soft4game\.com|sportplayer\.io|top-parser\.com/i.test(
+        upstreamUrl,
+      );
     return {
       Accept: '*/*',
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
-      Referer: 'https://olimpbet.kz/',
-      Origin: 'https://olimpbet.kz',
+      Referer: isOneWinCdn ? 'https://1win.pro/' : 'https://olimpbet.kz/',
+      Origin: isOneWinCdn ? 'https://1win.pro/' : 'https://olimpbet.kz',
     };
   }
 
@@ -152,7 +197,9 @@ export class WcBroadcastProxyService {
   }
 
   private async buildHeaders(upstreamUrl: string): Promise<Record<string, string> | null> {
-    const headers: Record<string, string> = { ...this.upstreamHeaders() };
+    const headers: Record<string, string> = {
+      ...this.upstreamHeaders(upstreamUrl),
+    };
     if (isOlimpbetHost(upstreamUrl)) {
       const cookie = await this.cookieHeader();
       if (!cookie) return null;
@@ -257,6 +304,16 @@ export class WcBroadcastProxyService {
       let body = await upstream.text();
       if (/dmdvw\.live|sportboom|almastream/i.test(entry.upstreamUrl)) {
         body = rewriteTwitchParentsInHtml(body, requestHost, muted);
+      }
+      // Sportboom/dmdvw player HTML uses root-relative /js /css — point them at CDN.
+      body = rewriteEmbedRelativeAssets(body, entry.upstreamUrl);
+      const hlsFromEmbed = extractEmbedHlsUrl(body);
+      if (hlsFromEmbed && this.isAllowedUrl(hlsFromEmbed)) {
+        this.rememberUpstream(ref, hlsFromEmbed);
+        body = rewriteEmbedHlsToProxy(body, ref);
+      }
+      if (muted && /<video\b/i.test(body) && !/\bmuted\b/i.test(body)) {
+        body = body.replace(/<video\b/i, '<video muted');
       }
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'no-store');

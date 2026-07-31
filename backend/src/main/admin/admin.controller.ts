@@ -1,19 +1,82 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Param, Req } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AdminWelcomeBonusAnalyticsService } from './admin-welcome-bonus-analytics.service';
+import { AdminMetrikaService } from './admin-metrika.service';
+import { AdminAuditService } from './admin-audit.service';
 import { SuperuserGuard } from '../user/authentication/superuser.guard';
+import { AdminPermissionGuard } from '../user/authentication/admin-permission.guard';
+import { RequireAdminPermission } from '../user/authentication/admin-permission.decorator';
 
 @Controller('admin')
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly welcomeBonusAnalytics: AdminWelcomeBonusAnalyticsService,
+    private readonly metrikaService: AdminMetrikaService,
+    private readonly auditService: AdminAuditService,
   ) {}
+
+  private async logAdminAction(
+    req: any,
+    action: string,
+    entityType: string,
+    entityId?: string | number,
+    metadata?: Record<string, unknown>,
+  ) {
+    await this.auditService.log({
+      actorRole: req?.adminRole || 'superadmin',
+      actorToken: req?.adminToken,
+      action,
+      entityType,
+      entityId: entityId ?? null,
+      ip: req?.ip || null,
+      userAgent: req?.headers?.['user-agent'] || null,
+      metadata: metadata || {},
+    });
+  }
 
   @Get('test')
   @UseGuards(SuperuserGuard)
   async test() {
     return { message: 'Admin API is working', timestamp: new Date().toISOString() };
+  }
+
+  @Get('me')
+  @UseGuards(SuperuserGuard)
+  async me(@Req() req: any) {
+    return {
+      role: req?.adminRole || 'superadmin',
+      permissions: req?.adminPermissions || ['*'],
+    };
+  }
+
+  @Get('metrika/visitors')
+  @UseGuards(SuperuserGuard)
+  async getMetrikaVisitors() {
+    return this.metrikaService.getVisitors();
+  }
+
+  @Get('inbox/counts')
+  @UseGuards(SuperuserGuard)
+  async getInboxCounts() {
+    return this.adminService.getInboxCounts();
+  }
+
+  @Get('audit/logs')
+  @UseGuards(SuperuserGuard, AdminPermissionGuard)
+  @RequireAdminPermission('audit.read')
+  async getAuditLogs(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('action') action?: string,
+    @Query('entityType') entityType?: string,
+  ) {
+    return this.auditService.list({
+      limit: limit ? Number(limit) : 50,
+      offset: offset ? Number(offset) : 0,
+      action,
+      entityType,
+    });
   }
 
   @Get('financial-stats')
@@ -284,9 +347,16 @@ export class AdminController {
     type: string;
     description: string;
     currencyCode?: string;
-  }) {
+  }, @Req() req: any) {
     try {
-      return await this.adminService.createBonus(bonusData);
+      const result = await this.adminService.createBonus(bonusData);
+      await this.logAdminAction(req, 'bonus.create', 'bonus', (result as any)?.id, {
+        userEmail: bonusData.userEmail || null,
+        type: bonusData.type,
+        amount: bonusData.amount,
+        currencyCode: bonusData.currencyCode || null,
+      });
+      return result;
     } catch (error) {
       console.error('Error in createBonus:', error);
       return { error: error.message };
@@ -295,9 +365,11 @@ export class AdminController {
 
   @Post('bonuses/:bonusId/approve')
   @UseGuards(SuperuserGuard)
-  async approveBonus(@Param('bonusId') bonusId: string) {
+  async approveBonus(@Param('bonusId') bonusId: string, @Req() req: any) {
     try {
-      return await this.adminService.updateBonusStatus(bonusId, 'approved');
+      const result = await this.adminService.updateBonusStatus(bonusId, 'approved');
+      await this.logAdminAction(req, 'bonus.approve', 'bonus', bonusId);
+      return result;
     } catch (error) {
       console.error('Error in approveBonus:', error);
       return { error: error.message };
@@ -306,9 +378,11 @@ export class AdminController {
 
   @Post('bonuses/:bonusId/reject')
   @UseGuards(SuperuserGuard)
-  async rejectBonus(@Param('bonusId') bonusId: string) {
+  async rejectBonus(@Param('bonusId') bonusId: string, @Req() req: any) {
     try {
-      return await this.adminService.updateBonusStatus(bonusId, 'rejected');
+      const result = await this.adminService.updateBonusStatus(bonusId, 'rejected');
+      await this.logAdminAction(req, 'bonus.reject', 'bonus', bonusId);
+      return result;
     } catch (error) {
       console.error('Error in rejectBonus:', error);
       return { error: error.message };
@@ -329,9 +403,11 @@ export class AdminController {
 
   @Post('withdrawals/:withdrawalId/approve')
   @UseGuards(SuperuserGuard)
-  async approveWithdrawal(@Param('withdrawalId') withdrawalId: string) {
+  async approveWithdrawal(@Param('withdrawalId') withdrawalId: string, @Req() req: any) {
     try {
-      return await this.adminService.updateWithdrawalStatus(withdrawalId, 'approved');
+      const result = await this.adminService.updateWithdrawalStatus(withdrawalId, 'approved');
+      await this.logAdminAction(req, 'withdrawal.approve', 'withdrawal', withdrawalId);
+      return result;
     } catch (error) {
       console.error('Error in approveWithdrawal:', error);
       return { error: error.message };
@@ -340,9 +416,11 @@ export class AdminController {
 
   @Post('withdrawals/:withdrawalId/reject')
   @UseGuards(SuperuserGuard)
-  async rejectWithdrawal(@Param('withdrawalId') withdrawalId: string) {
+  async rejectWithdrawal(@Param('withdrawalId') withdrawalId: string, @Req() req: any) {
     try {
-      return await this.adminService.updateWithdrawalStatus(withdrawalId, 'rejected');
+      const result = await this.adminService.updateWithdrawalStatus(withdrawalId, 'rejected');
+      await this.logAdminAction(req, 'withdrawal.reject', 'withdrawal', withdrawalId);
+      return result;
     } catch (error) {
       console.error('Error in rejectWithdrawal:', error);
       return { error: error.message };
@@ -380,14 +458,18 @@ export class AdminController {
 
   @Post('deposits/:id/approve')
   @UseGuards(SuperuserGuard)
-  async approveDeposit(@Param('id') id: string) {
-    return this.adminService.approveDeposit(Number(id));
+  async approveDeposit(@Param('id') id: string, @Req() req: any) {
+    const result = await this.adminService.approveDeposit(Number(id));
+    await this.logAdminAction(req, 'deposit.approve', 'deposit', id);
+    return result;
   }
 
   @Post('deposits/:id/reject')
   @UseGuards(SuperuserGuard)
-  async rejectDeposit(@Param('id') id: string) {
-    return this.adminService.rejectDeposit(Number(id));
+  async rejectDeposit(@Param('id') id: string, @Req() req: any) {
+    const result = await this.adminService.rejectDeposit(Number(id));
+    await this.logAdminAction(req, 'deposit.reject', 'deposit', id);
+    return result;
   }
 
   // ===== Promo usages management =====
@@ -402,8 +484,13 @@ export class AdminController {
   async grantPromoManually(
     @Param('code') code: string,
     @Body() body: { userEmail: string },
+    @Req() req: any,
   ) {
-    return this.adminService.grantPromoManually(code, body.userEmail);
+    const result = await this.adminService.grantPromoManually(code, body.userEmail);
+    await this.logAdminAction(req, 'promo.grant_manual', 'promo', code, {
+      userEmail: body.userEmail,
+    });
+    return result;
   }
 
   @Post('promos/:code/cancel')
@@ -411,7 +498,12 @@ export class AdminController {
   async cancelPromoUsage(
     @Param('code') code: string,
     @Body() body: { userEmail: string },
+    @Req() req: any,
   ) {
-    return this.adminService.cancelPromoUsage(code, body.userEmail);
+    const result = await this.adminService.cancelPromoUsage(code, body.userEmail);
+    await this.logAdminAction(req, 'promo.cancel_usage', 'promo', code, {
+      userEmail: body.userEmail,
+    });
+    return result;
   }
 }

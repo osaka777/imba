@@ -61,29 +61,32 @@ export default function LoginContent() {
 
   if (status === "loading" || (status === "authenticated" && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-sm text-gray-600">Проверка авторизации...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          <p className="mt-4 text-sm text-muted-foreground">Проверка авторизации...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Вход в админ-панель
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="admin-card w-full max-w-md space-y-8 p-8">
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-lg font-bold text-primary">
+            I
+          </div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Imba CRM
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Доступ только для авторизованных Google-аккаунтов
+          <p className="mt-2 text-sm text-muted-foreground">
+            Вход для внутренних отчётов на cdn.imba.bet
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         )}
@@ -92,7 +95,7 @@ export default function LoginContent() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -115,7 +118,7 @@ export default function LoginContent() {
           {loading ? "Вход..." : "Войти через Google"}
         </button>
 
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-muted-foreground">
           После входа через Google backend-токен выдаётся автоматически
         </p>
       </div>

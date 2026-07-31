@@ -30,9 +30,13 @@ export type SocialPulseResponse = {
   items: SocialPulseItem[];
 };
 
+import { feedAuthHeaders } from "~/entities/wc-odds/lib/feedSession";
+
 export async function fetchSocialPulse(signal?: AbortSignal): Promise<SocialPulseResponse> {
   const response = await fetch("/api/feed/social/pulse", {
     cache: "no-store",
+    credentials: "include",
+    headers: feedAuthHeaders(),
     signal,
   });
   if (!response.ok) {

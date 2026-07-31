@@ -1,14 +1,17 @@
+import type { Metadata } from "next";
+
 import { Header } from "~/widgets/Header";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 import { HomeDeferredSections } from "./HomeDeferredSections";
 import styles from "./Home.module.css";
-import { makeMetadata } from "~/shared/lib";
 
-export const metadata = makeMetadata(undefined, {
-  description:
-    "Imba.bet — букмекер со ставками live и линией на футбол, теннис и киберспорт. Минимальный депозит от 500 ₸, пополнение Kaspi и USDT.",
-  path: "/",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoSiteTitle", {
+    descriptionKey: "common.seoHomeDesc",
+    path: "/",
+  });
+}
 
 export default function Home() {
   return (

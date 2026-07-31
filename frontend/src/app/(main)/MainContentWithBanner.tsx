@@ -8,6 +8,8 @@ export function MainContentWithBanner({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const hideWelcomeBonus =
     pathname?.startsWith("/cybersport") ||
+    pathname?.startsWith("/trading") ||
+    pathname?.startsWith("/markets") ||
     pathname?.startsWith("/casino/btc-updown");
 
   return (

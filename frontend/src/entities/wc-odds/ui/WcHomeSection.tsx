@@ -172,7 +172,7 @@ function HomePanel({
           <div className={cn(styles.tabGroup, isMobile && styles.tabGroup_mobile)}>
             {isMobile && onMobilePanelToggle ? (
               <button
-                aria-label={isLive ? "Переключить на Prematch" : "Переключить на Live"}
+                aria-label={isLive ? t("wc.switchToPrematch") : t("wc.switchToLive")}
                 className={styles.tabPrimary}
                 onClick={onMobilePanelToggle}
                 type="button"

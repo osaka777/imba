@@ -19,10 +19,9 @@ import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { WcExpressOpenBetCard } from "~/entities/wc-odds/ui/WcExpressOpenBetCard";
 import { WcOpenBetCard } from "~/entities/wc-odds/ui/WcOpenBetCard";
 import { useWcCashoutQuotes } from "~/entities/wc-odds/lib/useWcCashoutQuotes";
-import { gamesList } from "~/entities/game";
+import { gamesList, getSportLabel } from "~/entities/game";
 import { LoadingSpinner } from "~/shared/ui";
-import { getClientLocale } from "~/shared/i18n/get-client-locale";
-import { translate, type MessageKey } from "~/shared/i18n/messages";
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
 import { useLocale } from "~/shared/model/useLocale";
 
 import { createTitleForBet } from "../../lib";
@@ -31,27 +30,29 @@ import styles from "./OpenTab.module.css";
 
 const FILTER_IDS: OpenBetFilter[] = ["all", "live", "line", "today"];
 
-function tt(key: MessageKey, params?: Record<string, string | number>) {
-  return translate(getClientLocale(), key, params);
+type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
+
+function filterLabel(id: OpenBetFilter, t: TranslateFn) {
+  if (id === "all") return t("coupon.all");
+  if (id === "live") return t("coupon.live");
+  if (id === "line") return t("coupon.line");
+  return t("coupon.today");
 }
 
-function filterLabel(id: OpenBetFilter) {
-  if (id === "all") return tt("coupon.all");
-  if (id === "live") return tt("coupon.live");
-  if (id === "line") return tt("coupon.line");
-  return tt("coupon.today");
+function eventWord(count: number, t: TranslateFn) {
+  if (count === 1) return t("coupon.eventWord1");
+  if (count < 5) return t("coupon.eventWord2");
+  return t("coupon.eventWord5");
 }
 
-function eventWord(count: number) {
-  if (count === 1) return tt("coupon.eventWord1");
-  if (count < 5) return tt("coupon.eventWord2");
-  return tt("coupon.eventWord5");
-}
-
-function getBetNameFromApiResponse(bet: Record<string, unknown>, betIndex?: number): string {
+function getBetNameFromApiResponse(
+  bet: Record<string, unknown>,
+  t: TranslateFn,
+  betIndex?: number,
+): string {
   try {
     const raw = bet?.betApiResponse;
-    if (!raw) return createTitleForBet(bet.betInfo as string, bet.betType as string);
+    if (!raw) return createTitleForBet(bet.betInfo as string, bet.betType as string, t);
 
     const apiResponse = typeof raw === "string" ? JSON.parse(raw) : raw;
     const list = apiResponse?.BetsContentDataList;
@@ -60,13 +61,17 @@ function getBetNameFromApiResponse(bet: Record<string, unknown>, betIndex?: numb
       const betData = list[dataIndex];
       if (betData?.BetName) return betData.BetName;
     }
-    return createTitleForBet(bet.betInfo as string, bet.betType as string);
+    return createTitleForBet(bet.betInfo as string, bet.betType as string, t);
   } catch {
-    return createTitleForBet(bet.betInfo as string, bet.betType as string);
+    return createTitleForBet(bet.betInfo as string, bet.betType as string, t);
   }
 }
 
-function getTeamsFromApiResponse(bet: Record<string, unknown>, betIndex?: number): string {
+function getTeamsFromApiResponse(
+  bet: Record<string, unknown>,
+  t: TranslateFn,
+  betIndex?: number,
+): string {
   try {
     const raw = bet?.betApiResponse;
     if (raw) {
@@ -79,10 +84,10 @@ function getTeamsFromApiResponse(bet: Record<string, unknown>, betIndex?: number
       }
     }
     const game = bet.game as Record<string, unknown> | undefined;
-    return (game?.eventName as string) || "Матч";
+    return (game?.eventName as string) || t("coupon.matchDefault");
   } catch {
     const game = bet.game as Record<string, unknown> | undefined;
-    return (game?.eventName as string) || "Матч";
+    return (game?.eventName as string) || t("coupon.matchDefault");
   }
 }
 
@@ -97,7 +102,7 @@ function isLegacyGameLive(game: Record<string, unknown> | undefined): boolean {
   );
 }
 
-function renderLegacyOrdiCard(bet: Record<string, unknown>) {
+function renderLegacyOrdiCard(bet: Record<string, unknown>, t: TranslateFn) {
   const game = bet.game as Record<string, unknown> | undefined;
   const isLive = isLegacyGameLive(game);
   const ticketId = formatBetDisplayId(Number(bet.id));
@@ -118,7 +123,7 @@ function renderLegacyOrdiCard(bet: Record<string, unknown>) {
     <OpenBetSlipCard
       coef={cf}
       dataKey={`r-${bet.id}`}
-      footerRightLabel={bonusProgress ? tt("coupon.bonusProgress") : tt("coupon.potentialWinShort")}
+      footerRightLabel={bonusProgress ? t("coupon.bonusProgress") : t("coupon.potentialWinShort")}
       footerRightValue={
         bonusProgress
           ? `${bonusProgress.current}/${bonusProgress.total}`
@@ -129,7 +134,7 @@ function renderLegacyOrdiCard(bet: Record<string, unknown>) {
       highlight={isFresh}
       isLive={isLive}
       key={`r-${bet.id}`}
-      kindLabel={tt("coupon.ordinar")}
+      kindLabel={t("coupon.ordinar")}
       kickoffLabel={
         !isLive && kickoffRaw
           ? formatOpenBetKickoff(String(kickoffRaw))
@@ -139,21 +144,21 @@ function renderLegacyOrdiCard(bet: Record<string, unknown>) {
         game?.leagueName ? truncateLeagueName(String(game.leagueName)) : null
       }
       matchHref={href}
-      matchLinkText={tt("coupon.goToEvent")}
-      outcome={getBetNameFromApiResponse(bet)}
+      matchLinkText={t("coupon.goToEvent")}
+      outcome={getBetNameFromApiResponse(bet, t)}
       placedAt={formatCouponPlacedAt(String(bet.createdAt ?? ""))}
       scoreDetail={scoreDetail}
       scoreMain={scoreMain}
       sportIcon={SportIcon}
       stakeLabel={formatCouponMoney(amount, currencyCode)}
-      teamsLabel={getTeamsFromApiResponse(bet)}
+      teamsLabel={getTeamsFromApiResponse(bet, t)}
       ticketId={ticketId}
       winLabel={formatCouponMoney(amount * Number(bet.cf), currencyCode)}
     />
   );
 }
 
-function renderExpressCard(bet: Record<string, unknown>) {
+function renderExpressCard(bet: Record<string, unknown>, t: TranslateFn) {
   const legs = (bet.bets as Array<Record<string, unknown>>) ?? [];
   const ticketId = formatBetDisplayId(Number(bet.id));
   const isLive = legs.some((leg) => isLegacyGameLive(leg.game as Record<string, unknown> | undefined));
@@ -167,7 +172,7 @@ function renderExpressCard(bet: Record<string, unknown>) {
     <OpenBetSlipCard
       coef={cf}
       dataKey={`e-${bet.id}`}
-      footerRightLabel={bonusProgress ? tt("coupon.bonusProgress") : tt("coupon.potentialWinShort")}
+      footerRightLabel={bonusProgress ? t("coupon.bonusProgress") : t("coupon.potentialWinShort")}
       footerRightValue={
         bonusProgress
           ? `${bonusProgress.current}/${bonusProgress.total}`
@@ -178,9 +183,9 @@ function renderExpressCard(bet: Record<string, unknown>) {
       highlight={isFresh}
       isLive={isLive}
       key={`e-${bet.id}`}
-      kindLabel={tt("coupon.express")}
+      kindLabel={t("coupon.express")}
       matchHref="#"
-      outcome={`${legs.length} ${eventWord(legs.length)}`}
+      outcome={`${legs.length} ${eventWord(legs.length, t)}`}
       placedAt={formatCouponPlacedAt(String(bet.createdAt ?? ""))}
       stakeLabel={formatCouponMoney(amount, currencyCode)}
       teamsLabel=""
@@ -194,20 +199,19 @@ function renderExpressCard(bet: Record<string, unknown>) {
           const { detail: scoreDetail } = getLegacyOpenBetScoreDisplay(
             game as Parameters<typeof getLegacyOpenBetScoreDisplay>[0],
           );
-          const sportLabel =
-            game?.sport && gamesList[game.sport as string]
-              ? gamesList[game.sport as string].label
-              : (game?.sport as string);
+          const sportLabel = game?.sport
+            ? getSportLabel(String(game.sport), t)
+            : undefined;
 
           return (
             <OpenBetSlipExpressLeg
               coef={String(leg.cf)}
               key={String(leg.id ?? index)}
               matchHref={href}
-              outcome={getBetNameFromApiResponse(bet, index)}
+              outcome={getBetNameFromApiResponse(bet, t, index)}
               scoreDetail={scoreDetail}
               sportLabel={sportLabel}
-              teamsLabel={getTeamsFromApiResponse(bet, index)}
+              teamsLabel={getTeamsFromApiResponse(bet, t, index)}
             />
           );
         })}
@@ -295,7 +299,7 @@ export const OpenTab = ({ isActive = true }: { isActive?: boolean }) => {
             onClick={() => setFilter(id)}
             type="button"
           >
-            {filterLabel(id)}
+            {filterLabel(id, t)}
             {filterCounts[id] > 0 ? ` · ${filterCounts[id]}` : ""}
           </button>
         ))}
@@ -325,10 +329,10 @@ export const OpenTab = ({ isActive = true }: { isActive?: boolean }) => {
           );
         }
         if (entry.kind === "ordinar" && entry.ordinarBet) {
-          return renderLegacyOrdiCard(entry.ordinarBet);
+          return renderLegacyOrdiCard(entry.ordinarBet, t);
         }
         if (entry.kind === "express" && entry.expressBet) {
-          return renderExpressCard(entry.expressBet);
+          return renderExpressCard(entry.expressBet, t);
         }
         return null;
       })}
@@ -339,7 +343,7 @@ export const OpenTab = ({ isActive = true }: { isActive?: boolean }) => {
             ? t("coupon.emptyOpenBets")
             : (
               <>
-                {t("coupon.emptyFilter", { filter: filterLabel(filter) })}
+                {t("coupon.emptyFilter", { filter: filterLabel(filter, t) })}
                 {allEntries.length > 0 ? (
                   <button
                     className={styles.filterResetBtn}

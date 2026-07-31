@@ -7,6 +7,7 @@ import { Table } from '@/widgets/Table'
 import { slidesAPI, type Slide } from '@/shared/api/slides'
 
 import { PromoBannersEditor } from './PromoBannersEditor'
+import { TrustBadgesEditor } from './TrustBadgesEditor'
 import { SlideEditorForm } from './SlideEditorForm'
 import { DEFAULT_SLIDE_FORM, slideToFormData, type SlideFormData } from './slideEditorDefaults'
 
@@ -16,7 +17,7 @@ export default function WebsiteEditingPage() {
   const [error, setError] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingSlide, setEditingSlide] = useState<Slide | null>(null)
-  const [section, setSection] = useState<'promo' | 'slider'>('promo')
+  const [section, setSection] = useState<'promo' | 'slider' | 'trust'>('promo')
 
   const [formData, setFormData] = useState<SlideFormData>(DEFAULT_SLIDE_FORM)
   
@@ -141,10 +142,20 @@ export default function WebsiteEditingPage() {
               >
                 Главный слайдер
               </Button>
+              <Button
+                onClick={() => setSection('trust')}
+                className={`${section === 'trust' ? 'bg-blue-600' : 'bg-gray-500'} hover:opacity-90 text-white`}
+              >
+                Награды футера
+              </Button>
             </div>
 
             {section === 'promo' && (
               <PromoBannersEditor />
+            )}
+
+            {section === 'trust' && (
+              <TrustBadgesEditor />
             )}
 
             {/* Раздел слайдеров */}

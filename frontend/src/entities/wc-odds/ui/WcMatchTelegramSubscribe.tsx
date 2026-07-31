@@ -12,6 +12,7 @@ import {
 import { getTelegramNotifications } from "~/entities/user/api/telegram";
 import { getSessionClient } from "~/entities/user/lib";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "~/entities/wc-odds/ui/WcMatchTelegramSubscribe.module.css";
 
@@ -24,6 +25,7 @@ export function WcMatchTelegramSubscribe({
   eventRef,
   variant = "meta",
 }: WcMatchTelegramSubscribeProps) {
+  const { t } = useLocale();
   const [linked, setLinked] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export function WcMatchTelegramSubscribe({
   const toggle = useCallback(async () => {
     const token = getSessionClient();
     if (!token) {
-      toast.error("Войдите в аккаунт");
+      toast.error(t("wc.tgLoginRequired"));
       return;
     }
 
@@ -66,25 +68,23 @@ export function WcMatchTelegramSubscribe({
       if (subscribed) {
         await unsubscribeWcEvent(token, eventRef);
         setSubscribed(false);
-        toast.success("Уведомления по матчу отключены");
+        toast.success(t("wc.tgUnsubscribed"));
       } else {
         await subscribeWcEvent(token, eventRef);
         setSubscribed(true);
-        toast.success("Голы и старт матча — в Telegram");
+        toast.success(t("wc.tgSubscribedGoals"));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Ошибка";
+      const message = error instanceof Error ? error.message : t("wc.tgError");
       toast.error(message);
     } finally {
       setBusy(false);
     }
-  }, [eventRef, subscribed]);
+  }, [eventRef, subscribed, t]);
 
   if (loading || !linked || variant !== "meta") return null;
 
-  const label = subscribed
-    ? "Уведомления в Telegram включены"
-    : "Уведомления о голах в Telegram";
+  const label = subscribed ? t("wc.tgEnabled") : t("wc.tgEnableGoals");
 
   return (
     <button

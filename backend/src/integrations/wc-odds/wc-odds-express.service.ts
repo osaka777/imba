@@ -27,6 +27,10 @@ import { olimpbetSportKeyToSlug } from '../olimpbet-wc/olimpbet-sport.util';
 
 import { buildBetPlacementContext } from './wc-bet-placement-context.util';
 import { isWcBettingOpen } from './wc-betting.util';
+import {
+  wcOddsMaxStakeForCurrency,
+  wcOddsMinStakeForCurrency,
+} from './wc-odds-stake.util';
 import { advanceMatchState } from './wc-match-state-tracker.util';
 import { parseMatchState } from './wc-match-state.types';
 import {
@@ -92,8 +96,14 @@ export class WcOddsExpressService {
 
     const minLegs = Number(this.config.get<string>('WC_EXPRESS_MIN_LEGS', '2'));
     const maxLegs = Number(this.config.get<string>('WC_EXPRESS_MAX_LEGS', '5'));
-    const minStake = Number(this.config.get<string>('WC_ODDS_MIN_STAKE', '100'));
-    const maxStake = Number(this.config.get<string>('WC_ODDS_MAX_STAKE', '1000000'));
+    const minStake = wcOddsMinStakeForCurrency(
+      params.currencyCode,
+      Number(this.config.get<string>('WC_ODDS_MIN_STAKE', '100')),
+    );
+    const maxStake = wcOddsMaxStakeForCurrency(
+      params.currencyCode,
+      Number(this.config.get<string>('WC_ODDS_MAX_STAKE', '1000000')),
+    );
 
     if (params.legs.length < minLegs || params.legs.length > maxLegs) {
       throw new BadRequestException(`Express must have ${minLegs}–${maxLegs} events`);
@@ -310,7 +320,7 @@ export class WcOddsExpressService {
         groupKey,
         totalsGroupLabel,
       });
-      if (scope && isMarketScopeFinalized(placementDetail, scope)) {
+      if (scope && isMarketScopeFinalized(placementDetail, scope, parseMatchState(event.matchStateJson))) {
         throw new BadRequestException('Betting closed for this period');
       }
       const score = this.olimpbet.extractScore(placementDetail);

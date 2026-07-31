@@ -1,10 +1,14 @@
-import { LOCALE_STORAGE_KEY, isAppLocale, type AppLocale } from "./locale";
+import {
+  LOCALE_STORAGE_KEY,
+  normalizeAppLocale,
+  type AppLocale,
+} from "./locale";
 import { languageService } from "~/shared/services/language.service";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 function defaultLocale(): AppLocale {
-  return languageService.getDefaultLanguage() === "en" ? "en" : "ru";
+  return languageService.getDefaultLanguage();
 }
 
 function readLocaleCookie(): AppLocale | null {
@@ -14,7 +18,7 @@ function readLocaleCookie(): AppLocale | null {
       new RegExp(`(?:^|;\\s*)${LOCALE_STORAGE_KEY}=([^;]*)`),
     );
     const value = match?.[1] ? decodeURIComponent(match[1]) : null;
-    return isAppLocale(value) ? value : null;
+    return normalizeAppLocale(value);
   } catch {
     return null;
   }
@@ -30,7 +34,10 @@ export function writeLocaleCookie(locale: AppLocale): void {
   }
 }
 
-/** Read UI locale from localStorage → cookie → env default. */
+/** Read UI locale from localStorage → cookie → env default.
+ *  Do NOT call during React render / hydration — use LocaleProvider.t instead.
+ *  Safe in effects, event handlers, and API clients.
+ */
 export function getClientLocale(): AppLocale {
   if (typeof window === "undefined") {
     return defaultLocale();
@@ -38,7 +45,8 @@ export function getClientLocale(): AppLocale {
 
   try {
     const raw = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (isAppLocale(raw)) return raw;
+    const fromStorage = normalizeAppLocale(raw);
+    if (fromStorage) return fromStorage;
   } catch {
     // ignore
   }

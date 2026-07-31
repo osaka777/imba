@@ -1,3 +1,6 @@
+import { getClientLocale } from "~/shared/i18n/get-client-locale";
+import { translate, type MessageKey, type TranslateParams } from "~/shared/i18n/messages";
+
 export type SupportSessionMeta = {
   closed?: boolean;
   closedAt?: number | null;
@@ -24,25 +27,35 @@ export type SupportStats = {
   avgCsat?: number | null;
 };
 
-export function getSupportPageHint(pathname: string): string | null {
+export type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
+
+function resolveT(t?: TranslateFn): TranslateFn {
+  if (t) return t;
+  const locale = getClientLocale();
+  return (key, params) => translate(locale, key, params);
+}
+
+export function getSupportPageHint(pathname: string, t?: TranslateFn): string | null {
+  const tr = resolveT(t);
   if (pathname.startsWith("/deposit")) {
-    return "Укажите ID заявки из «Истории финансов» и приложите скрин чека.";
+    return tr("support.hintDeposit");
   }
   if (pathname.includes("/profile/financeHistory") || pathname.includes("/profile/wallets")) {
-    return "Приложите номер операции и скрин статуса из истории финансов.";
+    return tr("support.hintWithdraw");
   }
   if (pathname.includes("/profile/promocodes")) {
-    return "Напишите код акции и что именно не начислилось.";
+    return tr("support.hintBonus");
   }
   if (pathname.startsWith("/profile")) {
-    return "Опишите проблему — оператор видит ваш профиль и баланс.";
+    return tr("support.hintDefault");
   }
   return null;
 }
 
-export function tagLabel(tag?: string) {
-  if (tag === "deposit") return "Пополнение";
-  if (tag === "withdraw") return "Вывод";
-  if (tag === "bonus") return "Бонус";
-  return "Поддержка";
+export function tagLabel(tag?: string, t?: TranslateFn) {
+  const tr = resolveT(t);
+  if (tag === "deposit") return tr("support.tagDeposit");
+  if (tag === "withdraw") return tr("support.tagWithdraw");
+  if (tag === "bonus") return tr("support.tagBonus");
+  return tr("support.tagSupport");
 }

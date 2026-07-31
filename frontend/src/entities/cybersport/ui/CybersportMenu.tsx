@@ -14,7 +14,9 @@ import {
   cyberDisciplineLiveHref,
   disciplineFromPathname,
 } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
+import { CyberSportGlyph } from "~/entities/cybersport/ui/CyberSportGlyph";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CybersportMenu.module.css";
 
@@ -25,6 +27,7 @@ type CybersportMenuProps = {
 };
 
 export function CybersportMenu({ sport, discipline, mode }: CybersportMenuProps) {
+  const { t } = useLocale();
   const pathname = usePathname();
   const pathnameDiscipline = disciplineFromPathname(pathname);
   const { data: counts = {} } = useCybersportCounts();
@@ -36,7 +39,7 @@ export function CybersportMenu({ sport, discipline, mode }: CybersportMenuProps)
 
   return (
     <div className={styles.menu}>
-      {visibleDisciplines.map(({ Icon, label, slug, apiSport }) => {
+      {visibleDisciplines.map(({ label, slug, apiSport }) => {
         const href =
           mode === "live"
             ? cyberDisciplineLiveHref(slug)
@@ -53,7 +56,11 @@ export function CybersportMenu({ sport, discipline, mode }: CybersportMenuProps)
             href={href}
             key={slug}
           >
-            <Icon className={styles.icon} />
+            <CyberSportGlyph
+              apiSport={apiSport}
+              className={styles.icon}
+              label={label}
+            />
             <span>{label}</span>
             {count > 0 ? <span className={styles.count}>{count}</span> : null}
           </Link>
@@ -67,7 +74,7 @@ export function CybersportMenu({ sport, discipline, mode }: CybersportMenuProps)
         )}
         href="/cybersport"
       >
-        <span>Все</span>
+        <span>{t("common.all")}</span>
       </Link>
     </div>
   );

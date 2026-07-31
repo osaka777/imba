@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Bitcoin Up or Down · Imba",
-  description: "5-минутные ставки BTC вверх/вниз с баланса Imba",
-};
-
-export default function BtcUpdownPage() {
-  notFound();
+/** Old URL — keep bookmarks working. */
+export default function BtcUpdownRedirectPage() {
+  redirect("/trading");
 }

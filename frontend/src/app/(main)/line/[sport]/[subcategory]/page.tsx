@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { api } from "~/shared/api";
 import { GamesPrematchBySportAndSubcategory } from "~/entities/game";
 import { Header } from "~/widgets/Header";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 interface SubcategoryPageProps {
   params: {
@@ -17,9 +17,10 @@ export const generateMetadata = async ({
 }: SubcategoryPageProps): Promise<Metadata> => {
   const paramsObj = await params;
   const label = `${paramsObj.sport} — ${paramsObj.subcategory}`;
-  return makeMetadata(`Линия: ${label}`, {
-    description: `Прематч-ставки на ${label} в Imba.bet.`,
+  return makeSeoMetadata("common.seoLineSportTitle", {
+    descriptionKey: "common.seoLineSportDesc",
     path: `/line/${paramsObj.sport}/${paramsObj.subcategory}`,
+    params: { name: label },
   });
 };
 

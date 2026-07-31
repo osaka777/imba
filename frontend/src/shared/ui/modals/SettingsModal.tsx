@@ -54,7 +54,9 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [hideBalance, setHideBalance] = useLocalStorage<boolean>("hideBalance", false);
+  const [hideBalance, setHideBalance] = useLocalStorage<boolean>("hideBalance", false, {
+    initializeWithValue: false,
+  });
   const { selectedAccountType, setSelectedAccountType, isClient } = useAccountType();
   const [showTelegram, setShowTelegram] = useState(false);
 
@@ -164,9 +166,9 @@ export const SettingsModal = ({ onClose }: { onClose: () => void }) => {
   return (
     <div className={styles.settingsModal} onClick={(e) => e.stopPropagation()}>
       <div className={styles.modalHeader}>
-        <div className={styles.headerTitle}>Настройки</div>
+        <div className={styles.headerTitle}>{t("profile.settingsTitle")}</div>
         <div className={styles.accountInfo}>
-          <div className={styles.accountNumber}>Счет #{userData?.id}</div>
+          <div className={styles.accountNumber}>{t("profile.accountId", { id: userData?.id ?? "" })}</div>
           <button className={styles.closeButton} onClick={onClose}>
             &#x2715;
           </button>

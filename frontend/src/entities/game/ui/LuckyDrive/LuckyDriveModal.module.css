@@ -23,13 +23,13 @@
 }
 
 .modalContentAuth .closeBtn {
-  background: rgba(20, 27, 46, 0.08);
-  color: rgb(20, 27, 46);
+  background: color-mix(in srgb, var(--black-blue) 8%, transparent);
+  color: var(--black-blue);
 }
 
 .modalContentAuth .closeBtn:hover {
-  background: rgba(20, 27, 46, 0.14);
-  color: rgb(20, 27, 46);
+  background: color-mix(in srgb, var(--black-blue) 14%, transparent);
+  color: var(--black-blue);
 }
 
 .closeBtn {
@@ -551,7 +551,7 @@
   -webkit-overflow-scrolling: touch;
   padding: 24px 20px 20px;
   background: #fff;
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
 }
 
 .authBack {
@@ -578,7 +578,7 @@
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
 }
 
 /* ── Auth dialog (legacy — prefer inline authShell) ── */

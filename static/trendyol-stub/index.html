@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="kk-Latn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Sait uaqytşa qoljetımsız</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --panel:#ffffff;
+      --ink:#0b1f3a;
+      --muted:#5a6b80;
+      --line:#d7e0ec;
+      --blue:#0038b8;
+      --blue-soft:#2f6fed;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;background:
+        linear-gradient(180deg,#ffffff 0%, #eef3fa 48%, #e7eef8 100%);
+      color:var(--ink);
+      font-family:Manrope,system-ui,sans-serif;
+      font-weight:300;
+      letter-spacing:.01em;
+    }
+
+    .sovereign-banner{
+      width:100%;
+      background:#b00020;
+      color:#fff;
+      border-bottom:3px solid #7a0016;
+    }
+    .sovereign-banner .inner{
+      width:min(1100px,100%);
+      margin:0 auto;
+      padding:.85rem clamp(1rem,3vw,1.5rem);
+      font-size:clamp(.78rem,1.55vw,.92rem);
+      line-height:1.45;
+      font-weight:500;
+      letter-spacing:.02em;
+    }
+    .sovereign-banner strong{
+      font-weight:600;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      display:block;
+      margin-bottom:.35rem;
+      font-size:.72rem;
+    }
+    .sovereign-banner p{margin:0;color:#fff;font-size:inherit}
+    body.lang-he .sovereign-banner .inner{direction:rtl;text-align:right}
+    body.lang-he .mast-main, body.lang-he .lawbar, body.lang-he .foot{direction:rtl;text-align:right}
+    body.lang-he .mast-top{flex-direction:row-reverse}
+    body.lang-he .mast-left{flex-direction:row-reverse}
+    body.lang-he .law strong, body.lang-he .law span{text-align:right}
+    .frame{
+      width:min(1100px,100%);
+      margin:0 auto;
+      min-height:100vh;
+      padding:clamp(1.5rem,4vw,3.5rem);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:1.25rem;
+    }
+    .mast{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-top:3px solid var(--blue);
+      box-shadow:0 14px 40px rgba(11,31,58,.05);
+    }
+    .mast-top{
+      display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+      padding:.85rem 1.2rem;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,#f8fbff,#ffffff);
+    }
+    .mast-left{display:flex;align-items:center;gap:.9rem;min-width:0}
+    .eu-flag{
+      width:52px;height:35px;flex:0 0 auto;
+      border:1px solid rgba(11,31,58,.18);
+      box-shadow:0 1px 2px rgba(11,31,58,.08);
+      overflow:hidden;
+      padding:0;background:transparent;
+    }
+    .eu-flag img{display:block;width:100%;height:100%;object-fit:cover}
+    .eu-flag svg{display:block;width:100%;height:100%}
+    .brand-block{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+    .mark{
+      font-family:"Cormorant Garamond",Georgia,serif;
+      font-size:.92rem;letter-spacing:.28em;text-transform:uppercase;color:var(--blue);
+    }
+    .domain-line{
+      font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    }
+    .mast-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .badges{display:flex;gap:.45rem;flex-wrap:wrap}
+    .badge{
+      font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+      border:1px solid var(--blue);color:var(--blue);padding:.32rem .5rem;
+    }
+    .lang-switch{display:flex;align-items:center;gap:.45rem}
+    .lang-btn{
+      appearance:none;border:1px solid var(--line);background:#fff;
+      padding:3px;cursor:pointer;line-height:0;
+      transition:border-color .15s, box-shadow .15s, opacity .15s;
+    }
+    .lang-btn:hover{border-color:var(--blue-soft)}
+    .lang-btn[aria-pressed="true"]{
+      border-color:var(--blue);
+      box-shadow:0 0 0 2px rgba(0,56,184,.18);
+    }
+    .lang-btn[aria-pressed="false"]{opacity:.72}
+    .lang-btn img{display:block;width:48px;height:32px;object-fit:cover}
+    .mast-main{padding:1.15rem 1.35rem 1.25rem}
+    .mast-title{
+      margin:0 0 .55rem;
+      font-family:"Cormorant Garamond",Georgia,serif;
+      font-size:clamp(1.35rem,2.2vw,1.75rem);
+      font-weight:500;color:var(--ink);letter-spacing:.02em;
+    }
+    .mast-sub{margin:0;font-size:.88rem;color:var(--muted);line-height:1.55;max-width:58rem}
+    .lawbar{
+      border-top:1px solid var(--line);
+      padding:1rem 1.35rem 1.15rem;
+      background:#f7faff;
+    }
+    .lawbar h2{
+      margin:0 0 .75rem;
+      font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);
+      font-weight:500;
+    }
+    .laws{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:.65rem;
+    }
+    .law{
+      border:1px solid var(--line);
+      background:#fff;
+      padding:.7rem .75rem;
+      min-height:100%;
+    }
+    .law strong{
+      display:block;
+      font-size:.72rem;
+      letter-spacing:.04em;
+      color:var(--blue);
+      margin-bottom:.35rem;
+      font-weight:500;
+    }
+    .law span{
+      display:block;
+      font-size:.78rem;
+      line-height:1.45;
+      color:#334861;
+    }
+    .wrap{
+      background:var(--panel);
+      border:1px solid var(--line);
+      box-shadow:0 18px 50px rgba(11,31,58,.06);
+    }
+    .col{padding:clamp(1.5rem,3vw,2.75rem);line-height:1.7}
+    .col[hidden]{display:none !important}
+    .col-he{direction:rtl;text-align:right}
+    h1{
+      margin:0 0 1.35rem;
+      font-family:"Cormorant Garamond",Georgia,serif;
+      font-size:clamp(1.7rem,2.4vw,2.15rem);
+      font-weight:400;letter-spacing:.02em;line-height:1.2;color:var(--blue);
+    }
+    p,li{margin:0 0 1rem;font-size:.95rem;color:var(--ink)}
+    p{color:#24364f}
+    ul{margin:0 0 1.1rem;padding-inline-start:1.15rem}
+    li{color:#334861}
+    a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(0,56,184,.28)}
+    a:hover{border-bottom-color:var(--blue);color:var(--blue-soft)}
+    a.tg{display:inline-flex;align-items:center;gap:.45rem;margin-top:.85rem;border-bottom:none;letter-spacing:.06em;color:var(--blue)}
+    a.tg svg{width:1rem;height:1rem;flex:0 0 auto}
+    a.tg:hover{color:var(--blue-soft)}
+    .meta{margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted);letter-spacing:.04em}
+    .col-he a.tg{flex-direction:row-reverse}
+    .foot{
+      display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+      font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+      padding:1rem 0 0;border-top:2px solid var(--blue);
+    }
+    @media (max-width:900px){
+      .laws{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:820px){
+      .laws{grid-template-columns:1fr}
+      .badges{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="sovereign-banner" id="sovereign-banner" role="status">
+    <div class="inner">
+      <strong data-i18n="ban-kicker">Qazaqstan Respublikasy · Memlekettık kepıldık</strong>
+      <p data-i18n="ban-text">Qazaqstan — zañ üstemdıgı bar zaıyirlyq memleket. Azamattardyñ jeke derekterı memleket qorğauyna jatady. Domendık atau ıesınıñ qūqyğy QR Konstitutsiasynyñ 26-baby 3-tarmağy boıynşa qorğalady: eşkim öz mülkinen (onyñ işınde zañdy tırkelgen domen qūqyqtarynan) sot şeşiminşiz aıyryla almaıdy. Keşelsız talap haty, erıksız alyp qoıu nemese qūqyqtardy joıu — Konstitusiaga qaıshy.</p>
+    </div>
+  </div>
+  <div class="frame">
+    <header class="mast">
+      <div class="mast-top">
+        <div class="mast-left">
+          <div class="eu-flag" title="European Union" aria-label="European Union"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iODEwIiBoZWlnaHQ9IjU0MCI+PGRlZnM+PGcgaWQ9ImQiPjxnIGlkPSJiIj48cGF0aCBpZD0iYSIgZD0iTTAgMHYxaC41eiIgdHJhbnNmb3JtPSJyb3RhdGUoMTggMy4xNTcgLS41KSIvPjx1c2UgeGxpbms6aHJlZj0iI2EiIHRyYW5zZm9ybT0ic2NhbGUoLTEgMSkiLz48L2c+PGcgaWQ9ImMiPjx1c2UgeGxpbms6aHJlZj0iI2IiIHRyYW5zZm9ybT0icm90YXRlKDcyKSIvPjx1c2UgeGxpbms6aHJlZj0iI2IiIHRyYW5zZm9ybT0icm90YXRlKDE0NCkiLz48L2c+PHVzZSB4bGluazpocmVmPSIjYyIgdHJhbnNmb3JtPSJzY2FsZSgtMSAxKSIvPjwvZz48L2RlZnM+PHBhdGggZmlsbD0iIzAzOSIgZD0iTTAgMGg4MTB2NTQwSDB6Ii8+PGcgZmlsbD0iI2ZjMCIgdHJhbnNmb3JtPSJtYXRyaXgoMzAgMCAwIDMwIDQwNSAyNzApIj48dXNlIHhsaW5rOmhyZWY9IiNkIiB5PSItNiIvPjx1c2UgeGxpbms6aHJlZj0iI2QiIHk9IjYiLz48ZyBpZD0iZSI+PHVzZSB4bGluazpocmVmPSIjZCIgeD0iLTYiLz48dXNlIHhsaW5rOmhyZWY9IiNkIiB0cmFuc2Zvcm09InJvdGF0ZSgtMTQ0IC0yLjM0NCAtMi4xMSkiLz48dXNlIHhsaW5rOmhyZWY9IiNkIiB0cmFuc2Zvcm09InJvdGF0ZSgxNDQgLTIuMTEgLTIuMzQ0KSIvPjx1c2UgeGxpbms6aHJlZj0iI2QiIHRyYW5zZm9ybT0icm90YXRlKDcyIC00LjY2MyAtMi4wNzYpIi8+PHVzZSB4bGluazpocmVmPSIjZCIgdHJhbnNmb3JtPSJyb3RhdGUoNzIgLTUuMDc2IC41MzQpIi8+PC9nPjx1c2UgeGxpbms6aHJlZj0iI2UiIHRyYW5zZm9ybT0ic2NhbGUoLTEgMSkiLz48L2c+PC9zdmc+" alt="EU" width="52" height="35" decoding="async"></div>
+          <div class="brand-block">
+            <div class="mark" data-i18n="mark">Legal Notice</div>
+            <div class="domain-line" data-i18n="domain-line">trendyol.kz · .KZ Registrant Position</div>
+          </div>
+        </div>
+        <div class="mast-right">
+          <div class="badges">
+            <span class="badge" data-i18n="badge1">Non-commercial</span>
+            <span class="badge" data-i18n="badge2">No admission</span>
+            <span class="badge" data-i18n="badge3">Rights reserved</span>
+          </div>
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" class="lang-btn" id="btn-kk" data-lang="kk" aria-pressed="true" title="Qazaqsha" aria-label="Qazaqsha"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTAwMCIgaGVpZ2h0PSI1MDAiPjxwYXRoIGZpbGw9IiMwMGFiYzIiIGQ9Ik0wIDBoMTAwMHY1MDBIMHoiLz48ZyBmaWxsPSIjZmZlYzJkIj48ZyB0cmFuc2Zvcm09Im1hdHJpeCguNSAwIDAgLjUgNTQwLjIzNiAyMTApIj48Y2lyY2xlIHI9IjEzNC41NSIvPjxnIGlkPSJjIj48ZyBpZD0iYiI+PHBhdGggaWQ9ImEiIGQ9Ik0wLTE1Mi45YzgtLjEgMTEtNS4xIDExLTExLjEgMC04LTExLTQ2LjEtMTEtNDYuMVMtMTEtMTcyLTExLTE2NGMwIDYgMyAxMS4xIDExIDExLjF6Ii8+PHVzZSB4bGluazpocmVmPSIjYSIgdHJhbnNmb3JtPSJyb3RhdGUoOTApIi8+PHVzZSB4bGluazpocmVmPSIjYSIgdHJhbnNmb3JtPSJzY2FsZSgtMSkiLz48dXNlIHhsaW5rOmhyZWY9IiNhIiB0cmFuc2Zvcm09InJvdGF0ZSgyNzApIi8+PC9nPjx1c2UgeGxpbms6aHJlZj0iI2IiIHRyYW5zZm9ybT0icm90YXRlKDIyLjUpIi8+PHVzZSB4bGluazpocmVmPSIjYiIgdHJhbnNmb3JtPSJyb3RhdGUoNDUpIi8+PHVzZSB4bGluazpocmVmPSIjYiIgdHJhbnNmb3JtPSJyb3RhdGUoNjcuNSkiLz48L2c+PHVzZSB4bGluazpocmVmPSIjYyIgdHJhbnNmb3JtPSJyb3RhdGUoMTEuMjUpIi8+PC9nPjxnIHRyYW5zZm9ybT0ic2NhbGUoLjUpIj48cGF0aCBkPSJNMTA1Ni40NjcgNzExLjQ2N2MtMy42LjItNy4xLjY2Ni0xMC41MzQgMS43NjYtNC43LjYzNC05LjIgMi4yNjctMTMuODY2IDMuMDM0bC0xLjg2Ny4zLTMuMTMzLjNjLjIuODY2LjMzMyAxLjczMy4zMzMgMi42IDAgLjktLjEgMS43NjYtLjMzMyAyLjUtLjIuNy0uODM0IDEuNTY2LTEuMzM0IDIuMS0uNjY2LjczMy0xLjM2NiAxLjM2Ni0yLjIgMS43NjYtLjguNC0xLjcuNTY3LTIuNi42MzQtLjkuMDMzLTEuODMzIDAtMi43LS4zMzQtLjktLjMtMS43MzMtLjg2Ni0yLjUtMS41MzNhMjEuNTcgMjEuNTcgMCAwIDEtMi44LjVjLS45MzMuMS0xLjguMS0yLjYzMyAwLS45MzMtLjI2Ny0xLjktLjU2Ny0yLjgtLjkzM2ExNi4xNCAxNi4xNCAwIDAgMS0yLjYtMS4zNjdjLTMuNCAyLTcuMiAzLjktOS4yNjcgNy40LTEuMTY2IDEuNi0xLjQgMy40MzMtMS42NjYgNS4zMzMtLjE2NyAyLjMzNC40MzMgNC44IDEuNDMzIDYuOTY3LjM2Ny42MzMuNjY3LTIuMyAxLjgtMi43IDEuOS0xLjU2NyA0LjI2Ny0yLjcgNi42NjctMy4zMzMgMi4wMzMtMS4wMzQgMS43NjYuMDY2LjkzMyAxLjY2Ni0uMi44MzQtMS4zMzMgNCAuMiAyLjQgNi43NjctMyAxNC4yNjctMy42IDIxLjU2Ny00LjE2NiAxMC42LTEuMSAyMS4yMzMtMS4zMzQgMzEuODY2LTEuNDY3bDMwIC42MzNjNC43NjcuMTM0IDkuNTY3IDEuMiAxNC4yNjcuNCAxLjEzMy0uMyAyLjktLjM2NiAzLjU2Ny0xLjAzMy0yLjEzNC0xLjIzMy00LjYzNC0xLjI2Ny03LTEuNTY3SDEwODAuMmMtNS4zLS41MzMtMTAuODMzLS42LTE1LjgzMy0yLjYtMS4zMzQtLjUzMy0yLjU2Ny0xLjgtMy44MzQtLjQzMy0xLjkuNjY3LTMuOTMzIDEuMTMzLTUuOTMzIDEuMjY3LTMuNS4yNjYtNy0uNDY3LTEwLjIzMy0xLjc2NyAyLjMzMy0zLjIzMyA1LjEzMy02LjA2NyA3LjctOS4wNjctMi4wNjctLjMzMy00LjA2Ny0uNzY2LTYuMTM0LTEuMjY2IDMuNjM0LTIuNSA3LTUuMzM0IDEwLjUzNC04eiIvPjxwYXRoIGQ9Ik0xMjEyLjIgNzQ2LjAxYy03LjI0NSA0LjM1LTEyLjc3NS0zLjM2Mi0xOC44MzEtNS42NzUtNC4zMjUgMi4zNDktNC43MjkgMTAuMjA4LTguNzcgMTMuOTMtNC44MzUgNS41MDItMTAuNzYtMS41MzctMTAuMzE5LTYuOTY1LTUuNzgyIDQuODc0LTguNzA2IDE1LjkyMi0xOC4wNTcgMTQuNDQ2LTQuNDMtMy42MTUtNy43MjEtMTEuMjAxLTExLjEwNi0yLjU2NC0yLjc2IDQuMjIyLTEwLjExIDEwLjIzLTEzLjkxNiAzLjg1NC0xLjE3OC01LjYzLTQtMTIuMjUtNy4wNjMtMy4zMDgtMi4xMDIgNi4zMjUtOC44NSAxMC45NzgtMTUuMzc5IDguMjA5LTMuNTc0LTIuOTIyIDIuODY1LTEzLjcyNy0xLjY4NC0xMi45NTgtNi44IDQuNDk1LTEwLjc1MyAxNS42NTgtMjAuMjQyIDE0Ljc2NC0zLjY4NS00LjEzNiAyLjIzNi0xMS4xNDQtMS44MDYtMTUuNzM1LTQuNzcgNi4xMjMtMTAuMDYzIDE1LjA4OS0xOC4zMTUgMTUuNzM1LTMuOTg4LTMuMjMyLjE1Ny0xMi41MDEtMi4zOS0xMy44NzMtOC40NjcgNS4wNzgtMTcuNDAxIDE0LjEyOC0yOC4wNSAxMS4yOTQgNC4xNS0xNS44NzMgMjEuNDktMjEuNDQyIDM2LjA3My0yMi42OCAyNS4wODktMy4wODQgNTEuNDg0IDIuNTg2IDc1LjYyNC02LjQ3IDMuOS0yLjM3MyAxMy4zNS01LjczOSA5Ljk4NS0xMS4yNDMtMi45OC00LjM0NyA3Ljc1My0yLjY0NyA4Ljc4NS03LjcyNC0uNjM5LTYuNDMgNC45MjctNS41NDUgMTAuMzY0LTYuMTA4IDI0LjM3Ni0xLjA1MiA0OC40NTUgNC4wODIgNzIuNzU4IDQuOTU0IDEuODM2IDExLjg0Mi0xMS4zIDIwLjE1Ny0yMS44NzYgMTYuNS01LjA1Mi44MTktMTIuNjI3LTExLjYxNS0xMS4xNDItMi41Ny0xLjAxOCA0Ljc0OC0uMzA1IDExLjAxOC00LjY0MyAxNC4xODltLTIwNy40LTI0LjI0OGM1LjY0MyA1LjE2NSA5LjYtLjk3MyAxNC44NzUtMy4yMTYgMTcuNjkyLTYuMDg1IDMzLjEyOC0xNi43MTkgNDguMzQ2LTI3LjM0NCA5LjIyLTcuNjMgMTcuMjE0LTE3LjUyNSAyOS41OTctMjAgMjQuMTU1LTcuMzAzIDQ5LjgzMi02LjQxNyA3NC4wOC0xMy4xNTcgMTguNDY1LTI1LjI4IDQ5LjgyNi0zNC4yOTkgNzYuMDk3LTQ4LjgzIDUuODk5LTEuODMzIDguMTc4LTYuNjg4IDEwLjA2Mi0xMi4wNDggMTAuMDI4LTE1LjgzIDIzLjY4OS0yOS44NTcgMzkuODQ1LTM5LjQzOSA3LjY0NC00LjE3NyAxNi43NjQtNi41ODIgMjUuNDE4LTQuNjcyLS42MiAxMC4zMDctNi41MzMgMTkuNDQyLTEzLjY3MiAyNi41NyA1Ljg0Mi0uMTI4IDEwLjg2My0zLjgxOSAxNi43NjctMy42MTEgMi4wMjMgMTAuNTc4LTkuNCAxNi4xMTQtMTUuNDc4IDIyLjcgMy4zODUuNzg3IDE2LjM1MyAxLjc2OCA5LjI4NiA1LjE1OS05LjAwNSA2LjI1LTE5LjI4OSAxMC41NDEtMjcuNjAyIDE3Ljc5OSA3LjY3IDEuMzc4IDguNTQ0IDMuMDA4Ljc0NSA1Ljc4Mi00LjIyMiAyLjg2Mi0xMi4zNDEgMy44NjItMTMuMTI2IDkuNDM3IDUuNzk0IDMuNTYxLTIuNjY5IDcuMDk3LTUuOTMzIDguMjU1LTYuMjQyIDEuNDU0LTEyLjc5OCA0LjE2NS00LjUwNyA4LjkwNy0zLjEzNiA0LjczOC05Ljg2NSA1Ljc0OS0xNS4zNTYgNS4yOCAxLjY2NiA1LjM3IDQuMDc4IDExLjM3OS0yLjg5MiAxMy43NDgtMTUuNjI0IDExLjgxLTMzLjk2IDIwLjQwMi01My42IDIyLjM2NyAyNC41MzUgMS44ODYgNDkuODA2LTIuNjY4IDcwLjc3Mi0xNi4wMTEgMi43NjgtMy4yNzMgMTcuMjgyLTYuNzkgOS4xNjQtOS41NDItMy44MjItMS41OS0xMi4wMTYtMy4zNTctMTIuNTctNi4yNzEgMTEuMzU1LTcuMDA2IDI1LjY2NC00LjUxNCAzNy44OC04LjY3Ni4zMTYtMy45NTUtOS4yOTItMi44NTUtMTIuODc0LTMuNzU1LTguNTQzLS43LTguMDQyLTIuODguMTk1LTMuNjg4IDEwLjQyMi0yLjc2IDIyLjIyNi0zLjMwMyAzMC45OTMtMTAuMDk4LTcuMTM4LTMuMzA3LTE2LjExNi0uMzk2LTIzLjczMi0zLjA5NiAxMi45MTEtNS42NSAyOC4xNDItNi4yMTcgMzkuNzI2LTE0LjcwNCA1LjI3Ny01Ljg3LTYuNzYtNC4wMzYtMTAuMjY3LTMuODkzLTcuMTUgMS4yNDUtMTAuNDU2LTIuMTc4LTIuMzMyLTUuMTQ5IDEzLjg3LTEwLjIyNyAzMS40MzMtMTYuODcgNDEuMTc2LTMxLjY5NyAyLjMwOC0zLjMxOSA1LjQzMy0xMy4zMTktMS45MjgtOS43MjItOS42OCAzLjIxOS0xOC4xOTggMTQuMTAxLTI5LjIyOCAxMC43MzUgMjEuNzMzLTE2Ljg0NCA0Mi40MTMtMzYuMDIgNTcuMjY3LTU5LjMzLjc2OC02LjcyMy05Ljc4NS03LjQ1LTEyLjUzMi0yLjE3Mi0xMy45NjMgMTMuNDU0LTI2LjYgMjkuMzM1LTQ0LjQ3NyAzNy43NyAxNy4xMjEtMTYuNTI1IDMxLjI3Ni0zNi4wOTIgNDMuNjI2LTU2LjM3MiAyLjY0OC02LjAzMiA5Ljc2NC0xMy4yODYgNS45MDItMTkuOTgzLTYuMjI1LTUuMTUzLTE0LjAxMy0uNDM2LTE3LjI0OCA1LjczLTEwLjg1NCAxNC4xNy0xOS4wOTYgMzAuNzA5LTMzLjA1NCA0Mi4yNSAxMi4yMi0yMy4zMjEgMjQuODcxLTQ4LjE0NyAyNS4xOC03NS4wNDYtLjAzOC01LjUzOC0xLjE1LTEzLjY5NC04LjY3LTEyLjY2LTUuOTYyIDEuMDY5LTQuNTQ2IDkuOTkyLTcuMDA0IDE0LjUwNS01LjQxMSAxOC4zNzctNy45NTEgMzguMjc5LTE5LjA1IDU0LjM3IDIuNDk3LTE0LjkzMyA2Ljg2Ni0zMC41IDMuNTEyLTQ1LjU4LTEuNTY3LTYuNzM5LTEyLjQ1LTMuODQtMTEuMDQ4IDIuODMtMTMuMDAyIDY1Ljg2LTU3LjE5NCAxMjMuNDYtMTE0Ljk5IDE1Ni43OC0yNi40NjQgMTQuOTczLTU2LjAyMyAyNC42MjYtODYuMDk2IDI5LjAwMi04LjA5IDEuNzcxLTE2Ljg0LjczMi0yNC41NzIgMy40OS0xOC43MzYgMTQuMzY3LTMwLjA4IDM4LjQwNy01My44MDIgNDUuOTM1LTEwLjYzMiA1LjI4NC0yNC40OTYgNi4zNTYtMzIuMDk4IDE2LjIzMy0uNjU4IDEuMjYzLS44IDIuNzI3LS43NzQgNC4xMjgiLz48cGF0aCBkPSJNMTA3NS44IDY1NC45NWMtMy41IDYuMzU0LTUuNTYgMTMuNjU4LTEwLjA2IDE5LjM0Ny0xMy41NDEtMTIuMzIxLTMzLjE3MS0xMS45MTQtNTAuMzQ3LTEyLjczNC0xNC4xNzctLjc1Ny0yOS41OTQtMi4wNjUtNDAuNTYzLTEyLjE3Ni0xMS41MzktOS40NTItMjAuOTU4LTIxLjcyNC0zMy44NTItMjkuMzkzLTExLjc2OS0zLjItMjMuNjMzLTcuMjA0LTMzLjA5NS0xNS4yNzEtMjAuMjItMTYuNDgyLTMxLjgtNDAuOTM3LTUxLjU1OC01Ny45MzMtMy43NjctMy43MDgtOC4yMDktNi41ODEtMTIuNDI5LTkuNzI3LTQuMDEuOTc3LTIuMTk1IDkuNjMxLTcuMTAyIDUuMjItMi42Ny0xLjktOS4zNDgtMi4wODUtOS45NS41NjkgNi4wNDEgNy45NiAxMi4wODggMTcuMDQ5IDEyLjkyNSAyNy4yMy00LjEyLjQyMi0xMS40NDUtLjg3LTEzLjQ4Ny42NjQgNS40NzEgOC4yIDEyLjQ4NCAxNS40NzMgMjAuNDUyIDIxLjI2My0zLjgyMi42MTQtMTEuMzUzLjI4LTEyLjgxOCAxLjgyIDcuOTA5IDYuNDQ2IDE2LjM5IDEzLjAzNCAyNi43NDcgMTQuNjkgMi4xMiAyLjc5NC0zLjEgOC4xOSAxLjI5IDEwLjU3NiAyLjU0NSAxLjA0IDEwLjk0NCAyLjc4IDUuMTU5IDUuNjc1LTMuOTcgMi42NzUtMi40OTcgOC45MSAyLjU4IDguNzcgMy4yMSAxLjY0IDEwLjQxNyAyLjA0MSAxMC45ODEgNC44OC0yLjg0NSAyLjg5NS0xMS42OTggNi4zMjgtNC4xNjMgOS4wNCA3LjAzOSAzLjkwNCAxNS4wNjcgNi40MzkgMjMuMTA1IDYuNzE3LTQuMDM0IDMuMzk0LTkuMDA0IDUuMzItMTMuMTU2IDguNTEzIDE4LjU1IDEwLjg3NyAzOS4xMTMgMTguMDMgNTkuNDMzIDI0LjkxOSA4LjA5IDIuNzAzIDE2LjI3NCA1LjIyMyAyNC42NiA2LjgxLTI0LjM2OC0xLjQwNy00Ny45MjEtOC42MjEtNzAuMTE1LTE4LjQ5NS0xMS41MDMtNS4wNDUtMjMuMDg0LTkuOTItMzQuODczLTE0LjI2NSA1LjE2OS0yLjY5IDExLjE0OC0zLjM0NyAxNi41MDktNS42NzUtMTEuMTI4LTIuMjMtMjMuMjg1LTIuOTYtMzMuMDY3LTkuMDc3IDEuNS0yLjY3NiA3LjE4My0yLjgwMiAxMC4zMjYtNC4xNjQgNS45MTEtMS40MTYgOS41NzgtMy4xMzQgMS4yNDMtMy42NDgtOC40MDUtMi4yODEtMTguMDQ1LTEuMjU3LTI1LjQ1Mi02LjMyOC40NzctMy4wNCA4LjIyOS0xLjk4IDExLjM4Ni0zLjI5MyAzLjk3Ni0uNjgzIDguMzk2LTEuMjU1IDExLjU3My0zLjkzLTEyLjk5NC01LjM4Ny0yOS45OS0xLjU3LTQwLjE2OC0xMy4wNDUtMi4zNDctNC4zNzIgNy4yODktLjg1IDEwLjAzMy0xLjU3OSA2Ljk3MyAwIDE0LjQ2NyAyLjIxNiAyMS4xMDctLjU5NS0xOC45MzQtOC4zMTMtMzkuMjE1LTE2LjA5NS01My42NTUtMzEuNDcxLTEuNjAzLTIuNDcyLTYuNDA3LTkuMjI1LTIuNTMxLTEwLjA2IDExLjIzOSAxLjQ4NyAxOS4zNzQgMTMuNzUzIDMxLjM5NiAxMS44NDQgMS41OTctMi4xNTMtNi45ODQtNS42ODEtOS4xMjYtOC43NTgtMTcuNTI4LTE1LjA0MS0zNC41NC0zMS4zNjQtNDYuODI1LTUxLjA2Ni0uODQ1LTYuNTggOS40OTctNy41NjUgMTIuMjItMi40ODQgMTMuNDA1IDEyLjkxMSAyNS41MTQgMjcuOTc3IDQyLjIxIDM2Ljc5MSA1LjkyNCAyLjg3My0zLjQwMi0zLjQtNC42NDQtNS42NzUtMTUuNDI3LTE3LjkxNC0zMC4xMTMtMzYuODM0LTQwLjg5NS01Ny45MzItMS45My0zLjgwMi01LjEyOC0xMC42ODYuNjQ2LTEyLjcxIDUuNzczLTIuODkyIDExLjUwMSAxLjA0OCAxNC40MjggNi4wMDcgMTEuMzQyIDE0LjMwNSAxOS42ODggMzEuMzA3IDMzLjgxNyA0My4yMjUtMTIuMDM3LTIzLjM1OS0yNC44ODktNDcuOTQ4LTI1LjItNzQuODI4LjI4My01LjIxLjYxOC0xMy4wOTIgNy42ODQtMTIuODc4IDUuOTMzLS45IDQuOTk2IDYuNjk2IDYuOTQgMTAuMzE4IDUuODQ2IDE5Ljc0NyA4LjM5NSA0MS4xMjEgMjAuMTIyIDU4LjU1Ni0yLjU5LTE0LjY0OS02LjQwMy0yOS43MzUtMy44Ny00NC42MjcuNTg0LTQuODkgNi4wODktNi4zNyA5LjY4Mi0zLjQxNCAyLjkwNSA3LjExIDMuNTEgMTUuODkgNi4xNTcgMjMuNDkxIDE1LjA2IDUxLjUyIDQ4Ljg3NSA5Ni44MzIgOTIuOTQxIDEyNy4yNCAzNi4yOTIgMjQuODkxIDc5LjM2MiAzOS43NSAxMjMuMzIgNDIuMzQxIDMuOTcuMzQ2IDcuOTU2LjQ2NiAxMS45MzIuNzEiLz48Y2lyY2xlIGN4PSIxMDIwIiBjeT0iNzIwLjg4NyIgcj0iMi4zNjciLz48Y2lyY2xlIGN4PSIxMDE5LjgiIGN5PSI3MjAuNTA3IiByPSIuOTY1IiBzdHJva2U9IiNmZmVjMmQiIHN0cm9rZS13aWR0aD0iLjM4MSIvPjxnIGlkPSJmIj48ZyBpZD0iZSI+PHBhdGggZD0iTTEyMCA3Mi45MjJzLTkuNjEtOC4wNzYtMTIuODc0LTQuMDI1Yy01LjI1IDYuNTE1IDE2LjE0IDM4Ljk2OCAxNi4xNCA1MC4zOTYgMCAxOC43NTktMTIuNTE3IDIzLjg2LTI3Ljk3MyAyNi41MzktMTAuMzcxIDEuNzk4LTI3LjI1OS0uNzUyLTI3LjI1OS0uNzUyIDMuMTgtNC4yNzMgNS4yNDgtNS41MzIgMTAuNjA2LTUuODczLTUuOTY1LTMuMDk3LTEyLjAzOS05LjgyLTEyLjAzOS0yMC4yODQgMC0xNi4xMzggNi42NDMtMjIuNzkgNi42NDMtNDAuOTgzIDAtMTAuMDkzLTguMjc2LTIyLjk0MS04LjI3Ni0yMi45NDEgMTQuNjI5IDEuNDY0IDIxLjg3OSAxNS4wMDkgMTcuNzU0IDI1LjgzNCAyLjMyOC4zMzUgNC40NDItLjE5IDYuMjU4LTEuOTEgMS4wNyAzLS42MiA2LjQ4My0yLjg4MyA5LjQ4NCAxLjgyMy45NzQgMy4xNjIuMzkgNi4wNjYtLjIxLS4yNzYgMy4wOTItMi4xMjggNi4zNzYtNi42NiA5LjQ2OCAxMy4xNTEtMy40MTUgMjEuMjQzIDUuNzUxIDIxLjI0MyAxNS4zNDcgMCA3LjI0OC01LjA3OSAxMi40NDMtMTAuMDQ0IDEyLjQ0My0xLjYwNCAwLTMuOTYxLS42NjEtNS4yOS0xLjY1NC0uOTM4IDEuOTk1LS40NTUgNC42NjUuNTEgNi42Ni0zLjYzOC0uOTYyLTUuOTQ4LTMuMTIzLTQuMzA0LTcuNjIxLTIuNzk1LS4yNTctNS4wMTgtMS4yMDEtNi41My0zIDEuNTMyLTEuOTYzIDMuODU3LTMuMDkzIDYuNTMtMy4wMDEtMi4wMzUtNC4yLjIzMy02LjU1IDMuNTM4LTguNDU2IDAgMC0yLjEwMiA4LjQ1NiAzLjI2NSA4LjQ1NiAyLjQxMyAwIDQuNjEyLS43ODYgNC42MTItNC4zNDMgMC0zLjA5Ny0yLjcwNy03LjM4Ny04Ljk2Ni03LjExNHMtMTEuMzMyIDQuMzE1LTExLjMzMiAxNC4zMDZjMCA5LjIxNiA3LjQzNCAxMy44IDE3LjIzIDE0LjA5NiA4LjgzMy4yNzMgMTUuNS00LjUxMiAxNS41LTEzLjYyNSAwLTEyLjEyOC0xNy41MDgtMzkuNzczLTE3LjUwOC01MC41OCAwLTguMTEgNy4yOTItMTIuNjM2IDE0LjQyNy0xMi42MzYgOS4yNTIgMCAxNy4wNTggOS4xNjEgMTcuMDU4IDkuMTYxbC01LjQzNSA2LjgxNXoiLz48cGF0aCBpZD0iZCIgZD0iTTEyMi4wMiAyOTIuMTRjMCAyMC4yNy0xOC4xOTggMzAuNjg4LTMyLjQ5OCAzMC42ODgtMTkuMjY2IDAtMjkuNTI0LTExLjUxOS0yOS41MjQtMjYuNTk4IDAtOC41NDggMS41NjYtMTMuOTExIDUuNTA3LTIyLjA5Mmw0NC4xNTMtOTEuNjUzYzEuNTQzLTMuMTg4IDIuMDQxLTYuODE4IDIuMDQxLTEyLjEzOCAwLTguMjE3LTcuOTctMTQuOTMzLTE2LjMyNy0xNS4xMzktNy42MTgtLjE5LTE1LjkxOCA3LjEwMi0xNS45MTggMTUuNDEyIDAgMTAuMDkzIDUuMjM2IDE0LjU5MyAxMC42MTIgMTQuNTkzIDYuNjE2IDAgOS4yNTItMi43MiA5LjI1Mi03LjM2NSAwLTMuMjM3LTEuNTYzLTQuNjM3LTMuODEtNC42MzctNS42NzQgMC00LjA4MSA3LjYzOC00LjA4MSA3LjYzOC0yLjgxOC0uNjE3LTUuMTM0LTMuNDk3LTMuODEtNy4wOTNhMTAuMjMgMTAuMjMgMCAwIDEtNS41MS0zLjI3M2MxLjUyMS0xLjQ3NSAzLjI2Ni0yLjYxMyA1LjUxLTMtMS4zMjktNC4zODguNDQ3LTYuNTMxIDQuMjg2LTcuNDMzLS43NzUgMS42ODctLjgwMSAzLjI0LS41NDQgNC43MDUgNi4wNDMtMS43MTkgMTUuMzA2IDEuMDE2IDE1LjMwNiAxMS40NTYgMCAxMC4zNjUtNy4xOTQgMTkuMDkzLTIwLjY4MSAxNi45MTIgMy4yMDggMS41MzQgNC44NCA0LjY3MyA1LjE3IDguMTgzLTIuNDUtLjk1NC01LjE3LTEuMDktNS4xNy0xLjA5IDEuNTc3IDIuNzggMy43NjcgNS4xNzcgMy42NzMgMTAuNjM3LTIuNS0xLjEzNy00LjgyMy0zLjI0Mi04LjAyNy0xLjkxIDUuMDMgOS44OTgtMS4xNSAyMy41MTItMTYuODcxIDI2LjczMyA1Ljc1NC02Ljc0NSA4LjU3MS0xNC4wMjcgOC41NzEtMjEuMjc3IDAtMjMuNDk2LTYuNTMtMjcuNDQ1LTYuNTMtNDMuNzggMC02LjgzNSAzLjUxMy0xNC4yMTUgMTAuNDc2LTE5LjIzMXYuMjczYy00LjYwMi0xLjIzMy03LjU1LTMuNDk5LTkuMjQ1LTYuNTc4IDEwLjUxNS0yLjk4MiAyNS44LTIuOTI3IDM0LjAwNi4zMDIgOS40MzQgMS4wOTMgMTYuMDIgOC4zMyAxNy45NiAxMi4wMDRzNS43MDkgMTYuOTUzIDAgMjguOTEybC00NC44OTggOTUuMTk4Yy0xLjk0OCA0LjE2NS0zLjEzIDguNTgzLTMuMTMgMTMuMzY2IDAgMTIuMDMgMTEuMDIgMTYuMjMgMTcuMjggMTYuMjMgNy40ODMgMCAxNS4xMDItNS43IDE1LjEwMi0xMi44MiAwLTQuNTExLTIuNDUtNy4yMjgtNS45ODctNy4yMjgtOC40NTggMC03Ljk0NCA3LjE5NS02LjI1OCAxMS43MjktNS4yNjQtMi4zNjctOC4zMjQtNi41OTItNy40ODMtMTEuMDQ3LTIuOTgtLjQwOS01LjgxNy0xLjgyMi04LjQzNS00Ljc3NCAyLjA2LTIuNiA0LjU3Mi00LjU2NyA4LjQzNS00LjYzNy0xLjY4Ny02LjkxMiAyLjk0LTkuODM1IDcuNDgzLTExLjQ1Ni0xLjQzNyA1LjA3My0yLjM4IDEwLjkxMSA2LjI1OCAxMC45MTEgNi4zIDAgMTEuMjU4IDEuMDkxIDE0LjE1IDUuMTgzbC42OC0yNy4wMDVjLjM2NC04LjA5OC0xMC44MzgtNy44NjctMTcuOTU4LTUuNDU2IDIuNjg3LTkuMzI3IDguMTk4LTE0LjM3IDIwLjk1Mi0xMy4wOTMtMy4wOTYtMS4yOTUtNi4zOTUtNC4yMDgtNi4zOTUtOS44Mi4wMDItNy41OTMgNi4xNjItMTYuMDA1IDEwLjIwNi0xOC40OTJsMi4wMjIgNzkuMDUxeiIvPjx1c2UgeGxpbms6aHJlZj0iI2QiIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIC0xIDAgNjQ1LjA4KSIvPjwvZz48dXNlIHhsaW5rOmhyZWY9IiNlIiB0cmFuc2Zvcm09Im1hdHJpeCgtMSAwIDAgMSAyNDAgMCkiLz48L2c+PHVzZSB4bGluazpocmVmPSIjZiIgdHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgLTEgMCAxMDAwKSIvPjwvZz48L2c+PC9zdmc+" alt="Qazaqstan" width="48" height="32" decoding="async">
+            </button>
+            <button type="button" class="lang-btn" id="btn-he" data-lang="he" aria-pressed="false" title="עברית" aria-label="עברית"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMTAwIiBoZWlnaHQ9IjgwMCI+PHBhdGggZD0iTTAgMGgxMTAwdjgwMEgwWiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0wIDc1aDExMDB2MTI1SDBaTTAgNjAwaDExMDB2MTI1SDBaIiBmaWxsPSIjMDAzOGI4Ii8+PHBhdGggZD0iTTQyMy44MTYgNDcyLjg1M2gyNTIuMzY4TDU1MCAyNTQuMjk1Wk01NTAgNTQ1LjcwNWwxMjYuMTg0LTIxOC41NThINDIzLjgxNloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMzhiOCIgc3Ryb2tlLXdpZHRoPSIyNy41Ii8+PC9zdmc+" alt="Israel" width="48" height="32" decoding="async">
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mast-main">
+        <h2 class="mast-title" data-i18n="mast-title">Official notice of the domain registrant</h2>
+        <p class="mast-sub" data-i18n="mast-sub">This resource is temporarily unavailable. Commercial activity is not conducted. The domain is held by the current registrant under a paid registration / acquisition arrangement. Any transfer, hold, cancellation, or forced disposition requires due process under the laws of the Republic of Kazakhstan, KazNIC procedures, and applicable European standards on possessions and personal data. A cease-and-desist letter alone does not extinguish registrant rights.</p>
+      </div>
+      <div class="lawbar">
+        <h2 data-i18n="law-h">Legal basis · Qazaqstan / European Union / Council of Europe</h2>
+                <div class="laws">
+          <div class="law"><strong data-i18n="l1t"></strong><span data-i18n="l1"></span></div>
+          <div class="law"><strong data-i18n="l2t"></strong><span data-i18n="l2"></span></div>
+          <div class="law"><strong data-i18n="l3t"></strong><span data-i18n="l3"></span></div>
+          <div class="law"><strong data-i18n="l4t"></strong><span data-i18n="l4"></span></div>
+          <div class="law"><strong data-i18n="l5t"></strong><span data-i18n="l5"></span></div>
+          <div class="law"><strong data-i18n="l6t"></strong><span data-i18n="l6"></span></div>
+          <div class="law"><strong data-i18n="l7t"></strong><span data-i18n="l7"></span></div>
+          <div class="law"><strong data-i18n="l8t"></strong><span data-i18n="l8"></span></div>
+          <div class="law"><strong data-i18n="l9t"></strong><span data-i18n="l9"></span></div>
+          <div class="law"><strong data-i18n="l10t"></strong><span data-i18n="l10"></span></div>
+          <div class="law"><strong data-i18n="l11t"></strong><span data-i18n="l11"></span></div>
+          <div class="law"><strong data-i18n="l12t"></strong><span data-i18n="l12"></span></div>
+          <div class="law"><strong data-i18n="l13t"></strong><span data-i18n="l13"></span></div>
+          <div class="law"><strong data-i18n="l14t"></strong><span data-i18n="l14"></span></div>
+          <div class="law"><strong data-i18n="l15t"></strong><span data-i18n="l15"></span></div>
+          <div class="law"><strong data-i18n="l16t"></strong><span data-i18n="l16"></span></div>
+        </div>
+      </div>
+    </header>
+    <div class="wrap">
+      <section class="col" id="panel-kk" lang="kk-Latn">
+        <h1>Sait uaqytşa qoljetımsız</h1>
+        <p>Osy resursda kommersiialyq qyzmet jürgızılmeıdı. Resurs Trendyol B.V., DSM Grup jäne olardyñ ülestes tulğalarymen bailanysty emes.</p>
+        <p>Domendık atau .KZ aımağynda tırkelgen. .KZ aımağyndağy domendık ataularğa qatysty daular KazNIC qağiadalary men Qazaqstan Respublikasynyñ zañnamasynda közdelgen tärtıppen, onyñ işınde sot tärtıbımen şeşıladı (QR Konstitutsiasynyñ 13-baby — sot arqyly qorğalu qūqyğy; 26-bap 3-t. — mülikten sotşyz aıyruğa tylım).</p>
+        <p>Europa standarty boıynşa (ECHR Prot. 1 Art. 1; GDPR; EU Charter Art. 8/17/47) domen qūqyqtary men jeke derekter qorğalady: talap haty özi qūqyqtardy joımaıdy.</p>
+        <p>Qandaı da bır būzuşylyqtardy moiymdamaı jäne domen ıesınıñ qūqyqtaryna nūqsan keltırmeı:</p>
+        <ul>
+          <li>ötınış beruşınıñ ökılettıkterı men rastauşy qūjattar tekserılgenge deıın domendı erıktı türde beru jüzege asyrylmaıdy;</li>
+          <li>kez kelgen talaptar qūqyqtar men ökılettıkterdıñ däelderın qosa bere otyryp, tek jazbaşa nysanda qabyldanady;</li>
+          <li>domen ıesınıñ barlyq qūqyqtary saqtalady jäne zañğa qaıshy kelmeıtın täsıldermen qorğalady;</li>
+          <li>jeke derekter (GDPR / ECHR Art. 8) zañdy negizsiz öñdelmeıdı jäne jarıalanbaıdy.</li>
+        </ul>
+        <p class="meta">Äkımşılık jäne qūqyqtyq mäseleler boıynşa:<br>
+          <a href="mailto:osaka@internet.ru">osaka@internet.ru</a><br>
+          <a class="tg" href="https://t.me/thelattafa" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Telegram · @thelattafa
+          </a>
+        </p>
+      </section>
+      <section class="col col-he" id="panel-he" lang="he" dir="rtl" hidden>
+        <h1>האתר אינו זמין באופן זמני</h1>
+        <p>לא מתבצעת פעילות מסחרית במשאב זה. המשאב אינו קשור ל־Trendyol B.V., ל־DSM Grup או לגופים המסונפים אליהם.</p>
+        <p>שם הדומיין רשום באזור .KZ. מחלוקות בנוגע לשמות דומיין באזור .KZ מוכרעות בהתאם לכללי KazNIC ולדין של רפובליקת קזחסטן, לרבות בדרך שיפוטית. אין לשלול זכויות רישום אלא בהליך חוקי / בפסק דין (סעיף 13 וסעיף 26(3) לחוקה).</p>
+        <p>על פי אמות מידה אירופיות (ECHR Prot. 1 Art. 1; GDPR; EU Charter Art. 8/17/47) זכויות בדומיין ונתונים אישיים מוגנים: מכתב דרישה אינו מבטל זכויות.</p>
+        <p>מבלי להודות בכל הפרה ומבלי לפגוע בזכויות בעל הדומיין:</p>
+        <ul>
+          <li>העברה מרצון של הדומיין לא תבוצע עד לבדיקת סמכויות הטוען ומסמכים תומכים;</li>
+          <li>כל טענה תתקבל בכתב בלבד, בצירוף ראיות לזכויות ולסמכויות;</li>
+          <li>כל זכויות בעל הדומיין שמורות ומוגנות בדרכים שאינן נוגדות את הדין;</li>
+          <li>נתונים אישיים (GDPR / ECHR Art. 8) לא יעובדו ולא יפורסמו ללא בסיס חוקי.</li>
+        </ul>
+        <p class="meta">לעניינים מנהליים ומשפטיים:<br>
+          <a href="mailto:osaka@internet.ru">osaka@internet.ru</a><br>
+          <a class="tg" href="https://t.me/thelattafa" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Telegram · @thelattafa
+          </a>
+        </p>
+      </section>
+    </div>
+    <div class="foot">
+      <span data-i18n="foot1">.KZ Domain · Legal Notice · EU / CoE standards</span>
+      <span data-i18n="foot2">Without prejudice · All rights reserved</span>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var i18n = {
+      kk: {
+        "title": "Sait uaqytşa qoljetımsız",
+        "mast-title": "Domen ıesınıñ resmi habarlamasy",
+        "mast-sub": "Bul resurs uaqytşa qoljetımsız. Kommersiialyq qyzmet jürgızılmeıdı. Domen ağımdağy tırkeluşıde tölemdı tırkeu / satyp alu negızınde. Beru, Hold, joıu nemese erıksız ıelıkten aıyru — Qazaqstan zañy, KazNIC jäne Europa standarttary (mülk / jeke derekter) boıynşa due process talap etedı. Talap haty özi qūqyqtardy joımaıdy.",
+        "law-h": "Qūqyqtyq negız · Qazaqstan / EU / Europa Keñesı",
+        "ban-kicker": "Qazaqstan Respublikasy · Memlekettık kepıldık",
+        "ban-text": "Qazaqstan — zañ üstemdıgı bar zaıyirlyq memleket. Azamattardyñ jeke derekterı memleket qorğauyna jatady. Domendık atau ıesınıñ qūqyğy QR Konstitutsiasynyñ 26-baby 3-tarmağy boıynşa qorğalady: eşkim öz mülkinen (onyñ işınde zañdy tırkelgen domen qūqyqtarynan) sot şeşiminşiz aıyryla almaıdy. Keşelsız talap haty, erıksız alyp qoıu nemese qūqyqtardy joıu — Konstitusiaga qaıshy.",
+        "mark": "Qūqyqtyq habarlama",
+        "domain-line": "trendyol.kz · .KZ tırkeluşı pozisiasy",
+        "badge1": "Kommersiia emes",
+        "badge2": "Moiymdau joq",
+        "badge3": "Qūqyqtar saqtalğan",
+        "foot1": ".KZ domen · Qūqyqtyq habarlama · EU / Europa Keñesı",
+        "foot2": "Without prejudice · Barlyq qūqyqtar saqtalğan",
+        "l1t": "QR Konstitusiia · 26-bap, 3-t.",
+        "l1": "Eşkim öz mülkinen sot şeşiminşiz aıyryla almaıdy. Domen qūqyqtaryn erıksız joıu — tek zañdy prosedura / sot arqyly.",
+        "l2t": "GPK RK · 11-bap",
+        "l2": "Mülk qoltiyması: aıyru tek sot şeşımımen (nemese zañda tıkelyı közdelgen tärtıppen).",
+        "l3t": "Azamattyq kodeks RK · 249-bap",
+        "l3": "Ieden erıksız alyp qoıuğa tylım, zañda tıkelyı kórsetılgen tar shekteulı negızderden basqa.",
+        "l4t": "QR Konstitusiia · 13-bap",
+        "l4": "Qūqyqtar men bostandyqtardy sot arqyly qorğau; zañğa qaıshy kelmeıtın barlyq ädıster.",
+        "l5t": "Cifrlyq kodeks RK",
+        "l5": "Cifrlyq obekt ıelerınıñ qūqyqtary — Azamattyq kodeks jäne şart boıynşa; beru tek zañdy/şarttyq negızben.",
+        "l6t": "KazNIC · .KZ aımağy",
+        "l6": "Avtomaty UDRP joq. Hold / beru — prosedura, taraptar kelısımı nemese sot aktısı. Talap haty — sot emes.",
+        "l7t": "ECHR · 1-hattema, 1-bap",
+        "l7": "Domen qūqyqtary possession retınde tanylğan (Paeffgen). Aralasu — tek zañ boıynşa, due process jäne proporcia.",
+        "l8t": "ECHR · 8-bap",
+        "l8": "Jeke ömır / hat-habar qūrmettyğy. Tırkeluşınıñ jeke derekterın öñdeu zañdy jäne qajet boluı tııs.",
+        "l9t": "EU Hartiasy · 17 / 8 / 47-bap",
+        "l9": "Mülk qūqyğy; jeke derekterdı qorğau; tıımdı qūqyqtyq qorğau jäne ädıl sot.",
+        "l10t": "GDPR (EU) 2016/679",
+        "l10": "Tırkeluşınıñ jeke derekterı tek zañdy negızben öñdeledı (5–6-bap). Subekt qūqyqtary: qoljetım, tuzetu, şekteu, qarsylyq (12–21). Talap haty GDPR mindetterın alyp tastamaıdy.",
+        "l11t": "ePrivacy Dir. 2002/58/EC",
+        "l11": "Elektron hat-habar qupiiasy; zañdy negızsız saqtau / qoljetu şekteulı.",
+        "l12t": "NL · BW / SIDN",
+        "l12": "Domen tırkeuı şarttyq / mülktık qūqyq beredı; qūlyp/beru — kelısım, registry prosedura nemese sot; jeke talap jetkızbeıdı.",
+        "l13t": "DE · MarkenG / BGB / BDSG",
+        "l13": "Tauar belgisı men domen daulary — zañ jäne sot/ADR; jeke tulğanyñ derekterı GDPR+BDSG; hatpen tärkipteu joq.",
+        "l14t": "FR · CPI / CNIL / GDPR",
+        "l14": "Domen/IP daulary — Code de la propriété intellectuelle jäne sot/ADR; derekter — CNIL/GDPR.",
+        "l15t": "Tauar belgisı zañy RK · 19(4)",
+        "l15": "QR-da 3 jyl paıdalanylmağan belgı qorğauyn daulauğa bolady (bölek prosedura).",
+        "l16t": "Şarttyq satyp alu",
+        "l16": "Tırkeu qūqyqtary aldynğy tırkeluşıden alynğan; erıktı beru — tek kelısım jäne/nemese settlement. Without prejudice · moiymdau joq."
+      },
+      he: {
+        "title": "האתר אינו זמין באופן זמני",
+        "mast-title": "הודעה רשמית של בעל הדומיין",
+        "mast-sub": "משאב זה אינו זמין באופן זמני. לא מתבצעת פעילות מסחרית. הדומיין מוחזק בידי בעל הרישום הנוכחי מכוח רישום / רכישה בתשלום. העברה, Hold, ביטול או שלילה כפויה דורשים הליך תקין לפי דין קזחסטן, כללי KazNIC וסטנדרטים אירופיים (רכוש / נתונים אישיים). מכתב דרישה אינו מבטל זכויות.",
+        "law-h": "בסיס משפטי · קזחסטן / האיחוד האירופי / מועצת אירופה",
+        "ban-kicker": "רפובליקת קזחסטן · ערבות מדינה",
+        "ban-text": "קזחסטן היא מדינה חילונית של שלטון החוק. נתונים אישיים של אזרחים מוגנים על ידי המדינה. זכות בעל שם הדומיין מוגנת לפי סעיף 26(3) לחוקה: אין לשלול רכוש (לרבות זכויות רישום דומיין כדין) אלא בפסק דין. מכתב דרישה, תפיסה כפויה או ביטול זכויות ללא בית משפט — בניגוד לחוקה.",
+        "mark": "הודעה משפטית",
+        "domain-line": "trendyol.kz · עמדת בעל הרישום ב־.KZ",
+        "badge1": "לא מסחרי",
+        "badge2": "ללא הודאה",
+        "badge3": "כל הזכויות שמורות",
+        "foot1": "דומיין .KZ · הודעה משפטית · תקני האיחוד / מועצת אירופה",
+        "foot2": "ללא דעה קדומה · כל הזכויות שמורות",
+        "l1t": "חוקת קזחסטן · סעיף 26(3)",
+        "l1": "אין לשלול רכוש אלא בפסק דין. שלילה כפויה של זכויות דומיין — רק בהליך חוקי / פסק דין.",
+        "l2t": "סדר הדין האזרחי · סעיף 11",
+        "l2": "קדושת הקניין: שלילה רק בפסק דין (או בהליך שנקבע במפורש בחוק).",
+        "l3t": "הקודקס האזרחי · סעיף 249",
+        "l3": "אין העברה כפויה מבעלים אלא בעילות מוגבלות שנקבעו במפורש בחוק.",
+        "l4t": "חוקת קזחסטן · סעיף 13",
+        "l4": "זכות להגנה שיפוטית על זכויות וחירויות; הגנה בכל דרך שאינה נוגדת את הדין.",
+        "l5t": "הקודקס הדיגיטלי של קזחסטן",
+        "l5": "זכויות בעלי אובייקטים דיגיטליים — לפי הקודקס האזרחי והחוזה; העברה רק על בסיס חוקי/חוזי.",
+        "l6t": "KazNIC · אזור .KZ",
+        "l6": "אין UDRP אוטומטי. Hold / העברה — בהליך, בהסכמת הצדדים או בפסק דין. מכתב דרישה אינו צו בית משפט.",
+        "l7t": "האמנה האירופית · פרוטוקול 1 סעיף 1",
+        "l7": "זכויות בדומיין הוכרו כ־possession (Paeffgen). התערבות — רק לפי דין, בהליך תקין ובמידתיות.",
+        "l8t": "האמנה האירופית · סעיף 8",
+        "l8": "כבוד לחיים פרטיים / תכתובת. עיבוד נתונים אישיים של בעל הרישום חייב להיות חוקי ונחוץ.",
+        "l9t": "אמנת האיחוד האירופי · סעיפים 17 / 8 / 47",
+        "l9": "זכות הקניין; הגנה על נתונים אישיים; זכות לסעד אפקטיבי ולמשפט הוגן.",
+        "l10t": "GDPR (EU) 2016/679",
+        "l10": "נתונים אישיים של בעל הרישום יעובדו רק על בסיס חוקי (סעיפים 5–6). זכויות: עיון, תיקון, הגבלה, התנגדות (12–21). מכתב דרישה אינו מבטל חובות GDPR.",
+        "l11t": "הוראת ePrivacy 2002/58/EC",
+        "l11": "סודיות תקשורת אלקטרונית; הגבלות על אחסון / גישה ללא בסיס חוקי.",
+        "l12t": "הולנד · BW / SIDN",
+        "l12": "רישום דומיין יוצר עניין חוזי/קנייני; נעילה/העברה — בהסכמה, בהליך הרישום או בצו — לא במכתב פרטי בלבד.",
+        "l13t": "גרמניה · MarkenG / BGB / BDSG",
+        "l13": "סכסוכי סימן ודומיין — לפי חוק ובית משפט/ADR; נתונים אישיים מוגנים ב־GDPR+BDSG; אין החרמה במכתב.",
+        "l14t": "צרפת · CPI / CNIL / GDPR",
+        "l14": "סכסוכי דומיין/קניין רוחני — לפי CPI ובית משפט/ADR; נתונים — פיקוח CNIL/GDPR.",
+        "l15t": "חוק סימני המסחר · סעיף 19(4)",
+        "l15": "ניתן לערער על הגנת סימן שלא נעשה בו שימוש בקזחסטן במשך 3 שנים (מסלול נפרד).",
+        "l16t": "רכישה חוזית",
+        "l16": "זכויות הרישום נרכשו מבעל הרישום הקודם; העברה מרצון — רק בהסכמה ו/או בהסדר. ללא דעה קדומה · ללא הודאה."
+      }
+    };
+    function setLang(lang) {
+      var kk = document.getElementById("panel-kk");
+      var he = document.getElementById("panel-he");
+      var btnKk = document.getElementById("btn-kk");
+      var btnHe = document.getElementById("btn-he");
+      var isHe = lang === "he";
+      kk.hidden = isHe;
+      he.hidden = !isHe;
+      btnKk.setAttribute("aria-pressed", isHe ? "false" : "true");
+      btnHe.setAttribute("aria-pressed", isHe ? "true" : "false");
+      document.documentElement.lang = isHe ? "he" : "kk-Latn";
+      document.documentElement.dir = isHe ? "rtl" : "ltr";
+      document.body.classList.toggle("lang-he", isHe);
+      var pack = i18n[lang] || i18n.kk;
+      document.title = pack.title;
+      document.querySelectorAll("[data-i18n]").forEach(function (el) {
+        var key = el.getAttribute("data-i18n");
+        if (pack[key]) el.textContent = pack[key];
+      });
+      try { localStorage.setItem("ty_lang", lang); } catch (e) {}
+    }
+    document.getElementById("btn-kk").addEventListener("click", function () { setLang("kk"); });
+    document.getElementById("btn-he").addEventListener("click", function () { setLang("he"); });
+    var saved = null;
+    try { saved = localStorage.getItem("ty_lang"); } catch (e) {}
+    setLang(saved === "he" ? "he" : "kk");
+  })();
+  </script>
+</body>
+</html>

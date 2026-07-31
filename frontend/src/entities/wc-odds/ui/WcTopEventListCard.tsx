@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useMemo } from "react";
 import { FiPlus, FiTrendingUp, FiZap } from "react-icons/fi";
 
+import type { AppLocale } from "~/shared/i18n";
 import { gamesList } from "~/entities/game/lib/gamesList";
 import type { SocialPulseItem } from "~/entities/social-pulse/api/client";
 import type { WcEvent } from "~/entities/wc-odds/api/client";
@@ -35,7 +36,7 @@ type Props = {
   pulse?: SocialPulseItem;
 };
 
-function resolveMeta(item: TopEventItem, locale: "ru" | "en") {
+function resolveMeta(item: TopEventItem, locale: AppLocale) {
   if (item.kind === "wc") {
     const event = item.event;
     const sportDef = gamesList[event.sport as keyof typeof gamesList] ?? gamesList.soccer;
@@ -99,10 +100,29 @@ function pickOdd(meta: ReturnType<typeof resolveMeta>, pick: FavoritePick): numb
   return meta.oddsDraw ?? 0;
 }
 
-function pickLabel(meta: ReturnType<typeof resolveMeta>, pick: FavoritePick, locale: "ru" | "en"): string {
+function pickLabel(
+  meta: ReturnType<typeof resolveMeta>,
+  pick: FavoritePick,
+  t: (key: import("~/shared/i18n/messages").MessageKey) => string,
+): string {
   if (pick === "HOME") return meta.homeTeam;
   if (pick === "AWAY") return meta.awayTeam;
-  return locale === "en" ? "Draw" : "Ничья";
+  return t("wc.draw");
+}
+
+function betCountLabel(
+  count: number,
+  t: (key: import("~/shared/i18n/messages").MessageKey) => string,
+) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  const noun =
+    mod10 === 1 && mod100 !== 11
+      ? t("wc.betWord1")
+      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+        ? t("wc.betWord2")
+        : t("wc.betWord5");
+  return `${count} ${noun}`;
 }
 
 /** Bookmaker's shortest-odd favorite — used when no crowd data exists yet. */
@@ -132,31 +152,18 @@ function crowdFavorite(
   return { pick: top.pick, odd: pickOdd(meta, top.pick), percent: top.percent };
 }
 
-function betCountLabel(count: number, locale: "ru" | "en") {
-  if (locale === "en") return `${count} ${count === 1 ? "bet" : "bets"}`;
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  const noun =
-    mod10 === 1 && mod100 !== 11
-      ? "ставка"
-      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
-        ? "ставки"
-        : "ставок";
-  return `${count} ${noun}`;
-}
-
 export const WcTopEventListCard = memo(function WcTopEventListCard({
   item,
   pulse,
 }: Props) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const meta = useMemo(() => resolveMeta(item, locale), [item, locale]);
   const crowd = useMemo(() => crowdFavorite(meta, pulse), [meta, pulse]);
   const bookFavorite = useMemo(() => bookmakerFavorite(meta), [meta]);
   const favorite = crowd ?? bookFavorite;
   const { SportIcon } = meta;
 
-  const favoriteLabel = favorite ? pickLabel(meta, favorite.pick, locale) : null;
+  const favoriteLabel = favorite ? pickLabel(meta, favorite.pick, t) : null;
   const impliedProbability = !crowd && bookFavorite
     ? Math.min(99, Math.round(100 / bookFavorite.odd))
     : null;
@@ -217,14 +224,12 @@ export const WcTopEventListCard = memo(function WcTopEventListCard({
             >
               {pulse ? <FiZap aria-hidden /> : <FiTrendingUp aria-hidden />}
               {pulse
-                ? betCountLabel(pulse.betCount, locale)
-                : locale === "en"
-                  ? "Popular match"
-                  : "Популярный матч"}
+                ? betCountLabel(pulse.betCount, t)
+                : t("wc.popularMatch")}
             </span>
             {(crowd || impliedProbability !== null) && (
               <span className={styles.probabilityMetric}>
-                {locale === "en" ? "Probability" : "Вероятность"}{" "}
+                {t("wc.probability")}{" "}
                 <strong>{crowd?.percent ?? impliedProbability}%</strong>
               </span>
             )}
@@ -233,13 +238,7 @@ export const WcTopEventListCard = memo(function WcTopEventListCard({
           <div className={styles.selection}>
             <div className={styles.selectionText}>
               <small>
-                {crowd
-                  ? locale === "en"
-                    ? "Crowd's pick"
-                    : "Выбор большинства"
-                  : locale === "en"
-                    ? "Match result (regular time)"
-                    : "Результат матча (основное время)"}
+                {crowd ? t("wc.majorityPick") : t("wc.matchResultFt")}
               </small>
               <strong>{favoriteLabel ?? "—"}</strong>
             </div>
@@ -261,7 +260,7 @@ export const WcTopEventListCard = memo(function WcTopEventListCard({
         </div>
 
         <Link
-          aria-label={locale === "en" ? "Open all markets" : "Открыть все рынки"}
+          aria-label={t("wc.openAllMarkets")}
           className={styles.openButton}
           href={meta.href}
           prefetch={false}

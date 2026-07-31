@@ -13,9 +13,9 @@ import {
 import { cyberTournamentPageHref } from "~/entities/cybersport/lib/cyberTournamentPaths";
 import { CybersportGamesPanel } from "~/entities/cybersport/ui/CybersportGamesPanel";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CybersportSection.module.css";
-import cardStyles from "./CybersportDisciplineCards.module.css";
 
 import { MQ_PHONE } from "~/shared/lib/layoutBreakpoints";
 
@@ -49,6 +49,7 @@ function CybersportPanel({
   className,
   isMobile,
   onMobilePanelToggle,
+  t,
 }: {
   variant: "live" | "prematch";
   href: string;
@@ -58,6 +59,7 @@ function CybersportPanel({
   className?: string;
   isMobile: boolean;
   onMobilePanelToggle?: () => void;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   const isLive = variant === "live";
 
@@ -67,7 +69,7 @@ function CybersportPanel({
       Live
     </>
   ) : (
-    <>Линия</>
+    <>{t("cyber.line")}</>
   );
 
   return (
@@ -77,7 +79,7 @@ function CybersportPanel({
           <div className={cn(styles.tabGroup, isMobile && styles.tabGroup_mobile)}>
             {isMobile && onMobilePanelToggle ? (
               <button
-                aria-label={isLive ? "Переключить на Линию" : "Переключить на Live"}
+                aria-label={isLive ? t("cyber.switchToLine") : t("cyber.switchToLive")}
                 className={styles.tabPrimary}
                 onClick={onMobilePanelToggle}
                 type="button"
@@ -89,7 +91,7 @@ function CybersportPanel({
             )}
 
             <Link className={styles.tabSecondary} href={href}>
-              Все
+              {t("cyber.all")}
             </Link>
           </div>
         </div>
@@ -111,6 +113,7 @@ function CybersportPanel({
 }
 
 export function CybersportTournamentSection({ discipline, tournament }: Props) {
+  const { t } = useLocale();
   const config = CYBER_DISCIPLINES[discipline];
   const isMobile = useMobileLayout();
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("live");
@@ -121,35 +124,15 @@ export function CybersportTournamentSection({ discipline, tournament }: Props) {
 
   const liveHref = `${cyberDisciplineLiveHref(discipline)}?tournament=${tournament.id}`;
   const lineHref = `${cyberDisciplineLineHref(discipline)}?tournament=${tournament.id}`;
-  const { Icon } = config;
-  const matchCount = tournament.liveCount + tournament.lineCount;
 
   return (
     <div className={styles.wrap}>
-      <header className={styles.hero}>
-        <div className={styles.heroGlow} aria-hidden />
-        <div className={styles.heroContent}>
-          <p className={styles.heroEyebrow}>
-            <Link className={cardStyles.breadcrumbLink} href="/cybersport">
-              Киберспорт
-            </Link>
-            {" · "}
-            <Link className={cardStyles.breadcrumbLink} href={`/cybersport/${discipline}`}>
-              <Icon className={cardStyles.heroIcon} />
-              {config.label}
-            </Link>
-          </p>
-          <h1 className={styles.heroTitle}>{tournament.name}</h1>
-          <p className={styles.heroSubtitle}>
-            Ставки на {config.label} · {tournament.name}
-          </p>
-          {matchCount > 0 ? (
-            <p className={cardStyles.countBadge}>
-              {matchCount} матчей · live {tournament.liveCount} · prematch {tournament.lineCount}
-            </p>
-          ) : null}
-        </div>
-      </header>
+      <div className={styles.disciplineTitleRow}>
+        <h1 className={styles.disciplineTitle}>{tournament.name}</h1>
+        <Link className={styles.tabSecondary} href={`/cybersport/${discipline}`}>
+          {config.label}
+        </Link>
+      </div>
 
       <div className={cn(styles.grid, isMobile && styles.grid_mobile)}>
         <CybersportPanel
@@ -165,6 +148,7 @@ export function CybersportTournamentSection({ discipline, tournament }: Props) {
           onMobilePanelToggle={isMobile ? handleMobilePanelToggle : undefined}
           sport={config.apiSport}
           sportLabel={config.label}
+          t={t}
           tournamentId={tournament.id}
           variant="live"
         />
@@ -181,6 +165,7 @@ export function CybersportTournamentSection({ discipline, tournament }: Props) {
           onMobilePanelToggle={isMobile ? handleMobilePanelToggle : undefined}
           sport={config.apiSport}
           sportLabel={config.label}
+          t={t}
           tournamentId={tournament.id}
           variant="prematch"
         />

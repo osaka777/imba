@@ -1,6 +1,10 @@
-import { makeMetadata } from "~/shared/lib";
+import type { Metadata } from "next";
 
-export const metadata = makeMetadata("Сброс пароля", { noIndex: true });
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoResetPassword", { noIndex: true });
+}
 
 export default function ResetPasswordLayout({
   children,

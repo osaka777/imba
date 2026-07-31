@@ -14,6 +14,8 @@ import {
 } from "~/entities/wc-odds/lib/wcSlug";
 import { api } from "~/shared/api";
 import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata, resolveRequestLocale } from "~/shared/i18n/seo-metadata";
+import { translate } from "~/shared/i18n/messages";
 
 type PageProps = {
   params: Promise<{ eventId: string }>;
@@ -47,6 +49,10 @@ async function loadBetApiGame(eventId: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { eventId } = await params;
 
+  if (/^cyber-\d+$/i.test(decodeURIComponent(eventId))) {
+    return makeSeoMetadata("common.seoMatch");
+  }
+
   if (isOlimpbetGameRef(eventId)) {
     try {
       const event = await fetchWcEventByRef(eventId);
@@ -56,19 +62,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     } catch {
       /* ignore */
     }
-    return makeMetadata("Матч");
+    return makeSeoMetadata("common.seoMatch");
   }
 
   try {
     const { data } = await loadBetApiGame(eventId);
     return makeMetadata(data?.eventName);
   } catch {
-    return makeMetadata("Игра");
+    return makeSeoMetadata("common.seoGame");
   }
 }
 
 export default async function MatchPage({ params }: PageProps) {
   const { eventId } = await params;
+
+  // Legacy / coupon links may still point at /game/cyber-* — send them to the
+  // dedicated 1win cybersport match page (not the Olimpbet WC feed).
+  if (/^cyber-\d+$/i.test(decodeURIComponent(eventId))) {
+    redirect(`/cybersport/game/${encodeURIComponent(eventId)}`);
+  }
 
   if (isOlimpbetGameRef(eventId)) {
     // Fast SSR from cache — markets unlock via WS focused oddsOnly refresh.
@@ -96,6 +108,7 @@ export default async function MatchPage({ params }: PageProps) {
     return <Match matchData={data} isSubGame={isSubGame} />;
   } catch (error) {
     console.error("[MatchPage] Error loading game data:", error);
-    return <div>Игра не найдена</div>;
+    const locale = await resolveRequestLocale();
+    return <div>{translate(locale, "common.gameNotFound")}</div>;
   }
 }

@@ -265,3 +265,74 @@
 .cardMeta {
   display: none;
 }
+
+/* Sportsbook light surfaces */
+.section {
+  border-color: #e1e6ed;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.sectionTitle,
+.cardTitle,
+.tournamentName {
+  color: #101828;
+}
+
+.sectionMeta,
+.countBadge {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.card,
+.footerBtn,
+.tournamentRow {
+  border-color: #e1e6ed;
+  background: #f8fafc;
+  color: #667085;
+}
+
+.card:hover,
+.footerBtn:hover,
+.tournamentRow:hover {
+  border-color: #93c5fd;
+  background: #eef4ff;
+  color: #2563eb;
+  box-shadow: none;
+}
+
+.cardIconWrap {
+  border-color: #d7dde5;
+  background: #ffffff;
+}
+
+.cardIcon {
+  fill: #475467;
+}
+
+.cardCount {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.emptyHint {
+  border-color: #d7dde5;
+  color: #667085;
+}
+
+.inactiveLabel,
+.tournamentCounts {
+  color: #8b93a1;
+}
+
+.breadcrumbLink:hover,
+.tournamentLive {
+  color: #2563eb;
+}
+
+.tournamentTotal {
+  border-color: #d7dde5;
+  background: #eef2f7;
+}

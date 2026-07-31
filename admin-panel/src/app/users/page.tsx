@@ -1,24 +1,28 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthGuard } from '@/shared/components/AuthGuard'
-import { Table } from '@/widgets/Table'
-import { Button } from '@/widgets/Button'
 import { adminUsersAPI, User } from '@/shared/api/users'
+import { formatBalances, formatMoney } from '@/shared/lib/format'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { LoadingBlock } from '@/shared/ui/LoadingBlock'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { PageShell } from '@/shared/ui/PageShell'
 
 export default function UsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const data = await adminUsersAPI.getAllUsers()
         setUsers(data || [])
-      } catch (e: any) {
+      } catch (e) {
         console.error('Failed to fetch users:', e)
         setError('Не удалось загрузить список пользователей')
       } finally {
@@ -26,192 +30,124 @@ export default function UsersPage() {
       }
     }
 
-    fetchUsers()
+    void fetchUsers()
   }, [])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency',
-      currency: 'RUB',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return users
+    return users.filter((user) =>
+      String(user.id).includes(q)
+      || user.email?.toLowerCase().includes(q)
+      || user.username?.toLowerCase().includes(q)
+      || user.phone?.toLowerCase().includes(q)
+      || user.defaultCurrencyCode?.toLowerCase().includes(q),
+    )
+  }, [users, query])
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ru-RU')
-  }
-
-  const columns = [
-    { 
-      header: 'ID', 
-      accessor: 'id' as const,
-      render: (user: User) => (
-        <span className="font-mono text-sm">{user.id}</span>
-      )
-    },
-    { 
-      header: 'Email', 
-      accessor: 'email' as const,
-      render: (user: User) => (
-        <span className="text-blue-600">{user.email}</span>
-      )
-    },
-    { 
-      header: 'Имя пользователя', 
-      accessor: 'username' as const,
-      render: (user: User) => (
-        <span className="font-medium">{user.username}</span>
-      )
-    },
-    { 
-      header: 'Баланс', 
-      accessor: 'totalBalance' as const,
-      render: (user: User) => (
-        <span className={`font-semibold ${user.totalBalance > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-          {formatCurrency(user.totalBalance)}
-        </span>
-      )
-    },
-    { 
-      header: 'Бонусный баланс', 
-      accessor: 'bonusBalance' as const,
-      render: (user: User) => (
-        <span className={`font-semibold ${user.bonusBalance > 0 ? 'text-purple-600' : 'text-gray-500'}`}>
-          {formatCurrency(user.bonusBalance)}
-        </span>
-      )
-    },
-    { 
-      header: 'Ставки', 
-      accessor: 'totalBets' as const,
-      render: (user: User) => (
-        <div className="text-sm">
-          <div>Всего: <span className="font-medium">{user.totalBets}</span></div>
-          <div className="text-xs text-gray-500">
-            Выигрыши: {user.winningBets} | Проигрыши: {user.losingBets}
-          </div>
-        </div>
-      )
-    },
-    { 
-      header: 'Винрейт', 
-      accessor: 'winRate' as const,
-      render: (user: User) => (
-        <span className={`font-semibold ${
-          user.winRate >= 60 ? 'text-green-600' : 
-          user.winRate >= 40 ? 'text-yellow-600' : 'text-red-600'
-        }`}>
-          {user.winRate.toFixed(1)}%
-        </span>
-      )
-    },
-    { 
-      header: 'Последняя активность', 
-      accessor: 'updatedAt' as const,
-      render: (user: User) => (
-        <span className="text-sm text-gray-600">
-          {formatDate(user.updatedAt)}
-        </span>
-      )
-    },
-    { 
-      header: 'Действия', 
-      accessor: 'id' as const,
-      render: (user: User) => (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push(`/users/${user.id}`)}
-        >
-          Подробнее
-        </Button>
-      )
-    },
-  ]
+  const currencyTotals = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const user of users) {
+      for (const balance of user.balances || []) {
+        map.set(balance.currency, (map.get(balance.currency) || 0) + Number(balance.amount || 0))
+      }
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1])
+  }, [users])
 
   return (
     <AuthGuard>
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">👥 Пользователи</h1>
-            <p className="text-gray-600">Полный список пользователей с детальной статистикой</p>
+      <PageShell>
+        <PageHeader
+          title="Пользователи"
+          description="Балансы показываются в реальной валюте каждого пользователя"
+        />
+
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="admin-card p-4">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Всего</p>
+            <p className="mt-2 text-2xl font-semibold">{users.length}</p>
           </div>
+          {currencyTotals.slice(0, 3).map(([currency, amount]) => (
+            <div key={currency} className="admin-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Баланс {currency}</p>
+              <p className="mt-2 text-2xl font-semibold">{formatMoney(amount, currency)}</p>
+            </div>
+          ))}
+        </div>
 
-          {/* Статистика */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-blue-100 text-blue-600 text-xl">
-                  👥
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Всего пользователей</p>
-                  <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-green-100 text-green-600 text-xl">
-                  💰
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Общий баланс</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(users.reduce((sum, user) => sum + user.totalBalance, 0))}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-purple-100 text-purple-600 text-xl">
-                  🎁
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Бонусные средства</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(users.reduce((sum, user) => sum + user.bonusBalance, 0))}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 text-xl">
-                  🎯
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Всего ставок</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {users.reduce((sum, user) => sum + user.totalBets, 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="mb-4">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск: email, телефон, id, валюта…"
+            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
 
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-500">Загрузка пользователей...</p>
+        <div className="admin-card overflow-hidden">
+          {loading ? (
+            <LoadingBlock />
+          ) : error ? (
+            <div className="p-4 text-sm text-rose-600">{error}</div>
+          ) : filtered.length === 0 ? (
+            <div className="p-4">
+              <EmptyState />
             </div>
-          )}
-          
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <div className="text-red-600">{error}</div>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <Table<User> data={users} columns={columns} />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Пользователь</th>
+                    <th>Балансы</th>
+                    <th>Бонусы</th>
+                    <th>Ставки</th>
+                    <th>Винрейт</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((user) => (
+                    <tr key={user.id}>
+                      <td className="font-mono text-xs">{user.id}</td>
+                      <td>
+                        <div className="font-medium">{user.email}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.username}
+                          {user.phone ? ` · ${user.phone}` : ''}
+                          {user.defaultCurrencyCode ? ` · ${user.defaultCurrencyCode}` : ''}
+                        </div>
+                      </td>
+                      <td className="font-medium text-emerald-700">
+                        {formatBalances(user.balances)}
+                      </td>
+                      <td>{formatBalances(user.bonusBalances)}</td>
+                      <td>
+                        <div className="text-sm">{user.totalBets}</div>
+                        <div className="text-xs text-muted-foreground">
+                          W {user.winningBets} / L {user.losingBets}
+                        </div>
+                      </td>
+                      <td>{user.winRate.toFixed(1)}%</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/users/${user.id}`)}
+                          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                        >
+                          Открыть
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </div>
+      </PageShell>
     </AuthGuard>
   )
 }

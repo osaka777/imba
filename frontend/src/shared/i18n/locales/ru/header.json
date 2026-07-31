@@ -1,4 +1,9 @@
 {
-  "promoSubtitle": "Бонус на депозит",
-  "downloadApk": "Скачать Android APK"
+  "promoSubtitle": "Ставки на исходы событий",
+  "downloadApk": "Скачать Android APK",
+  "downloadWindows": "Скачать для Windows",
+  "appLabel": "Приложение",
+  "appAndroid": "для Android",
+  "appWindows": "для Windows",
+  "appIosSoon": "iOS скоро"
 }

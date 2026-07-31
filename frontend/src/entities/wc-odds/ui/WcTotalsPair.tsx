@@ -5,7 +5,9 @@ import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
 import { formatTotalsScopeLabel, isScopeCaptionRedundant, type TotalsScopeOptions } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
+import { localizeWcLabel } from "~/entities/wc-odds/lib/localizeWcLabel";
 import { usePrevious } from "~/shared/model";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
 
@@ -34,6 +36,7 @@ export function WcTotalsPair({
   scopeOptions,
   kickChip = false,
 }: WcTotalsPairProps) {
+  const { t } = useLocale();
   const { toggle, isSelected, isBettable } = useWcMarketPairToggle(event, group, bettingOpen);
 
   const underValue = under ? under.price.toFixed(2) : "0";
@@ -43,9 +46,10 @@ export function WcTotalsPair({
   const underFlash = wcOddsFlashClasses(underValue, prevUnder, styles);
   const overFlash = wcOddsFlashClasses(overValue, prevOver, styles);
 
-  const scopeLabel = showScopeHeader
+  const scopeLabelRaw = showScopeHeader
     ? formatTotalsScopeLabel(group, categoryName, scopeOptions)
     : null;
+  const scopeLabel = scopeLabelRaw ? localizeWcLabel(scopeLabelRaw, t) : null;
 
   return (
     <div className={scopeLabel ? styles.totalsScopedRow : undefined}>

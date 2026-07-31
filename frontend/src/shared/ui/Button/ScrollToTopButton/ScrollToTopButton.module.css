@@ -16,8 +16,8 @@
 .darkGradient {
   background: linear-gradient(
     92.58deg,
-    #1e283f 0%,
-    rgba(20, 27, 46, 0.6) 99.71%
+    var(--blue-20) 0%,
+    var(--blue-10-transparent) 99.71%
   );
   padding: 0;
   display: flex;

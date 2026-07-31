@@ -9,6 +9,7 @@ import { TelegramModule } from '../telegram/telegram.module';
 import { PushModule } from '../push/push.module';
 import { BonusBalanceModule } from '../bonus-balance/bonus-balance.module';
 import { PhoneVerificationModule } from '../user/phone-verification.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PhoneVerificationModule } from '../user/phone-verification.module';
     PushModule,
     BonusBalanceModule,
     PhoneVerificationModule,
+    AdminModule,
   ],
   controllers: [WithdrawalController],
   providers: [WithdrawalService],

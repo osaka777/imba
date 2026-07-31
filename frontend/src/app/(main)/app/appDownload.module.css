@@ -79,6 +79,13 @@
   color: #61da84;
 }
 
+.brandLogo {
+  width: 40px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 3px;
+}
+
 .heroTitle {
   margin: 0 0 14px;
   font-size: clamp(1.9rem, 4.6vw, 2.75rem);
@@ -176,7 +183,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--blue-gray, rgb(37, 47, 75));
+  background: var(--blue-gray);
 }
 
 /* ══════════ Phone visual ══════════ */
@@ -193,7 +200,7 @@
   width: min(100%, 250px);
   padding: 12px 10px 16px;
   border-radius: 34px;
-  background: linear-gradient(180deg, rgb(31, 41, 66) 0%, rgb(14, 20, 37) 100%);
+  background: linear-gradient(180deg, rgb(31, 41, 66) 0%, var(--surface-toast) 100%);
   border: 1px solid rgba(177, 209, 255, 0.16);
   box-shadow:
     0 30px 60px rgba(0, 0, 0, 0.5),
@@ -208,7 +215,7 @@
   gap: 10px;
   padding: 14px 12px 16px;
   border-radius: 24px;
-  background: var(--blue-00, rgb(9, 15, 30));
+  background: var(--blue-00, var(--blue-00));
 }
 
 .phoneStatus {
@@ -265,7 +272,7 @@
 .phoneMatch {
   padding: 11px 12px;
   border-radius: 14px;
-  background: var(--blue-20, rgb(30, 40, 63));
+  background: var(--blue-20, var(--blue-20));
   border: 1px solid rgba(177, 209, 255, 0.09);
 }
 
@@ -351,7 +358,7 @@
   gap: 2px;
   padding: 7px 4px;
   border-radius: 9px;
-  background: var(--blue-25, rgb(42, 54, 78));
+  background: var(--blue-25, var(--blue-25));
   font-size: 9px;
   color: var(--blue-70, #94a6cd);
 }
@@ -428,7 +435,7 @@
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
 }
 
 .qrCard {
@@ -468,7 +475,7 @@
   gap: 8px;
   padding: 20px 18px;
   border-radius: 18px;
-  background: var(--blue-20, rgb(30, 40, 63));
+  background: var(--blue-20, var(--blue-20));
   border: 1px solid rgba(177, 209, 255, 0.09);
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
@@ -509,11 +516,55 @@
 }
 
 /* ══════════ Install ══════════ */
+/* ══════════ What's new ══════════ */
+.whatsNew {
+  margin-bottom: 14px;
+  padding: 24px 22px;
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(245, 158, 11, 0.08) 0%, transparent 45%),
+    var(--blue-20, var(--blue-20));
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+.whatsNewList {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.whatsNewList li {
+  position: relative;
+  padding: 10px 12px 10px 36px;
+  border-radius: 12px;
+  background: rgba(11, 17, 33, 0.55);
+  border: 1px solid rgba(177, 209, 255, 0.08);
+  color: #d6e4ff;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.whatsNewList li::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+}
+
+/* ══════════ Install ══════════ */
 .install {
   margin-bottom: 14px;
   padding: 28px 26px;
   border-radius: 20px;
-  background: var(--blue-20, rgb(30, 40, 63));
+  background: var(--blue-20, var(--blue-20));
   border: 1px solid rgba(177, 209, 255, 0.09);
 }
 
@@ -550,7 +601,7 @@
   gap: 7px;
   padding: 18px 16px;
   border-radius: 14px;
-  background: var(--blue-25, rgb(42, 54, 78));
+  background: var(--blue-25, var(--blue-25));
   border: 1px solid rgba(177, 209, 255, 0.08);
 }
 
@@ -644,7 +695,7 @@
   border-radius: 20px;
   background:
     radial-gradient(ellipse 70% 120% at 100% 50%, rgba(16, 141, 231, 0.18) 0%, transparent 60%),
-    var(--blue-20, rgb(30, 40, 63));
+    var(--blue-20, var(--blue-20));
   border: 1px solid rgba(177, 209, 255, 0.1);
 }
 

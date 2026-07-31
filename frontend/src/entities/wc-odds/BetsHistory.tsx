@@ -13,6 +13,7 @@ import { getMyWcBetsGrouped } from "~/entities/wc-odds/api/getMyWcBets";
 import { mapWcExpressForHistory } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
 import { getWcBetLabel } from "~/entities/wc-odds/lib/wcRate";
+import { prefersEnglishFallback } from "~/shared/i18n";
 import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./BetsHistoryPage.module.css";
@@ -31,8 +32,8 @@ interface BetsResponse {
 export const BetsHistory: React.FC = () => {
   const [tab, setTab] = useState<TabType>("all");
   const router = useRouter();
-  const { locale } = useLocale();
-  const dateLocale = locale === "en" ? enUS : ru;
+  const { locale, t } = useLocale();
+  const dateLocale = prefersEnglishFallback(locale) ? enUS : ru;
 
   const handleBetClick = (bet: any) => {
     if (bet?.isWcBet && bet?.wcGameHref) {
@@ -135,32 +136,32 @@ export const BetsHistory: React.FC = () => {
       const eventName =
         firstBet?.eventName ||
         firstBet?.game?.eventName ||
-        `Экспресс из ${bet.bets.length} событий`;
+        t("wc.expressEvents", { n: bet.bets.length });
       const sport = firstBet?.sport || firstBet?.game?.sport;
       const league = firstBet?.leagueName || firstBet?.game?.leagueName;
       return [eventName, [sport, league].filter(Boolean).join(" • ")]
         .filter(Boolean)
         .join(" (") + (sport || league ? ")" : "");
     } else if (bet.game || bet.eventName) {
-      const eventName = bet.eventName || bet.game?.eventName || "Событие";
+      const eventName = bet.eventName || bet.game?.eventName || t("wc.eventDefault");
       const sport = bet.sport || bet.game?.sport;
       const league = bet.leagueName || bet.game?.leagueName;
       return [eventName, [sport, league].filter(Boolean).join(" • ")]
         .filter(Boolean)
         .join(" (") + (sport || league ? ")" : "");
     }
-    return "Событие";
+    return t("wc.eventDefault");
   };
 
   const getChoice = (bet: any): string => {
     if (bet.isWcBet) {
-      return bet.betInfo || "Ставка";
+      return bet.betInfo || t("wc.betLabel");
     }
     if (bet.bets?.length > 0) {
-      let choiceText = `Экспресс из ${bet.bets.length} событий`;
+      let choiceText = t("wc.expressEvents", { n: bet.bets.length });
       const score = bet.bets[0]?.score || bet.bets[0]?.game?.score;
       if (score && score !== "N/A" && score !== "0:0") {
-        choiceText += `Счёт: ${score}`;
+        choiceText += t("wc.scoreColon", { score });
       }
       return choiceText;
     } else if (bet.betInfo) {
@@ -169,18 +170,18 @@ export const BetsHistory: React.FC = () => {
 
       const score = bet.score || bet.game?.score;
       if (score && score !== "N/A" && score !== "0:0") {
-        choiceText += `Счёт: ${score}`;
+        choiceText += t("wc.scoreColon", { score });
       }
       return choiceText;
     }
-    return bet.betType || "Ставка";
+    return bet.betType || t("wc.betLabel");
   };
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
         <div className={styles.headerRow}>
-          <div className={styles.headerTitle}>История ставок</div>
+          <div className={styles.headerTitle}>{t("coupon.historyTitle")}</div>
         </div>
       </div>
 
@@ -189,32 +190,32 @@ export const BetsHistory: React.FC = () => {
           className={`${styles.tabItem} ${tab === "all" ? styles.active : ""}`}
           onClick={() => setTab("all")}
         >
-          Всё
+          {t("coupon.historyAll")}
         </button>
         <button
           className={`${styles.tabItem} ${tab === "express" ? styles.active : ""
             }`}
           onClick={() => setTab("express")}
         >
-          Экспресс
+          {t("wc.express")}
         </button>
         <button
           className={`${styles.tabItem} ${tab === "ordinar" ? styles.active : ""
             }`}
           onClick={() => setTab("ordinar")}
         >
-          Ординар
+          {t("coupon.ordinar")}
         </button>
       </div>
 
       <div className={styles.content}>
         {isLoading || wcLoading ? (
-          <div className={styles.loadingText}>Загрузка ставок...</div>
+          <div className={styles.loadingText}>{t("coupon.loadingBets")}</div>
         ) : !filteredBets.length ? (
           <div className={styles.emptyBlock}>
-            <div className={styles.emptyTitle}>Ничего нет</div>
+            <div className={styles.emptyTitle}>{t("coupon.emptyTitle")}</div>
             <div className={styles.emptyText}>
-              У вас пока нет ни одной ставки
+              {t("coupon.historyModalEmpty")}
             </div>
           </div>
         ) : (
@@ -241,10 +242,10 @@ export const BetsHistory: React.FC = () => {
                       {tab === "all" && (
                         <span className={styles.betType}>
                           {(bet as any).isWcBet
-                            ? "Ординар"
+                            ? t("coupon.ordinar")
                             : (bet as any).betVariant === "EXPRESS"
-                              ? "Экспресс"
-                              : "Ординар"}
+                              ? t("wc.express")
+                              : t("coupon.ordinar")}
                         </span>
                       )}
                     </div>
@@ -260,26 +261,26 @@ export const BetsHistory: React.FC = () => {
                                 : styles.statusReturn
                         }
                       >
-                        {getBetStatusName(bet.status, getGameStatus(bet))}
+                        {getBetStatusName(bet.status, getGameStatus(bet), t)}
                       </span>
                     </div>
                   </div>
 
                   <div className={styles.betContent}>
                     <div className={styles.betEvent}>{getEventName(bet)}</div>
-                    <div className={styles.betChoice}>{getBetStatusName(bet.status, getGameStatus(bet)) !== "Расчет" ? getChoice(bet) : 'ОКОНЧЕНА'}</div>
+                    <div className={styles.betChoice}>{getBetStatusName(bet.status, getGameStatus(bet), t) !== t("coupon.historySettling") ? getChoice(bet) : t("wc.finished").toUpperCase()}</div>
                   </div>
 
                   <div className={styles.betFooter}>
                     <div className={styles.betCoefficient}>
-                      <span className={styles.betCoefficientLabel}>Кф:</span>
+                      <span className={styles.betCoefficientLabel}>{t("coupon.coefficientShort")}</span>
                       <span className={styles.betCoefficientValue}>
                         {bet.cf || "N/A"}
                       </span>
                     </div>
                     <div className={styles.betAmount}>
                       <span className={styles.betAmountLabel}>
-                        {bet.status === "CASHOUT" ? "Продажа:" : "Сумма:"}
+                        {bet.status === "CASHOUT" ? t("wc.cashoutSelling")+":" : t("profile.bonusHistAmount")}
                       </span>
                       <span className={styles.betAmountValue}>
                         {bet.status === "CASHOUT" && bet.payout
@@ -332,21 +333,22 @@ function getGameStatus(bet: any): { isFinished: boolean; game: any } {
 
 function getBetStatusName(
   status: BetStatus,
-  gameStatus?: { isFinished: boolean; game: any }
+  gameStatus: { isFinished: boolean; game: any } | undefined,
+  t: (key: any, params?: Record<string, string | number>, t) => string,
 ): string {
   switch (status) {
     case "PENDING":
-      if (gameStatus?.isFinished) return "Расчет";
-      return "В игре";
+      if (gameStatus?.isFinished) return t("coupon.historySettling");
+      return t("coupon.historyPending");
     case "WIN":
-      return "Выигрыш";
+      return t("coupon.historyWin");
     case "LOSE":
-      return "Проигрыш";
+      return t("coupon.historyLose");
     case "RETURN":
-      return "Возврат";
+      return t("coupon.historyReturn");
     case "CASHOUT":
-      return "Продажа";
+      return t("coupon.historyCashout");
     default:
-      return "Неизвестно";
+      return t("wc.betLabel");
   }
 }

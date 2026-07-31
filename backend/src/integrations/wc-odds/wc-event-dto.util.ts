@@ -2,6 +2,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 import { getWcEventPhase, isWcBettingOpen } from './wc-betting.util';
 import { isOlimpbetPriorityLevel } from '../olimpbet-wc/olimpbet-priority.util';
+import { resolveOneWinEsportsTeamIcon } from '../onewin-wc/onewin-esports-logos.util';
 import {
   buildWcLineExtras,
   extractMainTotalLine,
@@ -11,6 +12,10 @@ import type { WcOddsEventDto } from './wc-odds.types';
 import { parseMatchState } from './wc-match-state.types';
 import { baseWcSlug, isBrokenWcSlug } from './wc-slug.util';
 import { wcLeagueNameFromSportKey, wcSportKeyToSlug } from './wc-sport.util';
+
+function isOneWinEventId(id: string): boolean {
+  return /^ow-\d+$/i.test(id);
+}
 
 export type WcEventRowForDto = {
   id: string;
@@ -64,6 +69,17 @@ export function buildWcOddsEventDto(event: WcEventRowForDto): WcOddsEventDto {
         }
       : undefined);
 
+  const oneWinIcons = isOneWinEventId(event.id)
+    ? {
+        awayTeamIcon: event.awayCompetitorId
+          ? resolveOneWinEsportsTeamIcon({ id: event.awayCompetitorId })
+          : null,
+        homeTeamIcon: event.homeCompetitorId
+          ? resolveOneWinEsportsTeamIcon({ id: event.homeCompetitorId })
+          : null,
+      }
+    : { awayTeamIcon: null as null | string, homeTeamIcon: null as null | string };
+
   return {
     id: event.id,
     slug,
@@ -86,9 +102,10 @@ export function buildWcOddsEventDto(event: WcEventRowForDto): WcOddsEventDto {
     bettingOpen,
     phase,
     oddsUpdatedAt: event.oddsUpdatedAt?.toISOString() ?? null,
-    homeTeamIcon: null,
-    awayTeamIcon: null,
+    homeTeamIcon: oneWinIcons.homeTeamIcon,
+    awayTeamIcon: oneWinIcons.awayTeamIcon,
     hasBroadcast: Boolean(event.hasBroadcast),
+    hasLiveTracker: Boolean(persistedResult?.hasLiveTracker),
     priorityLevel,
     isPriority: isOlimpbetPriorityLevel(priorityLevel),
     parsedScore: persistedParsedScore,

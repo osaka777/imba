@@ -6,10 +6,12 @@ import { DEFAULT_CYBER_SPORT } from "~/entities/cybersport/lib/cyberSportsList";
 
 const STORAGE_KEY = "imba-cyber-sport-filter";
 
+/** Empty string = all disciplines (home live hub). */
 function readStoredSport(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const value = localStorage.getItem(STORAGE_KEY);
+    if (value === "") return "";
     return value?.startsWith("esports.") ? value : null;
   } catch {
     return null;
@@ -17,16 +19,21 @@ function readStoredSport(): string | null {
 }
 
 export function useCyberSportPreference(initialSport?: string) {
-  const [sport, setSportState] = useState(initialSport ?? DEFAULT_CYBER_SPORT);
+  const [sport, setSportState] = useState(
+    initialSport !== undefined ? initialSport : DEFAULT_CYBER_SPORT,
+  );
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // URL (?sport=) имеет приоритет над localStorage — без flash при шаринге ссылок
-    if (initialSport) {
+    // URL / explicit initialSport wins; otherwise restore localStorage (incl. "").
+    if (initialSport !== undefined && initialSport !== "") {
       setSportState(initialSport);
+    } else if (initialSport === "") {
+      const stored = readStoredSport();
+      setSportState(stored ?? "");
     } else {
       const stored = readStoredSport();
-      if (stored) setSportState(stored);
+      if (stored != null) setSportState(stored);
     }
     setHydrated(true);
   }, [initialSport]);
@@ -42,7 +49,8 @@ export function useCyberSportPreference(initialSport?: string) {
 
   const syncUrlSport = useCallback((next: string) => {
     const url = new URL(window.location.href);
-    url.searchParams.set("sport", next);
+    if (next) url.searchParams.set("sport", next);
+    else url.searchParams.delete("sport");
     window.history.replaceState(null, "", url.toString());
   }, []);
 

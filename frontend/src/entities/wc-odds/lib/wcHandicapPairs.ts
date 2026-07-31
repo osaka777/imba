@@ -27,12 +27,12 @@ export function lineFromHandicapOutcome(outcome: WcMarketOutcome): number | null
 
 function isHomeHandicapOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey.startsWith("HOME_HCP_")) return true;
-  return /^Ф1\b/i.test(outcome.name.trim());
+  return /^Ф1\b/i.test((outcome.name ?? "").trim());
 }
 
 function isAwayHandicapOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey.startsWith("AWAY_HCP_")) return true;
-  return /^Ф2\b/i.test(outcome.name.trim());
+  return /^Ф2\b/i.test((outcome.name ?? "").trim());
 }
 
 function formatHandicapLine(value: number): string {
@@ -114,13 +114,14 @@ export function handicapDirectionLabel(outcome: WcMarketOutcome): string {
 }
 
 export function handicapSideLabel(outcome: WcMarketOutcome): string {
-  if (outcome.outcomeKey.startsWith("HOME_HCP_") || /^Ф1\b/i.test(outcome.name.trim())) {
+  const name = outcome.name ?? "";
+  if (outcome.outcomeKey.startsWith("HOME_HCP_") || /^Ф1\b/i.test(name.trim())) {
     return "Ф1";
   }
-  if (outcome.outcomeKey.startsWith("AWAY_HCP_") || /^Ф2\b/i.test(outcome.name.trim())) {
+  if (outcome.outcomeKey.startsWith("AWAY_HCP_") || /^Ф2\b/i.test(name.trim())) {
     return "Ф2";
   }
-  const match = outcome.name.match(/^(Ф[12])/i);
+  const match = name.match(/^(Ф[12])/i);
   if (match) {
     const side = match[1]!.toUpperCase().replace("Ф", "Ф");
     return side.startsWith("Ф") ? side : `Ф${side.slice(-1)}`;

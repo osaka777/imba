@@ -16,11 +16,8 @@ import {
   USDT_PROMO_GRADIENT_FROM,
   USDT_PROMO_GRADIENT_TO,
   USDT_PROMO_IMAGE,
-  USDT_PROMO_MODAL_SUBTITLE,
-  USDT_PROMO_MODAL_TITLE,
-  USDT_PROMO_STEP_DEPOSIT,
-  USDT_PROMO_STEP_REGISTER,
 } from './usdtPromoCopy';
+import { useLocale } from '~/shared/model/useLocale';
 import styles from './LuckyDriveModal.module.css';
 
 type WizardStep = 'intro' | 'deposit' | 'waiting' | 'success';
@@ -35,6 +32,7 @@ const gradientStyle = {
 };
 
 export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useLocale();
   const [step, setStep] = useState<WizardStep>('intro');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +112,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
 
   const goToDeposit = () => {
     if (!isAuthenticated) {
-      setError('Войдите или зарегистрируйтесь, чтобы продолжить');
+      setError(t('promo.authRequired'));
       return;
     }
     setError(null);
@@ -128,13 +126,13 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
 
   const stepSubtitle =
     step === 'intro'
-      ? USDT_PROMO_MODAL_SUBTITLE
+      ? t('promo.usdtModalSubtitle')
       : step === 'deposit'
-        ? `Минимум ${minAmount} USDT. Переводите только TRC-20 — бонус +10% начислится после зачисления.`
+        ? t('promo.usdtDepositHint', { min: minAmount })
         : step === 'waiting'
-          ? 'Ожидаем перевод USDT. Бонус +10% начислится автоматически после подтверждения в сети.'
+          ? t('promo.usdtWaitingSubtitle')
           : step === 'success'
-            ? 'Депозит зачислен. Бонус +10% добавлен на баланс.'
+            ? t('promo.usdtSuccessSubtitle')
             : null;
 
   const showAuth = authModalType !== 'closed';
@@ -142,7 +140,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={cn(styles.modalContent, showAuth && styles.modalContentAuth)} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label={t("promo.close")}>
           ×
         </button>
         <main className={styles.modalBody}>
@@ -150,14 +148,14 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
             <ModalInlineAuth
               variant={authModalType}
               onBack={() => setAuthModalType('closed')}
-              backLabel="← Назад к акции"
+              backLabel={t("promo.backToPromo")}
             />
           ) : (
             <div className={cn(styles.base, step === 'deposit' && styles.baseDeposit)} style={gradientStyle}>
               {step !== 'success' ? (
                 <nav
                   className={cn(styles.stepper, step === 'deposit' && styles.stepperCompact)}
-                  aria-label="Шаги"
+                  aria-label={t("promo.stepsAria")}
                 >
                   <div className={styles.stepperTrack} aria-hidden>
                     <div
@@ -165,7 +163,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                       style={{ width: pageIndex >= 1 ? '100%' : '0%' }}
                     />
                   </div>
-                  {['Ознакомление', 'Пополнение'].map((label, index) => (
+                  {[t('promo.stepIntro'), t('promo.stepDeposit')].map((label, index) => (
                     <div
                       key={label}
                       className={cn(
@@ -196,10 +194,10 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                     ) : null}
                     <h2 className={styles.title}>
                       {step === 'waiting'
-                        ? 'Ожидаем перевод USDT'
+                        ? t('promo.usdtWaitingTitle')
                         : step === 'success'
-                          ? 'Готово!'
-                          : USDT_PROMO_MODAL_TITLE}
+                          ? t('promo.readyExclaim')
+                          : t('promo.usdtModalTitle')}
                     </h2>
                     {stepSubtitle ? <p className={styles.subtitle}>{stepSubtitle}</p> : null}
                   </header>
@@ -213,12 +211,12 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                         setStep('intro');
                       }}
                     >
-                      ← Назад
+                      {t('promo.back')}
                     </button>
                     <div className={styles.depositHeadMain}>
-                      <h2 className={styles.depositTitle}>Пополнение USDT</h2>
+                      <h2 className={styles.depositTitle}>{t('promo.usdtDepositTitle')}</h2>
                       <div className={styles.depositMeta}>
-                        <span>от {minAmount} USDT</span>
+                        <span>{t('promo.fromAmount', { amount: `${minAmount} USDT` })}</span>
                         <span className={styles.depositMetaDot} aria-hidden>
                           ·
                         </span>
@@ -231,7 +229,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                 {error ? <div className={styles.errorMessage}>{error}</div> : null}
 
                 {isLoading ? (
-                  <div className={styles.loading}>Загрузка...</div>
+                  <div className={styles.loading}>{t('promo.loading')}</div>
                 ) : (
                   <div className={styles.actions}>
                     {step === 'intro' && (
@@ -240,11 +238,11 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                           <article className={cn(styles.task, isAuthenticated && styles.taskDone)}>
                             <span className={styles.taskNumber}>1</span>
                             <div className={styles.taskBody}>
-                              <p className={styles.taskText}>{USDT_PROMO_STEP_REGISTER}</p>
+                              <p className={styles.taskText}>{t('promo.usdtStepRegister')}</p>
                               {isAuthenticated ? (
                                 <span className={styles.taskDoneLabel}>
                                   <CheckIcon className={styles.taskDoneLabelCheckIcon} />
-                                  Выполнено
+                                  {t('promo.done')}
                                 </span>
                               ) : (
                                 <div className={styles.taskActions}>
@@ -253,14 +251,14 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                                     className={styles.taskBtn}
                                     onClick={() => setAuthModalType('login')}
                                   >
-                                    Войти
+                                    {t('promo.login')}
                                   </button>
                                   <button
                                     type="button"
                                     className={cn(styles.taskBtn, styles.taskBtnSecondary)}
                                     onClick={() => setAuthModalType('register')}
                                   >
-                                    Регистрация
+                                    {t('promo.register')}
                                   </button>
                                 </div>
                               )}
@@ -270,16 +268,16 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                             <span className={styles.taskNumber}>2</span>
                             <div className={styles.taskBody}>
                               <p className={styles.taskText}>
-                                {USDT_PROMO_STEP_DEPOSIT} — от {minAmount} USDT
+                                {t('promo.usdtStepDepositFrom', { step: t('promo.usdtStepDeposit'), min: minAmount })}
                               </p>
                               <p className={styles.taskHint}>
-                                На следующем шаге отправьте USDT на адрес кошелька TRC-20.
+                                {t('promo.usdtTaskHint')}
                               </p>
                             </div>
                           </article>
                         </div>
                         <button type="button" className={styles.button} onClick={goToDeposit}>
-                          Пополнить USDT
+                          {t('promo.usdtDepositCta')}
                         </button>
                       </>
                     )}
@@ -303,7 +301,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                           className={styles.linkBtn}
                           onClick={() => void refresh({ keepPage: true })}
                         >
-                          Проверить статус пополнения
+                          {t('promo.checkDepositStatus')}
                         </button>
                       </>
                     )}
@@ -312,7 +310,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                       <>
                         <div className={styles.waitingCard}>
                           <p className={styles.waitingHint}>
-                            Перевод обрабатывается автоматически. Обычно это занимает несколько минут.
+                            {t('promo.usdtWaitingAuto')}
                           </p>
                         </div>
                         <button
@@ -320,14 +318,14 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                           className={styles.button}
                           onClick={() => void refresh({ keepPage: true })}
                         >
-                          Обновить статус
+                          {t('promo.refreshStatus')}
                         </button>
                         <button
                           type="button"
                           className={styles.linkBtn}
                           onClick={() => setStep('deposit')}
                         >
-                          Вернуться к пополнению
+                          {t('promo.backToDeposit')}
                         </button>
                       </>
                     )}
@@ -336,7 +334,7 @@ export const UsdtPromoModal: React.FC<UsdtPromoModalProps> = ({ isOpen, onClose 
                       <>
                         <div className={styles.successIcon}>🎉</div>
                         <button type="button" className={styles.button} onClick={onClose}>
-                          Играть
+                          {t('promo.usdtPlay')}
                         </button>
                       </>
                     )}

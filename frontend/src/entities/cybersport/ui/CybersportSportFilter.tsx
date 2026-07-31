@@ -10,6 +10,7 @@ import {
 } from "~/entities/cybersport/lib/cyberDisciplineSort";
 import { CYBER_SPORTS, DEFAULT_CYBER_SPORT } from "~/entities/cybersport/lib/cyberSportsList";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CybersportSportFilter.module.css";
 
@@ -17,6 +18,11 @@ type CybersportSportFilterProps = {
   sport: string;
   onChange: (sport: string) => void;
 };
+
+function SportGlyph({ item }: { item: (typeof CYBER_SPORTS)[number] }) {
+  const { Icon, label } = item;
+  return <Icon aria-label={label} className={styles.icon} />;
+}
 
 function SportIconButton({
   item,
@@ -29,7 +35,7 @@ function SportIconButton({
   count: number;
   onClick: () => void;
 }) {
-  const { Icon, label } = item;
+  const { label } = item;
 
   return (
     <button
@@ -38,7 +44,7 @@ function SportIconButton({
       title={count > 0 ? `${label} · ${count}` : label}
       type="button"
     >
-      <Icon className={styles.icon} />
+      <SportGlyph item={item} />
       {active && <span className={styles.label}>{label}</span>}
       {!active && count > 0 ? <span className={styles.badge}>{count}</span> : null}
     </button>
@@ -46,6 +52,7 @@ function SportIconButton({
 }
 
 export function CybersportSportFilter({ sport, onChange }: CybersportSportFilterProps) {
+  const { t } = useLocale();
   const activeSport = sport || DEFAULT_CYBER_SPORT;
   const { data: counts = {} } = useCybersportCounts();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -56,7 +63,10 @@ export function CybersportSportFilter({ sport, onChange }: CybersportSportFilter
     () => pickQuickCyberSports(sorted, counts, activeSport),
     [sorted, counts, activeSport],
   );
-  const more = useMemo(() => cyberMoreSports(sorted, quick), [sorted, quick]);
+  const more = useMemo(
+    () => cyberMoreSports(sorted, quick, counts),
+    [sorted, quick, counts],
+  );
   const activeInMore = more.some((item) => item.name === activeSport);
 
   useEffect(() => {
@@ -98,8 +108,8 @@ export function CybersportSportFilter({ sport, onChange }: CybersportSportFilter
             >
               <span className={styles.moreLabel}>
                 {activeInMore
-                  ? (sorted.find((item) => item.name === activeSport)?.label ?? "Ещё")
-                  : "Ещё"}
+                  ? (sorted.find((item) => item.name === activeSport)?.label ?? t("common.more"))
+                  : t("common.more")}
               </span>
               <span className={styles.moreChevron} aria-hidden>
                 ▾
@@ -123,7 +133,7 @@ export function CybersportSportFilter({ sport, onChange }: CybersportSportFilter
                       role="option"
                       type="button"
                     >
-                      <item.Icon className={styles.moreIcon} />
+                      <SportGlyph item={item} />
                       <span className={styles.moreItemLabel}>{item.label}</span>
                       {count > 0 ? (
                         <span className={styles.moreItemCount}>{count}</span>

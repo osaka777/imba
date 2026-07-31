@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 
 import { LoadingScreen, Button } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 import { ArrowTopIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib/twMerge";
 import FireIcon from "~/shared/assets/icons/fire.svg?component";
@@ -42,6 +43,7 @@ type MatchProps = {
 };
 
 export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
+  const { t } = useLocale();
   const params = useParams();
   const eventId = params.eventId as string;
   
@@ -102,7 +104,7 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
           status: subGamesData.status
         });
       } catch (err) {
-        setErrorSubGames('Ошибка загрузки подыгр');
+        setErrorSubGames(t("common.subGamesLoadError"));
       } finally {
         setLoadingSubGames(false);
       }
@@ -131,7 +133,7 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
       setSelectedSubGameData(data);
     } catch (err) {
       console.error('❌ [Match] Error loading subgame data:', err);
-      setErrorSubGames('Ошибка загрузки данных подыгры');
+      setErrorSubGames(t("common.subGameDataLoadError"));
     }
   };
 
@@ -284,16 +286,16 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
   );
 
   // Определяем текст сообщения об отсутствии рынков
-  const noMarketsMessage = selectedSubGameData 
-    ? `пока нет доступных ставок`
-    : "Ставок больше нет";
+  const noMarketsMessage = selectedSubGameData
+    ? t("common.noBetsYet")
+    : t("common.noMoreBets");
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
   if (!data) {
-    return <div className={styles.err}>Данные не найдены</div>;
+    return <div className={styles.err}>{t("common.dataNotFound")}</div>;
   }
 
 
@@ -315,7 +317,7 @@ export const Match = ({ matchData, isSubGame = false }: MatchProps) => {
                 className={`${!activeSubGame ? styles.activeButton : ''}`}
                 onClick={() => handleSubGameSwitch(null)}
               >
-                Все
+                {t("common.all")}
               </button>
               {subGames.map((subGame) => (
                 <button

@@ -165,7 +165,7 @@ export const BetsHistoryModal = ({
                 return t("coupon.scoreLabel", { score });
             }
 
-            return createTitleForBet(bet.betInfo) || t("coupon.betLabel");
+            return createTitleForBet(bet.betInfo, undefined, t) || t("coupon.betLabel");
         }
         return bet.betType || t("coupon.betLabel");
     };

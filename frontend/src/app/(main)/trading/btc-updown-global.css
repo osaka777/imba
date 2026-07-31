@@ -1,0 +1,70 @@
+/* Match bookmaker home typography (shared/ui/styles/index.css). */
+html[data-btc-page] {
+  --btc-font:
+    "SF Pro Display",
+    "Open Sans",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Helvetica Neue",
+    sans-serif;
+  --btc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --btc-bg: transparent;
+  --btc-surface: transparent;
+  --btc-elevated: rgba(255, 255, 255, 0.04);
+  --btc-line: rgba(255, 255, 255, 0.1);
+  --btc-line-soft: rgba(255, 255, 255, 0.06);
+  --btc-text: #eaecef;
+  --btc-muted: #8b9bb4;
+  --btc-up: #0ecb81;
+  --btc-down: #f6465d;
+  --btc-warn: #f0b90b;
+}
+
+html[data-btc-page],
+html[data-btc-page] body,
+html[data-btc-page] #root {
+  font-family: var(--btc-font);
+}
+
+/* Hub: keep bookmaker Main grid (content | coupon 320px) */
+html[data-btc-page="hub"] main > div:nth-child(2) {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+/* Game: full-bleed chart + internal ticket (hide sports coupon column) */
+html[data-btc-page="game"] main {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "nav"
+    "content" !important;
+}
+
+html[data-btc-page="game"] main > *:nth-child(3) {
+  display: none !important;
+}
+
+html[data-btc-page="game"] main > div:nth-child(2) {
+  max-width: 100%;
+  padding-inline: 0;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@media (max-width: 640px) {
+  html[data-btc-page] main > div:nth-child(2) {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* Events detail: game mode strips inline padding — restore inside our shell */
+html[data-btc-page="game"] [data-events-detail] {
+  padding-inline: 0;
+}

@@ -1,0 +1,13 @@
+{
+  "colTime": "Hora",
+  "colTeams": "Equipos",
+  "topEvents": "Populares ahora",
+  "topEventsLive": "Actividad de jugadores",
+  "topEventsSubtitle": "Partidos en tendencia y la elección del público en tiempo real",
+  "topEventsLegend": "Un porcentaje más alto indica una selección más popular",
+  "emptyLive": "No hay eventos Live para {sport}",
+  "emptyLine": "No hay eventos de línea para {sport}",
+  "emptyHint": "Prueba otro deporte o abre la sección completa",
+  "viewAllLive": "Ver todo Live",
+  "goToLine": "Ir a la línea"
+}

@@ -24,7 +24,7 @@ import {
 import { getLegacyOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDisplay";
 import type { WcHistoryExpressBet } from "~/entities/wc-odds/lib/mapWcExpressForHistory";
 import type { WcHistoryOrdinarBet } from "~/entities/wc-odds/lib/mapWcBetsForHistory";
-import { gamesList } from "~/entities/game";
+import { gamesList, getSportLabel } from "~/entities/game";
 import { components } from "~/shared/api";
 import type { MessageKey } from "~/shared/i18n/messages";
 import { useLocale } from "~/shared/model/useLocale";
@@ -72,8 +72,8 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
     (bet as WcHistoryOrdinarBet).isWcBet && (bet as WcHistoryOrdinarBet).status === "CASHOUT"
       ? Number((bet as WcHistoryOrdinarBet).payout)
       : undefined;
-  const footer = getHistoryFooter(status, amount, cf, currencyCode, payoutOverride);
-  const ribbon = getHistoryRibbon(status, gameStatus);
+  const footer = getHistoryFooter(status, amount, cf, currencyCode, t, payoutOverride);
+  const ribbon = getHistoryRibbon(status, gameStatus, t);
   const ticketId = formatBetDisplayId(
     (bet as WcHistoryOrdinarBet).isWcBet
       ? (bet as WcHistoryOrdinarBet).wcBetId
@@ -171,7 +171,7 @@ function OrdinarBetHistoryCard({ bet }: { bet: BetDto | WcHistoryOrdinarBet }) {
         scoreMain={scoreMain}
         sportIcon={SportIcon}
         stakeLabel={formatCouponMoney(amount, currencyCode)}
-        teamsLabel={getTeamsFromApiResponse(legacyBet as Record<string, unknown>)}
+        teamsLabel={getTeamsFromApiResponse(legacyBet as Record<string, unknown>, undefined, t)}
         ticketId={ticketId}
         winLabel={footer.footerRightValue}
       />
@@ -188,8 +188,8 @@ function WcExpressBetHistoryCard({ bet }: { bet: WcHistoryExpressBet }) {
   const amount = Number(bet.amount);
   const cf = Number(bet.cf);
   const currencyCode = bet.currencyCode;
-  const footer = getHistoryFooter(status, amount, cf, currencyCode);
-  const ribbon = getHistoryRibbon(status, gameStatus);
+  const footer = getHistoryFooter(status, amount, cf, currencyCode, t);
+  const ribbon = getHistoryRibbon(status, gameStatus, t);
   const ticketId = formatBetDisplayId(bet.wcExpressId);
   const isLive = gameStatus.isLive;
   const firstHref = legs[0]?.wcGameHref ?? "#";
@@ -230,10 +230,9 @@ function WcExpressBetHistoryCard({ bet }: { bet: WcHistoryExpressBet }) {
         <div className={openStyles.openBetExpressBlock}>
           {legs.map((leg) => {
             const href = leg.wcGameHref ?? "#";
-            const sportLabel =
-              leg.sport && gamesList[leg.sport]
-                ? gamesList[leg.sport].label
-                : leg.sport;
+            const sportLabel = leg.sport
+              ? getSportLabel(leg.sport, t)
+              : undefined;
 
             return (
               <div
@@ -270,8 +269,8 @@ function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
   const amount = Number(bet.amount);
   const cf = Number(bet.cf);
   const currencyCode = String(bet.currencyCode ?? "KZT");
-  const footer = getHistoryFooter(status, amount, cf, currencyCode);
-  const ribbon = getHistoryRibbon(status, gameStatus);
+  const footer = getHistoryFooter(status, amount, cf, currencyCode, t);
+  const ribbon = getHistoryRibbon(status, gameStatus, t);
   const ticketId = formatBetDisplayId(Number(bet.id));
   const isLive = legs.some((leg) =>
     isLegacyGameLive(leg.game as Record<string, unknown> | undefined),
@@ -322,10 +321,9 @@ function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
             const { detail: scoreDetail } = getLegacyOpenBetScoreDisplay(
               game as Parameters<typeof getLegacyOpenBetScoreDisplay>[0],
             );
-            const sportLabel =
-              game?.sport && gamesList[game.sport as string]
-                ? gamesList[game.sport as string].label
-                : (game?.sport as string);
+            const sportLabel = game?.sport
+              ? getSportLabel(String(game.sport), t)
+              : undefined;
 
             return (
               <div
@@ -346,6 +344,8 @@ function ExpressBetHistoryCard({ bet }: { bet: ExpressBetDto }) {
                   sportLabel={sportLabel}
                   teamsLabel={getTeamsFromApiResponse(
                     leg as Record<string, unknown>,
+                    undefined,
+                    t,
                   )}
                 />
               </div>

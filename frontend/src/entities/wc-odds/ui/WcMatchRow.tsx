@@ -49,7 +49,7 @@ export const WcMatchRow = memo(function WcMatchRow({
 }: WcMatchRowProps) {
   const router = useRouter();
   const broadcast = useWcBroadcast();
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const gameHref = buildWcGameHref(event);
   const isLive = event.phase === "live";
   const isTwoWay = sportIsTwoWay(event.sport);
@@ -142,7 +142,7 @@ export const WcMatchRow = memo(function WcMatchRow({
                 <>
                   {event.hasBroadcast && (
                     <button
-                      aria-label="Открыть видеотрансляцию"
+                      aria-label={t("common.openBroadcast")}
                       className={compactStyles.teamBroadcastBtn}
                       onClick={openBroadcast}
                       type="button"

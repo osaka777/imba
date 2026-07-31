@@ -1,8 +1,7 @@
 export const WIMBLEDON_PROMO_IMAGE = "/wiem.png";
 
-export const WIMBLEDON_PROMO_TITLE = "Уимблдон";
-export const WIMBLEDON_PROMO_SUBTITLE = "Финал · Синнер — Зверев";
-export const WIMBLEDON_PROMO_HIGHLIGHT = "Wimbledon";
+export const WIMBLEDON_PROMO_TITLE = "US Open";
+export const WIMBLEDON_PROMO_HIGHLIGHT = "US Open";
 
 export const WIMBLEDON_PROMO_HREF = "/game/sinner-yannik-vs-zverev-aleksandr-12-07";
 

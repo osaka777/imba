@@ -1,108 +1,93 @@
 "use client"
 
-interface StatisticsData {
-  totalDeposits: number
-  totalWithdrawals: number
-  totalBonuses: number
-  totalWins: number
-  totalLosses: number
-  totalGames: number
-  activePartners: number
-  totalRevenue: number
-}
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Coins,
+  Gamepad2,
+  Gift,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import { StatisticsData } from '@/shared/api/statistics'
+import { formatMoney, formatNumber } from '@/shared/lib/format'
+import { KpiCard } from '@/shared/ui/KpiCard'
 
 interface StatisticsCardsProps {
   statistics: StatisticsData | null
 }
 
 export function StatisticsCards({ statistics }: StatisticsCardsProps) {
+  const currency = statistics?.primaryCurrency || statistics?.byCurrency?.[0]?.currency || null
+
   const cards = [
     {
-      title: 'Общие зачисления',
-      value: statistics?.totalDeposits || 0,
-      format: 'currency',
-      color: 'bg-green-500',
-      icon: '💰'
+      label: 'Зачисления',
+      value: formatMoney(statistics?.totalDeposits || 0, currency),
+      hint: currency || undefined,
+      icon: ArrowUpCircle,
+      accent: 'emerald' as const,
     },
     {
-      title: 'Общие выплаты',
-      value: statistics?.totalWithdrawals || 0,
-      format: 'currency',
-      color: 'bg-red-500',
-      icon: '💸'
+      label: 'Выплаты',
+      value: formatMoney(statistics?.totalWithdrawals || 0, currency),
+      hint: currency || undefined,
+      icon: ArrowDownCircle,
+      accent: 'rose' as const,
     },
     {
-      title: 'Выплачено бонусов',
-      value: statistics?.totalBonuses || 0,
-      format: 'currency',
-      color: 'bg-blue-500',
-      icon: '🎁'
+      label: 'Бонусы',
+      value: formatMoney(statistics?.totalBonuses || 0, currency),
+      hint: currency || undefined,
+      icon: Gift,
+      accent: 'sky' as const,
     },
     {
-      title: 'Общие выигрыши',
-      value: statistics?.totalWins || 0,
-      format: 'currency',
-      color: 'bg-emerald-500',
-      icon: '🏆'
+      label: 'Выигрыши',
+      value: formatMoney(statistics?.totalWins || 0, currency),
+      hint: currency || undefined,
+      icon: TrendingUp,
+      accent: 'emerald' as const,
     },
     {
-      title: 'Общие проигрыши',
-      value: statistics?.totalLosses || 0,
-      format: 'currency',
-      color: 'bg-orange-500',
-      icon: '📉'
+      label: 'Проигрыши',
+      value: formatMoney(statistics?.totalLosses || 0, currency),
+      hint: currency || undefined,
+      icon: Coins,
+      accent: 'amber' as const,
     },
     {
-      title: 'Всего игр',
-      value: statistics?.totalGames || 0,
-      format: 'number',
-      color: 'bg-purple-500',
-      icon: '🎮'
+      label: 'Игры / ставки',
+      value: formatNumber(statistics?.totalGames || 0),
+      icon: Gamepad2,
+      accent: 'violet' as const,
     },
     {
-      title: 'Активные партнеры',
-      value: statistics?.activePartners || 0,
-      format: 'number',
-      color: 'bg-indigo-500',
-      icon: '🤝'
+      label: 'Партнёры',
+      value: formatNumber(statistics?.activePartners || 0),
+      icon: Users,
+      accent: 'slate' as const,
     },
     {
-      title: 'Общая прибыль',
-      value: statistics?.totalRevenue || 0,
-      format: 'currency',
-      color: 'bg-yellow-500',
-      icon: '📊'
-    }
+      label: 'Прибыль',
+      value: formatMoney(statistics?.totalRevenue || 0, currency),
+      hint: currency ? `Основная валюта: ${currency}` : 'Нет данных',
+      icon: TrendingUp,
+      accent: 'sky' as const,
+    },
   ]
 
-  const formatValue = (value: number, format: string) => {
-    if (format === 'currency') {
-      return new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value)
-    }
-    return new Intl.NumberFormat('ru-RU').format(value)
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {cards.map((card, index) => (
-        <div key={index} className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">{card.title}</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {formatValue(card.value, card.format)}
-              </p>
-            </div>
-            <div className={`${card.color} p-3 rounded-full text-white text-xl`}>
-              {card.icon}
-            </div>
-          </div>
-        </div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <KpiCard
+          key={card.label}
+          label={card.label}
+          value={card.value}
+          hint={card.hint}
+          icon={card.icon}
+          accent={card.accent}
+        />
       ))}
     </div>
   )

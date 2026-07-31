@@ -18,7 +18,7 @@ const SET_RE = /(\d+)\s*[-–—]?\s*[йи]\s+сет/i;
 const HALF_RE = /(\d+)\s*[-–—]?\s*[йи]\s+тайм/i;
 const QUARTER_RE = /(\d+)\s*[-–—]?\s*[яи]\s+четверть/i;
 const GAME_RE = /(\d+)\s*[-–—]?\s*[йи]\s+гейм/i;
-const MAP_RE = /(\d+)\s*[-–—]?\s*[яи]\s+карт[аы]?/i;
+const MAP_RE = /(\d+)\s*[-–—]?\s*[йяи]\s+карт[аыеу]?/i;
 const ROUND_RE = /(\d+)\s*[-–—]?\s*[йи]\s+раунд/i;
 
 function formatSet(n: string): string {
@@ -55,11 +55,13 @@ function stripTrailingScope(name: string): string {
   s = s.replace(/\s*[,·•]\s*\d+\s*[-–—]?\s*[йи]\s+сет.*$/i, "");
   s = s.replace(/\s*[,·•]\s*\d+\s*[-–—]?\s*[йи]\s+тайм.*$/i, "");
   s = s.replace(/\s*[,·•]\s*\d+\s*[-–—]?\s*[яи]\s+четверть.*$/i, "");
-  s = s.replace(/\s*[,·•]\s*\d+\s*[-–—]?\s*[яи]\s+карт[аы]?.*$/i, "");
+  s = s.replace(/\s*[,·•]\s*\d+\s*[-–—]?\s*[йяи]\s+карт[аыеу]?.*$/i, "");
+  s = s.replace(/\s+в\s+\d+\s*[-–—]?\s*[йяи]\s+карт[аыеу]?.*$/i, "");
   s = s.replace(/\s+\d+\s*[-–—]?\s*[йи]\s+сет\s*$/i, "");
   s = s.replace(/\s+\d+\s*[-–—]?\s*[йи]\s+тайм\s*$/i, "");
   s = s.replace(/\s+\d+\s*[-–—]?\s*[яи]\s+четверть\s*$/i, "");
   s = s.replace(/\s+\d+\s*[-–—]?\s*[йи]\s+гейм\s*$/i, "");
+  s = s.replace(/\s+\d+\s*[-–—]?\s*[йяи]\s+карт[аыеу]?\s*$/i, "");
   return normalizeSpaces(s.replace(/^[,·•]\s*|[,·•]\s*$/g, ""));
 }
 
@@ -107,6 +109,9 @@ function canonicalMarketTitle(name: string): string {
 
   if (/^score_set$/i.test(trimmed) || /^сч[её]т\s+в\s+гейме$/i.test(trimmed)) return "Счёт в гейме";
   if (/^score_first_x_games/i.test(trimmed)) return "Счёт первых геймов";
+  if (/^score_map$/i.test(trimmed) || /^сч[её]т\s+в\s+\d/i.test(trimmed) || /^сч[её]т\s+на\s+карт/i.test(trimmed)) {
+    return "Точный счёт";
+  }
   if (/^score$/i.test(trimmed) || /^сч[её]т$/i.test(trimmed)) return "Точный счёт";
   if (/^следующ.*очк.*гейм/i.test(trimmed)) return "Следующее очко";
   if (/^next_points_game$/i.test(trimmed)) return "Следующее очко";
@@ -144,7 +149,9 @@ function canonicalMarketTitle(name: string): string {
     return canonicalMarketTitle(stripTrailingScope(trimmed));
   }
 
-  return stripTrailingScope(trimmed);
+  const stripped = stripTrailingScope(trimmed);
+  if (/^сч[её]т$/i.test(stripped) || /^score$/i.test(stripped)) return "Точный счёт";
+  return stripped;
 }
 
 function buildScopedDisplay(display: string, tabScope: string | null, game?: string): string {

@@ -14,7 +14,9 @@ import {
   CYBER_DISCIPLINE_LIST,
   cyberDisciplineHubHref,
 } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
+import { CyberSportGlyph } from "~/entities/cybersport/ui/CyberSportGlyph";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CybersportDisciplineCards.module.css";
 
@@ -27,7 +29,7 @@ function DisciplineCard({
   count?: number;
   inactive?: boolean;
 }) {
-  const { Icon, label, slug } = item;
+  const { label, slug, apiSport } = item;
 
   return (
     <Link
@@ -36,7 +38,12 @@ function DisciplineCard({
       title={inactive ? label : count ? `${label} · ${count}` : label}
     >
       <div className={styles.cardIconWrap}>
-        <Icon className={styles.cardIcon} />
+        <CyberSportGlyph
+          apiSport={apiSport}
+          className={styles.cardIcon}
+          label={label}
+          size={22}
+        />
         {!inactive && count != null && count > 0 ? (
           <span className={styles.cardCount}>{count}</span>
         ) : null}
@@ -47,6 +54,7 @@ function DisciplineCard({
 }
 
 export function CybersportDisciplineCards() {
+  const { t } = useLocale();
   const { data: counts = {} } = useCybersportCounts();
   const [showAll, setShowAll] = useState(false);
 
@@ -63,11 +71,11 @@ export function CybersportDisciplineCards() {
   const activeTotal = countActiveCyberDisciplines(counts);
 
   return (
-    <section aria-label="Дисциплины киберспорта" className={styles.section}>
+    <section aria-label={t("cyber.disciplinesAria")} className={styles.section}>
       <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Дисциплины</h2>
+        <h2 className={styles.sectionTitle}>{t("cyber.disciplines")}</h2>
         {activeTotal > 0 ? (
-          <span className={styles.sectionMeta}>{activeTotal} в линии и live</span>
+          <span className={styles.sectionMeta}>{t("cyber.inLineAndLive", { n: activeTotal })}</span>
         ) : null}
       </div>
 
@@ -82,7 +90,7 @@ export function CybersportDisciplineCards() {
           ))}
         </nav>
       ) : (
-        <p className={styles.emptyHint}>Сейчас нет матчей — загляните позже</p>
+        <p className={styles.emptyHint}>{t("cyber.noMatchesNow")}</p>
       )}
 
       {(active.length > CYBER_CARD_DEFAULT_LIMIT || inactive.length > 0) && (
@@ -93,7 +101,7 @@ export function CybersportDisciplineCards() {
               onClick={() => setShowAll(true)}
               type="button"
             >
-              Ещё {active.length - CYBER_CARD_DEFAULT_LIMIT} с матчами
+              {t("cyber.moreWithMatches", { n: active.length - CYBER_CARD_DEFAULT_LIMIT })}
             </button>
           ) : null}
 
@@ -103,7 +111,7 @@ export function CybersportDisciplineCards() {
               onClick={() => setShowAll(true)}
               type="button"
             >
-              Все дисциплины ({CYBER_DISCIPLINE_LIST.length})
+              {t("cyber.allDisciplinesCount", { n: CYBER_DISCIPLINE_LIST.length })}
             </button>
           ) : null}
 
@@ -123,7 +131,7 @@ export function CybersportDisciplineCards() {
 
               {inactive.length > 0 ? (
                 <>
-                  <p className={styles.inactiveLabel}>Без матчей сейчас</p>
+                  <p className={styles.inactiveLabel}>{t("cyber.noMatchesNowShort")}</p>
                   <nav className={cn(styles.cards, styles.cards_muted)}>
                     {inactive.map((item) => (
                       <DisciplineCard inactive item={item} key={item.slug} />
@@ -137,7 +145,7 @@ export function CybersportDisciplineCards() {
                 onClick={() => setShowAll(false)}
                 type="button"
               >
-                Свернуть
+                {t("cyber.collapse")}
               </button>
             </>
           ) : null}

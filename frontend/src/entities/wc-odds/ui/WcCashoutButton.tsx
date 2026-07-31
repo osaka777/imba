@@ -12,6 +12,7 @@ import {
   type WcCashoutQuote,
 } from "~/entities/wc-odds/api/client";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "~/entities/bet/ui/Coupon/OpenTab.module.css";
 
@@ -32,6 +33,7 @@ function amountsDiffer(a: string, b: string): boolean {
 }
 
 export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonProps) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [snapshotQuote, setSnapshotQuote] = useState<AvailableQuote | null>(null);
@@ -51,16 +53,19 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
     },
     onSuccess: (result) => {
       closeConfirm();
-      toast.success(`Ставка продана: +${formatCouponMoney(result.amount, bet.currencyCode)}`, {
-        autoClose: 5000,
-      });
+      toast.success(
+        t("wc.cashoutSold", {
+          amount: formatCouponMoney(result.amount, bet.currencyCode),
+        }),
+        { autoClose: 5000 },
+      );
       void queryClient.invalidateQueries({ queryKey: ["wc-bets"] });
       void queryClient.invalidateQueries({ queryKey: ["wc-cashout-quotes"] });
       void queryClient.invalidateQueries({ queryKey: ["user"] });
       void queryClient.invalidateQueries({ queryKey: ["bets", "open"] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Не удалось продать ставку");
+      toast.error(error.message || t("wc.cashoutFailed"));
       void queryClient.invalidateQueries({ queryKey: ["wc-cashout-quotes"] });
     },
   });
@@ -77,7 +82,7 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
     return (
       <div className={styles.cashoutBlock}>
         <button className={cn(styles.cashoutBtn, styles.cashoutBtnLoading)} disabled type="button">
-          <span className={styles.cashoutBtnLabel}>Продажа</span>
+          <span className={styles.cashoutBtnLabel}>{t("wc.cashoutSelling")}</span>
           <span className={styles.cashoutBtnAmount}>…</span>
         </button>
       </div>
@@ -108,10 +113,10 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
           <p className={styles.cashoutConfirmLead}>
             {liveQuote && !liveQuote.available
               ? liveQuote.reason
-              : "Котировка недоступна"}
+              : t("wc.cashoutUnavailable")}
           </p>
           <button className={styles.cashoutGhostBtn} onClick={closeConfirm} type="button">
-            Закрыть
+            {t("wc.cashoutClose")}
           </button>
         </div>
       );
@@ -123,11 +128,14 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
       <div className={styles.cashoutBlock}>
         <p className={cn(styles.cashoutConfirmLead, priceChanged && styles.cashoutConfirmLeadWarn)}>
           {priceChanged
-            ? "Сумма изменилась — подтвердите продажу"
-            : `Продать за ${confirmAmountLabel}?`}
+            ? t("wc.cashoutPriceChanged")
+            : t("wc.cashoutConfirmAmount", { amount: confirmAmountLabel })}
         </p>
         <p className={styles.cashoutConfirmMeta}>
-          Кф. {liveQuote.currentOdds} · при приёме {liveQuote.placedOdds}
+          {t("wc.cashoutOddsLine", {
+            current: liveQuote.currentOdds,
+            placed: liveQuote.placedOdds,
+          })}
         </p>
         <div className={styles.cashoutConfirmRow}>
           <button
@@ -136,7 +144,7 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
             onClick={closeConfirm}
             type="button"
           >
-            Отмена
+            {t("wc.cashoutCancel")}
           </button>
           <button
             className={cn(styles.cashoutBtn, styles.cashoutBtnConfirm)}
@@ -145,7 +153,7 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
             type="button"
           >
             <span className={styles.cashoutBtnLabel}>
-              {selling ? "Обработка…" : "Подтвердить"}
+              {selling ? t("wc.cashoutProcessing") : t("wc.cashoutConfirm")}
             </span>
             <span className={styles.cashoutBtnAmount}>{confirmAmountLabel}</span>
           </button>
@@ -163,8 +171,10 @@ export function WcCashoutButton({ bet, quote, quotesLoading }: WcCashoutButtonPr
         type="button"
       >
         <span className={styles.cashoutBtnText}>
-          <span className={styles.cashoutBtnLabel}>Продать</span>
-          <span className={styles.cashoutBtnHint}>кф. {quote.currentOdds}</span>
+          <span className={styles.cashoutBtnLabel}>{t("wc.cashoutSell")}</span>
+          <span className={styles.cashoutBtnHint}>
+            {t("wc.cashoutOddsHint", { odds: quote.currentOdds })}
+          </span>
         </span>
         <span className={styles.cashoutBtnAmount}>{amountLabel}</span>
       </button>

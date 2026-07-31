@@ -3,6 +3,13 @@ import type { AppLocale } from "./locale";
 const INTL_LOCALE: Record<AppLocale, string> = {
   ru: "ru-RU",
   en: "en-US",
+  kk: "kk-KZ",
+  uz: "uz-UZ",
+  tr: "tr-TR",
+  uk: "uk-UA",
+  az: "az-AZ",
+  es: "es-ES",
+  pt: "pt-BR",
 };
 
 export function toIntlLocale(locale: AppLocale): string {

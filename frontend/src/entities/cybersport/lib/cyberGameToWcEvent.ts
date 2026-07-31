@@ -1,9 +1,11 @@
 import type { CyberGame } from "~/entities/cybersport/api/client";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import type { WcEvent, WcEventDetail } from "~/entities/wc-odds/api/client";
 import { extractCyberWinOdds } from "~/entities/wc-odds/ui/topEventsUtils";
 
 export type CyberWcBettingMeta = {
   wcBetting?: boolean;
+  wcBettingOpen?: boolean;
   wcEventRef?: string;
   wcOddsHome?: number | null;
   wcOddsAway?: number | null;
@@ -14,6 +16,10 @@ export type CyberWcBettingMeta = {
   hasBroadcast?: boolean;
   commenceTime?: string;
   marketsCount?: number;
+  oneWinBroadcastUrl?: string;
+  streamProvider?: string;
+  kickChannel?: string;
+  twitchChannel?: string;
 };
 
 export function readCyberWcMeta(game: CyberGame): CyberWcBettingMeta {
@@ -47,11 +53,7 @@ export function cyberGameToWcEventDetail(game: CyberGame): WcEventDetail {
   const fallbackOdds = extractCyberWinOdds(game);
   const phase = cyberGamePhase(game);
   const completed = phase === "finished";
-  const hasBroadcast = Boolean(
-    meta.wcHasBroadcast
-    || meta.hasBroadcast
-    || (game.meta as { hasBroadcast?: boolean } | undefined)?.hasBroadcast,
-  );
+  const hasBroadcast = cyberGameHasVideo(game);
 
   return {
     id: wcRef,
@@ -76,7 +78,7 @@ export function cyberGameToWcEventDetail(game: CyberGame): WcEventDetail {
     awayScore: game.parsedScore?.currentScore?.[1] != null
       ? Number(game.parsedScore.currentScore[1])
       : null,
-    bettingOpen: !completed,
+    bettingOpen: !completed && (meta.wcBettingOpen !== false),
     phase,
     oddsUpdatedAt: null,
     marketsCount: meta.marketsCount ?? 1,
@@ -95,30 +97,22 @@ export function cyberGameToWcEventDetail(game: CyberGame): WcEventDetail {
   };
 }
 
-export function cyberGameToWcEvent(game: CyberGame): WcEvent | null {
+/** Always maps a cyber game for home/list UI (even without WC 1X2). */
+export function cyberGameToHomeWcEvent(game: CyberGame): WcEvent {
   const meta = readCyberWcMeta(game);
-  if (!cyberGameSupportsWcBetting(game)) return null;
-
   const fallbackOdds = extractCyberWinOdds(game);
   const oddsHome = meta.wcOddsHome ?? fallbackOdds.home;
   const oddsAway = meta.wcOddsAway ?? fallbackOdds.away;
   const oddsDraw = meta.wcOddsDraw ?? fallbackOdds.draw;
   const commenceTime = meta.wcCommenceTime ?? meta.commenceTime ?? new Date().toISOString();
-  const isLive =
-    game.status === "IN_PROGRESS"
-    || game.status === "LIVE"
-    || game.status === "IN_PLAY"
-    || game.status === "STARTING";
-  const completed = meta.wcCompleted ?? (game.status === "FINISHED" || game.status === "CANCELED");
-  const hasBroadcast = Boolean(
-    meta.wcHasBroadcast
-    || meta.hasBroadcast
-    || (game.meta as { hasBroadcast?: boolean } | undefined)?.hasBroadcast,
-  );
+  const phase = cyberGamePhase(game);
+  const completed = phase === "finished";
+  const hasBroadcast = cyberGameHasVideo(game);
+  const ref = meta.wcEventRef ?? game.eventId;
 
   return {
-    id: meta.wcEventRef,
-    slug: meta.wcEventRef,
+    id: ref,
+    slug: ref,
     sport: game.sport,
     leagueName: game.leagueName ?? "",
     tournamentId: null,
@@ -139,8 +133,11 @@ export function cyberGameToWcEvent(game: CyberGame): WcEvent | null {
     awayScore: game.parsedScore?.currentScore?.[1] != null
       ? Number(game.parsedScore.currentScore[1])
       : null,
-    bettingOpen: !completed,
-    phase: completed ? "finished" : isLive ? "live" : "prematch",
+    bettingOpen:
+      !completed
+      && cyberGameSupportsWcBetting(game)
+      && meta.wcBettingOpen !== false,
+    phase,
     oddsUpdatedAt: null,
     marketsCount: meta.marketsCount ?? 1,
     odds1X: null,
@@ -155,4 +152,13 @@ export function cyberGameToWcEvent(game: CyberGame): WcEvent | null {
     isPriority: (game.priority ?? 0) > 0,
     feedStatus: null,
   };
+}
+
+export function cyberGameHomeHref(game: CyberGame): string {
+  return `/cybersport/game/${encodeURIComponent(String(game.eventId))}`;
+}
+
+export function cyberGameToWcEvent(game: CyberGame): WcEvent | null {
+  if (!cyberGameSupportsWcBetting(game)) return null;
+  return cyberGameToHomeWcEvent(game);
 }

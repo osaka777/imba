@@ -377,7 +377,7 @@ export function needsGroupSubLabel(
 
   if (/^40:40$/i.test(categoryName.trim())) return true;
 
-  if (group.outcomes.every((outcome) => /^\d+:\d+$/.test(outcome.name.trim()))) {
+  if (group.outcomes.every((outcome) => /^\d+:\d+$/.test((outcome.name ?? "").trim()))) {
     const sub = formatGroupSubLabel(group, categoryName);
     if (sub && normalizeLabel(sub) !== normalizeLabel(category)) return true;
     if (/SCORE_SET|SCORE_WINNER|EXACT_POINT/i.test(group.marketKey)) return true;
@@ -386,7 +386,7 @@ export function needsGroupSubLabel(
   if (!/^display_/i.test(group.marketKey) || group.outcomes.length !== 2) return false;
 
   const shortNames = group.outcomes.every((outcome) =>
-    /^(П1|П2|Да|Нет|X|1X|X2|12)$/i.test(outcome.name.trim()),
+    /^(П1|П2|Да|Нет|X|1X|X2|12)$/i.test((outcome.name ?? "").trim()),
   );
 
   return shortNames && !category.includes(label);

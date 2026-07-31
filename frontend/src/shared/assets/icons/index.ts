@@ -1,4 +1,3 @@
-import AaioLogoIcon from "./aaioLogo.svg?component";
 import AccessIcon from "./access.svg?component";
 import AndroidIcon from "./android.svg?component";
 import AppleIcon from "./apple.svg?component";
@@ -97,7 +96,6 @@ import WebmoneyIcon from "./webmoney.svg?component";
 import WtaIcon from "./wta.svg?component";
 
 export {
-  AaioLogoIcon,
   AccessIcon,
   AndroidIcon,
   AppleIcon,

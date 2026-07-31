@@ -12,8 +12,8 @@ import {
   HistoryIcon,
   HomeIcon,
   LiveIcon,
-  PresentIcon,
   SoccerBallIcon,
+  StatsIcon,
 } from "~/shared/assets";
 import { Button } from "~/shared/ui";
 
@@ -30,7 +30,7 @@ const tabList: {
   { Icon: SoccerBallIcon, href: "/line", labelKey: "nav.line" },
   { Icon: LiveIcon, href: "/live", labelKey: "nav.live", live: true },
   { Icon: CSIcon, href: "/cybersport", labelKey: "nav.cyberShort", showNewBadge: true },
-  { Icon: PresentIcon, href: "#", labelKey: "nav.freeMoney" },
+  { Icon: StatsIcon, href: "/markets", labelKey: "nav.markets", showNewBadge: true },
   { Icon: HistoryIcon, href: "/profile/betHistory", labelKey: "nav.history" },
 ];
 
@@ -45,7 +45,7 @@ const tabListNoAuth: {
   { Icon: SoccerBallIcon, href: "/line", labelKey: "nav.line" },
   { Icon: LiveIcon, href: "/live", labelKey: "nav.live", live: true },
   { Icon: CSIcon, href: "/cybersport", labelKey: "nav.cyberShort", showNewBadge: true },
-  { Icon: PresentIcon, href: "#", labelKey: "nav.freeMoney" },
+  { Icon: StatsIcon, href: "/markets", labelKey: "nav.markets", showNewBadge: true },
 ];
 
 export const Content = ({ isAuth }: { isAuth: boolean }) => {

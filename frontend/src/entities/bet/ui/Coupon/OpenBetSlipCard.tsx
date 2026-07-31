@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "~/shared/lib";
 import { useFlashOnChange } from "~/shared/lib/useFlashOnChange";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./OpenTab.module.css";
 
@@ -71,7 +72,7 @@ export function OpenBetSlipCard({
   matchHref,
   stakeLabel,
   winLabel,
-  footerRightLabel = "Возм. выигрыш",
+  footerRightLabel,
   footerRightValue,
   footerRightWin = true,
   footerRightDanger = false,
@@ -81,13 +82,16 @@ export function OpenBetSlipCard({
   children,
   postFooter,
 }: OpenBetSlipCardProps) {
+  const { t } = useLocale();
   const rightValue = footerRightValue ?? winLabel;
   const coefFlash = useFlashOnChange(coef);
   const scoreFlash = useFlashOnChange(scoreMain);
+  const resolvedFooterLabel = footerRightLabel ?? t("coupon.possibleWin");
   const effectiveRibbon: SlipRibbon =
     ribbon ?? (isLive
       ? { label: "Live", variant: "live", pulse: true }
-      : { label: "Линия", variant: "line" });
+      : { label: t("coupon.lineLabel"), variant: "line" });
+  const isOrdinar = kindLabel === t("coupon.ordinar");
 
   return (
     <div
@@ -97,7 +101,7 @@ export function OpenBetSlipCard({
       <div className={styles.openBetHeaderBar}>
         <span className={styles.openBetHeaderDate}>{headerDate}</span>
         <div className={styles.openBetHeaderCenter}>
-          {kindLabel === "Ординар" ? (
+          {isOrdinar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               alt="Imba.bet"
@@ -172,7 +176,9 @@ export function OpenBetSlipCard({
             ) : null}
           </>
         ) : (
-          <p className={styles.openBetPlacedHint}>Поставлена {placedAt}</p>
+          <p className={styles.openBetPlacedHint}>
+            {t("coupon.placedAt", { time: placedAt })}
+          </p>
         )}
 
         {children}
@@ -181,11 +187,11 @@ export function OpenBetSlipCard({
 
         <div className={styles.openBetFooterGrid}>
           <div className={styles.openBetFooterCol}>
-            <span className={styles.openBetFooterLabel}>Ставка</span>
+            <span className={styles.openBetFooterLabel}>{t("coupon.stakeLabel")}</span>
             <span className={styles.openBetFooterValue}>{stakeLabel}</span>
           </div>
           <div className={`${styles.openBetFooterCol} ${styles.openBetFooterColRight}`}>
-            <span className={styles.openBetFooterLabel}>{footerRightLabel}</span>
+            <span className={styles.openBetFooterLabel}>{resolvedFooterLabel}</span>
             <span
               className={cn(
                 footerRightWin

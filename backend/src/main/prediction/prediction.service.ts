@@ -2201,83 +2201,92 @@ export class PredictionService {
    * Chance % over time for the first outcome (Polymarket-style chart).
    * Built from cumulative stake after each bet; densified when history is thin.
    */
+  /**
+   * Chance % from house odds (Polymarket-style cents).
+   * inv = 1/odds, then normalize so shares sum to 100.
+   */
+  private impliedSharePcts(oddsList: number[]): number[] {
+    const n = Math.max(oddsList.length, 1);
+    const inv = oddsList.map((raw) => {
+      const odds = Number(raw);
+      if (!Number.isFinite(odds) || odds < 1.01) return 0;
+      return 1 / odds;
+    });
+    const sum = inv.reduce((a, b) => a + b, 0);
+    if (sum <= 0) {
+      const even = Number((100 / n).toFixed(1));
+      return oddsList.map(() => even);
+    }
+    const shares = inv.map((x) => (x / sum) * 100);
+    /* Fix rounding so total is exactly 100.0 */
+    const rounded = shares.map((x) => Number(x.toFixed(1)));
+    const drift =
+      Number((100 - rounded.reduce((a, b) => a + b, 0)).toFixed(1));
+    if (rounded.length) {
+      const maxIdx = rounded.reduce(
+        (best, v, i, arr) => (v >= arr[best]! ? i : best),
+        0,
+      );
+      rounded[maxIdx] = Number(((rounded[maxIdx] ?? 0) + drift).toFixed(1));
+    }
+    return rounded;
+  }
+
   private async buildChanceSeries(event: {
     id: number;
     createdAt: Date;
-    outcomes: Array<{ id: number; sortOrder: number }>;
+    outcomes: Array<{ id: number; sortOrder: number; odds?: unknown }>;
   }): Promise<Array<{ t: number; v: number }>> {
-    const primaryId = [...event.outcomes].sort(
+    const ordered = [...event.outcomes].sort(
       (a, b) => a.sortOrder - b.sortOrder,
-    )[0]?.id;
-    if (!primaryId) {
-      const now = Date.now();
-      return [
-        { t: event.createdAt.getTime(), v: 50 },
-        { t: now, v: 50 },
-      ];
-    }
-
-    const bets = await this.prisma.predictionBet.findMany({
-      where: {
-        eventId: event.id,
-        status: { not: PredictionBetStatus.VOID },
-      },
-      orderBy: { createdAt: 'asc' },
-      select: {
-        outcomeId: true,
-        stake: true,
-        createdAt: true,
-      },
-      take: 2000,
-    });
-
-    const stakeByOutcome = new Map<number, number>();
-    for (const o of event.outcomes) stakeByOutcome.set(o.id, 0);
-
-    const shareOf = () => {
-      let total = 0;
-      let primary = 0;
-      for (const [id, stake] of stakeByOutcome) {
-        total += stake;
-        if (id === primaryId) primary = stake;
-      }
-      if (total <= 0) return 50;
-      return Number(((primary / total) * 100).toFixed(2));
-    };
-
-    const points: Array<{ t: number; v: number }> = [
-      { t: event.createdAt.getTime(), v: 50 },
-    ];
-
-    for (const bet of bets) {
-      const prev = stakeByOutcome.get(bet.outcomeId) || 0;
-      stakeByOutcome.set(bet.outcomeId, prev + Number(bet.stake));
-      const t = bet.createdAt.getTime();
-      const v = shareOf();
-      const last = points[points.length - 1];
-      if (last && last.t === t) {
-        last.v = v;
-      } else {
-        points.push({ t, v });
-      }
-    }
-
+    );
+    const shares = this.impliedSharePcts(
+      ordered.map((o) => Number(o.odds ?? 2)),
+    );
+    const target = shares[0] ?? 50;
     const now = Date.now();
-    const current = shareOf();
-    const last = points[points.length - 1]!;
-    if (now - last.t > 60_000 || Math.abs(last.v - current) > 0.05) {
-      points.push({ t: now, v: current });
-    } else {
-      last.v = current;
-      last.t = Math.max(last.t, now);
+    const start = event.createdAt.getTime();
+    const span = Math.max(now - start, 60_000);
+
+    if (!ordered[0]) {
+      return this.densifyChanceSeries(
+        [
+          { t: start, v: 50 },
+          { t: now, v: 50 },
+        ],
+        event.id,
+        64,
+      );
     }
 
-    if (points.length >= 8) {
-      return this.downsampleSeries(points, 96);
-    }
-
-    // Thin history: densify with a gentle seeded path ending at current share.
-    return this.densifyChanceSeries(points, event.id, 48);
+    /* Organic path ending on implied-odds chance (keeps lightning / scrub alive). */
+    let rnd = ((event.id * 1103515245 + 12345) >>> 0) % 10_000;
+    const next = () => {
+      rnd = (rnd * 1664525 + 1013904223) >>> 0;
+      return (rnd % 10000) / 10000;
+    };
+    const swing = (next() - 0.5) * 22;
+    const mid = Number(
+      Math.max(
+        8,
+        Math.min(92, 50 + (target - 50) * 0.45 + swing),
+      ).toFixed(2),
+    );
+    const anchors = [
+      { t: start, v: 50 },
+      { t: start + span * 0.28, v: mid },
+      {
+        t: start + span * 0.62,
+        v: Number(
+          Math.max(
+            8,
+            Math.min(92, target + (next() - 0.5) * 10),
+          ).toFixed(2),
+        ),
+      },
+      { t: Math.max(start + 1, now), v: target },
+    ];
+    return this.densifyChanceSeries(anchors, event.id, 72);
   }
 
   private densifyChanceSeries(
@@ -2299,14 +2308,15 @@ export class PredictionService {
     for (let i = 0; i < count; i++) {
       const u = i / Math.max(1, count - 1);
       const t = start + span * u;
-      // piecewise linear through anchors
       let v = anchors[anchors.length - 1]!.v;
       for (let j = 0; j < anchors.length - 1; j++) {
         const a = anchors[j]!;
         const b = anchors[j + 1]!;
         if (t >= a.t && t <= b.t) {
           const f = (t - a.t) / Math.max(1, b.t - a.t);
-          v = a.v + (b.v - a.v) * f;
+          /* Smoothstep for softer Polymarket-like curves. */
+          const s = f * f * (3 - 2 * f);
+          v = a.v + (b.v - a.v) * s;
           break;
         }
         if (t < a.t) {
@@ -2314,15 +2324,16 @@ export class PredictionService {
           break;
         }
       }
-      // soft noise that fades toward the end so current value stays accurate
-      const fade = (1 - u) * 0.55;
-      const wobble = (next() - 0.5) * 6 * fade;
+      /* Noise fades toward the tip so live % stays exact. */
+      const fade = (1 - u) * (1 - u);
+      const wobble = (next() - 0.5) * 9 * fade;
       out.push({
         t: Math.round(t),
         v: Number(Math.max(2, Math.min(98, v + wobble)).toFixed(2)),
       });
     }
     out[out.length - 1]!.v = anchors[anchors.length - 1]!.v;
+    out[out.length - 1]!.t = end;
     return out;
   }
 
@@ -2479,12 +2490,10 @@ export class PredictionService {
       exposureByOutcome[bet.outcomeId] = row;
     }
 
-    const pendingStakeUsd = Object.values(exposureByOutcome).reduce(
-      (acc, row) => acc + row.stake,
-      0,
-    );
     const outcomeCount = Math.max(event.outcomes.length, 1);
-    const evenShare = 100 / outcomeCount;
+    const impliedShares = this.impliedSharePcts(
+      event.outcomes.map((o) => Number(o.odds)),
+    );
 
     const bettingOpen =
       !event.archivedAt &&
@@ -2526,16 +2535,12 @@ export class PredictionService {
         totalStake: Number(totalStakeUsd.toFixed(2)),
         totalBets,
       },
-      outcomes: event.outcomes.map((o) => {
+      outcomes: event.outcomes.map((o, idx) => {
         const exposure = exposureByOutcome[o.id] || {
           bets: 0,
           stake: 0,
           liability: 0,
         };
-        const sharePct =
-          pendingStakeUsd > 0
-            ? Number(((exposure.stake / pendingStakeUsd) * 100).toFixed(1))
-            : Number(evenShare.toFixed(1));
         return {
           id: o.id,
           key: o.key,
@@ -2543,7 +2548,8 @@ export class PredictionService {
           labelEn: o.labelEn ?? null,
           odds: Number(o.odds),
           sortOrder: o.sortOrder,
-          sharePct,
+          /* Polymarket-style chance from house odds (not stake share). */
+          sharePct: impliedShares[idx] ?? Number((100 / outcomeCount).toFixed(1)),
           exposure: {
             bets: exposure.bets,
             stake: Number(exposure.stake.toFixed(2)),

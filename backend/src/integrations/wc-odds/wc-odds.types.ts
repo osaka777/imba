@@ -41,6 +41,8 @@ export type WcOddsEventDto = {
   homeTeamIcon?: string | null;
   awayTeamIcon?: string | null;
   hasBroadcast?: boolean;
+  /** Live tracker / statistics widget available (1win). */
+  hasLiveTracker?: boolean;
   olimpbetEventId?: number | null;
   priorityLevel?: number;
   isPriority?: boolean;

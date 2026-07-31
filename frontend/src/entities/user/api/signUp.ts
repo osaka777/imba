@@ -20,11 +20,20 @@ export type SignUpBody = {
   };
 };
 
+async function persistSession(accessToken: string) {
+  await createSessionClient(accessToken);
+  try {
+    await createSession(accessToken);
+  } catch (error) {
+    // Client localStorage + cookie already set; httpOnly cookie is best-effort.
+    console.warn("createSession httpOnly cookie failed after sign-up:", error);
+  }
+}
+
 export const signUp = async (body: SignUpBody) => {
   const { data, error } = await api.POST("/api/sign-up", { body });
-  if (data) {
-    await createSessionClient(data.accessToken);
-    await createSession(data.accessToken);
+  if (data?.accessToken) {
+    await persistSession(data.accessToken);
     return;
   }
   throw error;

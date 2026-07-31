@@ -2,16 +2,17 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 
 import { MatchResultsPage } from "~/entities/results";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 import { LoadingSpinner } from "~/shared/ui";
 
 import styles from "../(home)/Home.module.css";
 
-export const metadata: Metadata = makeMetadata("Результаты", {
-  description:
-    "Результаты и live-счёт матчей на Imba.bet: футбол, теннис, хоккей, баскетбол.",
-  path: "/results",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoResultsTitle", {
+    descriptionKey: "common.seoResultsDesc",
+    path: "/results",
+  });
+}
 
 export default function ResultsPage() {
   return (

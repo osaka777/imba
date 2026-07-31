@@ -212,6 +212,50 @@ export class CreateSlideDto {
   @Max(100)
   @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
   descMobilePosYPct?: number;
+
+  @IsOptional()
+  @IsString()
+  layoutMode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  showSecondaryButton?: boolean;
+
+  @IsOptional()
+  @IsString()
+  secondaryButtonText?: string;
+
+  @IsOptional()
+  @IsString()
+  secondaryButtonLink?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, { message: 'buttonColor must be a valid hex color' })
+  buttonColor?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, { message: 'buttonTextColor must be a valid hex color' })
+  buttonTextColor?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, { message: 'secondaryButtonColor must be a valid hex color' })
+  secondaryButtonColor?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, { message: 'secondaryButtonTextColor must be a valid hex color' })
+  secondaryButtonTextColor?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Transform(({ value }) => (value === '' || value === null || value === undefined) ? undefined : parseInt(value))
+  secondaryButtonOpacity?: number;
 }
 
 export class UpdateSlideDto extends CreateSlideDto {}

@@ -5,8 +5,11 @@ import { useMemo } from "react";
 
 import { useCybersportFeaturedLive } from "~/entities/cybersport/hooks/useCybersportFeaturedLive";
 import { apiSportToDisciplineSlug } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
 import { FeaturedLiveQuickOdds } from "~/entities/cybersport/ui/FeaturedLiveQuickOdds";
+import { BroadcastIcon } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 
 import styles from "./CybersportFeaturedLive.module.css";
@@ -55,8 +58,10 @@ function FeaturedSkeleton({ count = 3 }: { count?: number }) {
 export function CybersportFeaturedLive({
   sport,
   limit = 5,
-  title = "Прямой эфир",
+  title,
 }: CybersportFeaturedLiveProps) {
+  const { t } = useLocale();
+  const sectionTitle = title ?? t("cyber.featuredLiveTitle");
   const { data: games = [], isLoading } = useCybersportFeaturedLive(limit, sport);
 
   const viewAllHref = useMemo(() => {
@@ -67,11 +72,11 @@ export function CybersportFeaturedLive({
 
   if (isLoading) {
     return (
-      <section aria-busy="true" aria-label="Live сейчас" className={styles.section}>
+      <section aria-busy="true" aria-label={t("cyber.liveNowAria")} className={styles.section}>
         <div className={styles.head}>
           <h2 className={styles.title}>
             <span className={styles.livePill}>LIVE</span>
-            {title}
+            {sectionTitle}
           </h2>
         </div>
         <FeaturedSkeleton count={Math.min(limit, 3)} />
@@ -81,17 +86,17 @@ export function CybersportFeaturedLive({
 
   if (games.length === 0) {
     return (
-      <section aria-label="Live сейчас" className={styles.section}>
+      <section aria-label={t("cyber.liveNowAria")} className={styles.section}>
         <div className={styles.head}>
           <h2 className={styles.title}>
             <span className={styles.livePill}>LIVE</span>
-            {title}
+            {sectionTitle}
           </h2>
         </div>
         <div className={styles.emptyState}>
-          <p className={styles.emptyText}>Сейчас нет live-матчей</p>
+          <p className={styles.emptyText}>{t("cyber.noLiveAny")}</p>
           <Link className={styles.emptyLink} href="/cybersport/line">
-            Смотреть линию →
+            {t("cyber.watchLineArrow")}
           </Link>
         </div>
       </section>
@@ -99,14 +104,14 @@ export function CybersportFeaturedLive({
   }
 
   return (
-    <section aria-label="Live сейчас" className={styles.section}>
+    <section aria-label={t("cyber.liveNowAria")} className={styles.section}>
       <div className={styles.head}>
         <h2 className={styles.title}>
           <span className={styles.livePill}>LIVE</span>
-          {title}
+          {sectionTitle}
         </h2>
         <Link className={styles.viewAll} href={viewAllHref}>
-          Смотреть все
+          {t("cyber.watchAll")}
         </Link>
       </div>
 
@@ -115,6 +120,7 @@ export function CybersportFeaturedLive({
           const href = `/cybersport/game/${game.eventId}`;
           const team1 = maskCybersportLabel(game.team1);
           const team2 = maskCybersportLabel(game.team2);
+          const hasVideo = cyberGameHasVideo(game);
 
           return (
             <article className={styles.card} data-sport={game.sport} key={game.eventId}>
@@ -134,11 +140,11 @@ export function CybersportFeaturedLive({
                       teamName={game.team2 ?? ""}
                     />
                   </div>
-                  <span aria-hidden className={styles.watchBtn}>
-                    <svg className={styles.watchIcon} viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </span>
+                  {hasVideo ? (
+                    <span aria-hidden className={styles.watchBtn} title={t("cyber.hasBroadcastTitle")}>
+                      <BroadcastIcon className={styles.watchIcon} />
+                    </span>
+                  ) : null}
                   <span className={styles.previewLive}>LIVE</span>
                 </div>
               </Link>

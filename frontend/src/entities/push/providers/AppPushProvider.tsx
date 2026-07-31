@@ -6,20 +6,23 @@ import { toast } from "react-toastify";
 import { useAuth } from "~/app/providers/AuthProvider";
 import { getSessionClient } from "~/entities/user/lib";
 import { registerPushDevice } from "~/entities/push/api/push";
-import { ANDROID_APP_VERSION } from "~/shared/lib/appVersion";
+import { ANDROID_APP_VERSION, WINDOWS_APP_VERSION } from "~/shared/lib/appVersion";
 import {
   getNativeFcmToken,
   hasNativeNotificationPermission,
   isNativeApp,
+  isWindowsNativeApp,
   requestNativeNotificationPermission,
 } from "~/entities/push/lib/nativeApp";
 
 import { AppPushOptInModal } from "../ui/AppPushOptInModal";
+import { useLocale } from "~/shared/model/useLocale";
 
 const OPT_IN_KEY = "imba_push_optin_dismissed_v1";
 
 export function AppPushProvider({ children }: { children: ReactNode }) {
   const { isAuth } = useAuth();
+  const { t } = useLocale();
   const [showModal, setShowModal] = useState(false);
   const registeredRef = useRef(false);
 
@@ -29,8 +32,10 @@ export function AppPushProvider({ children }: { children: ReactNode }) {
 
     await registerPushDevice(session, {
       fcmToken,
-      platform: "android",
-      appVersion: window.ImbaApp?.getAppVersion?.() || ANDROID_APP_VERSION,
+      platform: isWindowsNativeApp() ? "windows" : "android",
+      appVersion:
+        window.ImbaApp?.getAppVersion?.()
+        || (isWindowsNativeApp() ? WINDOWS_APP_VERSION : ANDROID_APP_VERSION),
       notifyBets: true,
       notifyDeposit: true,
       notifyWithdraw: true,
@@ -72,8 +77,10 @@ export function AppPushProvider({ children }: { children: ReactNode }) {
         const token = getNativeFcmToken();
         if (token && isAuth) {
           void registerToken(token).then(() => {
-            toast.success("Уведомления включены");
+            toast.success(t("notify.pushEnabled"));
           }).catch(() => undefined);
+        } else if (isWindowsNativeApp()) {
+          toast.success(t("notify.pushWindowsEnabled"));
         }
       }
     };
@@ -88,7 +95,7 @@ export function AppPushProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("imba:fcm-token", onToken);
       window.removeEventListener("imba:notification-permission", onPermission);
     };
-  }, [isAuth, maybeShowOptIn, registerToken]);
+  }, [isAuth, maybeShowOptIn, registerToken, t]);
 
   const handleEnable = () => {
     requestNativeNotificationPermission();
@@ -98,8 +105,10 @@ export function AppPushProvider({ children }: { children: ReactNode }) {
         const token = getNativeFcmToken();
         if (token && isAuth) {
           void registerToken(token).then(() => {
-            toast.success("Уведомления включены");
+            toast.success(t("notify.pushEnabled"));
           }).catch(() => undefined);
+        } else if (isWindowsNativeApp()) {
+          toast.success(t("notify.pushWindowsEnabled"));
         }
       }
     }, 800);

@@ -17,14 +17,23 @@ export type SliderProps = {
 };
 
 export const Slider: React.FC<SliderProps> = ({ className, slides }) => {
+  const hasMultipleSlides = slides.length > 1;
+  const modules = hasMultipleSlides
+    ? [Navigation, Pagination, Autoplay]
+    : [Autoplay];
+
   return (
     <Swiper
       autoplay={{ delay: 5000, disableOnInteraction: false }}
       className={`${styles.Slider} ${className}`}
-      loop={slides.length > 1}
-      modules={[Navigation, Pagination, Autoplay]}
-      navigation={{ nextEl: `.${styles.nextEl}`, prevEl: `.${styles.prevEl}` }}
-      pagination={{ clickable: true, dynamicBullets: true }}
+      loop={hasMultipleSlides}
+      modules={modules}
+      navigation={
+        hasMultipleSlides
+          ? { nextEl: `.${styles.nextEl}`, prevEl: `.${styles.prevEl}` }
+          : undefined
+      }
+      pagination={hasMultipleSlides ? { clickable: true, dynamicBullets: false } : false}
       slidesPerView={1}
     >
       {slides.map((slide, index) => {
@@ -34,12 +43,16 @@ export const Slider: React.FC<SliderProps> = ({ className, slides }) => {
           </SwiperSlide>
         );
       })}
-      <Button className={`${styles.navEl} ${styles.nextEl} a`}>
-        {<ArrowIcon className={`${styles.navIcon} ${styles.navIcon_next}`} />}
-      </Button>
-      <Button className={`${styles.navEl} ${styles.prevEl}`}>
-        {<ArrowIcon className={`${styles.navIcon} ${styles.navIcon_prev}`} />}
-      </Button>
+      {hasMultipleSlides ? (
+        <>
+          <Button className={`${styles.navEl} ${styles.prevEl}`} aria-label="Previous slide">
+            <ArrowIcon className={`${styles.navIcon} ${styles.navIcon_prev}`} />
+          </Button>
+          <Button className={`${styles.navEl} ${styles.nextEl}`} aria-label="Next slide">
+            <ArrowIcon className={`${styles.navIcon} ${styles.navIcon_next}`} />
+          </Button>
+        </>
+      ) : null}
     </Swiper>
   );
 };

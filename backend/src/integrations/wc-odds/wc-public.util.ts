@@ -1,21 +1,36 @@
 import type { WcOddsEventDetailDto, WcOddsEventDto } from './wc-odds.types';
-import { isWcEventId, olimpbetIdFromWcEventId } from './wc-slug.util';
+import {
+  isWcEventId,
+  olimpbetIdFromWcEventId,
+  oneWinMatchIdFromWcEventId,
+} from './wc-slug.util';
 import { stripJunkSpecialtyGroupedMarkets } from '../olimpbet-wc/olimpbet-wc-market-keys.util';
 
-/** XOR mask for public event ids (internal ol-{n} never leaves the server). */
+/** XOR mask for public event ids (internal ol-{n} / ow-{n} never leaves the server). */
 const ID_XOR = 0x5a3c9f12;
 
 export function toPublicEventId(internalId: string): string {
   const olId = olimpbetIdFromWcEventId(internalId);
-  if (olId == null) return internalId;
-  return `m${(olId ^ ID_XOR).toString(36)}`;
+  if (olId != null) return `m${(olId ^ ID_XOR).toString(36)}`;
+
+  const owId = oneWinMatchIdFromWcEventId(internalId);
+  if (owId != null) return `w${(owId ^ ID_XOR).toString(36)}`;
+
+  return internalId;
 }
 
 export function publicIdToInternal(publicId: string): string | null {
-  if (!/^m[a-z0-9]+$/i.test(publicId)) return null;
-  const olId = parseInt(publicId.slice(1), 36) ^ ID_XOR;
-  if (!Number.isFinite(olId) || olId <= 0) return null;
-  return `ol-${olId}`;
+  if (/^m[a-z0-9]+$/i.test(publicId)) {
+    const olId = parseInt(publicId.slice(1), 36) ^ ID_XOR;
+    if (!Number.isFinite(olId) || olId <= 0) return null;
+    return `ol-${olId}`;
+  }
+  if (/^w[a-z0-9]+$/i.test(publicId)) {
+    const owId = parseInt(publicId.slice(1), 36) ^ ID_XOR;
+    if (!Number.isFinite(owId) || owId <= 0) return null;
+    return `ow-${owId}`;
+  }
+  return null;
 }
 
 /** Resolve a client ref (public id, legacy ol-id, or slug) for DB lookup. */

@@ -1,4 +1,9 @@
-import { buildHomepageWidgets, isWorldCupLeague } from './wc-home-widgets.util';
+import {
+  buildHomepageWidgets,
+  isBigTennisTournament,
+  isWorldCupLeague,
+  sortHomepageCyberLive,
+} from './wc-home-widgets.util';
 import type { WcOddsEventDto } from './wc-odds.types';
 
 describe('buildHomepageWidgets', () => {
@@ -42,7 +47,12 @@ describe('buildHomepageWidgets', () => {
     expect(isWorldCupLeague('Wimbledon')).toBe(false);
   });
 
-  it('puts prematch line first, then mixed wc soccer and cs2', () => {
+  it('detects big tennis tournaments', () => {
+    expect(isBigTennisTournament('Wimbledon')).toBe(true);
+    expect(isBigTennisTournament('ATP Challenger')).toBe(false);
+  });
+
+  it('puts football tops first, then tennis/CS2 by priority', () => {
     const pool = [
       base('wc-live', 'soccer', {
         leagueName: 'Чемпионат мира 2026',
@@ -62,36 +72,104 @@ describe('buildHomepageWidgets', () => {
         priorityLevel: 1,
         isPriority: true,
       }),
-      base('tennis', 'tennis', { phase: 'prematch', priorityLevel: 2, isPriority: true }),
+      base('soccer-extra', 'soccer', {
+        leagueName: 'Premier League',
+        phase: 'prematch',
+        priorityLevel: 1,
+        isPriority: true,
+      }),
+      base('tennis-slam', 'tennis', {
+        leagueName: 'Wimbledon',
+        phase: 'live',
+        priorityLevel: 2,
+        isPriority: true,
+      }),
     ];
 
-    const items = buildHomepageWidgets(pool, {
-      game: {
-        eventId: 'cy-1',
-        eventName: 'A — B',
-        team1: 'A',
-        team2: 'B',
-        team1Icon: 'https://logo/a.png',
-        team2Icon: 'https://logo/b.png',
-        sport: 'esports.cs',
-        leagueName: 'CS',
-        score: '',
-        parsedScore: { currentScore: [0, 0], text: { currentScore: '0:0' } },
-        status: 'PREMATCH' as never,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        groupedMarkets: {},
+    const items = buildHomepageWidgets(pool, [
+      {
+        game: {
+          eventId: 'cy-dota',
+          eventName: 'A — B',
+          team1: 'A',
+          team2: 'B',
+          team1Icon: 'https://logo/a.png',
+          team2Icon: 'https://logo/b.png',
+          sport: 'esports.dota2',
+          leagueName: 'Dota',
+          score: '',
+          parsedScore: { currentScore: [0, 0], text: { currentScore: '0:0' } },
+          status: 'PREMATCH' as never,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          groupedMarkets: {},
+          priority: 0,
+        } as never,
+        isLive: true,
       },
-      isLive: false,
-    });
+      {
+        game: {
+          eventId: 'cy-cs2',
+          eventName: 'C — D',
+          team1: 'C',
+          team2: 'D',
+          team1Icon: 'https://logo/c.png',
+          team2Icon: 'https://logo/d.png',
+          sport: 'esports.cs',
+          leagueName: 'CS',
+          score: '',
+          parsedScore: { currentScore: [1, 0], text: { currentScore: '1:0' } },
+          status: 'IN_PROGRESS' as never,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          groupedMarkets: {},
+          priority: 2,
+        } as never,
+        isLive: true,
+      },
+    ]);
 
-    expect(items).toHaveLength(4);
+    expect(items.length).toBeGreaterThanOrEqual(5);
     expect(items[0]?.kind).toBe('wc');
     if (items[0]?.kind === 'wc') {
-      expect(items[0].event.id).toBe('wc-line');
+      expect(items[0].event.sport).toBe('soccer');
       expect(items[0].event.phase).toBe('prematch');
     }
-    expect(items.filter((item) => item.kind === 'wc' && item.event.sport === 'tennis')).toHaveLength(0);
-    expect(items[3]?.kind).toBe('cyber');
+
+    const firstNonSoccer = items.findIndex(
+      (item) => !(item.kind === 'wc' && item.event.sport === 'soccer'),
+    );
+    expect(firstNonSoccer).toBeGreaterThanOrEqual(3);
+
+    const afterSoccer = items.slice(firstNonSoccer);
+    const tennisOrCs = afterSoccer.filter(
+      (item) =>
+        (item.kind === 'wc' && item.event.sport === 'tennis') ||
+        (item.kind === 'cyber' && String(item.event.sport).includes('cs')),
+    );
+    expect(tennisOrCs.length).toBeGreaterThan(0);
+
+    const cyberIds = items
+      .filter((item) => item.kind === 'cyber')
+      .map((item) => (item.kind === 'cyber' ? item.event.eventId : ''));
+    expect(cyberIds[0]).toBe('cy-cs2');
+  });
+
+  it('sorts homepage cyber: high-pri CS2 first', () => {
+    const sorted = sortHomepageCyberLive([
+      {
+        game: { eventId: 'dota', sport: 'esports.dota2', priority: 2 } as never,
+        isLive: true,
+      },
+      {
+        game: { eventId: 'cs-low', sport: 'esports.cs', priority: 0 } as never,
+        isLive: true,
+      },
+      {
+        game: { eventId: 'cs-high', sport: 'esports.cs', priority: 2 } as never,
+        isLive: true,
+      },
+    ]);
+    expect(sorted.map((x) => x.game.eventId)).toEqual(['cs-high', 'dota', 'cs-low']);
   });
 });

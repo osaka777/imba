@@ -25,6 +25,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_KICK_SHORT_CLICK_DOMAIN: 'imbalance.click'
+        BACKEND_URL: 'http://backend:3000'
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_HOST: 'https://imba.bet'

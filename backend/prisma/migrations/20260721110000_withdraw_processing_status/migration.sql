@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "OperationStatus" ADD VALUE IF NOT EXISTS 'PROCESSING';

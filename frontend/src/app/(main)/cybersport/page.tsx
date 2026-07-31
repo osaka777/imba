@@ -1,14 +1,23 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 import { CybersportSection } from "~/entities/cybersport/ui/CybersportSection";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
+import { LoadingSpinner } from "~/shared/ui";
 
-export const metadata: Metadata = makeMetadata("Киберспорт", {
-  description:
-    "Ставки на киберспорт в Imba.bet: CS2, Dota 2 и другие дисциплины — линия и live.",
-  path: "/cybersport",
-});
+import homeStyles from "../(home)/Home.module.css";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoCyberTitle", {
+    descriptionKey: "common.seoCyberDesc",
+    path: "/cybersport",
+  });
+}
 
 export default function CybersportPage() {
-  return <CybersportSection />;
+  return (
+    <Suspense fallback={<LoadingSpinner className={homeStyles.games} />}>
+      <CybersportSection className={homeStyles.games} />
+    </Suspense>
+  );
 }

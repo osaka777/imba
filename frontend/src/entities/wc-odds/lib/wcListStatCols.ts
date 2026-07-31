@@ -7,7 +7,10 @@ export type WcListStatCol = {
   away: string;
 };
 
-type WcEventWithStats = Pick<WcEvent, "sport" | "statList" | "phase">;
+type WcEventWithStats = Pick<
+  WcEvent,
+  "sport" | "statList" | "phase" | "hasLiveTracker"
+>;
 
 function pickStat(event: WcEventWithStats, id: string) {
   return event.statList?.find((row) => row.id === id);
@@ -65,9 +68,10 @@ export function wcEventHasListStats(event: WcEventWithStats): boolean {
   return buildWcListStatCols(event).length > 0;
 }
 
-/** Stats icon on home/live list: any enriched stat row, not only compact list cols. */
+/** Stats icon on home/live list: enriched stat rows OR live tracker. */
 export function wcEventHasGameStats(event: WcEventWithStats): boolean {
   if (event.phase !== "live") return false;
+  if (event.hasLiveTracker) return true;
   const list = event.statList;
   if (!list?.length) return false;
 

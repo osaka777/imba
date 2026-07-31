@@ -1,0 +1,175 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 18px;
+  box-sizing: border-box;
+  font-family: Manrope, var(--font-inter), system-ui, sans-serif;
+  color: #e7ecf3;
+  background:
+    radial-gradient(ellipse 90% 70% at 88% -8%, rgba(16, 141, 231, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at -12% 108%, rgba(8, 85, 196, 0.32) 0%, transparent 58%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(97, 218, 132, 0.05) 0%, transparent 70%),
+    linear-gradient(165deg, #11182b 0%, var(--blue-00) 48%, #070b14 100%);
+}
+
+.shell {
+  width: min(640px, 100%);
+  position: relative;
+}
+
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 141, 231, 0.45),
+    rgba(97, 218, 132, 0.25),
+    rgba(16, 141, 231, 0.08)
+  );
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  margin: 1px;
+  padding: 40px 36px 32px;
+  border-radius: 27px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(16, 141, 231, 0.16) 0%, transparent 55%),
+    linear-gradient(165deg, #121a2e 0%, var(--blue-00) 100%);
+  border: 1px solid rgba(177, 209, 255, 0.12);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.logo {
+  height: 36px;
+  width: auto;
+  margin: 0 auto 22px;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 18px;
+  padding: 7px 14px 7px 12px;
+  border-radius: 999px;
+  background: rgba(97, 218, 132, 0.12);
+  border: 1px solid rgba(97, 218, 132, 0.28);
+  color: #7ee49a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #61da84;
+  box-shadow: 0 0 0 4px rgba(97, 218, 132, 0.18);
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: clamp(26px, 5vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.lead {
+  margin: 0 auto 28px;
+  max-width: 34em;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #8b97ad;
+  font-weight: 500;
+}
+
+.divider {
+  height: 1px;
+  margin: 0 0 24px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, rgba(177, 209, 255, 0.12), transparent);
+}
+
+.notice {
+  text-align: left;
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.noticeLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #108de7;
+}
+
+.notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #c5cddc;
+  font-weight: 500;
+}
+
+.noticeEn p {
+  color: #8b97ad;
+  font-size: 12.5px;
+}
+
+.foot {
+  margin-top: 22px;
+  font-size: 12px;
+  color: #8b97ad;
+}
+
+.foot a {
+  color: #87a2da;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.foot a:hover {
+  color: #b1d1ff;
+}
+
+@media (max-width: 520px) {
+  .card {
+    padding: 32px 22px 26px;
+    border-radius: 22px;
+  }
+
+  .shell::before {
+    border-radius: 23px;
+  }
+
+  .logo {
+    height: 30px;
+  }
+}

@@ -12,12 +12,14 @@ import {
   cyberGameSupportsWcBetting,
   cyberGameToWcEvent,
 } from "~/entities/cybersport/lib/cyberGameToWcEvent";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { useCyberRowMapOdds } from "~/entities/cybersport/hooks/useCyberRowMapOdds";
 import { useCyberRowLiveWcEvent } from "~/entities/cybersport/hooks/useCyberRowLiveWcEvent";
 import { isEsportsApiSport } from "~/entities/cybersport/lib/cyberDisciplineCatalog";
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { BroadcastIcon, FireIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { Game } from "~/entities/game/types";
 import { SubGameDto } from "~/entities/game/ui/SubGames";
 import { MatchFieldsRow } from "~/entities/game/ui/TournamentTable/MatchFieldsRow";
@@ -68,6 +70,8 @@ function resolveSeriesScore(
   score: ReturnType<typeof useMatchRow>["score"],
   isLive: boolean,
 ): string {
+  if (!isLive) return "VS";
+
   const current =
     score?.currentScore
     ?? matchData.parsedScore?.currentScore;
@@ -127,6 +131,7 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
   gameLinkPrefix = "/game/",
   matchData,
 }) => {
+  const { t } = useLocale();
   const { markets, marketsCount, score } = useMatchRow(matchData);
   const broadcast = useWcBroadcast();
   const router = useRouter();
@@ -162,6 +167,10 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
     hasBroadcast?: boolean;
     wcHasBroadcast?: boolean;
     marketsCount?: number;
+    oneWinBroadcastUrl?: string;
+    streamProvider?: string;
+    kickChannel?: string;
+    twitchChannel?: string;
   };
   const cyberBroadcastRef = wcEvent?.id ?? cyberMeta.wcEventRef ?? "";
   const needsQuickOddsFetch =
@@ -170,14 +179,12 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
     && Boolean(cyberBroadcastRef)
     && !wcHasLiveOdds
     && !hasPrematchOdds
-    && totalMarketsCount > 0;
+    && (totalMarketsCount > 0 || Boolean(cyberMeta.wcEventRef) || cyberGameSupportsWcBetting(matchData));
   const { data: quickOddsPayload, isLoading: quickOddsLoading } = useCyberRowMapOdds(
     cyberBroadcastRef,
     needsQuickOddsFetch,
   );
-  const cyberHasBroadcast = Boolean(
-    wcEvent?.hasBroadcast || cyberMeta.hasBroadcast || cyberMeta.wcHasBroadcast,
-  );
+  const cyberHasBroadcast = cyberGameHasVideo(matchData);
   const showCyberBroadcast = isCyberRow && cyberHasBroadcast && Boolean(cyberBroadcastRef);
 
   const gameHref = `${gameLinkPrefix}${matchData.eventId}`;
@@ -221,7 +228,6 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
         <WcHomeOddCell
           event={wcEvent}
           pick="HOME"
-          tone="kick"
           value={formatWcCompactOdd(wcEvent.oddsHome, "--")}
         />
       </div>
@@ -230,7 +236,6 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
           <WcHomeOddCell
             event={wcEvent}
             pick="DRAW"
-            tone="kick"
             value={formatWcCompactOdd(wcEvent.oddsDraw, "--")}
           />
         </div>
@@ -239,7 +244,6 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
         <WcHomeOddCell
           event={wcEvent}
           pick="AWAY"
-          tone="kick"
           value={formatWcCompactOdd(wcEvent.oddsAway, "--")}
         />
       </div>
@@ -291,7 +295,7 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
       role="link"
       tabIndex={0}
     >
-      <div className={styles.topMeta}>
+      <div className={styles.statusCell}>
         {isLive ? (
           <span className={styles.liveBadge}>
             <span aria-hidden="true" className={styles.liveDot} />
@@ -301,106 +305,76 @@ export const CyberMatchRow: React.FC<MatchRowProps> = ({
           <span className={styles.startLabel}>{matchData.meta.raw_start_at}</span>
         ) : null}
 
-        {showPrematchBadge && (
-          <span className={styles.prematchBadge} title="Коэффициенты из prematch-линии">
-            Линия
-          </span>
-        )}
-
-        {showCyberBroadcast && (
-          <button
-            className={styles.watchBtn}
-            onClick={openBroadcast}
-            title="Смотреть трансляцию"
-            type="button"
-          >
-            <BroadcastIcon className={styles.watchIcon} />
-            Watch
-          </button>
-        )}
-
-        {(matchData.priority ?? 0) > 0 && (
-          <span className={styles.priorityWrap} title="Топ-матч">
-            <FireIcon className={styles.priorityIcon} />
-          </span>
-        )}
-
-        {marketsCount > 1 && (
-          <span className={styles.marketsBadge}>{`+${marketsCount}`}</span>
-        )}
+        {phase != null && Number(phase) > 0 ? (
+          <span className={styles.phaseLabel}>{t("cyber.roundN", { n: phase })}</span>
+        ) : null}
       </div>
 
-      <div className={styles.mainGrid}>
-        <div
-          className={cn(
-            styles.teamSide,
-            styles.teamSide_home,
-            homeActive && styles.teamSide_active,
-          )}
-        >
-          <Link className={styles.teamLink} href={gameHref}>
+      <Link className={styles.teamsCell} href={gameHref}>
+        <span className={cn(styles.teamLine, homeActive && styles.teamLine_active)}>
+          <span className={styles.teamIdentity}>
             {homeActive && <span aria-hidden="true" className={styles.teamActiveDot} />}
             <span className={styles.teamLogo}>
               <WcTeamImage
                 iconUrl={matchData.team1Icon}
-                size={32}
+                size={22}
                 teamName={matchData.team1 ?? ""}
               />
             </span>
             <span className={styles.teamName}>{matchData.team1}</span>
-          </Link>
-        </div>
-
-        <div className={styles.centerBlock}>
-          {mapScore && isLive ? (
-            <>
-              <div
-                className={cn(
-                  styles.mapScore,
-                  styles.mapScore_primary,
-                  mapScore.isLiveMap && styles.mapScore_live,
-                )}
-              >
-                {mapScore.label}
-              </div>
-              <div className={styles.seriesScoreCompact}>{seriesScore}</div>
-              <span className={styles.seriesLabel}>Series</span>
-            </>
-          ) : (
-            <>
-              <div className={styles.seriesScore}>{seriesScore}</div>
-              {mapScore ? (
-                <div className={cn(styles.mapScore, mapScore.isLiveMap && styles.mapScore_live)}>
-                  {mapScore.label}
-                </div>
-              ) : phase != null && Number(phase) > 0 ? (
-                <div className={styles.phaseLabel}>{`Раунд ${phase}`}</div>
-              ) : !isLive && matchData.meta?.raw_start_at ? (
-                <div className={styles.startTime}>{matchData.meta.raw_start_at}</div>
-              ) : null}
-            </>
-          )}
-        </div>
-
-        <div
-          className={cn(
-            styles.teamSide,
-            styles.teamSide_away,
-            awayActive && styles.teamSide_active,
-          )}
-        >
-          <Link className={styles.teamLink} href={gameHref}>
+          </span>
+        </span>
+        <span className={cn(styles.teamLine, awayActive && styles.teamLine_active)}>
+          <span className={styles.teamIdentity}>
             {awayActive && <span aria-hidden="true" className={styles.teamActiveDot} />}
             <span className={styles.teamLogo}>
               <WcTeamImage
                 iconUrl={matchData.team2Icon}
-                size={32}
+                size={22}
                 teamName={matchData.team2 ?? ""}
               />
             </span>
             <span className={styles.teamName}>{matchData.team2}</span>
-          </Link>
-        </div>
+          </span>
+        </span>
+      </Link>
+
+      <div className={styles.scoreCell}>
+        <span className={styles.seriesScore}>{seriesScore}</span>
+        {mapScore ? (
+          <span className={cn(styles.mapScore, mapScore.isLiveMap && styles.mapScore_live)}>
+            {mapScore.label}
+          </span>
+        ) : isLive ? (
+          <span className={styles.seriesLabel}>{t("cyber.series")}</span>
+        ) : null}
+      </div>
+
+      <div className={styles.rowActions}>
+        {showPrematchBadge && (
+          <span className={styles.prematchBadge} title={t("cyber.prematchOddsTitle")}>
+            {t("cyber.line")}
+          </span>
+        )}
+        {showCyberBroadcast && (
+          <button
+            aria-label={t("cyber.watchStream")}
+            className={styles.watchBtn}
+            onClick={openBroadcast}
+            title={t("cyber.watchStream")}
+            type="button"
+          >
+            <BroadcastIcon className={styles.watchIcon} />
+          </button>
+        )}
+        {(matchData.priority ?? 0) > 0 && (
+          <span className={styles.priorityWrap} title={t("cyber.topMatch")}>
+            <FireIcon className={styles.priorityIcon} />
+          </span>
+        )}
+        {totalMarketsCount > 1 && (
+          <span className={styles.marketsBadge}>{`+${totalMarketsCount}`}</span>
+        )}
       </div>
 
       <div className={styles.oddsRow}>{oddsCells}</div>

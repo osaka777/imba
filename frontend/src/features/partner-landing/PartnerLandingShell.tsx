@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useLocale } from "~/shared/model/useLocale";
 import styles from "./landing.module.css";
 
 export function PartnerLandingShell({
@@ -9,6 +12,8 @@ export function PartnerLandingShell({
   ctaUrl: string;
   children: ReactNode;
 }) {
+  const { t } = useLocale();
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -16,13 +21,13 @@ export function PartnerLandingShell({
           IMBA<span className={styles.logoAccent}>.BET</span>
         </Link>
         <a href={ctaUrl} className={styles.headerCta}>
-          Регистрация
+          {t("partner.register")}
         </a>
       </header>
       <main className={styles.main}>{children}</main>
       <footer className={styles.footer}>
-        18+ · Играйте ответственно ·{" "}
-        <a href={ctaUrl}>Зарегистрироваться на imba.bet</a>
+        {t("partner.responsible")}{" "}
+        <a href={ctaUrl}>{t("partner.registerImba")}</a>
       </footer>
     </div>
   );

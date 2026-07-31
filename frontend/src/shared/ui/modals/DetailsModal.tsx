@@ -3,9 +3,14 @@
 import getSymbolFromCurrency from "currency-symbol-map";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FiInfo, FiSmartphone, FiXCircle } from "react-icons/fi";
+import { toast } from "react-toastify";
 
+import {
+  cancelWithdrawal,
+  fetchUserWithdrawals,
+} from "~/entities/finance/api";
 import { getSessionClient } from "~/entities/user/lib";
 import { KaspiLogoIcon, VisaIcon } from "~/shared/assets/icons";
 import { api } from "~/shared/api";
@@ -34,8 +39,11 @@ type OperationMeta = {
   paymentSystem?: string;
   cardType?: string;
   cardMask?: string;
+  cardNumber?: string;
   wallet?: string;
   reason?: string;
+  withdrawalId?: number;
+  action?: string;
 };
 
 interface Operation {
@@ -113,6 +121,10 @@ function getOperationTitle(operation: Operation, t: TranslateFn) {
   }
 
   if (operation.source === "PAYMENT_SYSTEM") {
+    if (operation.meta?.action === "withdrawal_cancelled_by_user"
+      || operation.meta?.title === "Отмена вывода") {
+      return t("profile.opWithdrawCancel");
+    }
     return operation.type === "INCOME" ? t("profile.opTopUp") : t("profile.opWithdraw");
   }
 
@@ -250,7 +262,9 @@ function getStatusHint(operation: Operation, t: TranslateFn) {
 export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
   const { t } = useLocale();
   const format = useFormat();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabType>("all");
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   const { data: operations, isLoading } = useQuery<Operation[]>({
     queryKey: ["operations"],
@@ -263,6 +277,35 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
       if (error) throw error;
       return data as Operation[];
     },
+  });
+
+  const { data: withdrawals = [] } = useQuery({
+    queryKey: ["user-withdrawals"],
+    queryFn: fetchUserWithdrawals,
+  });
+
+  const pendingWithdrawalIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const w of withdrawals) {
+      if (String(w.status).toUpperCase() === "WAITING") ids.add(Number(w.id));
+    }
+    return ids;
+  }, [withdrawals]);
+
+  const cancelMutation = useMutation({
+    mutationFn: cancelWithdrawal,
+    onSuccess: async () => {
+      toast.success(t("profile.financeCancelWithdrawOk"));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["operations"] }),
+        queryClient.invalidateQueries({ queryKey: ["user-withdrawals"] }),
+        queryClient.invalidateQueries({ queryKey: ["user"] }),
+      ]);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || t("profile.financeCancelWithdrawFail"));
+    },
+    onSettled: () => setCancellingId(null),
   });
 
   const filteredOperations = useMemo(() => {
@@ -334,6 +377,14 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
               const methodLabel = getPaymentMethodLabel(operation, t);
               const hint = getPaymentMethodHint(operation, t);
               const isFailed = operation.status === "FAILED";
+              const withdrawalId = Number(operation.meta?.withdrawalId);
+              const canCancel =
+                operation.type === "OUTCOME"
+                && operation.source === "PAYMENT_SYSTEM"
+                && Number.isFinite(withdrawalId)
+                && withdrawalId > 0
+                && pendingWithdrawalIds.has(withdrawalId);
+              const isCancelling = cancellingId === withdrawalId && cancelMutation.isPending;
 
               return (
                 <div className={styles.operationGroup} key={operation.id}>
@@ -358,15 +409,38 @@ export const DetailsModal = ({ onClose }: { onClose: () => void }) => {
                             <p className={styles.methodSubtitle}>{methodLabel}</p>
                           )}
                           {hint && <p className={styles.methodHint}>{hint}</p>}
-                          {statusLabel && (
+                          {canCancel ? (
                             <p className={styles.statusRow}>
                               <FiXCircle aria-hidden className={styles.statusIcon} />
-                              {statusLabel}
+                              {t("profile.financeStatusProcessing")}
                             </p>
+                          ) : (
+                            statusLabel && (
+                              <p className={styles.statusRow}>
+                                <FiXCircle aria-hidden className={styles.statusIcon} />
+                                {statusLabel}
+                              </p>
+                            )
                           )}
                         </div>
                         <p className={styles.date}>{formatOperationDate(operation.createdAt, format)}</p>
                       </div>
+
+                      {canCancel && (
+                        <button
+                          className={styles.cancelWithdrawBtn}
+                          disabled={cancelMutation.isPending}
+                          onClick={() => {
+                            setCancellingId(withdrawalId);
+                            cancelMutation.mutate(withdrawalId);
+                          }}
+                          type="button"
+                        >
+                          {isCancelling
+                            ? t("profile.financeCancellingWithdraw")
+                            : t("profile.financeCancelWithdraw")}
+                        </button>
+                      )}
                     </div>
                   </div>
 

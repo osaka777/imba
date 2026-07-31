@@ -1,7 +1,9 @@
 import { deviceIdHeaders } from "~/shared/lib/deviceId";
+import { tOutside } from "~/shared/i18n";
 
 import { createSessionClient } from "../lib/createSessionClient";
 import { createSession } from "../lib/createSession";
+import type { AffiliateSubs } from "../lib/affiliateSubs";
 
 export type TelegramWidgetUser = {
   id: number;
@@ -25,7 +27,11 @@ function apiOrigin(): string {
 
 async function persistAccessToken(accessToken: string): Promise<void> {
   await createSessionClient(accessToken);
-  await createSession(accessToken);
+  try {
+    await createSession(accessToken);
+  } catch (error) {
+    console.warn("createSession httpOnly cookie failed after Telegram auth:", error);
+  }
 }
 
 export async function authenticateWithTelegram(
@@ -58,8 +64,8 @@ export async function authenticateWithTelegram(
       typeof data?.message === "string"
         ? data.message
         : res.status === 404
-          ? "Аккаунт не найден. Зарегистрируйтесь через Telegram."
-          : "Не удалось войти через Telegram";
+          ? tOutside("common.errTgAccountNotFound")
+          : tOutside("common.errTgLogin");
     throw new Error(message);
   }
 
@@ -81,6 +87,7 @@ export async function completeTelegramProfile(body: {
   birthDate: string;
   tag?: string;
   promoCode?: string;
+  subs?: AffiliateSubs;
 }): Promise<void> {
   const res = await fetch(`${apiOrigin()}/api/auth/telegram/complete-profile`, {
     method: "POST",
@@ -97,7 +104,7 @@ export async function completeTelegramProfile(body: {
     throw new Error(
       typeof data?.message === "string"
         ? data.message
-        : "Не удалось завершить регистрацию",
+        : tOutside("common.errTgFinishRegistration"),
     );
   }
 

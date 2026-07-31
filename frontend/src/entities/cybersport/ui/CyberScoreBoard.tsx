@@ -5,7 +5,8 @@ import { useLocale } from "~/shared/model/useLocale";
 
 import type { CyberGame } from "~/entities/cybersport/api/client";
 import { readCyberWcMeta } from "~/entities/cybersport/lib/cyberGameToWcEvent";
-import { gamesList } from "~/entities/game/lib/gamesList";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
+import { gamesList, getSportLabel } from "~/entities/game/lib/gamesList";
 import { formatWcCompactTime } from "~/entities/wc-odds/lib/wcCompactFormat";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 import { BroadcastIcon } from "~/shared/assets";
@@ -59,12 +60,14 @@ export function CyberScoreBoard({
   hasBroadcast = false,
   onBroadcastOpen,
 }: CyberScoreBoardProps) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const isLive = isCyberLive(game);
   const meta = readCyberWcMeta(game);
-  const showBroadcast = hasBroadcast || Boolean(meta.wcHasBroadcast || (game.meta as { hasBroadcast?: boolean })?.hasBroadcast);
+  const showBroadcast = hasBroadcast || cyberGameHasVideo(game);
   const mapDetails = useMemo(() => normalizeMapDetails(game), [game]);
-  const sportLabel = gamesList[game.sport as keyof typeof gamesList]?.label ?? "Киберспорт";
+  const sportLabel = gamesList[game.sport as keyof typeof gamesList]
+    ? getSportLabel(game.sport, t)
+    : t("cyber.title");
   const commenceTime = meta.wcCommenceTime ?? meta.commenceTime ?? (game.meta as { commenceTime?: string })?.commenceTime;
   const kickoff = useMemo(
     () => (commenceTime ? formatWcCompactTime(commenceTime, locale) : null),
@@ -87,7 +90,7 @@ export function CyberScoreBoard({
           {showBroadcast && onBroadcastOpen && (
             <button className={styles.broadcastBtn} onClick={onBroadcastOpen} type="button">
               <BroadcastIcon className={styles.broadcastIcon} />
-              Трансляция
+              {t("cyber.broadcast")}
             </button>
           )}
         </div>
@@ -105,21 +108,21 @@ export function CyberScoreBoard({
           <div className={styles.centerScore}>
             {isLive ? (
               <>
-                <div className={styles.statusLabel}>Счёт</div>
+                <div className={styles.statusLabel}>{t("cyber.score")}</div>
                 <div className={styles.seriesScore}>{formatSeriesScore(game)}</div>
                 {phase != null && Number(phase) > 0 && (
-                  <div className={styles.phaseLabel}>Раунд {phase}</div>
+                  <div className={styles.phaseLabel}>{t("cyber.roundN", { n: String(phase) })}</div>
                 )}
               </>
             ) : kickoff ? (
               <>
-                <div className={styles.statusLabel}>Начало</div>
+                <div className={styles.statusLabel}>{t("cyber.kickoff")}</div>
                 <div className={styles.prematchTime}>{kickoff.time}</div>
                 <div className={styles.prematchDate}>{kickoff.date}</div>
               </>
             ) : (
               <>
-                <div className={styles.statusLabel}>Матч</div>
+                <div className={styles.statusLabel}>{t("cyber.match")}</div>
                 <div className={styles.seriesScore}>VS</div>
               </>
             )}
@@ -139,10 +142,10 @@ export function CyberScoreBoard({
             style={{ ["--map-cols" as string]: String(mapDetails.length) }}
           >
             <div className={styles.mapsHeader}>
-              <div className={styles.mapsHeaderCell}>Команда</div>
+              <div className={styles.mapsHeaderCell}>{t("cyber.team")}</div>
               {mapDetails.map((_, index) => (
                 <div className={styles.mapsHeaderCell} key={`map-head-${index}`}>
-                  К{index + 1}
+                  {t("cyber.mapShort", { n: index + 1 })}
                 </div>
               ))}
             </div>

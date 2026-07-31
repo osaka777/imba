@@ -1,7 +1,9 @@
 "use client";
 
 import { useCurrency } from "~/shared/model/useCurrency";
+import { useLocale } from "~/shared/model/useLocale";
 import {
+  currencyLabel,
   formatWelcomeMoney,
   getWelcomeLimit,
 } from "~/entities/game/ui/LuckyDrive/welcomeBonusLimits";
@@ -10,6 +12,7 @@ import styles from "./bonusGuide.module.css";
 
 export function BonusGuideLimits() {
   const { currency } = useCurrency();
+  const { t } = useLocale();
   const limit = getWelcomeLimit(currency);
 
   const exampleDeposit = limit.minDeposit * 2;
@@ -21,25 +24,33 @@ export function BonusGuideLimits() {
 
   return (
     <section className={styles.card}>
-      <h2 className={styles.sectionTitle}>Лимиты — {limit.label}</h2>
+      <h2 className={styles.sectionTitle}>
+        {t("guides.bonusLimitsTitle", { label: currencyLabel(limit.currency, t) })}
+      </h2>
       <div className={styles.limitCard}>
         <div className={styles.limitStat}>
-          <span className={styles.limitStatLabel}>Мин. депозит</span>
+          <span className={styles.limitStatLabel}>{t("guides.bonusMinDeposit")}</span>
           <span className={styles.limitStatValue}>
             {formatWelcomeMoney(limit.minDeposit, limit.currency)}
           </span>
         </div>
         <div className={styles.limitStat}>
-          <span className={styles.limitStatLabel}>Макс. бонус</span>
+          <span className={styles.limitStatLabel}>{t("guides.bonusMaxBonus")}</span>
           <span className={styles.limitStatValue}>
-            до {formatWelcomeMoney(limit.maxBonus, limit.currency)}
+            {t("guides.bonusMaxBonusUpTo", {
+              amount: formatWelcomeMoney(limit.maxBonus, limit.currency),
+            })}
           </span>
         </div>
       </div>
       <p className={styles.note}>
-        <strong>Пример:</strong> депозит {formatWelcomeMoney(exampleDeposit, limit.currency)} → бонус{" "}
-        {formatWelcomeMoney(exampleBonus, limit.currency)} → вейджер{" "}
-        {formatWelcomeMoney(exampleWager, limit.currency)} оборота (×8).
+        <strong>
+          {t("guides.bonusExample", {
+            deposit: formatWelcomeMoney(exampleDeposit, limit.currency),
+            bonus: formatWelcomeMoney(exampleBonus, limit.currency),
+            wager: formatWelcomeMoney(exampleWager, limit.currency),
+          })}
+        </strong>
       </p>
     </section>
   );

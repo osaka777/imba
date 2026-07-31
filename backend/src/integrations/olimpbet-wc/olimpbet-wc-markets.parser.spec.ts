@@ -681,6 +681,67 @@ describe('parseOlimpbetEventToGroupedMarkets', () => {
     expect(category![0].outcomes.map((o) => o.name)).toEqual(['40:0', '40:15']);
   });
 
+  it('merges SCORE_TIE_BREAK_SET scores and relabels catch-all without set-scope leak', async () => {
+    resolveVirtualCategoryName.mockReturnValue('Счет тай-брейка в 3-м сете');
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1839,
+          name: 'SCORE_TIE_BREAK_SET',
+          outcomes: [
+            { id: 2944, code: 'Счет[]' },
+            { id: 2945, code: 'Счет[]' },
+            { id: 2946, code: 'Счет[]' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1839,
+          probabilities: [
+            {
+              outcomeTypeId: 2944,
+              odd: 2.23,
+              parameters: [
+                { type: 'PARAMETER_SET_NUMBER', value: '3' },
+                { type: 'PARAMETER_HOME_SCORE', value: '10' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '6' },
+              ],
+            },
+            {
+              outcomeTypeId: 2945,
+              odd: 3.88,
+              parameters: [
+                { type: 'PARAMETER_SET_NUMBER', value: '3' },
+                { type: 'PARAMETER_HOME_SCORE', value: '10' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '7' },
+              ],
+            },
+            {
+              outcomeTypeId: 2946,
+              odd: 13.5,
+              parameters: [{ type: 'PARAMETER_SET_NUMBER', value: '3' }],
+            },
+          ],
+        },
+      ]),
+    );
+
+    const category =
+      grouped['Счет тай-брейка в 3-м сете']
+      ?? Object.entries(grouped).find(([k]) => /тай-?брейк/i.test(k))?.[1];
+    expect(category).toBeDefined();
+    expect(category!).toHaveLength(1);
+    // Category already names the set — no redundant "3-й сет" group label.
+    expect(category![0].label).toBe('');
+    const names = category![0].outcomes.map((o) => o.name);
+    expect(names).toEqual(expect.arrayContaining(['10:6', '10:7', 'Другой счёт']));
+    expect(names.some((n) => /м\s+сет/i.test(n))).toBe(false);
+  });
+
   it('labels WINNER_2GAMES_SET_4WAY with set/game scope and combo outcomes', async () => {
     const outcomes = [
       { id: 18371, code: 'П1П1_2Гейма[]', shortName: 'П1, П1', name: 'П1, П1' },
@@ -1275,6 +1336,56 @@ describe('parseOlimpbetEventToGroupedMarkets', () => {
     expect(penaltyRed?.outcomes.map((o) => o.name)).toEqual(['Да', 'Нет']);
   });
 
+  it('relabels the unresolved catch-all correct-score template outcome', async () => {
+    // Real feed: every SCORE_VARIANT outcome shares one template code
+    // ("ТочныйСчет[]"); the concrete score lives in HOME/AWAY_SCORE params, and
+    // the "any other" bucket ships as the sentinel score -1:-1.
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 2600,
+          name: 'SCORE_VARIANT',
+          outcomes: [
+            { id: 1, code: 'ТочныйСчет[]' },
+            { id: 2, code: 'ТочныйСчет[]' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 2600,
+          probabilities: [
+            {
+              outcomeTypeId: 1,
+              odd: 8.5,
+              parameters: [
+                { type: 'PARAMETER_HOME_SCORE', value: '1' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '0' },
+              ],
+            },
+            {
+              outcomeTypeId: 2,
+              odd: 13.25,
+              parameters: [
+                { type: 'PARAMETER_HOME_SCORE', value: '-1' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '-1' },
+              ],
+            },
+          ],
+        },
+      ]),
+    );
+
+    const names = (grouped['Точный счёт'] ?? []).flatMap((g) => g.outcomes.map((o) => o.name));
+    // Real score is preserved, and the raw "ТочныйСчет[]" template no longer leaks.
+    expect(names).toContain('1:0');
+    expect(names).toContain('Другой счёт');
+    expect(names.some((n) => /ТочныйСчет|\[\]/.test(n))).toBe(false);
+  });
+
   it('humanizes esports map markets and outcomes', async () => {
     loadOlimpbetMarketCatalog.mockResolvedValue(
       buildCatalog([
@@ -1732,5 +1843,253 @@ describe('parseOlimpbetEventToGroupedMarkets', () => {
     expect(
       Object.values(grouped).flat().some((g) => /TOTAL_GOALS_MINUTES/i.test(g.marketKey)),
     ).toBe(false);
+  });
+
+  it('drops placeholder SCORE_MAP books with flat 10.00 odds and invalid 12:12', async () => {
+    const scoreOutcomes = [
+      ...Array.from({ length: 12 }, (_, i) => ({
+        id: 100 + i,
+        code: `Счет_Карта[]`,
+        home: '13',
+        away: String(i),
+      })),
+      { id: 200, code: 'Счет_Карта[]', home: '12', away: '12' },
+      ...Array.from({ length: 12 }, (_, i) => ({
+        id: 300 + i,
+        code: 'Счет_Карта[]',
+        home: String(i),
+        away: '13',
+      })),
+    ];
+
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1189,
+          name: 'SCORE_MAP',
+          outcomes: scoreOutcomes.map(({ id, code }) => ({ id, code })),
+        },
+      ]),
+    );
+    resolveVirtualCategoryName.mockReturnValue('Счет в 3-й карте');
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1189,
+          probabilities: scoreOutcomes.map((row) => ({
+            outcomeTypeId: row.id,
+            odd: row.home === '12' && row.away === '12' ? 5.58 : 10,
+            parameters: [
+              { type: 'PARAMETER_MAP_NUMBER', value: '3' },
+              { type: 'PARAMETER_HOME_SCORE', value: row.home },
+              { type: 'PARAMETER_AWAY_SCORE', value: row.away },
+            ],
+          })),
+        },
+      ]),
+    );
+
+    expect(grouped['Счет в 3-й карте']).toBeUndefined();
+  });
+
+  it('keeps priced SCORE_MAP outcomes in one group without draws', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1189,
+          name: 'SCORE_MAP',
+          outcomes: [
+            { id: 1, code: 'Счет_Карта[]' },
+            { id: 2, code: 'Счет_Карта[]' },
+            { id: 3, code: 'Счет_Карта[]' },
+            { id: 4, code: 'Счет_Карта[]' },
+          ],
+        },
+      ]),
+    );
+    resolveVirtualCategoryName.mockReturnValue('Счет в 1-й карте');
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent([
+        {
+          marketId: 1189,
+          probabilities: [
+            {
+              outcomeTypeId: 1,
+              odd: 4.2,
+              parameters: [
+                { type: 'PARAMETER_MAP_NUMBER', value: '1' },
+                { type: 'PARAMETER_HOME_SCORE', value: '13' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '9' },
+              ],
+            },
+            {
+              outcomeTypeId: 2,
+              odd: 5.1,
+              parameters: [
+                { type: 'PARAMETER_MAP_NUMBER', value: '1' },
+                { type: 'PARAMETER_HOME_SCORE', value: '13' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '11' },
+              ],
+            },
+            {
+              outcomeTypeId: 3,
+              odd: 6.5,
+              parameters: [
+                { type: 'PARAMETER_MAP_NUMBER', value: '1' },
+                { type: 'PARAMETER_HOME_SCORE', value: '12' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '12' },
+              ],
+            },
+            {
+              outcomeTypeId: 4,
+              odd: 3.8,
+              parameters: [
+                { type: 'PARAMETER_MAP_NUMBER', value: '1' },
+                { type: 'PARAMETER_HOME_SCORE', value: '9' },
+                { type: 'PARAMETER_AWAY_SCORE', value: '13' },
+              ],
+            },
+          ],
+        },
+      ]),
+    );
+
+    const groups = grouped['Счет в 1-й карте'] ?? [];
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.marketKey).toBe('display_SCORE_MAP');
+    expect(groups[0]!.outcomes.map((o) => o.name)).toEqual(['13:9', '13:11', '9:13']);
+  });
+
+  it('drops flat placeholder esports totals books but keeps priced ones', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1500,
+          name: 'TOTAL_ROUNDS',
+          outcomes: [
+            { id: 1, code: 'ТБ' },
+            { id: 2, code: 'ТМ' },
+          ],
+        },
+      ]),
+    );
+
+    const flatLines = ['20.5', '22.5', '24.5', '26.5', '28.5', '30.5'];
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent(
+        [
+          {
+            marketId: 1500,
+            probabilities: flatLines.flatMap((line) => [
+              { outcomeTypeId: 1, odd: 10, parameters: [{ type: 'PARAMETER_VALUE', value: line }] },
+              { outcomeTypeId: 2, odd: 10, parameters: [{ type: 'PARAMETER_VALUE', value: line }] },
+            ]),
+          },
+        ],
+        // Olimpbet CS2 sport id
+        1040,
+      ),
+    );
+
+    expect(grouped['Тотал раундов']).toBeUndefined();
+  });
+
+  it('keeps priced esports totals books', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1500,
+          name: 'TOTAL_ROUNDS',
+          outcomes: [
+            { id: 1, code: 'ТБ' },
+            { id: 2, code: 'ТМ' },
+          ],
+        },
+      ]),
+    );
+
+    const linePrices: Array<[string, number, number]> = [
+      ['20.5', 1.5, 2.6],
+      ['22.5', 1.8, 2.0],
+      ['24.5', 2.2, 1.7],
+      ['26.5', 2.8, 1.45],
+      ['28.5', 3.5, 1.3],
+      ['30.5', 4.4, 1.2],
+    ];
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent(
+        [
+          {
+            marketId: 1500,
+            probabilities: linePrices.flatMap(([line, over, under]) => [
+              { outcomeTypeId: 1, odd: over, parameters: [{ type: 'PARAMETER_VALUE', value: line }] },
+              { outcomeTypeId: 2, odd: under, parameters: [{ type: 'PARAMETER_VALUE', value: line }] },
+            ]),
+          },
+        ],
+        1040,
+      ),
+    );
+
+    expect(grouped['Тотал раундов']).toBeDefined();
+    expect(grouped['Тотал раундов']!.length).toBeGreaterThan(0);
+  });
+
+  it('labels individual round totals as ТБ/ТМ not П1/П2', async () => {
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1600,
+          name: 'INDIVIDUAL_TOTAL_TEAM1_ROUNDS',
+          outcomes: [
+            { id: 1, code: 'П1' },
+            { id: 2, code: 'П1' },
+          ],
+        },
+      ]),
+    );
+    // Force OVER/UNDER via codes that include Б/М — use proper total codes
+    loadOlimpbetMarketCatalog.mockResolvedValue(
+      buildCatalog([
+        {
+          id: 1600,
+          name: 'INDIVIDUAL_TOTAL_TEAM1_ROUNDS',
+          outcomes: [
+            { id: 1, code: 'ТБ' },
+            { id: 2, code: 'ТМ' },
+          ],
+        },
+      ]),
+    );
+
+    const grouped = await parseOlimpbetEventToGroupedMarkets(
+      buildEvent(
+        [
+          {
+            marketId: 1600,
+            probabilities: [
+              {
+                outcomeTypeId: 1,
+                odd: 1.9,
+                parameters: [{ type: 'PARAMETER_VALUE', value: '26.5' }],
+              },
+              {
+                outcomeTypeId: 2,
+                odd: 1.8,
+                parameters: [{ type: 'PARAMETER_VALUE', value: '26.5' }],
+              },
+            ],
+          },
+        ],
+        1040,
+      ),
+    );
+
+    const groups = grouped['Индивидуальный тотал по раундам'] ?? [];
+    expect(groups.length).toBeGreaterThan(0);
+    const names = groups.flatMap((g) => g.outcomes.map((o) => o.name));
+    expect(names.sort()).toEqual(['ТБ', 'ТМ']);
   });
 });

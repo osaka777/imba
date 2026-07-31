@@ -1,4 +1,8 @@
+"use client";
+
 import React from "react";
+
+import { useLocale } from "~/shared/model/useLocale";
 
 import {
   sportHasDoubleChance,
@@ -14,7 +18,7 @@ type WcTournamentHeadProps = {
   sport: string;
 };
 
-function buildColumns(sport: string): Array<{ key: string; label: string; pivot?: boolean }> {
+function buildColumns(sport: string, totalLabel: string): Array<{ key: string; label: string; pivot?: boolean }> {
   const cols: Array<{ key: string; label: string; pivot?: boolean }> = [];
 
   if (sportIsTwoWay(sport)) {
@@ -32,7 +36,7 @@ function buildColumns(sport: string): Array<{ key: string; label: string; pivot?
 
   if (sportHasTotals(sport)) {
     cols.push(
-      { key: "total", label: "Тотал", pivot: true },
+      { key: "total", label: totalLabel, pivot: true },
       { key: "under", label: "ТМ" },
       { key: "over", label: "ТБ" },
     );
@@ -42,7 +46,8 @@ function buildColumns(sport: string): Array<{ key: string; label: string; pivot?
 }
 
 export function WcTournamentHead({ Icon, name, sport }: WcTournamentHeadProps) {
-  const columns = buildColumns(sport);
+  const { t } = useLocale();
+  const columns = buildColumns(sport, t("wc.totalPlain"));
 
   return (
     <div className={styles.Head} data-cols={columns.length}>

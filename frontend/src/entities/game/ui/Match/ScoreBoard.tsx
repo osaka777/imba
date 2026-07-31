@@ -3,12 +3,23 @@ import { components } from "~/shared/api";
 import { formatTennisGameScore } from "~/entities/wc-odds/lib/wcLiveScore";
 import { cn } from "~/shared/lib";
 import { TeamImage } from "~/components/ui/TeamImage";
+import { useLocale } from "~/shared/model/useLocale";
+import type { MessageKey } from "~/shared/i18n/messages";
 import styles from "./ScoreBoard.module.css";
-import { gamesList } from "../../lib";
+import { getSportLabel } from "../../lib/gamesList";
 import { getSportBackgroundCss } from "../../lib/sportBackground";
 
 type GameStatus = "PREMATCH" | "IN_PROGRESS" | "FINISHED" | "CANCELED" | "STARTING";
-type Sport = keyof typeof PERIOD_NAMES;
+type Sport = keyof typeof PERIOD_NAME_KEYS;
+
+const PERIOD_NAME_KEYS: Record<string, MessageKey> = {
+  basketball: "common.periodQuarter",
+  hockey: "common.periodDefault",
+  soccer: "common.periodHalf",
+  "table-tennis": "common.periodSet",
+  tennis: "common.periodSet",
+  volleyball: "common.periodSet",
+};
 
 interface StatListItem {
   id: string | number;
@@ -45,22 +56,12 @@ interface GameScore {
   };
 }
 
-const PERIOD_NAMES: Record<string, string> = {
-  basketball: "Четверть",
-  hockey: "Период",
-  soccer: "Тайм",
-  "table-tennis": "Сет",
-  tennis: "Сет",
-  volleyball: "Сет"
-};
-
-const translateSport = (sport?: string): string => {
+const translateSport = (
+  sport: string | undefined,
+  t: ReturnType<typeof useLocale>["t"],
+): string => {
   if (!sport) return "";
-  return gamesList[sport]?.label ?? sport;
-};
-
-const translateInfoName = (sport: string): string => {
-  return PERIOD_NAMES[sport] ?? "Период";
+  return getSportLabel(sport, t);
 };
 
 type ScoreProps = {
@@ -89,7 +90,7 @@ const secondsToTime = (totalSeconds: number): string => {
   return `${minutes}:${seconds}`;
 };
 
-const PrematchView = ({ game }: ScoreProps) => (
+const PrematchView = ({ game, t }: ScoreProps & { t: ReturnType<typeof useLocale>["t"] }) => (
   <div
     className="grid gap-6 px-1 py-3 mb-4 rounded-lg"
     style={{
@@ -98,9 +99,9 @@ const PrematchView = ({ game }: ScoreProps) => (
     }}
   >
     <div className="grid items-center grid-cols-3 text-center rounded-sm justify-items-center bg-white/5">
-      <div>{translateSport(game.sport)}</div>
+      <div>{translateSport(game.sport, t)}</div>
       <div style={{ width: "100px" }}>
-        {game.meta?.raw_start_at && `Начнётся: ${game.meta.raw_start_at}`}
+        {game.meta?.raw_start_at && t("common.startsAt", { time: game.meta.raw_start_at })}
         <br />
         {game.eventName}
       </div>
@@ -210,11 +211,15 @@ const ScoreboardRow = ({
 const ModeToggle = ({ 
   viewMode, 
   onModeChange, 
-  hasStats 
+  hasStats,
+  teamsLabel,
+  statsLabel,
 }: { 
   viewMode: 'teams' | 'stats';
   onModeChange: (mode: 'teams' | 'stats') => void;
   hasStats: boolean;
+  teamsLabel: string;
+  statsLabel: string;
 }) => {
   if (!hasStats) return null;
   
@@ -229,7 +234,7 @@ const ModeToggle = ({
             : "text-white/70 hover:text-white hover:bg-white/5"
         )}
       >
-        Команды
+        {teamsLabel}
       </button>
       <button
         onClick={() => onModeChange('stats')}
@@ -240,14 +245,19 @@ const ModeToggle = ({
             : "text-white/70 hover:text-white hover:bg-white/5"
         )}
       >
-        Статистика
+        {statsLabel}
       </button>
     </div>
   );
 };
 
 export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
+  const { t } = useLocale();
   const score = game.parsedScore;
+
+  const periodName = PERIOD_NAME_KEYS[game.sport]
+    ? t(PERIOD_NAME_KEYS[game.sport])
+    : t("common.periodDefault");
   
   const [displayedTime, setDisplayedTime] = useState<string>("00:00");
   const [viewMode, setViewMode] = useState<'teams' | 'stats'>('teams');
@@ -281,12 +291,11 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
   }, [shouldRunTimer]);
 
   if (game.status === "PREMATCH") {
-    return <PrematchView game={game} />;
+    return <PrematchView game={game} t={t} />;
   }
 
   const firstPlayerScores = score?.details?.map(([f]: [number | string, number | string]) => f) ?? [];
   const secondPlayerScores = score?.details?.map(([_f, s]: [number | string, number | string]) => s) ?? [];
-  const periodName = translateInfoName(game.sport);
   const currentScoreForEachPlayer = score?.currentScore ?? [];
   
   const mainScore = useMemo(() => {
@@ -300,14 +309,13 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
   const gameStatus = useMemo(() => {
     switch (game.status) {
       case "FINISHED": 
-        // Для завершенных игр всегда показываем "Окончена", независимо от наличия подыгр
-        return "Окончена";
-      case "CANCELED": return "Отменена";
+        return t("wc.finished");
+      case "CANCELED": return t("common.cancelled");
       case "IN_PROGRESS": return `${score?.period ?? "1"} ${periodName}`;
-      case "STARTING": return "Скоро начнётся";
+      case "STARTING": return t("common.startingSoon");
       default: return "";
     }
-  }, [game.status, score?.period, periodName]);
+  }, [game.status, score?.period, periodName, t]);
 
   const hasStats = useMemo(() => {
     return (game.meta?.stat_list?.length ?? 0) > 0;
@@ -323,7 +331,7 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
       }}
     >
       <div className="grid items-center grid-cols-3 text-center rounded-sm justify-items-center bg-white/5">
-        <div>{translateSport(game.sport)}</div>
+        <div>{translateSport(game.sport, t)}</div>
         {game.sport !== "tennis" && <ValueChange value={displayedTime} />}
         {game.sport === "tennis" && <div></div>}
         <div>{game.leagueName}</div>
@@ -367,6 +375,8 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
                   viewMode={viewMode}
                   onModeChange={setViewMode}
                   hasStats={hasStats}
+                  teamsLabel={t("common.teams")}
+                  statsLabel={t("wc.stats")}
                 />
 
                 {viewMode === 'teams' && hasDetails && (
@@ -375,9 +385,9 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
                       {/* Заголовок таблицы команд */}
                       <div className="bg-white/5 px-4 py-3 border-b border-white/10">
                         <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center text-sm font-medium text-white/70">
-                          <div className="text-left">Команда</div>
-                          <div className="text-center">Общий счёт</div>
-                          <div className="text-right">По периодам</div>
+                          <div className="text-left">{t("common.team")}</div>
+                          <div className="text-center">{t("common.totalScore")}</div>
+                          <div className="text-right">{t("common.byPeriods")}</div>
                         </div>
                       </div>
                       
@@ -439,7 +449,7 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
                             <span className="font-medium text-white/90 truncate">{game.team1}</span>
                           </div>
                           <div className="text-center">
-                            <span className="font-medium text-white/70 text-sm">Статистика</span>
+                            <span className="font-medium text-white/70 text-sm">{t("wc.stats")}</span>
                           </div>
                           <div className="text-right">
                             <span className="font-medium text-white/90 truncate">{game.team2}</span>
@@ -453,7 +463,7 @@ export const ScoreBoard = ({ game, hasSubGames = false }: ScoreProps) => {
                           // Обработка различных форматов статистики
                           const team1Value = row.opp1 || row.home || row.value1 || "-";
                           const team2Value = row.opp2 || row.away || row.value2 || "-";
-                          const statName = row.name || row.title || row.label || `Показатель ${index + 1}`;
+                          const statName = row.name || row.title || row.label || t("common.statIndicator", { n: index + 1 });
                           
                           return (
                             <div 

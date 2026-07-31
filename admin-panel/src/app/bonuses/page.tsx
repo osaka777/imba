@@ -5,6 +5,21 @@ import { AuthGuard } from '@/shared/components/AuthGuard'
 import { bonusAPI, Bonus } from '@/shared/api/bonuses'
 import { BonusAnalyticsDashboard } from '@/widgets/bonuses/BonusAnalyticsDashboard'
 import { adminAffiliatePartnersAPI } from '@/shared/api/affiliatePartners'
+import { formatMoney } from '@/shared/lib/format'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { LoadingBlock } from '@/shared/ui/LoadingBlock'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { PageShell } from '@/shared/ui/PageShell'
+import { toast } from 'react-toastify'
+
+const fieldClass =
+  'w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30'
+
+const btnPrimary =
+  'rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90'
+
+const btnSecondary =
+  'rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-accent'
 
 interface EnhancedBonusForm {
   promoCode: string
@@ -37,7 +52,7 @@ export default function BonusesPage() {
   const [newBonus, setNewBonus] = useState<EnhancedBonusForm>({
     promoCode: '',
     bonusType: 'DIRECT_BONUS',
-    bonusCurrency: 'RUB',
+    bonusCurrency: 'KZT',
     couponCount: '100',
     bonusPercentage: '50',
     bonusAmount: '1000',
@@ -71,7 +86,7 @@ export default function BonusesPage() {
 
   async function loadPromoUsages() {
     if (!manageCode) {
-      alert('Введите промо-код для управления')
+      toast.error('Введите промо-код для управления')
       return
     }
     setUsagesLoading(true)
@@ -81,7 +96,7 @@ export default function BonusesPage() {
       setUsagesMeta({ code: data.promo.code, available: data.promo.available, remaining: data.promo.remaining, type: data.promo.type })
     } catch (e) {
       console.error(e)
-      alert('Не удалось загрузить использования')
+      toast.error('Не удалось загрузить использования')
     } finally {
       setUsagesLoading(false)
     }
@@ -89,17 +104,17 @@ export default function BonusesPage() {
 
   async function handleGrantManual() {
     if (!manageCode || !grantEmail) {
-      alert('Укажите промо-код и email')
+      toast.error('Укажите промо-код и email')
       return
     }
     try {
       const res = await bonusAPI.grantPromoManually(manageCode, grantEmail)
-      alert(`Выдано: ${res.bonusAmount} ${res.bonusCurrency}, жетоны: ${res.totalTokens}`)
+      toast.success(`Выдано: ${formatMoney(res.bonusAmount, res.bonusCurrency)}, жетоны: ${res.totalTokens}`)
       setGrantEmail('')
       await loadPromoUsages()
     } catch (e) {
       console.error(e)
-      alert('Не удалось выдать бонус')
+      toast.error('Не удалось выдать бонус')
     }
   }
 
@@ -110,7 +125,7 @@ export default function BonusesPage() {
       await loadPromoUsages()
     } catch (e) {
       console.error(e)
-      alert('Не удалось отменить использование')
+      toast.error('Не удалось отменить использование')
     }
   }
 
@@ -149,7 +164,7 @@ export default function BonusesPage() {
     
     const validationError = validateForm()
     if (validationError) {
-      alert(validationError)
+      toast.error(validationError)
       return
     }
     
@@ -186,7 +201,7 @@ export default function BonusesPage() {
       setNewBonus({
         promoCode: '',
         bonusType: 'DIRECT_BONUS',
-        bonusCurrency: 'RUB',
+        bonusCurrency: 'KZT',
         couponCount: '100',
         bonusPercentage: '50',
         bonusAmount: '1000',
@@ -203,10 +218,10 @@ export default function BonusesPage() {
       })
       
       fetchBonuses()
-      alert('Бонус создан успешно!')
+      toast.success('Бонус создан успешно!')
     } catch (error) {
       console.error('Failed to create bonus:', error)
-      alert('Ошибка создания бонуса')
+      toast.error('Ошибка создания бонуса')
     }
   }
 
@@ -223,40 +238,36 @@ export default function BonusesPage() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency',
-      currency: 'RUB',
-      minimumFractionDigits: 0
-    }).format(amount)
-  }
-
   const getBonusTypeLabel = (type: string) => {
     const typeLabels = {
-      'DIRECT_BONUS': 'Прямой бонус',
-      'DEPOSIT_BONUS': 'Депозитный бонус', 
-      'VOUCHER': 'Ваучер',
-      'deposit': 'Депозитный',
-      'welcome': 'Приветственный',
-      'loyalty': 'Лояльности',
-      'referral': 'Реферальный'
+      DIRECT_BONUS: 'Прямой бонус',
+      DEPOSIT_BONUS: 'Депозитный бонус',
+      VOUCHER: 'Ваучер',
+      deposit: 'Депозитный',
+      welcome: 'Приветственный',
+      loyalty: 'Лояльности',
+      referral: 'Реферальный',
     }
     return typeLabels[type as keyof typeof typeLabels] || type
   }
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      waiting: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Ожидает' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Ожидает' },
-      success: { bg: 'bg-green-100', text: 'text-green-800', label: 'Одобрен' },
-      approved: { bg: 'bg-green-100', text: 'text-green-800', label: 'Одобрен' },
-      failed: { bg: 'bg-red-100', text: 'text-red-800', label: 'Отклонен' },
-      rejected: { bg: 'bg-red-100', text: 'text-red-800', label: 'Отклонен' }
+      waiting: { className: 'bg-amber-50 text-amber-700', label: 'Ожидает' },
+      pending: { className: 'bg-amber-50 text-amber-700', label: 'Ожидает' },
+      success: { className: 'bg-emerald-50 text-emerald-700', label: 'Одобрен' },
+      approved: { className: 'bg-emerald-50 text-emerald-700', label: 'Одобрен' },
+      failed: { className: 'bg-rose-50 text-rose-700', label: 'Отклонен' },
+      rejected: { className: 'bg-rose-50 text-rose-700', label: 'Отклонен' },
     }
-    
-    const config = statusConfig[status as keyof typeof statusConfig]
+
+    const config = statusConfig[status as keyof typeof statusConfig] ?? {
+      className: 'bg-slate-100 text-slate-600',
+      label: status,
+    }
+
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.bg} ${config.text}`}>
+      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}>
         {config.label}
       </span>
     )
@@ -264,27 +275,23 @@ export default function BonusesPage() {
 
   return (
     <AuthGuard>
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Управление бонусами</h1>
-            <p className="text-gray-600">
-              Создание и управление бонусами для пользователей
-            </p>
-          </div>
+      <PageShell>
+        <PageHeader
+          title="Управление бонусами"
+          description="Создание промо, депозитных бонусов и ваучеров"
+        />
 
-          <div className="mb-8">
-            <BonusAnalyticsDashboard period="week" showExpiringTable />
-          </div>
+        <div className="mb-6">
+          <BonusAnalyticsDashboard period="week" showExpiringTable />
+        </div>
 
-          {/* Create Bonus Form */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Создать новый бонус</h2>
+        <section className="admin-card mb-6 p-5">
+          <h2 className="mb-5 text-base font-semibold text-foreground">Создать новый бонус</h2>
             <form onSubmit={handleCreateBonus} className="space-y-6">
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Промо-код</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Промо-код</label>
                   <div className="flex">
                     <input
                       type="text"
@@ -304,11 +311,11 @@ export default function BonusesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Тип бонуса</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Тип бонуса</label>
                   <select
                     value={newBonus.bonusType}
                     onChange={(e) => setNewBonus({ ...newBonus, bonusType: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                   >
                     <option value="DIRECT_BONUS">Прямой бонус</option>
                     <option value="DEPOSIT_BONUS">Депозитный бонус</option>
@@ -316,22 +323,22 @@ export default function BonusesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Количество купонов</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Количество купонов</label>
                   <input
                     type="number"
                     value={newBonus.couponCount}
                     onChange={(e) => setNewBonus({ ...newBonus, couponCount: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                     min="1"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Партнёр (атрибуция)</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Партнёр (атрибуция)</label>
                   <select
                     value={newBonus.partnerId}
                     onChange={(e) => setNewBonus({ ...newBonus, partnerId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                   >
                     <option value="">Без партнёра</option>
                     {partners.map((p) => (
@@ -346,21 +353,21 @@ export default function BonusesPage() {
               {/* User Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email пользователя</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Email пользователя</label>
                   <input
                     type="email"
                     value={newBonus.userEmail}
                     onChange={(e) => setNewBonus({ ...newBonus, userEmail: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Описание</label>
                   <input
                     type="text"
                     value={newBonus.description}
                     onChange={(e) => setNewBonus({ ...newBonus, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                     placeholder="Дополнительное описание бонуса"
                   />
                 </div>
@@ -369,22 +376,22 @@ export default function BonusesPage() {
               {/* Date Range */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Дата начала</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Дата начала</label>
                   <input
                     type="datetime-local"
                     value={newBonus.startDate}
                     onChange={(e) => setNewBonus({ ...newBonus, startDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Дата окончания</label>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">Дата окончания</label>
                   <input
                     type="datetime-local"
                     value={newBonus.endDate}
                     onChange={(e) => setNewBonus({ ...newBonus, endDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={fieldClass}
                     required
                   />
                 </div>
@@ -392,25 +399,25 @@ export default function BonusesPage() {
 
               {/* Bonus Type Specific Fields */}
               <div className="border-t pt-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Настройки {getBonusTypeLabel(newBonus.bonusType)}</h3>
+                <h3 className="mb-4 text-sm font-semibold text-foreground">Настройки {getBonusTypeLabel(newBonus.bonusType)}</h3>
                 {newBonus.bonusType === 'DIRECT_BONUS' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Сумма бонуса</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Сумма бонуса</label>
                       <input
                         type="number"
                         value={newBonus.bonusAmount}
                         onChange={(e) => setNewBonus({ ...newBonus, bonusAmount: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Валюта</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Валюта</label>
                       <select
                         value={newBonus.bonusCurrency}
                         onChange={(e) => setNewBonus({ ...newBonus, bonusCurrency: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                       >
                         <option value="RUB">RUB</option>
                         <option value="USD">USD</option>
@@ -426,42 +433,42 @@ export default function BonusesPage() {
                 {newBonus.bonusType === 'DEPOSIT_BONUS' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Процент бонуса (%)</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Процент бонуса (%)</label>
                       <input
                         type="number"
                         value={newBonus.bonusPercentage}
                         onChange={(e) => setNewBonus({ ...newBonus, bonusPercentage: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Мин. депозит</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Мин. депозит</label>
                       <input
                         type="number"
                         value={newBonus.minDeposit}
                         onChange={(e) => setNewBonus({ ...newBonus, minDeposit: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Процент партнера (%)</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Процент партнера (%)</label>
                       <input
                         type="number"
                         value={newBonus.partnerPercentage}
                         onChange={(e) => setNewBonus({ ...newBonus, partnerPercentage: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="0"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Валюта</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Валюта</label>
                       <select
                         value={newBonus.bonusCurrency}
                         onChange={(e) => setNewBonus({ ...newBonus, bonusCurrency: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                       >
                         <option value="RUB">RUB</option>
                         <option value="USD">USD</option>
@@ -472,35 +479,35 @@ export default function BonusesPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Всего жетонов</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Всего жетонов</label>
                       <input
                         type="number"
                         value={newBonus.totalTokens}
                         onChange={(e) => setNewBonus({ ...newBonus, totalTokens: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Жетонов за ставку</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Жетонов за ставку</label>
                       <input
                         type="number"
                         value={newBonus.tokensPerBet}
                         onChange={(e) => setNewBonus({ ...newBonus, tokensPerBet: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Мин. коэффициент</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Мин. коэффициент</label>
                       <input
                         type="number"
                         step="0.01"
                         value={newBonus.tokenMinOdds}
                         onChange={(e) => setNewBonus({ ...newBonus, tokenMinOdds: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1.01"
                         required
                       />
@@ -511,31 +518,31 @@ export default function BonusesPage() {
                 {newBonus.bonusType === 'VOUCHER' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Сумма бонуса</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Сумма бонуса</label>
                       <input
                         type="number"
                         value={newBonus.bonusAmount}
                         onChange={(e) => setNewBonus({ ...newBonus, bonusAmount: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Процент партнера (%)</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Процент партнера (%)</label>
                       <input
                         type="number"
                         value={newBonus.partnerPercentage}
                         onChange={(e) => setNewBonus({ ...newBonus, partnerPercentage: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="0"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Валюта</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Валюта</label>
                       <select
                         value={newBonus.bonusCurrency}
                         onChange={(e) => setNewBonus({ ...newBonus, bonusCurrency: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                       >
                         <option value="RUB">RUB</option>
                         <option value="USD">USD</option>
@@ -546,35 +553,35 @@ export default function BonusesPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Всего жетонов</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Всего жетонов</label>
                       <input
                         type="number"
                         value={newBonus.totalTokens}
                         onChange={(e) => setNewBonus({ ...newBonus, totalTokens: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Жетонов за ставку</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Жетонов за ставку</label>
                       <input
                         type="number"
                         value={newBonus.tokensPerBet}
                         onChange={(e) => setNewBonus({ ...newBonus, tokensPerBet: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Мин. коэффициент</label>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">Мин. коэффициент</label>
                       <input
                         type="number"
                         step="0.01"
                         value={newBonus.tokenMinOdds}
                         onChange={(e) => setNewBonus({ ...newBonus, tokenMinOdds: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={fieldClass}
                         min="1.01"
                         required
                       />
@@ -584,49 +591,46 @@ export default function BonusesPage() {
               </div>
 
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <button type="submit" className={btnPrimary}>
                   Создать бонус
                 </button>
               </div>
-            </form>
-          </div>
+          </form>
+        </section>
 
           {/* Bonuses Table */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Список бонусов</h3>
+          <div className="admin-card overflow-hidden">
+            <div className="border-b border-border px-5 py-4">
+              <h3 className="text-base font-semibold text-foreground">Список бонусов</h3>
             </div>
             
             {loading ? (
-              <div className="flex justify-center items-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
+              <LoadingBlock heightClass="h-32" />
+            ) : bonuses.length === 0 ? (
+              <div className="p-4"><EmptyState title="Бонусов пока нет" /></div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+              <div className="overflow-x-auto p-2 md:p-4">
+                <table className="admin-table">
+                  <thead>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Промо-код</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сумма</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Валюта</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Доступно</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Осталось</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата начала</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Окончание</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email партнёра</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                      <th>Промо-код</th>
+                      <th>Тип</th>
+                      <th>Сумма</th>
+                      <th>Валюта</th>
+                      <th>Доступно</th>
+                      <th>Осталось</th>
+                      <th>Начало</th>
+                      <th>Окончание</th>
+                      <th>Партнёр</th>
+                      <th>Статус</th>
+                      <th>Действия</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody>
                     {bonuses.map((bonus) => {
                       const isPromo = String(bonus.id).startsWith('promo_');
                       const amountText = typeof bonus.amount === 'number' ? bonus.amount : 0;
-                      const currency = (bonus as any).currencyCode || 'RUB';
+                      const currency = (bonus as any).currencyCode || 'KZT'
                       const available = (bonus as any).available ?? (isPromo ? 0 : 1);
                       const remaining = (bonus as any).remaining ?? (isPromo ? 0 : 0);
                       const promoCode = (bonus as any).promoCode || '';
@@ -635,29 +639,31 @@ export default function BonusesPage() {
                       const partnerEmail = (bonus as any).partnerId || '';
                       
                       return (
-                        <tr key={bonus.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{promoCode}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bonus.type}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{amountText}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{currency}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{available}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{remaining}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(startDate).toLocaleString()}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{endDate ? new Date(endDate).toLocaleString() : ''}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{partnerEmail}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(bonus.status)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <tr key={bonus.id}>
+                          <td className="font-medium">{promoCode}</td>
+                          <td>{bonus.type}</td>
+                          <td className="font-semibold">{formatMoney(amountText, currency)}</td>
+                          <td>{currency}</td>
+                          <td>{available}</td>
+                          <td>{remaining}</td>
+                          <td className="whitespace-nowrap text-sm">{new Date(startDate).toLocaleString('ru-RU')}</td>
+                          <td className="whitespace-nowrap text-sm">{endDate ? new Date(endDate).toLocaleString('ru-RU') : '—'}</td>
+                          <td>{partnerEmail || '—'}</td>
+                          <td>{getStatusBadge(bonus.status)}</td>
+                          <td>
                             {!isPromo && (bonus.status === 'pending' || bonus.status === 'waiting') && (
-                              <div className="flex space-x-2">
+                              <div className="flex gap-2">
                                 <button
+                                  type="button"
                                   onClick={() => handleStatusChange(bonus.id, 'approved')}
-                                  className="text-green-600 hover:text-green-900"
+                                  className="text-sm font-medium text-emerald-600 hover:underline"
                                 >
                                   Одобрить
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleStatusChange(bonus.id, 'rejected')}
-                                  className="text-red-600 hover:text-red-900"
+                                  className="text-sm font-medium text-rose-600 hover:underline"
                                 >
                                   Отклонить
                                 </button>
@@ -673,9 +679,8 @@ export default function BonusesPage() {
             )}
           </div>
 
-          {/* Promo usages management */}
-          <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Управление использованием промо-кода</h2>
+          <section className="admin-card mt-6 p-5">
+            <h2 className="mb-4 text-base font-semibold text-foreground">Управление использованием промо-кода</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Промо-код</label>
@@ -683,24 +688,19 @@ export default function BonusesPage() {
                   type="text"
                   value={manageCode}
                   onChange={(e) => setManageCode(e.target.value.trim())}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={fieldClass}
                   placeholder="Введите код"
                 />
               </div>
               <div>
-                <button
-                  onClick={loadPromoUsages}
-                  className="w-full bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md border border-gray-300"
-                >
+                <button type="button" onClick={loadPromoUsages} className={`w-full ${btnSecondary}`}>
                   Показать использования
                 </button>
               </div>
               <div className="md:col-span-1"></div>
             </div>
 
-            {usagesLoading && (
-              <div className="mt-4 text-sm text-gray-500">Загрузка...</div>
-            )}
+            {usagesLoading ? <LoadingBlock heightClass="h-16" label="Загрузка…" /> : null}
 
             {usagesMeta && (
               <div className="mt-4 text-sm text-gray-700">
@@ -718,23 +718,24 @@ export default function BonusesPage() {
                   <div className="text-sm text-gray-500">Нет использований</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                    <table className="admin-table">
+                      <thead>
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                          <th>Email</th>
+                          <th>Статус</th>
+                          <th>Действия</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody>
                         {usages.map((u) => (
                           <tr key={`${u.userId}-${u.userEmail}`}>
-                            <td className="px-4 py-2 text-sm">{u.userEmail}</td>
-                            <td className="px-4 py-2 text-sm">{u.status}</td>
-                            <td className="px-4 py-2 text-sm">
+                            <td>{u.userEmail}</td>
+                            <td>{u.status}</td>
+                            <td>
                               <button
+                                type="button"
                                 onClick={() => handleCancelUsage(u.userEmail)}
-                                className="text-red-600 hover:text-red-800"
+                                className="text-sm font-medium text-rose-600 hover:underline"
                               >
                                 Отменить
                               </button>
@@ -748,29 +749,25 @@ export default function BonusesPage() {
 
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Выдать вручную (email)</label>
+                    <label className="mb-1 block text-sm font-medium text-muted-foreground">Выдать вручную (email)</label>
                     <input
                       type="email"
                       value={grantEmail}
                       onChange={(e) => setGrantEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={fieldClass}
                       placeholder="user@example.com"
                     />
                   </div>
                   <div>
-                    <button
-                      onClick={handleGrantManual}
-                      className="w-full bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700"
-                    >
+                    <button type="button" onClick={handleGrantManual} className={`w-full ${btnPrimary}`}>
                       Выдать бонус
                     </button>
                   </div>
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
+        </section>
+      </PageShell>
     </AuthGuard>
   )
 }

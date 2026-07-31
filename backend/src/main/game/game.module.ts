@@ -8,6 +8,7 @@ import { AuthenticationModule } from '../user/authentication/authentication.modu
 import { SubcategoryModule } from '../subcategory/subcategory.module';
 import { BetApiModule } from '~/integrations/betapi/betapi.module';
 import { EventModule } from '../event/event.module';
+import { CybersportModule } from '~/integrations/cybersport/cybersport.module';
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
 import { GameCleanupService } from './game-cleanup.service';
@@ -22,7 +23,7 @@ import { OlimpbetWcService } from '~/integrations/olimpbet-wc/olimpbet-wc.servic
 @Module({
   controllers: [GameController],
   exports: [GameService, GameCleanupService, GameMarketsService, EventMarketsService, MatchResultsService],
-  imports: [PrismaModule, BetParserModule, AuthenticationModule, SubcategoryModule, forwardRef(() => BetApiModule), forwardRef(() => EventModule), WinstonModule],
+  imports: [PrismaModule, BetParserModule, AuthenticationModule, SubcategoryModule, forwardRef(() => BetApiModule), forwardRef(() => EventModule), WinstonModule, CybersportModule],
   providers: [
     GameService,
     GameCleanupService,

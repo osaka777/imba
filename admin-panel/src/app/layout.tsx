@@ -8,8 +8,8 @@ import { LayoutClient } from './layout-client'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Admin Panel',
-  description: 'Admin panel for managing games and priorities',
+  title: 'Imba CRM',
+  description: 'Внутренняя CRM и управление imba.bet',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -38,44 +38,65 @@
   height: 36px;
   padding: 0;
   border-radius: 50%;
-  background: var(--kick-bg-card, #161617);
-  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
+  background: #3a4558;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
 .item_circle:hover {
-  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
-  background: var(--kick-green-dim, rgb(83 252 24 / 0.1));
+  background: #465468;
+  border-color: rgb(255 255 255 / 0.22);
+}
+
+.item_circle:active {
+  transform: scale(0.94);
 }
 
 .item_pill {
   height: 36px;
   padding: 0 16px 0 12px;
   border-radius: 999px;
-  background: var(--kick-green, #53fc18);
-  border: none;
-  box-shadow: 0 0 14px rgb(83 252 24 / 0.2);
+  background: #0085ff;
+  border: 1px solid transparent;
 }
 
 .item_pill:hover {
-  background: var(--kick-green-hover, #6aff2e);
+  background: #0074e0;
+}
+
+.item_pill:active {
+  transform: scale(0.98);
 }
 
 .item_pill .label {
-  color: #000;
-  font-weight: 800;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.iconImg {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
 }
 
 .icon {
   width: 18px;
   height: 18px;
-  fill: var(--white);
+  fill: #ffffff;
+  color: #ffffff;
   flex-shrink: 0;
+}
+
+.icon :global(path),
+.icon :global([fill]) {
+  fill: currentColor !important;
 }
 
 .label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--white);
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -87,8 +108,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 999px;
-  background: var(--kick-green, #53fc18);
-  color: #000;
+  background: #0085ff;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 900;
   line-height: 16px;
@@ -112,17 +133,17 @@
   height: 36px;
   padding: 0 12px;
   border-radius: 999px;
-  background: var(--kick-bg-card, #161617);
-  border: 1px solid var(--kick-border, rgb(255 255 255 / 0.07));
-  color: var(--kick-text-secondary, #a8a8a8);
+  background: #3a4558;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  color: #ffffff;
   cursor: pointer;
 }
 
 .item_more_active,
 .item_more:hover {
-  border-color: var(--kick-green-border, rgb(83 252 24 / 0.45));
-  background: var(--kick-green-dim, rgb(83 252 24 / 0.1));
-  color: var(--kick-green, #53fc18);
+  border-color: rgb(255 255 255 / 0.22);
+  background: #465468;
+  color: #ffffff;
 }
 
 .moreLabel {
@@ -146,9 +167,9 @@
   overflow: auto;
   padding: 6px;
   border-radius: 12px;
-  border: 1px solid var(--kick-border-strong, rgb(255 255 255 / 0.12));
-  background: var(--kick-bg-elevated, #1e1e20);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.55);
+  border: 1px solid #dce3eb;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgb(15 23 42 / 0.14);
 }
 
 .moreItem {
@@ -160,14 +181,14 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--white);
+  color: #344054;
   cursor: pointer;
   text-align: left;
 }
 
 .moreItem:hover,
 .moreItem_active {
-  background: var(--kick-green-dim, rgb(83 252 24 / 0.12));
+  background: #eef4ff;
 }
 
 .moreIcon {
@@ -175,6 +196,18 @@
   height: 16px;
   flex-shrink: 0;
   fill: currentColor;
+  color: #344054;
+}
+
+.moreItem .iconImg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.moreIcon :global(path),
+.moreIcon :global([fill]) {
+  fill: currentColor !important;
 }
 
 .moreItemLabel {
@@ -190,8 +223,8 @@
 .moreItemCount {
   font-size: 11px;
   font-weight: 700;
-  color: var(--white);
-  background: rgb(255 255 255 / 10%);
+  color: #475467;
+  background: #eef2f7;
   padding: 2px 6px;
   border-radius: 999px;
 }

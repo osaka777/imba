@@ -28,18 +28,18 @@
 /* Traveling lightning streak along the path (Polymarket-style). */
 .streakYes,
 .streakNo {
-  stroke-dasharray: 0.07 0.93;
+  stroke-dasharray: 0.1 0.9;
   stroke-dashoffset: 1;
   opacity: 0;
   pointer-events: none;
 }
 
 .streakYes {
-  animation: streakSweep 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: streakSweep 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .streakNo {
-  animation: streakSweep 3.6s cubic-bezier(0.4, 0, 0.2, 1) 1.8s infinite;
+  animation: streakSweep 2.8s cubic-bezier(0.4, 0, 0.2, 1) 1.4s infinite;
 }
 
 @keyframes streakSweep {
@@ -47,18 +47,18 @@
     stroke-dashoffset: 1;
     opacity: 0;
   }
-  8% {
-    opacity: 0.95;
+  6% {
+    opacity: 1;
   }
-  55% {
-    opacity: 0.7;
+  40% {
+    opacity: 0.85;
   }
-  72% {
-    stroke-dashoffset: -0.07;
+  68% {
+    stroke-dashoffset: -0.1;
     opacity: 0;
   }
   100% {
-    stroke-dashoffset: -0.07;
+    stroke-dashoffset: -0.1;
     opacity: 0;
   }
 }

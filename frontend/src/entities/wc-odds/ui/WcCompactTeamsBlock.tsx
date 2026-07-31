@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { MouseEvent, ReactNode } from "react";
 
 import { FireIcon, StatsIcon } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
 
 import compactStyles from "~/entities/wc-odds/ui/WcCompactTeamsRow.module.css";
 
@@ -42,8 +43,10 @@ export function WcCompactTeamsBlock({
   onMarketsClick,
   layout = "default",
 }: WcCompactTeamsBlockProps) {
+  const { t } = useLocale();
   const showMarkets = marketsCount > 0;
   const showScore = isLive && Boolean(scoreMain);
+  // Feed sends RU "Перерыв" — keep as match ID, do not localize this comparison.
   const isBreak = liveTimeLabel === "Перерыв";
   const showStats = hasStats && !isBreak;
   const showTeamIndicators = showStats || isPriority;
@@ -72,12 +75,16 @@ export function WcCompactTeamsBlock({
           {showTeamIndicators && (
             <div className={compactStyles.teamIndicators}>
               {showStats && (
-                <span className={compactStyles.statsBadge} title="Статистика">
+                <span className={compactStyles.statsBadge} title={t("wc.stats")}>
                   <StatsIcon className={compactStyles.statsIcon} />
                 </span>
               )}
               {isPriority && (
-                <span aria-label="Приоритетный матч" className={compactStyles.priorityBadge} title="Топ матч">
+                <span
+                  aria-label={t("wc.priorityMatch")}
+                  className={compactStyles.priorityBadge}
+                  title={t("wc.topMatch")}
+                >
                   <FireIcon className={compactStyles.priorityIcon} />
                 </span>
               )}

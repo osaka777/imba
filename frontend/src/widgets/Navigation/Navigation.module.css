@@ -1,6 +1,7 @@
 .Navigation {
   position: relative;
-  z-index: 2;
+  z-index: 200;
+  overflow: visible;
 
   border-radius: 10px;
 
@@ -30,13 +31,13 @@
 
 @media screen and (max-width: 767px) {
   .Navigation {
-    padding: 0 10px;
-    gap: 10px;
+    padding: 0 8px;
+    gap: 8px;
     justify-content: space-between;
   }
 
   .logo {
-    height: 34px;
+    height: 32px;
   }
 }
 

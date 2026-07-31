@@ -17,9 +17,12 @@ import { buildWcGameHref } from "~/entities/wc-odds/lib/wcSlug";
 import { isWcFeedPaused, wcFeedPausedLabel } from "~/entities/wc-odds/lib/wcFeedStatus";
 import { isWcPriorityEvent } from "~/entities/wc-odds/lib/wcPriority";
 import { wcEventHasStats } from "~/entities/wc-odds/lib/wcEventStats";
+import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { WcCompactTeamsBlock } from "~/entities/wc-odds/ui/WcCompactTeamsBlock";
 import { WcMatchFieldsCell } from "~/entities/wc-odds/ui/WcMatchFieldsCell";
+import { BroadcastIcon } from "~/shared/assets";
 
+import compactStyles from "~/entities/wc-odds/ui/WcCompactTeamsRow.module.css";
 import styles from "~/entities/wc-odds/ui/WcHomeMatchRow.module.css";
 import wcStyles from "~/entities/wc-odds/ui/WcLine.module.css";
 
@@ -28,6 +31,8 @@ type WcHomeMatchRowProps = {
   rowIndex: number;
   variant: "live" | "prematch";
   gridColumns: string;
+  /** Override default `/game/...` link (e.g. cybersport home → `/cybersport/game/...`). */
+  hrefOverride?: string;
 };
 
 export const WcHomeMatchRow = memo(function WcHomeMatchRow({
@@ -35,11 +40,12 @@ export const WcHomeMatchRow = memo(function WcHomeMatchRow({
   rowIndex,
   variant,
   gridColumns,
+  hrefOverride,
 }: WcHomeMatchRowProps) {
   const router = useRouter();
-  const gameHref = buildWcGameHref(event);
+  const gameHref = hrefOverride ?? buildWcGameHref(event);
   const isLive = variant === "live" && event.phase === "live";
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const isTwoWay = sportIsTwoWay(event.sport);
   const marketsCount = event.marketsCount ?? 0;
 
@@ -60,6 +66,20 @@ export const WcHomeMatchRow = memo(function WcHomeMatchRow({
   );
 
   const openGame = () => router.push(gameHref);
+  const broadcast = useWcBroadcast();
+
+  const openBroadcast = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!broadcast || !event.hasBroadcast) return;
+    broadcast.openBroadcast(event.slug || event.id, true, {
+      awayTeam: event.awayTeam,
+      homeTeam: event.homeTeam,
+      leagueName: event.leagueName,
+      homeTeamIcon: event.homeTeamIcon ?? null,
+      awayTeamIcon: event.awayTeamIcon ?? null,
+    });
+  };
 
   return (
     <div
@@ -94,6 +114,18 @@ export const WcHomeMatchRow = memo(function WcHomeMatchRow({
               awayTeam={event.awayTeam}
               gameHref={gameHref}
               hasStats={wcEventHasStats(event)}
+              homeExtras={
+                event.hasBroadcast ? (
+                  <button
+                    aria-label={t("common.openBroadcast")}
+                    className={compactStyles.teamBroadcastBtn}
+                    onClick={openBroadcast}
+                    type="button"
+                  >
+                    <BroadcastIcon className={compactStyles.teamBroadcastIcon} />
+                  </button>
+                ) : undefined
+              }
               homeTeam={event.homeTeam}
               isLive={isLive}
               isPriority={isWcPriorityEvent(event)}

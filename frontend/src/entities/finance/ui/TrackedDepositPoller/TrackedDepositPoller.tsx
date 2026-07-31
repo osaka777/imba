@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { useLocale } from "~/shared/model/useLocale";
 import {
   getMyKztForeignCardOrder,
   getMyRubForeignCardOrder,
@@ -13,6 +14,7 @@ import {
 } from "~/shared/lib/appNotifications";
 
 export const TrackedDepositPoller = () => {
+  const { t } = useLocale();
   useEffect(() => {
     let active = true;
 
@@ -29,13 +31,13 @@ export const TrackedDepositPoller = () => {
             const status = String(data?.status || "pending");
             if (status === "approved") {
               untrackDepositOrder(item.id);
-              toast.success(`Заявка #${displayId} одобрена`);
+              toast.success(t("deposit.orderApprovedId", { id: displayId }));
             } else if (status === "rejected" || status === "cancelled") {
               untrackDepositOrder(item.id);
-              toast.error(`Заявка #${displayId} отклонена`);
+              toast.error(t("deposit.orderRejectedId", { id: displayId }));
             } else if (status === "expired") {
               untrackDepositOrder(item.id);
-              toast.info(`Заявка #${displayId} истекла`);
+              toast.info(t("deposit.orderExpiredId", { id: displayId }));
             }
             continue;
           }
@@ -54,13 +56,13 @@ export const TrackedDepositPoller = () => {
           const status = String(order.status || "");
           if (status === "approved") {
             untrackDepositOrder(item.id);
-            toast.success(`Заявка #${displayId} одобрена`);
+            toast.success(t("deposit.orderApprovedId", { id: displayId }));
           } else if (status === "rejected") {
             untrackDepositOrder(item.id);
-            toast.error(`Заявка #${displayId} отклонена`);
+            toast.error(t("deposit.orderRejectedId", { id: displayId }));
           } else if (status === "expired") {
             untrackDepositOrder(item.id);
-            toast.info(`Заявка #${displayId} истекла`);
+            toast.info(t("deposit.orderExpiredId", { id: displayId }));
           }
         } catch {
           // ignore transient errors

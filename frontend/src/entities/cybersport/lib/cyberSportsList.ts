@@ -6,12 +6,14 @@ import {
 
 export type CyberSportItem = {
   Icon: React.FC<{ className?: string }>;
+  iconUrl?: string | null;
   label: string;
   name: string;
 };
 
 export const CYBER_SPORTS: CyberSportItem[] = CYBERSPORT_CATALOG.map((entry) => ({
   Icon: cyberIconForApiSport(entry.apiSport),
+  iconUrl: entry.iconUrl ?? null,
   label: entry.label,
   name: entry.apiSport,
 }));

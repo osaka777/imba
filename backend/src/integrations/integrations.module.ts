@@ -14,6 +14,7 @@ import { AAIOPaymentSystemModule } from './payment-system/aaio/aaio-payment-syst
 import { CrocoPayPaymentSystemModule } from './payment-system/crocopay/crocopay-payment-system.module';
 import { PaymentSystemModule } from './payment-system/payment-system.module';
 import { NirvanaPayPayinModule } from './payment-system/nirvanapay-payin/nirvanapay-payin.module';
+import { PayGateCorePaymentSystemModule } from './payment-system/paygatecore/paygatecore-payment-system.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NirvanaPayPayinModule } from './payment-system/nirvanapay-payin/nirvana
     GreengoPaymentSystemModule,
     CrocoPayPaymentSystemModule,
     NirvanaPayPayinModule,
+    PayGateCorePaymentSystemModule,
     WcOddsModule,
   ],
 })

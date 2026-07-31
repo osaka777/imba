@@ -46,7 +46,7 @@ export const BetItem: React.FC<BetItemProps> = ({
   const locked = !rate.isOpen || coefNotANumber;
   const outcomeTitle =
     rate.title
-    || (rate.groupedMarket ? createTitleForBet(rate.groupedMarket, rate.market) : null)
+    || (rate.groupedMarket ? createTitleForBet(rate.groupedMarket, rate.market, t) : null)
     || rate.market
     || t("coupon.betLabel");
 
@@ -98,7 +98,7 @@ export const BetItem: React.FC<BetItemProps> = ({
             <span className={openStyles.openBetHeaderScore}>{matchTimeLine}</span>
           ) : null}
           {!phaseBadge.label && !matchTimeLine ? (
-            <span className={openStyles.openBetHeaderDate}>Купон</span>
+            <span className={openStyles.openBetHeaderDate}>{t("coupon.couponLabel")}</span>
           ) : null}
         </div>
         <div className={openStyles.openBetHeaderCenter}>
@@ -112,7 +112,7 @@ export const BetItem: React.FC<BetItemProps> = ({
               width={72}
             />
           ) : (
-            <span className={openStyles.openBetHeaderBrand}>Экспресс</span>
+            <span className={openStyles.openBetHeaderBrand}>{t("coupon.express")}</span>
           )}
         </div>
         <Button
@@ -132,7 +132,7 @@ export const BetItem: React.FC<BetItemProps> = ({
             Live
           </span>
         ) : (
-          <span className={openStyles.openBetLineRibbon}>Линия</span>
+          <span className={openStyles.openBetLineRibbon}>{t("coupon.lineLabel")}</span>
         )}
 
         <div className={openStyles.openBetPickRow}>
@@ -189,6 +189,8 @@ export const BetItem: React.FC<BetItemProps> = ({
 function ratesExpressHint(coef: number) {
   if (!Number.isFinite(coef) || coef <= 0) return null;
   return (
-    <p className={styles.couponExpressHint}>В экспрессе · ×{coef.toFixed(2)}</p>
+    <p className={styles.couponExpressHint}>
+      {t("coupon.expressInCoupon", { coef: coef.toFixed(2) })}
+    </p>
   );
 }

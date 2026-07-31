@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { FiBell, FiCheckCircle, FiClock, FiGift, FiInfo, FiX, FiXCircle } from "react-icons/fi";
+import { MdNotifications } from "react-icons/md";
+import { FiCheckCircle, FiClock, FiGift, FiInfo, FiX, FiXCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { shouldDeferToNativePush } from "~/entities/push/lib/nativeApp";
+import { shouldDeferToNativePush, showNativeNotification } from "~/entities/push/lib/nativeApp";
 import {
   getMyKztForeignCardOrder,
+  getMyKztKaspiOrder,
   getMyRubForeignCardOrder,
   getUsdtTrc20OrderStatus,
 } from "~/entities/finance/api/deposit";
@@ -29,15 +31,19 @@ import {
   untrackDepositOrder,
 } from "~/shared/lib/appNotifications";
 import styles from "./NotificationsBell.module.css";
+import { useLocale } from "~/shared/model/useLocale";
+import type { AppLocale } from "~/shared/i18n/locale";
+import { toIntlLocale } from "~/shared/i18n/format";
+import type { MessageKey } from "~/shared/i18n/messages";
 
-const formatTime = (ts: number) => {
+const formatTime = (ts: number, locale: AppLocale) => {
   const d = new Date(ts);
-  return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(toIntlLocale(locale), { hour: "2-digit", minute: "2-digit" });
 };
 
-const formatDate = (ts: number) => {
+const formatDate = (ts: number, locale: AppLocale) => {
   const d = new Date(ts);
-  return d.toLocaleDateString("ru-RU", {
+  return d.toLocaleDateString(toIntlLocale(locale), {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -76,21 +82,25 @@ function resolveNotificationIcon(item: AppNotification): {
   return { type: "info", Icon: FiInfo };
 }
 
-const slidesToGeneralNotifications = (slides: Slide[]): AppNotification[] =>
+const slidesToGeneralNotifications = (
+  slides: Slide[],
+  t: (key: MessageKey) => string,
+): AppNotification[] =>
   slides
     .filter((slide) => slide.isActive)
     .sort((a, b) => a.order - b.order)
     .map((slide) => ({
       id: `slide-${slide.id}`,
       kind: "general" as const,
-      title: slide.title?.trim() || "Акция IMBA",
-      message: slide.description?.trim() || "Новое объявление на сайте",
+      title: slide.title?.trim() || t("notify.promoFallbackTitle"),
+      message: slide.description?.trim() || t("notify.promoFallbackMessage"),
       createdAt: new Date(slide.updatedAt || slide.createdAt).getTime(),
       read: false,
       linkUrl: slide.linkUrl,
     }));
 
 export const NotificationsBell = () => {
+  const { t, locale } = useLocale();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<NotificationTab>("all");
@@ -105,12 +115,12 @@ export const NotificationsBell = () => {
   const syncGeneralFromSlides = useCallback(async () => {
     try {
       const slides = await slideAPI.getActiveSlides();
-      setGeneralNotifications(slidesToGeneralNotifications(slides));
+      setGeneralNotifications(slidesToGeneralNotifications(slides, t));
       refresh();
     } catch {
       // ignore
     }
-  }, [refresh]);
+  }, [refresh, t]);
 
   useEffect(() => {
     setMounted(true);
@@ -126,40 +136,46 @@ export const NotificationsBell = () => {
     const unsub = subscribeDepositResults((payload) => {
       const displayId = Number(payload.publicOrderId ?? payload.orderId);
       if (payload.status === "approved") {
+        const title = t("notify.orderApprovedTitle", { id: displayId });
         addDepositNotification({
           orderId: payload.orderId,
           displayId,
-          title: `Заявка #${displayId} одобрена`,
-          message: "Средства зачислены на баланс.",
+          title,
+          message: t("notify.orderApprovedBody"),
         });
         if (!shouldDeferToNativePush()) {
-          toast.success(`Заявка #${displayId} одобрена`);
+          toast.success(title);
         }
+        showNativeNotification(t("notify.nativeBrand"), title);
       } else if (payload.status === "rejected") {
+        const title = t("notify.orderRejectedTitle", { id: displayId });
         addDepositNotification({
           orderId: payload.orderId,
           displayId,
-          title: `Заявка #${displayId} отклонена`,
-          message: "Обратитесь в поддержку, если это ошибка.",
+          title,
+          message: t("notify.orderRejectedBody"),
         });
         if (!shouldDeferToNativePush()) {
-          toast.error(`Заявка #${displayId} отклонена`);
+          toast.error(title);
         }
+        showNativeNotification(t("notify.nativeBrand"), title);
       } else if (payload.status === "expired") {
+        const title = t("notify.orderExpiredTitle", { id: displayId });
         addDepositNotification({
           orderId: payload.orderId,
           displayId,
-          title: `Заявка #${displayId} истекла`,
-          message: "Создайте новую заявку на пополнение.",
+          title,
+          message: t("notify.orderExpiredBody"),
         });
         if (!shouldDeferToNativePush()) {
-          toast.info(`Заявка #${displayId} истекла`);
+          toast.info(title);
         }
+        showNativeNotification(t("notify.nativeBrand"), title);
       }
       refresh();
     });
     return unsub;
-  }, [refresh]);
+  }, [refresh, t]);
 
   useEffect(() => {
     let active = true;
@@ -210,8 +226,19 @@ export const NotificationsBell = () => {
           const fetcher =
             order.currency === "RUB"
               ? getMyRubForeignCardOrder
-              : getMyKztForeignCardOrder;
-          const { data } = await fetcher();
+              : order.method === "KZT_KASPI"
+                ? getMyKztKaspiOrder
+                : getMyKztForeignCardOrder;
+          let { data } = await fetcher();
+          // Legacy tracked KZT orders may lack method — try Kaspi if card /me is empty.
+          if (
+            order.currency === "KZT" &&
+            order.method !== "KZT_KASPI" &&
+            (!data || typeof data !== "object" || !("id" in data))
+          ) {
+            const kaspi = await getMyKztKaspiOrder();
+            data = kaspi.data;
+          }
           const current = data as Record<string, unknown> | null | undefined;
           const resolvedDisplayId = Number(
             order.publicOrderId ?? current?.publicOrderId ?? order.id,
@@ -233,8 +260,8 @@ export const NotificationsBell = () => {
             addDepositNotification({
               orderId: order.id,
               displayId: resolvedDisplayId,
-              title: `Заявка #${resolvedDisplayId} отправлена`,
-              message: "Платеж принят на проверку.",
+              title: t("notify.orderSentTitle", { id: resolvedDisplayId }),
+              message: t("notify.orderSentBody"),
             });
             if (active) refresh();
             continue;
@@ -280,7 +307,7 @@ export const NotificationsBell = () => {
       active = false;
       clearInterval(id);
     };
-  }, [refresh]);
+  }, [refresh, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -305,17 +332,20 @@ export const NotificationsBell = () => {
   const unreadCount = items.filter((n) => !n.read).length;
 
   const tabs: { id: NotificationTab; label: string }[] = [
-    { id: "all", label: "Все" },
-    { id: "personal", label: "Личные" },
-    { id: "general", label: "Общие" },
+    { id: "all", label: t("notify.tabAll") },
+    { id: "personal", label: t("notify.tabPersonal") },
+    { id: "general", label: t("notify.tabGeneral") },
   ];
 
   const handleItemClick = (item: AppNotification) => {
     markNotificationRead(item.id, item.kind);
     refresh();
-    if (item.linkUrl) {
-      window.open(item.linkUrl, "_blank", "noopener,noreferrer");
+    if (!item.linkUrl) return;
+    if (item.linkUrl.startsWith("/")) {
+      window.location.assign(item.linkUrl);
+      return;
     }
+    window.open(item.linkUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleDeleteItem = (e: MouseEvent<HTMLButtonElement>, item: AppNotification) => {
@@ -341,10 +371,10 @@ export const NotificationsBell = () => {
         <div className={styles.modalHeader}>
           <div className={styles.modalHeaderRow}>
             <h3 className={styles.title} id="notifications-title">
-              Уведомления
+              {t("notify.bellTitle")}
             </h3>
             <button
-              aria-label="Закрыть"
+              aria-label={t("notify.close")}
               className={styles.closeBtn}
               onClick={() => setOpen(false)}
               type="button"
@@ -371,12 +401,10 @@ export const NotificationsBell = () => {
           {filteredItems.length === 0 ? (
             <div className={styles.empty}>
               <div className={styles.emptyIconWrap}>
-                <FiBell aria-hidden className={styles.emptyIcon} size={28} />
+                <MdNotifications aria-hidden className={styles.emptyIcon} size={28} />
               </div>
-              <p className={styles.emptyTitle}>Нет уведомлений</p>
-              <p className={styles.emptyText}>
-                Здесь появятся уведомления о ставках, пополнениях и акциях
-              </p>
+              <p className={styles.emptyTitle}>{t("notify.emptyTitle")}</p>
+              <p className={styles.emptyText}>{t("notify.emptyText")}</p>
             </div>
           ) : (
             filteredItems.map((item) => {
@@ -397,7 +425,7 @@ export const NotificationsBell = () => {
               >
                 {!item.read ? <span className={styles.itemUnreadDot} aria-hidden /> : null}
                 <button
-                  aria-label="Удалить уведомление"
+                  aria-label={t("notify.delete")}
                   className={styles.deleteBtn}
                   onClick={(e) => handleDeleteItem(e, item)}
                   type="button"
@@ -410,19 +438,21 @@ export const NotificationsBell = () => {
                 <div className={styles.itemBody}>
                   <div className={styles.itemTop}>
                     <span className={styles.itemKind}>
-                      {item.kind === "personal" ? "Личное" : "Акция"}
+                      {item.kind === "personal"
+                        ? t("notify.kindPersonal")
+                        : t("notify.kindPromo")}
                     </span>
                     <span className={styles.itemTime}>
                       {item.kind === "personal"
-                        ? formatTime(item.createdAt)
-                        : formatDate(item.createdAt)}
+                        ? formatTime(item.createdAt, locale)
+                        : formatDate(item.createdAt, locale)}
                     </span>
                   </div>
                   <div className={styles.itemTitle}>
-                    {item.title || "Уведомление"}
+                    {item.title || t("notify.fallbackTitle")}
                   </div>
                   <div className={styles.itemMessage}>
-                    {item.message || "Подробности в личном кабинете"}
+                    {item.message || t("notify.fallbackMessage")}
                   </div>
                 </div>
               </div>
@@ -442,7 +472,7 @@ export const NotificationsBell = () => {
                 }}
                 type="button"
               >
-                Прочитать все
+                {t("notify.markAllRead")}
               </button>
             ) : null}
             <button
@@ -453,7 +483,7 @@ export const NotificationsBell = () => {
               }}
               type="button"
             >
-              Удалить все
+              {t("notify.deleteAll")}
             </button>
           </div>
         ) : null}
@@ -464,13 +494,13 @@ export const NotificationsBell = () => {
   return (
     <div className={styles.bellWrap} ref={wrapRef}>
       <button
-        aria-label="Уведомления"
+        aria-label={t("notify.bellTitle")}
         className={styles.bellBtn}
         onClick={() => setOpen(true)}
         type="button"
       >
         <span className={styles.bellIconWrap}>
-          <FiBell size={18} className={styles.bellIcon} />
+          <MdNotifications size={20} className={styles.bellIcon} aria-hidden />
           {unreadCount > 0 ? (
             <span className={styles.badge}>{unreadCount > 9 ? "9+" : unreadCount}</span>
           ) : null}

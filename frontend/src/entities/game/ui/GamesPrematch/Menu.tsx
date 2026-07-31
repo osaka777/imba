@@ -4,6 +4,7 @@ import { useSportFilter } from "~/entities/game/lib/useSportFilter";
 import { lineAllHref, lineSportHref } from "~/entities/game/lib/sportPagePaths";
 import { useSportMenuRows } from "~/entities/cybersport/hooks/useSportMenuRows";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 import { getPrematchGameCounts, GameCounts } from "../../api/getGameCounts";
 import { fetchWcLineCounts } from "~/entities/wc-odds/api/client";
@@ -20,6 +21,7 @@ type MenuProps = {
 };
 
 export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
+  const { t } = useLocale();
   const sport = useSportFilter();
 
   const { data: gameCounts = { total: 0 }, isFetched: gameCountsFetched } = useQuery<GameCounts>({
@@ -81,7 +83,7 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
           key="All"
         >
           <p className={styles.text}>
-            Все
+            {t("common.all")}
             {totalCount > 0 && (
               <span className={styles.count}>{totalCount}</span>
             )}
@@ -115,7 +117,7 @@ export const Menu = ({ layout = "horizontal", className }: MenuProps) => {
         {esportsRows.length > 0 ? (
           <>
             <span className={styles.divider} aria-hidden />
-            <span className={styles.groupLabel}>Киберспорт</span>
+            <span className={styles.groupLabel}>{t("common.cybersport")}</span>
             {esportsRows
               .filter((item) => !isSidebar || !countsReady || item.count > 0)
               .map(({ Icon, label, name, count, isPriority }) => (

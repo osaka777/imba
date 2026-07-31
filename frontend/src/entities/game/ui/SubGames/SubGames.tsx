@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocale } from "~/shared/model/useLocale";
 import { getSubGames, getSubGameData, SubGameDto, SubGameData } from '../../api/getSubGames';
 import { useWebSocketContext } from '../../lib/WebSocketContext';
 import styles from './SubGames.module.css';
@@ -10,6 +13,7 @@ interface SubGamesProps {
 }
 
 export const SubGames: React.FC<SubGamesProps> = ({ eventId, onSubGameSelect }) => {
+  const { t } = useLocale();
   const [selectedSubGameId, setSelectedSubGameId] = useState<number | null>(null);
   const [subGameData, setSubGameData] = useState<SubGameData | null>(null);
   const [loadingSubGame, setLoadingSubGame] = useState(false);
@@ -157,7 +161,7 @@ export const SubGames: React.FC<SubGamesProps> = ({ eventId, onSubGameSelect }) 
     return (
       <div className={styles.subGamesContainer}>
         <div className={styles.loading}>
-          <span>Загрузка подигр...</span>
+          <span>{t("common.loadingSubGames")}</span>
         </div>
       </div>
     );
@@ -167,7 +171,7 @@ export const SubGames: React.FC<SubGamesProps> = ({ eventId, onSubGameSelect }) 
     return (
       <div className={styles.subGamesContainer}>
         <div className={styles.error}>
-          <span>Ошибка загрузки подигр: {error.message}</span>
+          <span>{t("common.subGamesError", { message: error.message })}</span>
         </div>
       </div>
     );
@@ -188,7 +192,7 @@ export const SubGames: React.FC<SubGamesProps> = ({ eventId, onSubGameSelect }) 
             }
           }}
         >
-          Все
+          {t("common.all")}
         </button>
         {(subGamesResponse?.sub_games ?? []).map((subGame) => (
           <button

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import {
   WC_LINE_TIME_OPTIONS,
@@ -37,11 +38,12 @@ export function OlimpbetTimeFilter({
   onSelectAll,
   className,
 }: OlimpbetTimeFilterProps) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const currentLabel =
-    WC_LINE_TIME_OPTIONS.find((option) => option.id === value)?.label ?? "Все время";
+  const currentOption = WC_LINE_TIME_OPTIONS.find((option) => option.id === value);
+  const currentLabel = currentOption ? t(currentOption.labelKey) : t("common.lineTimeAll");
 
   useEffect(() => {
     const onDocClick = (event: MouseEvent) => {
@@ -102,7 +104,7 @@ export function OlimpbetTimeFilter({
                 disabled={disabled}
                 onClick={() => selectOption(option.id)}
               >
-                <span>{option.label}</span>
+                <span>{t(option.labelKey)}</span>
                 <span className={styles.count}>{count}</span>
               </button>
             );

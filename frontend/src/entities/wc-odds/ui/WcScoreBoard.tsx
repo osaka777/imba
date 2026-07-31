@@ -1,63 +1,79 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  GiGoalKeeper,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
   GiCornerFlag,
   GiCrosshair,
+  GiGoalKeeper,
 } from "react-icons/gi";
 import {
-  TbBolt,
-  TbFlagFilled,
-  TbArrowsExchange,
-  TbCards,
-  TbClockHour4,
-} from "react-icons/tb";
-import {
-  MdSportsTennis,
-  MdOutlineSports,
   MdOutlineCompareArrows,
+  MdOutlineSports,
   MdOutlineSportsSoccer,
+  MdSportsTennis,
 } from "react-icons/md";
+import {
+  TbActivity,
+  TbArrowsExchange,
+  TbBolt,
+  TbCards,
+  TbChevronLeft,
+  TbClockHour4,
+  TbFlagFilled,
+} from "react-icons/tb";
 
 import type { WcEventDetail } from "~/entities/wc-odds/api/client";
-import { isSoccerLikeSport, isBasketballLikeSport } from "~/entities/wc-odds/lib/wcSportKinds";
-import { isEsportsMapScoreSport } from "~/entities/wc-odds/lib/wcEsportsScore";
+
 import { getSportBackgroundCss } from "~/entities/game/lib/sportBackground";
-import { isStaleSoccerBreak } from "~/entities/wc-odds/lib/wcSoccerPhase";
+import scoreStyles from "~/entities/game/ui/Match/ScoreBoard.module.css";
+import { isEsportsMapScoreSport } from "~/entities/wc-odds/lib/wcEsportsScore";
+import { isWcFeedPaused, wcFeedPausedLabel } from "~/entities/wc-odds/lib/wcFeedStatus";
+import { toFeedLocale } from "~/shared/i18n";
+import { isWcMatchEffectivelyFinished } from "~/entities/wc-odds/lib/wcLiveClock";
 import {
   formatTennisGameScore,
   resolveWcDisplayPeriod,
   sportUsesTennisPointScore,
 } from "~/entities/wc-odds/lib/wcLiveScore";
-import { isWcMatchEffectivelyFinished } from "~/entities/wc-odds/lib/wcLiveClock";
-import { isWcFeedPaused, wcFeedPausedLabel } from "~/entities/wc-odds/lib/wcFeedStatus";
-import { WcLiveMatchClockBar } from "~/entities/wc-odds/ui/WcLiveMatchClock";
 import { getWcSoccerCardCounts, teamHasCards } from "~/entities/wc-odds/lib/wcSoccerCards";
+import { isStaleSoccerBreak } from "~/entities/wc-odds/lib/wcSoccerPhase";
+import { isBasketballLikeSport, isSoccerLikeSport } from "~/entities/wc-odds/lib/wcSportKinds";
+import { WcLiveMatchClockBar } from "~/entities/wc-odds/ui/WcLiveMatchClock";
+import { WcLiveTrackerPanel } from "~/entities/wc-odds/ui/WcLiveTrackerPanel";
 import { WcPrematchKickoffCountdown } from "~/entities/wc-odds/ui/WcPrematchKickoffCountdown";
+import styles from "~/entities/wc-odds/ui/WcScoreBoard.module.css";
 import { WcTeamCardBadges } from "~/entities/wc-odds/ui/WcTeamCardBadges";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 import { BroadcastIcon, StatsIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
-
-import scoreStyles from "~/entities/game/ui/Match/ScoreBoard.module.css";
-import styles from "~/entities/wc-odds/ui/WcScoreBoard.module.css";
+import { useLocale } from "~/shared/model/useLocale";
 
 type WcScoreBoardProps = {
   event: WcEventDetail;
-  showBroadcastLink?: boolean;
   onBroadcastOpen?: () => void;
+  showBroadcastLink?: boolean;
   telegramAction?: ReactNode;
+  /** Resolved externally (see useWcLiveTracker) so the sidebar can share the same fetch. */
+  trackerUrl?: null | string;
 };
 
 function BroadcastLink({
-  show,
   onOpen,
+  show,
   variant = "inline",
+  t,
 }: {
-  show?: boolean;
   onOpen?: () => void;
+  show?: boolean;
   variant?: "inline" | "meta";
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   if (!show || !onOpen) return null;
 
@@ -76,23 +92,59 @@ function BroadcastLink({
       <span className={styles.broadcastLinkIconWrap}>
         <BroadcastIcon className={styles.broadcastLinkIcon} />
       </span>
-      Видеотрансляция
+      {t("wc.broadcast")}
+    </button>
+  );
+}
+
+function TrackerLink({
+  active,
+  onToggle,
+  show,
+}: {
+  active?: boolean;
+  onToggle?: () => void;
+  show?: boolean;
+}) {
+  if (!show || !onToggle) return null;
+
+  return (
+    <button
+      className={cn(styles.trackerLink, active && styles.trackerLink_active)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      type="button"
+    >
+      <span className={styles.trackerLinkIconWrap}>
+        <TbActivity className={styles.trackerLinkIcon} />
+      </span>
+      <span className={styles.trackerLinkLabel}>Live Tracker</span>
     </button>
   );
 }
 
 function MetaBar({
   leagueName,
-  status,
-  showBroadcastLink,
   onBroadcastOpen,
+  onTrackerToggle,
+  showBroadcastLink,
+  showTrackerLink,
+  status,
   telegramAction,
+  trackerActive,
+  t,
 }: {
   leagueName: string;
-  status: ReactNode;
-  showBroadcastLink?: boolean;
   onBroadcastOpen?: () => void;
+  onTrackerToggle?: () => void;
+  showBroadcastLink?: boolean;
+  showTrackerLink?: boolean;
+  status: ReactNode;
   telegramAction?: ReactNode;
+  trackerActive?: boolean;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   return (
     <div className={styles.metaBar}>
@@ -100,10 +152,16 @@ function MetaBar({
       <div className={styles.metaBar_right}>
         <div className={styles.metaBar_status}>{status}</div>
         {telegramAction}
+        <TrackerLink
+          active={trackerActive}
+          onToggle={onTrackerToggle}
+          show={showTrackerLink}
+        />
         <BroadcastLink
-          variant="meta"
-          show={showBroadcastLink}
           onOpen={onBroadcastOpen}
+          show={showBroadcastLink}
+          t={t}
+          variant="meta"
         />
       </div>
     </div>
@@ -112,43 +170,60 @@ function MetaBar({
 
 const SET_SPORTS = new Set(["tennis", "table-tennis", "volleyball"]);
 
-const COL_PREFIX: Record<string, string> = {
-  basketball:    "Ч",
-  "cyber-basketball": "Ч",
-  hockey:        "П",
-  soccer:        "Т",
-  "cyber-football": "Т",
-  "esports.cs":  "К",
-  "esports.dota2": "К",
-  "esports.valorant": "К",
-  "table-tennis":"С",
-  tennis:        "С",
-  volleyball:    "С",
-};
+function colPrefixForSport(
+  sport: string,
+  t: ReturnType<typeof useLocale>["t"],
+): string {
+  const map: Record<string, string> = {
+    basketball: t("wc.unitQuarterShort"),
+    "cyber-basketball": t("wc.unitQuarterShort"),
+    "cyber-football": t("wc.unitHalfShort"),
+    "esports.cs": t("wc.unitMapShort"),
+    "esports.dota2": t("wc.unitMapShort"),
+    "esports.valorant": t("wc.unitMapShort"),
+    hockey: t("wc.unitPeriodShort"),
+    soccer: t("wc.unitHalfShort"),
+    "table-tennis": t("wc.unitSetShort"),
+    tennis: t("wc.unitSetShort"),
+    volleyball: t("wc.unitSetShort"),
+  };
+  return map[sport] ?? (sport.startsWith("esports.") ? t("wc.unitMapShort") : t("wc.unitPeriodShort"));
+}
 
-const PERIOD_FULL: Record<string, string> = {
-  basketball:    "четверть",
-  "cyber-basketball": "четверть",
-  hockey:        "период",
-  soccer:        "тайм",
-  "cyber-football": "тайм",
-  "esports.cs":  "карта",
-  "esports.dota2": "карта",
-  "esports.valorant": "карта",
-  "table-tennis":"сет",
-  tennis:        "сет",
-  volleyball:    "сет",
-};
+function periodFullForSport(
+  sport: string,
+  t: ReturnType<typeof useLocale>["t"],
+): string {
+  const map: Record<string, string> = {
+    basketball: t("wc.unitQuarter"),
+    "cyber-basketball": t("wc.unitQuarter"),
+    "cyber-football": t("wc.unitHalf"),
+    "esports.cs": t("wc.unitMap"),
+    "esports.dota2": t("wc.unitMap"),
+    "esports.valorant": t("wc.unitMap"),
+    hockey: t("wc.unitPeriod"),
+    soccer: t("wc.unitHalf"),
+    "table-tennis": t("wc.unitSet"),
+    tennis: t("wc.unitSet"),
+    volleyball: t("wc.unitSet"),
+  };
+  return map[sport] ?? (sport.startsWith("esports.") ? t("wc.unitMap") : t("wc.unitPeriod"));
+}
 
-const GAME_PHASE_LABELS: Record<string, string> = {
-  extra_time_1: "Доп. время 1",
-  extra_time_2: "Доп. время 2",
-  penalties:    "Серия пенальти",
-  break:        "Перерыв",
-};
+function gamePhaseLabels(t: ReturnType<typeof useLocale>["t"]): Record<string, string> {
+  return {
+    break: t("wc.phaseBreak"),
+    extra_time_1: t("wc.phaseEt1"),
+    extra_time_2: t("wc.phaseEt2"),
+    penalties: t("wc.phasePenalties"),
+  };
+}
 
 /** Sport-specific label for the "penalties" game phase */
-function getPenaltiesPhaseLabel(sport: string): string {
+function getPenaltiesPhaseLabel(
+  sport: string,
+  t: ReturnType<typeof useLocale>["t"],
+): string {
   switch (sport) {
     case "tennis":
     case "table-tennis":
@@ -156,57 +231,67 @@ function getPenaltiesPhaseLabel(sport: string): string {
     case "beach-volleyball":
     case "badminton":
     case "squash":
-      return "Тай-брейк";
+      return t("wc.phaseTiebreak");
     case "hockey":
     case "bandy":
     case "floorball":
-      return "Буллиты";
+      return t("wc.phaseShootout");
     default:
-      return "Серия пенальти";
+      return t("wc.phasePenalties");
   }
 }
 
 // ── Stat metadata: icon component + label ─────────────────────────────────
-type StatMeta = { icon: React.ReactNode; label: string };
+type StatMeta = { icon: React.ReactNode; labelKey: `wc.${string}` };
 
 const STAT_META: Record<string, StatMeta> = {
-  possession:        { icon: <MdOutlineSportsSoccer />,   label: "Владение" },
-  shots_on:          { icon: <GiGoalKeeper />,            label: "Удары в створ" },
-  shots_off:         { icon: <GiCrosshair />,             label: "Удары мимо" },
-  dangerous_attacks: { icon: <TbBolt />,                  label: "Опасные атаки" },
-  fouls:             { icon: <MdOutlineSports />,          label: "Фолы" },
-  offsides:          { icon: <TbFlagFilled />,             label: "Офсайды" },
-  substitutions:     { icon: <TbArrowsExchange />,         label: "Замены" },
-  corners:           { icon: <GiCornerFlag />,             label: "Угловые" },
-  yellow_cards:      { icon: <TbCards />,                  label: "Жёлтые" },
-  red_cards:         { icon: <TbCards />,                  label: "Красные" },
-  yellow_red_cards:  { icon: <TbCards />,                  label: "Ж/К" },
-  penalty_minutes:   { icon: <TbClockHour4 />,             label: "Штрафи" },
-  free_kicks:        { icon: <MdOutlineSportsSoccer />,   label: "Штрафные" },
-  penalty_score:     { icon: <MdOutlineSportsSoccer />,   label: "Пенальти" },
-  extra_time_score:  { icon: <TbClockHour4 />,             label: "Голы в доп. время" },
-  shots:             { icon: <GiCrosshair />,             label: "Удары" },
-  saves:             { icon: <GiGoalKeeper />,            label: "Сейвы" },
-  woodwork:          { icon: <MdOutlineSportsSoccer />,   label: "Штанга" },
-  goal_kicks:        { icon: <MdOutlineSportsSoccer />,   label: "От ворот" },
-  outs:              { icon: <MdOutlineSports />,          label: "Ауты" },
-  expected_goals:    { icon: <GiCrosshair />,             label: "xG" },
-  aerial_duels:      { icon: <MdOutlineCompareArrows />,   label: "Верховые" },
-  interceptions:     { icon: <TbArrowsExchange />,         label: "Перехваты" },
-  dribbles:          { icon: <MdOutlineSportsSoccer />,   label: "Обводки" },
-  tackles:           { icon: <MdOutlineSports />,          label: "Отборы" },
-  players_on_ice:    { icon: <MdOutlineSports />,          label: "На льду" },
-  aces:              { icon: <MdSportsTennis />,           label: "Эйсы" },
-  double_faults:     { icon: <MdOutlineCompareArrows />,   label: "Двойные ошибки" },
-  server:            { icon: <MdSportsTennis />,           label: "Подача" },
+  aces:              { icon: <MdSportsTennis />,           labelKey: "wc.statAces" },
+  aerial_duels:      { icon: <MdOutlineCompareArrows />,   labelKey: "wc.statAerial" },
+  corners:           { icon: <GiCornerFlag />,             labelKey: "wc.statCorners" },
+  dangerous_attacks: { icon: <TbBolt />,                  labelKey: "wc.statDanger" },
+  double_faults:     { icon: <MdOutlineCompareArrows />,   labelKey: "wc.statDoubleFaults" },
+  dribbles:          { icon: <MdOutlineSportsSoccer />,   labelKey: "wc.statDribbles" },
+  expected_goals:    { icon: <GiCrosshair />,             labelKey: "wc.statShots" },
+  extra_time_score:  { icon: <TbClockHour4 />,             labelKey: "wc.statEtGoals" },
+  fouls:             { icon: <MdOutlineSports />,          labelKey: "wc.statFouls" },
+  free_kicks:        { icon: <MdOutlineSportsSoccer />,   labelKey: "wc.statFreeKicks" },
+  goal_kicks:        { icon: <MdOutlineSportsSoccer />,   labelKey: "wc.statGoalKicks" },
+  interceptions:     { icon: <TbArrowsExchange />,         labelKey: "wc.statInterceptions" },
+  offsides:          { icon: <TbFlagFilled />,             labelKey: "wc.statOffsides" },
+  outs:              { icon: <MdOutlineSports />,          labelKey: "wc.statOuts" },
+  penalty_minutes:   { icon: <TbClockHour4 />,             labelKey: "wc.statPenaltyMin" },
+  penalty_score:     { icon: <MdOutlineSportsSoccer />,   labelKey: "wc.statPenalties" },
+  players_on_ice:    { icon: <MdOutlineSports />,          labelKey: "wc.statOnIce" },
+  possession:        { icon: <MdOutlineSportsSoccer />,   labelKey: "wc.statPossession" },
+  red_cards:         { icon: <TbCards />,                  labelKey: "wc.statRed" },
+  saves:             { icon: <GiGoalKeeper />,            labelKey: "wc.statSaves" },
+  server:            { icon: <MdSportsTennis />,           labelKey: "wc.statServe" },
+  shots:             { icon: <GiCrosshair />,             labelKey: "wc.statShots" },
+  shots_off:         { icon: <GiCrosshair />,             labelKey: "wc.statShotsOff" },
+  shots_on:          { icon: <GiGoalKeeper />,            labelKey: "wc.statShotsOn" },
+  substitutions:     { icon: <TbArrowsExchange />,         labelKey: "wc.statSubs" },
+  tackles:           { icon: <MdOutlineSports />,          labelKey: "wc.statTackles" },
+  woodwork:          { icon: <MdOutlineSportsSoccer />,   labelKey: "wc.statWoodwork" },
+  yellow_cards:      { icon: <TbCards />,                  labelKey: "wc.statYellow" },
+  yellow_red_cards:  { icon: <TbCards />,                  labelKey: "wc.statYellowRed" },
 };
+
+function statLabel(
+  id: string,
+  t: ReturnType<typeof useLocale>["t"],
+  fallback?: string,
+): string {
+  if (id === "expected_goals") return "xG";
+  const meta = STAT_META[id];
+  return meta ? t(meta.labelKey) : (fallback ?? id);
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 // ── ValueChange animation ─────────────────────────────────────────────────
-function ValueChange({ value, className }: { value: string | number; className?: string }) {
+function ValueChange({ className, value }: { className?: string; value: number | string }) {
   const [prev, setPrev] = useState(value);
-  const [type, setType] = useState<"increased" | "decreased" | null>(null);
+  const [type, setType] = useState<"decreased" | "increased" | null>(null);
   useEffect(() => {
     if (value !== prev) {
       setType(Number(value) > Number(prev) ? "increased" : "decreased");
@@ -224,16 +309,25 @@ function ValueChange({ value, className }: { value: string | number; className?:
 }
 
 // ── Inline stat columns (compact table header icons) ──────────────────────
-type StatCol = { id: string; icon: React.ReactNode; iconLabel: string; home: string; away: string };
+type StatCol = { away: string; home: string; icon: React.ReactNode; iconLabel: string; id: string };
 
-function buildStatCols(event: WcEventDetail): StatCol[] {
+function buildStatCols(
+  event: WcEventDetail,
+  t: ReturnType<typeof useLocale>["t"],
+): StatCol[] {
   const cols: StatCol[] = [];
   const pick = (id: string) => event.statList?.find((s) => s.id === id);
   const add = (id: string) => {
     const s = pick(id);
     if (!s) return;
     const meta = STAT_META[id];
-    cols.push({ id, icon: meta?.icon ?? null, iconLabel: meta?.label ?? id, home: s.opp1, away: s.opp2 });
+    cols.push({
+      away: s.opp2,
+      home: s.opp1,
+      icon: meta?.icon ?? null,
+      iconLabel: statLabel(id, t, s.name),
+      id,
+    });
   };
 
   if (isSoccerLikeSport(event.sport)) {
@@ -273,18 +367,24 @@ const STATS_BLOCK_SPORTS = new Set([
 
 const STATS_STICKY_MS = 4000;
 
-function StatsBlock({ event }: { event: WcEventDetail }) {
+function StatsBlock({
+  event,
+  t,
+}: {
+  event: WcEventDetail;
+  t: ReturnType<typeof useLocale>["t"];
+}) {
   const [open, setOpen] = useState(false);
   const rows = useMemo(
     () => (event.statList ?? []).filter((s) => s.id !== "server"),
     [event.statList],
   );
-  const stickyRef = useRef<{ rows: typeof rows; at: number } | null>(null);
+  const stickyRef = useRef<{ at: number; rows: typeof rows } | null>(null);
   const [displayRows, setDisplayRows] = useState(rows);
 
   useEffect(() => {
     if (rows.length > 0) {
-      stickyRef.current = { rows, at: Date.now() };
+      stickyRef.current = { at: Date.now(), rows };
       setDisplayRows(rows);
       return undefined;
     }
@@ -306,13 +406,13 @@ function StatsBlock({ event }: { event: WcEventDetail }) {
   return (
     <div className={styles.statsWrap}>
       <button
-        type="button"
-        className={cn(styles.statsToggle, open && styles.statsToggle_open)}
         aria-expanded={open}
+        className={cn(styles.statsToggle, open && styles.statsToggle_open)}
         onClick={() => setOpen((value) => !value)}
+        type="button"
       >
-        <StatsIcon className={styles.statsToggleIcon} aria-hidden />
-        <span className={styles.statsToggleLabel}>Статистика</span>
+        <StatsIcon aria-hidden className={styles.statsToggleIcon} />
+        <span className={styles.statsToggleLabel}>{t("wc.stats")}</span>
         <span className={cn(styles.statsToggleChevron, open && styles.statsToggleChevron_open)} />
       </button>
 
@@ -320,7 +420,7 @@ function StatsBlock({ event }: { event: WcEventDetail }) {
         <div className={styles.statsBlock}>
           <div className={styles.statsBlock_header}>
             <span className={styles.statsBlock_homeTeam}>{event.homeTeam}</span>
-            <span className={styles.statsBlock_title}>Статистика</span>
+            <span className={styles.statsBlock_title}>{t("wc.stats")}</span>
             <span className={styles.statsBlock_awayTeam}>{event.awayTeam}</span>
           </div>
           {displayRows.map((row) => {
@@ -336,10 +436,10 @@ function StatsBlock({ event }: { event: WcEventDetail }) {
             const awayLeads = a > h;
             const suffix = isPossession ? "%" : "";
             return (
-              <div key={row.id} className={styles.statsRow}>
+              <div className={styles.statsRow} key={row.id}>
                 <div className={styles.statsLabel}>
                   {meta?.icon && <span className={styles.statIcon}>{meta.icon}</span>}
-                  <span className={styles.statLabelText}>{meta?.label ?? row.name}</span>
+                  <span className={styles.statLabelText}>{statLabel(row.id, t, row.name)}</span>
                 </div>
                 <span className={cn(styles.statsVal, homeLeads && styles.statsVal_lead)}>{h}{suffix}</span>
                 <div className={styles.barTrack}>
@@ -357,22 +457,29 @@ function StatsBlock({ event }: { event: WcEventDetail }) {
 }
 
 // ── Prematch view ─────────────────────────────────────────────────────────
-function PrematchView({ event, showBroadcastLink, onBroadcastOpen, telegramAction }: WcScoreBoardProps) {
+function PrematchView({
+  event,
+  onBroadcastOpen,
+  showBroadcastLink,
+  telegramAction,
+  t,
+}: WcScoreBoardProps & { t: ReturnType<typeof useLocale>["t"] }) {
   return (
     <div className={styles.wcScoreBoard} style={{
       background: getSportBackgroundCss(event.sport),
     }}>
       <MetaBar
         leagueName={event.leagueName}
-        status={<span className={styles.prematchMetaPill}>Линия</span>}
-        showBroadcastLink={showBroadcastLink}
         onBroadcastOpen={onBroadcastOpen}
+        showBroadcastLink={showBroadcastLink}
+        status={<span className={styles.prematchMetaPill}>{t("wc.line")}</span>}
+        t={t}
         telegramAction={telegramAction}
       />
 
       <div className={styles.prematchBody}>
         <div className={styles.prematchSide}>
-          <WcTeamImage teamName={event.homeTeam} iconUrl={event.homeTeamIcon} size={56} rounded />
+          <WcTeamImage iconUrl={event.homeTeamIcon} rounded size={56} teamName={event.homeTeam} />
           <span className={styles.prematchTeamName}>{event.homeTeam}</span>
         </div>
 
@@ -381,7 +488,7 @@ function PrematchView({ event, showBroadcastLink, onBroadcastOpen, telegramActio
         </div>
 
         <div className={styles.prematchSide}>
-          <WcTeamImage teamName={event.awayTeam} iconUrl={event.awayTeamIcon} size={56} rounded />
+          <WcTeamImage iconUrl={event.awayTeamIcon} rounded size={56} teamName={event.awayTeam} />
           <span className={styles.prematchTeamName}>{event.awayTeam}</span>
         </div>
       </div>
@@ -392,10 +499,12 @@ function PrematchView({ event, showBroadcastLink, onBroadcastOpen, telegramActio
 // ── Main scoreboard ────────────────────────────────────────────────────────
 export function WcScoreBoard({
   event,
-  showBroadcastLink,
   onBroadcastOpen,
+  showBroadcastLink,
   telegramAction,
+  trackerUrl,
 }: WcScoreBoardProps) {
+  const { t, locale } = useLocale();
   const score = event.parsedScore;
 
   const isLive     = event.phase === "live" && !isWcMatchEffectivelyFinished(event);
@@ -404,10 +513,66 @@ export function WcScoreBoard({
   const isSetSport = SET_SPORTS.has(event.sport);
   const isEsportsMap = isEsportsMapScoreSport(event.sport);
 
+  // Mobile/APK: horizontal swipe between scoreboard ↔ Live Tracker.
+  // Desktop (>=1081px) keeps the scoreboard only; tracker lives in the coupon sidebar.
+  const canSwipeTracker = Boolean(trackerUrl);
+  const [swipePage, setSwipePage] = useState(0);
+  const swipeViewportRef = useRef<HTMLDivElement>(null);
+  const scorePageRef = useRef<HTMLDivElement>(null);
+  const trackerPageRef = useRef<HTMLDivElement>(null);
+
+  const goToSwipePage = useCallback((index: number) => {
+    const el = swipeViewportRef.current;
+    if (!el) return;
+    el.scrollTo({ behavior: "smooth", left: index * el.clientWidth });
+    setSwipePage(index);
+  }, []);
+
+  useEffect(() => {
+    if (!trackerUrl) {
+      setSwipePage(0);
+      const el = swipeViewportRef.current;
+      if (el) el.scrollTo({ left: 0 });
+    }
+  }, [trackerUrl]);
+
+  const syncSwipeHeight = useCallback(() => {
+    const vp = swipeViewportRef.current;
+    if (!vp || !canSwipeTracker) {
+      if (vp) vp.style.height = "";
+      return;
+    }
+    const active = swipePage === 1 ? trackerPageRef.current : scorePageRef.current;
+    if (!active) return;
+    vp.style.height = `${active.offsetHeight}px`;
+  }, [canSwipeTracker, swipePage]);
+
+  useEffect(() => {
+    syncSwipeHeight();
+  }, [syncSwipeHeight, event, trackerUrl]);
+
+  useEffect(() => {
+    const vp = swipeViewportRef.current;
+    if (!vp || !canSwipeTracker) return undefined;
+
+    const onScroll = () => {
+      const next = Math.round(vp.scrollLeft / Math.max(1, vp.clientWidth));
+      setSwipePage((prev) => (prev === next ? prev : next));
+    };
+
+    vp.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", syncSwipeHeight);
+    return () => {
+      vp.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", syncSwipeHeight);
+    };
+  }, [canSwipeTracker, syncSwipeHeight]);
+
   const rawGamePhase     = score?.gamePhase ?? null;
   const isStaleBreak     = rawGamePhase === "break" && isStaleSoccerBreak(score ?? undefined);
   const gamePhase        = isStaleBreak ? null : rawGamePhase;
-  const gamePhaseLabel   = gamePhase ? (GAME_PHASE_LABELS[gamePhase] ?? null) : null;
+  const gamePhaseLabelsMap = useMemo(() => gamePhaseLabels(t), [t]);
+  const gamePhaseLabel   = gamePhase ? (gamePhaseLabelsMap[gamePhase] ?? null) : null;
   const isBreak          = gamePhase === "break";
   const isClassicSoccer = event.sport === "soccer";
 
@@ -418,14 +583,12 @@ export function WcScoreBoard({
   const isPenaltiesPhase = gamePhase === "penalties" || (isClassicSoccer && isLive && details.length >= 5);
 
   const showLiveClockBar = isLive && !isSetSport && !isBreak && !isPenaltiesPhase && !isEsportsMap;
-  const colPrefix  = COL_PREFIX[event.sport]
-    ?? (event.sport.startsWith("esports.") ? "К" : "П");
-  const periodStr  = PERIOD_FULL[event.sport]
-    ?? (event.sport.startsWith("esports.") ? "карта" : "период");
+  const colPrefix  = colPrefixForSport(event.sport, t);
+  const periodStr  = periodFullForSport(event.sport, t);
   const varState = score?.varState ?? null;
   const penaltyRisk = score?.penaltyRisk === true;
   const feedPaused = isWcFeedPaused(event.feedStatus);
-  const pausedLabel = wcFeedPausedLabel("ru");
+  const pausedLabel = wcFeedPausedLabel(toFeedLocale(locale));
 
   const currentPeriodIdx = isEsportsMap && isLive && details.length > 0
     ? details.length - 1
@@ -457,16 +620,16 @@ export function WcScoreBoard({
   // Status line ("2 сет", "1 тайм", "Доп. время 1")
   const statusLine = useMemo(() => {
     if (!isLive) return null;
-    if (isPenaltiesPhase) return getPenaltiesPhaseLabel(event.sport);
+    if (isPenaltiesPhase) return getPenaltiesPhaseLabel(event.sport, t);
     if (gamePhaseLabel) return gamePhaseLabel;
-    if (isEsportsMap) return details.length > 0 ? `Карта ${details.length}` : "Live";
+    if (isEsportsMap) return details.length > 0 ? t("wc.mapN", { n: details.length }) : "Live";
     if (isSetSport) return details.length > 0 ? `${details.length} ${periodStr}` : null;
     const p = resolveWcDisplayPeriod(event.sport, score?.period, details.length);
     return p > 0 ? `${p} ${periodStr}` : null;
-  }, [isLive, isPenaltiesPhase, gamePhaseLabel, isSetSport, isEsportsMap, details.length, periodStr, score?.period, event.sport]);
+  }, [isLive, isPenaltiesPhase, gamePhaseLabel, isSetSport, isEsportsMap, details.length, periodStr, score?.period, event.sport, t]);
 
   // ── Stat columns (inline in table header) ──────────────────────────────
-  const statCols = useMemo(() => buildStatCols(event), [event]);
+  const statCols = useMemo(() => buildStatCols(event, t), [event, t]);
 
   const hasStatsProgressBlock = useMemo(() => {
     if (!STATS_BLOCK_SPORTS.has(event.sport)) return false;
@@ -506,7 +669,7 @@ export function WcScoreBoard({
     const ch = Number(homeTotal) - sumHome;
     const ca = Number(awayTotal) - sumAway;
     if (ch < 0 || ca < 0) return null;
-    return { home: ch, away: ca };
+    return { away: ca, home: ch };
   }, [event.sport, isLive, details, homeTotal, awayTotal]);
 
   const extraCols = bballCurrent ? 1 : 0;
@@ -524,35 +687,45 @@ export function WcScoreBoard({
         event={event}
         onBroadcastOpen={onBroadcastOpen}
         showBroadcastLink={showBroadcastLink}
+        t={t}
         telegramAction={telegramAction}
       />
     );
   }
 
   return (
-    <div className={styles.wcScoreBoard} style={{
-      background: getSportBackgroundCss(event.sport),
-    }}>
-
+    <div
+      className={cn(styles.wcScoreBoard, canSwipeTracker && styles.wcScoreBoard_swipeable)}
+      style={{
+        background: getSportBackgroundCss(event.sport),
+      }}
+    >
+      <div className={styles.swipeViewport} ref={swipeViewportRef}>
+        <div className={styles.swipeTrack}>
+          <div className={styles.swipePage} data-swipe-page="score" ref={scorePageRef}>
       {/* ── Meta bar ──────────────────────────────────── */}
       <MetaBar
         leagueName={event.leagueName}
+        onBroadcastOpen={onBroadcastOpen}
+        onTrackerToggle={() => goToSwipePage(swipePage === 1 ? 0 : 1)}
+        showBroadcastLink={showBroadcastLink}
+        showTrackerLink={canSwipeTracker}
         status={
           <>
-            {isFinished && "Окончена"}
+            {isFinished && t("wc.finished")}
             {isLive && feedPaused && (
               <span className={styles.suspendedPill} title={pausedLabel}>
                 {pausedLabel}
               </span>
             )}
-            {isLive && !feedPaused && isPenaltiesPhase && getPenaltiesPhaseLabel(event.sport)}
-            {isLive && !feedPaused && !isPenaltiesPhase && !isSetSport && isBreak && (gamePhaseLabel ?? "Перерыв")}
-            {isLive && !feedPaused && isSetSport && (setsScore ? `Сеты ${setsScore}` : "Live")}
+            {isLive && !feedPaused && isPenaltiesPhase && getPenaltiesPhaseLabel(event.sport, t)}
+            {isLive && !feedPaused && !isPenaltiesPhase && !isSetSport && isBreak && (gamePhaseLabel ?? t("wc.break"))}
+            {isLive && !feedPaused && isSetSport && (setsScore ? t("wc.setsScore", { score: setsScore }) : "Live")}
           </>
         }
-        showBroadcastLink={showBroadcastLink}
-        onBroadcastOpen={onBroadcastOpen}
+        t={t}
         telegramAction={telegramAction}
+        trackerActive={swipePage === 1}
       />
 
       {showLiveClockBar && !feedPaused ? (
@@ -573,7 +746,7 @@ export function WcScoreBoard({
       {isLive && !feedPaused && isEsportsMap && (statusLine || esportsCurrentRound) ? (
         <div className={styles.liveClockBar}>
           <span className={styles.matchClockPill}>
-            <span className={styles.timerDot} aria-hidden />
+            <span aria-hidden className={styles.timerDot} />
             {statusLine ? (
               <span className={styles.matchClockPeriod}>{statusLine}</span>
             ) : null}
@@ -587,7 +760,7 @@ export function WcScoreBoard({
       {isLive && !feedPaused && isSetSport && statusLine ? (
         <div className={styles.liveClockBar}>
           <span className={styles.matchClockPill}>
-            <span className={styles.timerDot} aria-hidden />
+            <span aria-hidden className={styles.timerDot} />
             <span className={styles.matchClockPeriod}>{statusLine}</span>
           </span>
         </div>
@@ -605,23 +778,23 @@ export function WcScoreBoard({
           ) : null}
 
           <div className={styles.setScoresHeader}>
-            <div className={styles.setScoresHeaderSpacer} aria-hidden />
+            <div aria-hidden className={styles.setScoresHeaderSpacer} />
             <div className={styles.setPlayerScores}>
               <div className={cn(styles.cell_header, styles.cell_header_total, styles.setColHeader)}>
-                С
+                {t("wc.unitSetShort")}
               </div>
               {details.map((_, i) => {
                 const isCurrent = i === currentPeriodIdx;
                 const isDone = i < currentPeriodIdx;
                 return (
                   <div
-                    key={i}
                     className={cn(
                       styles.cell_header,
                       styles.setColHeader,
                       isCurrent && styles.cell_header_active,
                       isDone && styles.cell_header_done,
                     )}
+                    key={i}
                   >
                     {colPrefix}{i + 1}
                   </div>
@@ -629,9 +802,9 @@ export function WcScoreBoard({
               })}
               {displayStatCols.map((col) => (
                 <div
+                  className={cn(styles.cell_header, styles.cell_header_stat, styles.setColHeader)}
                   key={col.id}
                   title={col.iconLabel}
-                  className={cn(styles.cell_header, styles.cell_header_stat, styles.setColHeader)}
                 >
                   {col.icon}
                 </div>
@@ -642,9 +815,9 @@ export function WcScoreBoard({
           <div className={styles.setPlayerRow}>
             <div className={cn(styles.cell_team, serving === 1 && styles.cell_team_serving)}>
               <div className={styles.teamRowMain}>
-                <WcTeamImage teamName={event.homeTeam} iconUrl={event.homeTeamIcon} size={24} />
+                <WcTeamImage iconUrl={event.homeTeamIcon} size={24} teamName={event.homeTeam} />
                 <div className={styles.teamNameWithServe}>
-                  <span className={styles.teamNameCompact}>{event.homeTeam}</span>
+                  <span className={styles.teamNameCompact} title={event.homeTeam}>{event.homeTeam}</span>
                   {serving === 1 && <span className={styles.serveDot} />}
                 </div>
               </div>
@@ -656,15 +829,15 @@ export function WcScoreBoard({
                 const isDone    = i < currentPeriodIdx;
                 const won       = isDone && Number(h) > Number(details[i][1]);
                 return (
-                  <div key={i} className={cn(styles.cell_periodScore,
+                  <div className={cn(styles.cell_periodScore,
                     isCurrent && styles.cell_periodScore_current,
-                    won       && styles.cell_periodScore_won)}>{h}</div>
+                    won       && styles.cell_periodScore_won)} key={i}>{h}</div>
                 );
               })}
               {displayStatCols.map((col) => (
-                <div key={col.id} className={cn(styles.cell_statValue,
+                <div className={cn(styles.cell_statValue,
                   col.id === "yellow_cards" && styles.cell_stat_yellow,
-                  col.id === "red_cards"    && styles.cell_stat_red)}>{col.home}</div>
+                  col.id === "red_cards"    && styles.cell_stat_red)} key={col.id}>{col.home}</div>
               ))}
             </div>
           </div>
@@ -677,9 +850,9 @@ export function WcScoreBoard({
               )}
             >
               <div className={styles.teamRowMain}>
-                <WcTeamImage teamName={event.awayTeam} iconUrl={event.awayTeamIcon} size={24} />
+                <WcTeamImage iconUrl={event.awayTeamIcon} size={24} teamName={event.awayTeam} />
                 <div className={styles.teamNameWithServe}>
-                  <span className={styles.teamNameCompact}>{event.awayTeam}</span>
+                  <span className={styles.teamNameCompact} title={event.awayTeam}>{event.awayTeam}</span>
                   {serving === 2 && <span className={styles.serveDot} />}
                 </div>
               </div>
@@ -691,15 +864,15 @@ export function WcScoreBoard({
                 const isDone    = i < currentPeriodIdx;
                 const won       = isDone && Number(a) > Number(details[i][0]);
                 return (
-                  <div key={i} className={cn(styles.cell_periodScore,
+                  <div className={cn(styles.cell_periodScore,
                     isCurrent && styles.cell_periodScore_current,
-                    won       && styles.cell_periodScore_won)}>{a}</div>
+                    won       && styles.cell_periodScore_won)} key={i}>{a}</div>
                 );
               })}
               {displayStatCols.map((col) => (
-                <div key={col.id} className={cn(styles.cell_statValue,
+                <div className={cn(styles.cell_statValue,
                   col.id === "yellow_cards" && styles.cell_stat_yellow,
-                  col.id === "red_cards"    && styles.cell_stat_red)}>{col.away}</div>
+                  col.id === "red_cards"    && styles.cell_stat_red)} key={col.id}>{col.away}</div>
               ))}
             </div>
           </div>
@@ -711,19 +884,19 @@ export function WcScoreBoard({
         >
           {isFinished && (
             <div className={styles.headerStatusSpanned}>
-              <span className={styles.finishedPill}>Окончена</span>
+              <span className={styles.finishedPill}>{t("wc.finished")}</span>
             </div>
           )}
 
           {isLive && isPenaltiesPhase && (
             <div className={styles.headerStatusSpanned}>
-              <span className={styles.penaltiesLabel}>{getPenaltiesPhaseLabel(event.sport)}</span>
+              <span className={styles.penaltiesLabel}>{getPenaltiesPhaseLabel(event.sport, t)}</span>
             </div>
           )}
 
           {isLive && !isPenaltiesPhase && !isSetSport && isBreak && (
             <div className={styles.headerStatusSpanned}>
-              <span className={styles.gamePhaseLabel}>{gamePhaseLabel ?? "Перерыв"}</span>
+              <span className={styles.gamePhaseLabel}>{gamePhaseLabel ?? t("wc.break")}</span>
             </div>
           )}
 
@@ -734,7 +907,7 @@ export function WcScoreBoard({
                   <span className={styles.varPill}>{varState}</span>
                 ) : null}
                 {isClassicSoccer && penaltyRisk ? (
-                  <span className={styles.penaltyRiskPill}>Пен.</span>
+                  <span className={styles.penaltyRiskPill}>{t("wc.penaltyShort")}</span>
                 ) : null}
                 {feedPaused ? (
                   <span className={styles.suspendedPill} title={pausedLabel}>
@@ -750,11 +923,11 @@ export function WcScoreBoard({
             const isDone    = isLive && i < currentPeriodIdx;
             const isPenCol  = isPenaltiesPhase && i === 4;
             return (
-              <div key={i} className={cn(styles.cell_header,
+              <div className={cn(styles.cell_header,
                 isCurrent && styles.cell_header_active,
                 isDone    && styles.cell_header_done,
-                isPenCol  && styles.cell_header_penalties)}>
-                {isPenCol ? "Пен" : `${colPrefix}${i + 1}`}
+                isPenCol  && styles.cell_header_penalties)} key={i}>
+                {isPenCol ? t("wc.penaltyCol") : `${colPrefix}${i + 1}`}
               </div>
             );
           })}
@@ -764,18 +937,18 @@ export function WcScoreBoard({
             </div>
           )}
           {displayStatCols.map((col) => (
-            <div key={col.id} title={col.iconLabel}
-              className={cn(styles.cell_header, styles.cell_header_stat,
+            <div className={cn(styles.cell_header, styles.cell_header_stat,
                 col.id === "yellow_cards" && styles.cell_header_yellow,
-                col.id === "red_cards"    && styles.cell_header_red)}>
+                col.id === "red_cards"    && styles.cell_header_red)} key={col.id}
+              title={col.iconLabel}>
               {col.icon}
             </div>
           ))}
 
           <div className={cn(styles.cell_team, serving === 1 && styles.cell_team_serving)}>
             <div className={styles.teamRowMain}>
-              <WcTeamImage teamName={event.homeTeam} iconUrl={event.homeTeamIcon} size={24} />
-              <span className={styles.teamNameCompact}>{event.homeTeam}</span>
+              <WcTeamImage iconUrl={event.homeTeamIcon} size={24} teamName={event.homeTeam} />
+              <span className={styles.teamNameCompact} title={event.homeTeam}>{event.homeTeam}</span>
               {isSetSport && serving === 1 && <span className={styles.serveDot} />}
               {cardCounts && teamHasCards(cardCounts.home) && (
                 <WcTeamCardBadges
@@ -791,9 +964,9 @@ export function WcScoreBoard({
             const isDone    = isLive && i < currentPeriodIdx;
             const won       = isDone && Number(h) > Number(details[i][1]);
             return (
-              <div key={i} className={cn(styles.cell_periodScore,
+              <div className={cn(styles.cell_periodScore,
                 isCurrent && styles.cell_periodScore_current,
-                won       && styles.cell_periodScore_won)}>{h}</div>
+                won       && styles.cell_periodScore_won)} key={i}>{h}</div>
             );
           })}
           {bballCurrent && (
@@ -802,15 +975,15 @@ export function WcScoreBoard({
             </div>
           )}
           {displayStatCols.map((col) => (
-            <div key={col.id} className={cn(styles.cell_statValue,
+            <div className={cn(styles.cell_statValue,
               col.id === "yellow_cards" && styles.cell_stat_yellow,
-              col.id === "red_cards"    && styles.cell_stat_red)}>{col.home}</div>
+              col.id === "red_cards"    && styles.cell_stat_red)} key={col.id}>{col.home}</div>
           ))}
 
           <div className={cn(styles.cell_team, serving === 2 && styles.cell_team_serving)}>
             <div className={styles.teamRowMain}>
-              <WcTeamImage teamName={event.awayTeam} iconUrl={event.awayTeamIcon} size={24} />
-              <span className={styles.teamNameCompact}>{event.awayTeam}</span>
+              <WcTeamImage iconUrl={event.awayTeamIcon} size={24} teamName={event.awayTeam} />
+              <span className={styles.teamNameCompact} title={event.awayTeam}>{event.awayTeam}</span>
               {isSetSport && serving === 2 && <span className={styles.serveDot} />}
               {cardCounts && teamHasCards(cardCounts.away) && (
                 <WcTeamCardBadges
@@ -826,9 +999,9 @@ export function WcScoreBoard({
             const isDone    = isLive && i < currentPeriodIdx;
             const won       = isDone && Number(a) > Number(details[i][0]);
             return (
-              <div key={i} className={cn(styles.cell_periodScore,
+              <div className={cn(styles.cell_periodScore,
                 isCurrent && styles.cell_periodScore_current,
-                won       && styles.cell_periodScore_won)}>{a}</div>
+                won       && styles.cell_periodScore_won)} key={i}>{a}</div>
             );
           })}
           {bballCurrent && (
@@ -837,15 +1010,59 @@ export function WcScoreBoard({
             </div>
           )}
           {displayStatCols.map((col) => (
-            <div key={col.id} className={cn(styles.cell_statValue,
+            <div className={cn(styles.cell_statValue,
               col.id === "yellow_cards" && styles.cell_stat_yellow,
-              col.id === "red_cards"    && styles.cell_stat_red)}>{col.away}</div>
+              col.id === "red_cards"    && styles.cell_stat_red)} key={col.id}>{col.away}</div>
           ))}
         </div>
       )}
 
       {/* ── Stats block with progress bars (football) ─ */}
-      <StatsBlock event={event} />
+      <StatsBlock event={event} t={t} />
+          </div>
+
+          {canSwipeTracker && trackerUrl ? (
+            <div
+              className={styles.swipePageTracker}
+              data-swipe-page="tracker"
+              ref={trackerPageRef}
+            >
+              <button
+                aria-label={t("wc.backToScore")}
+                className={styles.swipeTrackerChrome}
+                onClick={() => goToSwipePage(0)}
+                type="button"
+              >
+                <span className={styles.swipeTrackerChromeIcon}>
+                  <TbActivity />
+                </span>
+                <span className={styles.swipeTrackerChromeTitle}>Live Tracker</span>
+                <span aria-hidden className={styles.swipeTrackerChromeHint}>
+                  <TbChevronLeft />
+                </span>
+              </button>
+              <WcLiveTrackerPanel url={trackerUrl} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {canSwipeTracker ? (
+        <div aria-hidden className={styles.swipeDots}>
+          <button
+            aria-label={t("wc.matchScoreAria")}
+            className={cn(styles.swipeDot, swipePage === 0 && styles.swipeDot_active)}
+            onClick={() => goToSwipePage(0)}
+            type="button"
+          />
+          <button
+            aria-label="Live Tracker"
+            className={cn(styles.swipeDot, swipePage === 1 && styles.swipeDot_active)}
+            onClick={() => goToSwipePage(1)}
+            type="button"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

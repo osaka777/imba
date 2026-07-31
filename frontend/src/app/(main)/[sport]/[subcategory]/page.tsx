@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { api } from "~/shared/api";
 import { GamesBySportAndSubcategory } from "~/entities/game";
 import { Header } from "~/widgets/Header";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 interface SubcategoryPageProps {
   params: {
@@ -17,9 +17,10 @@ export const generateMetadata = async ({
 }: SubcategoryPageProps): Promise<Metadata> => {
   const paramsObj = await params;
   const label = `${paramsObj.sport} — ${paramsObj.subcategory}`;
-  return makeMetadata(`Live: ${label}`, {
-    description: `Live-ставки на ${label} в Imba.bet.`,
+  return makeSeoMetadata("common.seoLivePrefix", {
+    descriptionKey: "common.seoLiveSportDesc",
     path: `/${paramsObj.sport}/${paramsObj.subcategory}`,
+    params: { name: label },
   });
 };
 
@@ -28,8 +29,8 @@ export default async function SubcategoryPage({
 }: SubcategoryPageProps) {
   const paramsObj = await params;
   const { sport, subcategory } = paramsObj;
-  
-  console.log('LIVE SubcategoryPage loaded:', { sport, subcategory });
+
+  console.log("LIVE SubcategoryPage loaded:", { sport, subcategory });
 
   try {
     const { data, error } = await api.GET("/api/games/live/{sport}/{subcategory}", {

@@ -1153,21 +1153,22 @@ export class BonusBalanceService {
       },
     });
 
-    if (!activeBonus) {
-      return;
-    }
-
     if (
-      activeBonus.requiredWager.greaterThan(0)
+      activeBonus
+      && activeBonus.requiredWager.greaterThan(0)
       && activeBonus.totalWagered.lessThan(activeBonus.requiredWager)
     ) {
       if (isBonusExpired(activeBonus.expiresAt)) {
         throw new BadRequestException('Срок отыгрыша бонуса истёк');
       }
       const remaining = activeBonus.requiredWager.minus(activeBonus.totalWagered);
-      throw new BadRequestException(
-        `Сначала отыграйте бонус: осталось ${remaining} ${currencyCode}`,
-      );
+      throw new BadRequestException({
+        statusCode: 400,
+        code: 'BONUS_WAGER_REQUIRED',
+        message: `Сначала отыграйте бонус: осталось ${remaining} ${currencyCode}`,
+        remaining: Number(remaining),
+        currencyCode,
+      });
     }
 
     const lockedWelcome = await this.prismaService.bonusBalance.findFirst({
@@ -1180,10 +1181,105 @@ export class BonusBalanceService {
       },
     });
     if (lockedWelcome && !isBonusExpired(lockedWelcome.expiresAt)) {
-      throw new BadRequestException(
-        'Активируйте welcome-бонус пополнением или дождитесь истечения срока',
-      );
+      throw new BadRequestException({
+        statusCode: 400,
+        code: 'BONUS_LOCK_REQUIRED',
+        message: 'Активируйте welcome-бонус пополнением или откажитесь от бонуса',
+        currencyCode,
+      });
     }
+  }
+
+  /**
+   * Пользователь отказывается от активного / заблокированного бонуса,
+   * чтобы снять блок на вывод. Бонусный баланс сгорает, основной не трогаем.
+   */
+  async forfeitBonus(userId: number, currencyCode: string) {
+    await this.expireBonusIfNeeded(userId, currencyCode);
+
+    const bonus = await this.prismaService.bonusBalance.findUnique({
+      where: { userId_currencyCode: { userId, currencyCode } },
+    });
+
+    if (!bonus) {
+      throw new NotFoundException('Бонус не найден');
+    }
+
+    const hasActiveWager =
+      bonus.isActive
+      && !bonus.isTokenBased
+      && bonus.requiredWager.greaterThan(0)
+      && bonus.totalWagered.lessThan(bonus.requiredWager);
+
+    const hasLockedWelcome =
+      bonus.requiresDeposit
+      && !bonus.depositActivated
+      && !isBonusExpired(bonus.expiresAt);
+
+    const hasActiveTokens = bonus.isActive && bonus.isTokenBased && bonus.remainingTokens > 0;
+
+    if (!hasActiveWager && !hasLockedWelcome && !hasActiveTokens && !bonus.isActive) {
+      throw new BadRequestException('Нет активного бонуса для отказа');
+    }
+
+    const forfeitedAmount = Number(bonus.amount) || 0;
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.bonusBalance.update({
+        where: { userId_currencyCode: { userId, currencyCode } },
+        data: {
+          isActive: false,
+          amount: 0,
+          remainingTokens: 0,
+          requiredWager: 0,
+          totalWagered: 0,
+          requiresDeposit: false,
+          depositActivated: false,
+          isFreeBet: false,
+          freeBetStake: null,
+          maxCashout: null,
+          expiresAt: null,
+        },
+      });
+
+      await tx.bonusHistory.updateMany({
+        where: {
+          userId,
+          currencyCode,
+          status: 'PENDING',
+        },
+        data: {
+          status: 'CANCELLED',
+          completedAt: new Date(),
+          notes: 'Отказ от бонуса пользователем (вывод)',
+        },
+      });
+
+      if (forfeitedAmount > 0) {
+        await tx.operation.create({
+          data: {
+            userId,
+            source: OperationSource.PROMO,
+            status: OperationStatus.SUCCESS,
+            type: OperationType.OUTCOME,
+            amount: new Decimal(forfeitedAmount),
+            currencyCode,
+            meta: {
+              type: 'BONUS_FORFEIT',
+              target: 'BonusBalance',
+              note: 'Отказ от бонуса — списание с бонусного счёта',
+            },
+          },
+        });
+      }
+    });
+
+    return {
+      ok: true,
+      forfeitedAmount,
+      currencyCode,
+      message: 'Бонус отменён. Можно выводить средства с основного счёта.',
+    };
   }
 
   private async applyFreeBetPromo(

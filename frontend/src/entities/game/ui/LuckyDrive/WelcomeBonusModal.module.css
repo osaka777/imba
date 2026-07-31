@@ -64,7 +64,7 @@
 
 .badgeAccent {
   background: linear-gradient(107deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
   border-color: transparent;
 }
 
@@ -240,7 +240,7 @@
 
 .stepDotDone {
   background: linear-gradient(135deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
   border-color: transparent;
   font-size: 14px;
 }
@@ -286,7 +286,7 @@
   letter-spacing: 0.03em;
   text-transform: uppercase;
   background: linear-gradient(107deg, rgb(255, 202, 77) 0%, rgb(255, 148, 0) 100%);
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
 }
 
 .stepDoneBadge {
@@ -330,7 +330,7 @@
   padding: 16px;
   border-radius: 16px;
   background: rgb(255, 255, 255);
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
 }
 
@@ -384,7 +384,7 @@
   display: block;
   font-size: 15px;
   font-weight: 800;
-  color: rgb(20, 27, 46);
+  color: var(--black-blue);
   line-height: 1.2;
 }
 

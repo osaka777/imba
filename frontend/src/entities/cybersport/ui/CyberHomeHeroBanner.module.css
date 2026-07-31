@@ -1,0 +1,684 @@
+/* Polymarket esports featured — mobile stacked, desktop content LEFT + media RIGHT */
+
+.wrap {
+  --pm-bg: #0e121c;
+  --pm-panel: #141c2e;
+  --pm-text: #eaecef;
+  --pm-muted: #8b9bb4;
+  --pm-up: #0acf97;
+  --pm-down: #ef473a;
+  --pm-blue: #108de7;
+  --pm-bar: var(--pm-blue);
+  --pm-cta: var(--pm-blue);
+  --pm-cta-hover: #0d7bc9;
+  --pm-font: "SF Pro Display", "Open Sans", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  width: 100%;
+  max-width: 1320px;
+  margin: 10px auto 18px;
+  font-family: var(--pm-font);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  color: var(--pm-text);
+}
+
+.wrap,
+.wrap *,
+.wrap *::before,
+.wrap *::after {
+  box-sizing: border-box;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--pm-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--pm-text);
+  min-height: 0;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+/* Full-bleed hit only over media — never covers odds buttons */
+.hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* —— Media (above hit so stream is usable) —— */
+.media {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 220px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--pm-bg);
+}
+
+.playerShell,
+.placeholderShell {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  overflow: hidden;
+}
+
+.wcPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 28px 36px 40px;
+  background:
+    radial-gradient(ellipse 70% 80% at 50% 40%, rgba(16, 141, 231, 0.18), transparent 70%),
+    linear-gradient(160deg, #121a2c 0%, #0a0e18 55%, #0e121c 100%);
+}
+
+.wcPlaceholderSide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.wcPlaceholderName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: center;
+}
+
+.wcPlaceholderMid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 72px;
+}
+
+.wcPlaceholderLive {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ff4d4f;
+}
+
+.wcPlaceholderScore {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+  line-height: 1;
+}
+
+.placeholderShell :global([class*="frame"]) {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  aspect-ratio: auto;
+  border: none;
+  border-radius: 0;
+}
+
+/* Fill media edge-to-edge — crop sides if needed, no top/bottom bars */
+.playerShell :global([class*="broadcastWrap"]) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  aspect-ratio: auto !important;
+  background: #000 !important;
+  overflow: hidden !important;
+}
+
+.playerShell :global([class*="videoShell"]) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  aspect-ratio: auto !important;
+  border-radius: 0 !important;
+  background: #000 !important;
+  overflow: hidden !important;
+}
+
+.playerShell :global([class*="broadcastVideo"]),
+.playerShell :global(iframe),
+.playerShell :global(video) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+}
+
+.mediaFade {
+  position: absolute;
+  inset: auto 0 0;
+  height: 62%;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    rgba(14, 18, 28, 0) 0%,
+    rgba(14, 18, 28, 0.08) 22%,
+    rgba(14, 18, 28, 0.28) 48%,
+    rgba(14, 18, 28, 0.62) 72%,
+    rgba(14, 18, 28, 0.9) 88%,
+    var(--pm-bg) 100%
+  );
+}
+
+.arrow {
+  position: absolute;
+  top: 110px;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0 0 2px;
+  backdrop-filter: blur(6px);
+  opacity: 1;
+  transition:
+    opacity 0.18s ease,
+    background 0.15s ease;
+}
+
+.arrow:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Desktop: arrows only on banner hover */
+@media (hover: hover) and (pointer: fine) {
+  .arrow {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .card:hover .arrow,
+  .card:focus-within .arrow {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.arrowLeft {
+  left: 10px;
+}
+
+.arrowRight {
+  right: 10px;
+}
+
+/* —— Content panel —— */
+.panel {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 16px 16px;
+  pointer-events: auto;
+  background: var(--pm-bg);
+}
+
+.panel a,
+.panel button {
+  pointer-events: auto;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-muted);
+}
+
+.metaLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pm-text);
+  font-weight: 700;
+}
+
+.metaItem {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 42vw;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pm-down);
+  box-shadow: 0 0 0 3px rgba(239, 71, 58, 0.22);
+  flex: 0 0 auto;
+}
+
+.metaSep {
+  opacity: 0.55;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--pm-text);
+  text-decoration: none;
+}
+
+.title:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.markets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.outcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.outcomeMain {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.outcomeText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.outcomeName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: 4px;
+  border-radius: inherit;
+  background: var(--pm-bar);
+  transition:
+    width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease,
+    filter 0.35s ease;
+  will-change: width;
+}
+
+.barFill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.barFillHome {
+  background: var(--pm-up);
+}
+
+.barFillAway {
+  background: var(--pm-blue);
+}
+
+.barFillPulseUp,
+.barFillPulseDown {
+  filter: brightness(1.25);
+}
+
+.barFillPulseUp::after,
+.barFillPulseDown::after {
+  opacity: 1;
+  animation: barShimmer 0.7s ease-out both;
+}
+
+.barFillHome.barFillPulseUp {
+  box-shadow: 0 0 10px rgb(10 207 151 / 0.7);
+}
+
+.barFillHome.barFillPulseDown {
+  box-shadow: 0 0 10px rgb(10 207 151 / 0.45);
+}
+
+.barFillAway.barFillPulseUp {
+  box-shadow: 0 0 10px rgb(16 141 231 / 0.75);
+}
+
+.barFillAway.barFillPulseDown {
+  box-shadow: 0 0 10px rgb(16 141 231 / 0.45);
+}
+
+@keyframes barShimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barFill {
+    transition: none;
+  }
+
+  .barFillPulseUp::after,
+  .barFillPulseDown::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.mapScore {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pm-text);
+  text-align: center;
+}
+
+.oddsX {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+
+.ctaRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 4px;
+  position: relative;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+/* Flat CTAs — hover via solid color shift (no filter = no gray wash / twitch) */
+.cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 48px;
+  height: 48px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.1;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+  transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ctaPick {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.78);
+}
+
+.ctaCoef {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.ctaHome {
+  background: #0acf97;
+}
+
+.ctaHome:hover,
+.ctaHome:focus-visible {
+  background: #1be0aa;
+}
+
+.ctaHome:active {
+  background: #09b884;
+}
+
+.ctaAway {
+  background: #108de7;
+}
+
+.ctaAway:hover,
+.ctaAway:focus-visible {
+  background: #2a9ef0;
+}
+
+.ctaAway:active {
+  background: #0d7bc9;
+}
+
+.ctaAdded {
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.55);
+}
+
+.ctaHome.ctaAdded:hover,
+.ctaHome.ctaAdded:focus-visible {
+  background: #09b884;
+}
+
+.ctaAway.ctaAdded:hover,
+.ctaAway.ctaAdded:focus-visible {
+  background: #0d7bc9;
+}
+
+.ctaDisabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--pm-muted);
+  cursor: default;
+  transition: none;
+}
+
+.ctaDisabled:hover,
+.ctaDisabled:focus-visible,
+.ctaDisabled:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ctaDisabled .ctaPick,
+.ctaDisabled .ctaCoef {
+  color: var(--pm-muted);
+}
+
+@media (min-width: 640px) {
+  .card {
+    display: block;
+    height: 340px;
+    overflow: hidden;
+  }
+
+  .media {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 55%;
+    height: 100%;
+  }
+
+  .mediaFade {
+    inset: 0;
+    height: auto;
+    /* Long soft blend into video — no hard edge */
+    background: linear-gradient(
+      90deg,
+      #0e121c 0%,
+      rgba(14, 18, 28, 0.94) 10%,
+      rgba(14, 18, 28, 0.78) 22%,
+      rgba(14, 18, 28, 0.55) 36%,
+      rgba(14, 18, 28, 0.32) 50%,
+      rgba(14, 18, 28, 0.16) 64%,
+      rgba(14, 18, 28, 0.06) 78%,
+      rgba(14, 18, 28, 0) 92%
+    );
+  }
+
+  .panel {
+    width: 45%;
+    height: 100%;
+    margin: 0;
+    padding: 20px 22px 20px 24px;
+    gap: 12px;
+    justify-content: center;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .metaItem {
+    max-width: 180px;
+  }
+
+  .arrow {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .arrowLeft {
+    left: 8px;
+  }
+
+  .arrowRight {
+    /* over media edge */
+    right: 8px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .markets {
+    gap: 12px;
+  }
+
+  .ctaRow {
+    margin-top: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wrap {
+    margin: 12px auto 22px;
+  }
+
+  .card {
+    height: 420px;
+  }
+
+  .panel {
+    padding: 28px 28px 28px 32px;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .outcome {
+    grid-template-columns: minmax(0, 1fr) 32px 56px;
+    gap: 12px;
+  }
+
+  .metaItem {
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 420px) {
+  .oddsX {
+    display: none;
+  }
+
+  .outcome {
+    grid-template-columns: minmax(0, 1fr) 24px;
+  }
+}

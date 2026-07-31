@@ -28,24 +28,19 @@ export class LanguageService {
    * Проверить, поддерживается ли указанный язык
    */
   isSupportedLanguage(language: string): boolean {
-    const supportedLanguages = ['ru', 'en', 'tr', 'kz', 'uz'];
+    const supportedLanguages = ['ru', 'en', 'tr', 'kk', 'kz', 'uz', 'uk', 'az', 'es', 'pt'];
     return supportedLanguages.includes(language.toLowerCase());
   }
 
-  /**
-   * Получить язык с fallback на язык по умолчанию
-   */
   getLanguageWithFallback(language?: string): string {
     if (language && this.isSupportedLanguage(language)) {
-      return language.toLowerCase();
+      const normalized = language.toLowerCase();
+      return normalized === 'kz' ? 'kk' : normalized;
     }
     return this.defaultLanguage;
   }
 
-  /**
-   * Получить список поддерживаемых языков
-   */
   getSupportedLanguages(): string[] {
-    return ['ru', 'en', 'tr', 'kz', 'uz'];
+    return ['ru', 'en', 'kk', 'uz', 'tr', 'uk', 'az', 'es', 'pt'];
   }
 }

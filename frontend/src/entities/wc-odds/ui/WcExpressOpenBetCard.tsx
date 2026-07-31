@@ -19,6 +19,7 @@ import {
   OpenBetSlipExpressLeg,
 } from "~/entities/bet/ui/Coupon/OpenBetSlipCard";
 import styles from "~/entities/bet/ui/Coupon/OpenTab.module.css";
+import { useLocale } from "~/shared/model/useLocale";
 
 type WcExpressOpenBetCardProps = {
   bet: WcExpressBet;
@@ -26,6 +27,7 @@ type WcExpressOpenBetCardProps = {
 };
 
 export function WcExpressOpenBetCard({ bet, highlight }: WcExpressOpenBetCardProps) {
+  const { t } = useLocale();
   const cf = Number(bet.combinedOdds).toFixed(2);
   const placedAt = formatCouponPlacedAt(bet.createdAt);
   const headerDate = formatOpenBetHeaderDate(bet.createdAt);
@@ -33,8 +35,13 @@ export function WcExpressOpenBetCard({ bet, highlight }: WcExpressOpenBetCardPro
   const isFresh = highlight ?? isFreshOpenBet(bet.createdAt);
   const ticketId = formatBetDisplayId(bet.id);
   const legCount = bet.legs.length;
-  const legLabel =
-    `${legCount} ${legCount === 1 ? "событие" : legCount < 5 ? "события" : "событий"}`;
+  const eventWord =
+    legCount === 1
+      ? t("wc.eventWord1")
+      : legCount < 5
+        ? t("wc.eventWord2")
+        : t("wc.eventWord5");
+  const legLabel = `${legCount} ${eventWord}`;
 
   return (
     <OpenBetSlipCard
@@ -43,7 +50,7 @@ export function WcExpressOpenBetCard({ bet, highlight }: WcExpressOpenBetCardPro
       headerDate={headerDate}
       highlight={isFresh}
       isLive={isLive}
-      kindLabel="Экспресс"
+      kindLabel={t("coupon.express")}
       matchHref="#"
       outcome={legLabel}
       placedAt={placedAt}

@@ -5,6 +5,7 @@ import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { useWcMarketPairToggle } from "~/entities/wc-odds/lib/useWcMarketPairToggle";
 import { usePrevious } from "~/shared/model";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
 import { resolveYesNoPivotLine } from "~/entities/wc-odds/lib/wcYesNoLineTitle";
@@ -29,11 +30,14 @@ export function WcYesNoPair({
   no,
   bettingOpen,
   categoryName = "",
-  yesLabel = "Да",
-  noLabel = "Нет",
+  yesLabel: yesLabelProp,
+  noLabel: noLabelProp,
   pivotLabel,
   kickChip = false,
 }: WcYesNoPairProps) {
+  const { t } = useLocale();
+  const yesLabel = yesLabelProp ?? t("wc.yes");
+  const noLabel = noLabelProp ?? t("wc.no");
   const { toggle, isSelected, isBettable } = useWcMarketPairToggle(event, group, bettingOpen);
 
   const yesValue = yes ? yes.price.toFixed(2) : "0";

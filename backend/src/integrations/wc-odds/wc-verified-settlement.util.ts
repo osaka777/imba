@@ -34,8 +34,11 @@ import {
 import { parseRaceTargetFromParams, parseTennisScopedGameParams } from './tennis-market-params.util';
 import { inferTennisGameClosingPointWinner, parseTennisGameScore } from './tennis-game-score.util';
 import {
+  isMatchLevelTennisGamesTotal,
   isTennisScopedGameCompleted,
   parseTennisTotalsScopeFromText,
+  resolveTennisMatchGamesPair,
+  resolveTennisMatchGamesTotal,
   tennisGamePointsPlayed,
 } from './tennis-totals-scope.util';
 import {
@@ -89,6 +92,24 @@ export function resolveTotalsScopeTotal(
 
   if (tennisScope?.unit === 'points' && tennisScope.gameNum) {
     return tennisGamePointsPlayed(ctx.matchState, tennisScope.setNum, tennisScope.gameNum);
+  }
+
+  // Match-level tennis «Тотал геймов» — sum games across sets, never set score (0:2).
+  const tennisFeed = isTennisGameFeed(ctx.detail)
+    || resolveTennisMatchGamesTotal(undefined, ctx.matchState) != null;
+  if (
+    tennisFeed
+    && isMatchLevelTennisGamesTotal(scopeHint, tennisScope)
+  ) {
+    if (marketKey === 'totals_home' || marketKey === 'totals_away') {
+      const games = resolveTennisMatchGamesPair(ctx.detail, ctx.matchState);
+      if (games) {
+        return marketKey === 'totals_home' ? games.home : games.away;
+      }
+      return null;
+    }
+    const total = resolveTennisMatchGamesTotal(ctx.detail, ctx.matchState);
+    if (total != null) return total;
   }
 
   const scoped = pickSettlementScores(
@@ -1482,11 +1503,18 @@ function resolveEarlyTotalsBet(
   const scopeHint = resolveTotalsScopeHint(bet);
   const scope = scopeHint ? parseMarketScopeFromText(scopeHint) : null;
   const tennisScope = scopeHint ? parseTennisTotalsScopeFromText(scopeHint) : null;
-  const tennisGames = isTennisGameFeed(ctx.detail);
+  const tennisGames = isTennisGameFeed(ctx.detail)
+    || resolveTennisMatchGamesTotal(undefined, ctx.matchState) != null;
   const pointSetSport = isPointSetSportFeed(ctx.detail);
+  const matchLevelTennisGames = tennisGames
+    && !scope
+    && isMatchLevelTennisGamesTotal(scopeHint, tennisScope);
 
-  // Unscoped tennis totals must never early-settle: fallback scores sum games across sets.
-  if (tennisGames && !scope) return null;
+  // Unscoped tennis totals without a games sum must stay pending (set score is wrong).
+  if (tennisGames && !scope && !matchLevelTennisGames) return null;
+  if (matchLevelTennisGames && resolveTennisMatchGamesTotal(ctx.detail, ctx.matchState) == null) {
+    return null;
+  }
 
   // Tennis «тотал очков в N-м гейме» — count points in that game, not games in the set.
   if (tennisGames && tennisScope?.unit === 'points' && tennisScope.gameNum) {
@@ -1511,18 +1539,26 @@ function resolveEarlyTotalsBet(
     }
     // Soccer/basketball unscoped — early win when line is beaten in-play.
     if (!tennisGames && !pointSetSport) return WcOddsBetStatus.WIN;
-    // Volleyball match total — early win only when already over the line (cannot decrease).
-    if (pointSetSport && !scope) return WcOddsBetStatus.WIN;
+    // Volleyball / tennis match games total — games/points only increase.
+    if ((pointSetSport || matchLevelTennisGames) && !scope) return WcOddsBetStatus.WIN;
     return null;
   }
 
   if (isUnder && scopeTotal > line) {
     if (scope) return WcOddsBetStatus.LOSE;
-    if (pointSetSport || !tennisGames) return WcOddsBetStatus.LOSE;
+    if (pointSetSport || matchLevelTennisGames || !tennisGames) return WcOddsBetStatus.LOSE;
     return null;
   }
 
   if (scope && ctx.detail && isMarketScopeFinalized(ctx.detail, scope)) {
+    if (scopeTotal === line) return WcOddsBetStatus.VOID;
+    if (isOver) return scopeTotal > line ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
+    if (isUnder) return scopeTotal < line ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
+    return WcOddsBetStatus.LOSE;
+  }
+
+  // Match-level tennis games total — final settle when event is finished.
+  if (matchLevelTennisGames && ctx.detail && isOlimpbetEventCompleted(ctx.detail)) {
     if (scopeTotal === line) return WcOddsBetStatus.VOID;
     if (isOver) return scopeTotal > line ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;
     if (isUnder) return scopeTotal < line ? WcOddsBetStatus.WIN : WcOddsBetStatus.LOSE;

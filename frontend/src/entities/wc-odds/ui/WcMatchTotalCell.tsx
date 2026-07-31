@@ -6,6 +6,7 @@ import { useLocalStorage } from "usehooks-ts";
 import type { Rates } from "~/entities/bet";
 import { AccessIcon } from "~/shared/assets";
 import { usePrevious } from "~/shared/model";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 import type { WcEvent } from "~/entities/wc-odds/api/client";
 import {
@@ -25,12 +26,14 @@ type WcMatchTotalCellProps = {
 };
 
 export function WcMatchTotalCell({ event, side, value }: WcMatchTotalCellProps) {
+  const { t } = useLocale();
   const bettingOpen = useWcBettingOpen(event);
   const line = event.totalLine;
   const outcomeKey = line != null ? `${side}_${line}` : side;
   const market = wcMarketId("totals", outcomeKey);
   const label = side === "OVER" ? `Б ${line ?? ""}`.trim() : `М ${line ?? ""}`.trim();
-  const groupLabel = line != null ? `Тотал ${line}` : "Тотал";
+  const groupLabel =
+    line != null ? t("wc.totalLine", { line: String(line) }) : t("wc.totalPlain");
   const outcomeName = side === "OVER" ? `Б ${line ?? ""}`.trim() : `М ${line ?? ""}`.trim();
 
   const { prevState } = usePrevious(value);

@@ -8,6 +8,7 @@ export type PublicPaymentSettings = {
     RUB: { enabled: boolean; minAmount: number };
     RUB_SBERBANK: { enabled: boolean; minAmount: number };
     RUB_YANDEX_BANK: { enabled: boolean; minAmount: number };
+    RUB_VTB_BANK: { enabled: boolean; minAmount: number };
     USDT: { enabled: boolean; minAmount: number };
   };
   paymentMethods: Record<string, { enabled: boolean; label: string }>;
@@ -31,4 +32,11 @@ export function isManualMethodEnabled(
 ): boolean {
   if (!settings) return true;
   return settings.manualDeposit[manualKey]?.enabled !== false;
+}
+
+export function isPayGateCoreEnabled(
+  settings: PublicPaymentSettings | null | undefined,
+): boolean {
+  if (!settings) return false;
+  return settings.paymentMethods?.PayGateCore?.enabled === true;
 }

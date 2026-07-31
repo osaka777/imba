@@ -11,6 +11,7 @@ import {
 import { findTotalsPair, coalesceTotalsGroups, hasCompleteTotalsPair, isComboResultTotalGroup } from "~/entities/wc-odds/lib/wcTotalsPairs";
 import { formatHandicapScopeLabel, formatTotalsScopeLabel, isScopeCaptionRedundant, totalsScopeBucketKey } from "~/entities/wc-odds/lib/wcMarketScopeLabel";
 import { findPxOutcomes } from "~/entities/wc-odds/lib/wcPxOutcomes";
+import { localizeWcLabel } from "~/entities/wc-odds/lib/localizeWcLabel";
 import { formatGroupSubLabel, needsGroupSubLabel } from "~/entities/wc-odds/lib/wcGroupSubLabel";
 import {
   filterRelevantTimeWindowGroups,
@@ -28,6 +29,7 @@ import {
   normalizeWcMarketKey,
 } from "~/entities/wc-odds/lib/wcRate";
 import { WcEvenOddPair } from "~/entities/wc-odds/ui/WcEvenOddPair";
+import { useLocale } from "~/shared/model/useLocale";
 import { WcHandicap3WayPivotRow } from "~/entities/wc-odds/ui/WcHandicap3WayPivotRow";
 import { WcHandicapPair } from "~/entities/wc-odds/ui/WcHandicapPair";
 import { WcPXPair } from "~/entities/wc-odds/ui/WcPXPair";
@@ -61,6 +63,7 @@ import {
   isCorrectScoreMarketKey,
   compareCorrectScoreOutcomes,
   sortCorrectScoreOutcomes,
+  isFlatCorrectScoreOddsBook,
 } from "~/entities/wc-odds/lib/wcCorrectScoreSort";
 
 function formatTotalsPoint(point: number | string): string {
@@ -153,7 +156,14 @@ function preferCanonicalDoubleChanceGroups(groups: WcMarketGroup[]): WcMarketGro
 
 function isCorrectScoreCategoryName(categoryName: string): boolean {
   const trimmed = categoryName.trim();
-  return /точн/i.test(trimmed) || /^сч[её]т$/i.test(trimmed);
+  return (
+    /точн/i.test(trimmed)
+    || /^сч[её]т$/i.test(trimmed)
+    || /^сч[её]т\s+в\s+\d/i.test(trimmed)
+    || /^сч[её]т\s+на\s+карт/i.test(trimmed)
+    || /^сч[её]т\s+тай-?брейк/i.test(trimmed)
+    || /^сч[её]т\s+первых/i.test(trimmed)
+  );
 }
 
 function renderMergedCorrectScoreGroups(
@@ -167,6 +177,7 @@ function renderMergedCorrectScoreGroups(
   for (const group of groups) {
     if (!isCorrectScoreMarketKey(group.marketKey)) continue;
     for (const outcome of group.outcomes) {
+      if (!/^\d+:\d+$/.test((outcome.name ?? "").trim())) continue;
       if (isWcOutcomeOffered(outcome, group.marketKey, bettingOpen)) {
         items.push({ group, outcome });
       }
@@ -174,6 +185,10 @@ function renderMergedCorrectScoreGroups(
   }
 
   if (!items.length) return null;
+
+  if (isFlatCorrectScoreOddsBook(items.map(({ outcome }) => outcome.price))) {
+    return null;
+  }
 
   items.sort((a, b) => compareCorrectScoreOutcomes(a.outcome, b.outcome));
 
@@ -198,13 +213,15 @@ function renderMergedCorrectScoreGroups(
 function renderGroupSubLabel(
   group: WcMarketGroup,
   categoryName: string,
-  teams?: { homeTeam?: string; awayTeam?: string },
+  teams: { homeTeam?: string; awayTeam?: string } | undefined,
+  t: (key: import("~/shared/i18n/messages").MessageKey) => string,
 ) {
   if (!needsGroupSubLabel(group, categoryName, teams)) return null;
+  const raw = formatGroupSubLabel(group, categoryName, teams);
 
   return (
     <p className={matchStyles.oddsGroupSubLabel}>
-      {formatGroupSubLabel(group, categoryName, teams)}
+      {localizeWcLabel(raw, t)}
     </p>
   );
 }
@@ -214,6 +231,7 @@ function renderPxGroupOrRows(
   group: WcMarketGroup,
   categoryName: string,
   bettingOpen: boolean,
+  t: (key: import("~/shared/i18n/messages").MessageKey) => string,
   is1X2 = false,
 ) {
   const px = findPxOutcomes(group);
@@ -225,7 +243,7 @@ function renderPxGroupOrRows(
         {renderGroupSubLabel(group, categoryName, {
           homeTeam: event.homeTeam,
           awayTeam: event.awayTeam,
-        })}
+        }, t)}
         <div
           className={cn(
             matchStyles.oddsBlock,
@@ -263,9 +281,9 @@ function renderPxGroupOrRows(
   return (
     <div key={group.key} className={matchStyles.oddsBlockScoped}>
       {renderGroupSubLabel(group, categoryName, {
-        homeTeam: event.homeTeam,
-        awayTeam: event.awayTeam,
-      })}
+          homeTeam: event.homeTeam,
+          awayTeam: event.awayTeam,
+        }, t)}
       <div className={cn(matchStyles.oddsBlock, isCorrectScore && matchStyles.oddsBlockCorrectScore)}>
         {sortedOffered.map((outcome) => (
           <WcSingleBetRow
@@ -284,6 +302,7 @@ function renderPxGroupOrRows(
 }
 
 export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip = false }: WcOddsItemProps) {
+  const { t } = useLocale();
   if (!groups.length) return null;
 
   if (isCorrectScoreCategoryName(categoryName)) {
@@ -423,9 +442,9 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
 
   return (
     <div className={matchStyles.oddsBlockCategory}>
-      {h2h.map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen, true))}
+      {h2h.map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen, t, true))}
 
-      {doubleChance.map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen))}
+      {doubleChance.map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen, t))}
 
       {bttsOutcomeRows.length > 0 ? (
         <div className={matchStyles.oddsTotalsGroup}>
@@ -444,10 +463,10 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
                   group={row.group}
                   kickChip={kickChip}
                   no={row.no}
-                  noLabel="Нет"
+                  noLabel={t("wc.no")}
                   pivotLabel={row.result}
                   yes={row.yes}
-                  yesLabel="Да"
+                  yesLabel={t("wc.yes")}
                 />
               </div>
             );
@@ -495,9 +514,9 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
               return (
                 <div className={matchStyles.oddsBlockScoped} key={group.key}>
                   {renderGroupSubLabel(group, categoryName, {
-                    homeTeam: event.homeTeam,
-                    awayTeam: event.awayTeam,
-                  })}
+          homeTeam: event.homeTeam,
+          awayTeam: event.awayTeam,
+        }, t)}
                   <WcEvenOddPair
                     bettingOpen={bettingOpen}
                     even={even}
@@ -566,7 +585,7 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
           const px = findPxOutcomes(group);
           return !px?.draw;
         })
-        .map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen, true))}
+        .map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen, t, true))}
 
       {(() => {
         const timeWindowYesNo = isTimeWindowYesNoCategory(categoryName, filteredYesNo)
@@ -584,7 +603,7 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
                   const { yes, no } = findYesNoOutcomes(group);
                   const range = extractTimeWindowRange(group);
                   const intervalLabel = range
-                    ? `${range.from}–${range.to} мин`
+                    ? t("wc.minutesRange", { from: range.from, to: range.to })
                     : group.label.replace(/^GOAL15MIN:\s*да\/нет\s*/i, "").trim();
                   const showIntervalSubLabel =
                     intervalLabel
@@ -620,9 +639,9 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
                     return (
                       <div key={group.key} className={matchStyles.oddsBlockScoped}>
                         {renderGroupSubLabel(group, categoryName, {
-                          homeTeam: event.homeTeam,
-                          awayTeam: event.awayTeam,
-                        })}
+          homeTeam: event.homeTeam,
+          awayTeam: event.awayTeam,
+        }, t)}
                         <WcYesNoPair
                           bettingOpen={bettingOpen}
                           categoryName={categoryName}
@@ -666,7 +685,7 @@ export function WcOddsItem({ event, groups, categoryName, bettingOpen, kickChip 
         ? renderMergedCorrectScoreGroups(event, correctScoreGroups, categoryName, bettingOpen)
         : null}
 
-      {extraOtherGroups.map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen))}
+      {extraOtherGroups.map((group) => renderPxGroupOrRows(event, group, categoryName, bettingOpen, t))}
     </div>
   );
 }

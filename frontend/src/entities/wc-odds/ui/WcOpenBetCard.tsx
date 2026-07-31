@@ -21,6 +21,7 @@ import {
 import { getWcOpenBetScoreDisplay } from "~/entities/bet/lib/openBetScoreDisplay";
 
 import { OpenBetSlipCard } from "~/entities/bet/ui/Coupon/OpenBetSlipCard";
+import { useLocale } from "~/shared/model/useLocale";
 import { WcCashoutButton } from "~/entities/wc-odds/ui/WcCashoutButton";
 
 type WcOpenBetCardProps = {
@@ -36,6 +37,7 @@ export function WcOpenBetCard({
   cashoutQuote,
   quotesLoading,
 }: WcOpenBetCardProps) {
+  const { t } = useLocale();
   const cf = Number(bet.odds).toFixed(2);
   const placedAt = formatCouponPlacedAt(bet.createdAt);
   const headerDate = formatOpenBetHeaderDate(bet.createdAt);
@@ -67,7 +69,7 @@ export function WcOpenBetCard({
       headerDate={headerDate}
       highlight={isFresh}
       isLive={isLive}
-      kindLabel="Ординар"
+      kindLabel={t("coupon.ordinar")}
       kickoffLabel={kickoffLabel}
       league={bet.event.leagueName ? truncateLeagueName(bet.event.leagueName) : null}
       matchHref={href}

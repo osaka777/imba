@@ -9,9 +9,12 @@ import {
   extractBirthDateDigits,
   formatBirthDateDisplay,
   getBirthDatePickerMax,
-  isBirthDateUnder18,
+  isBirthDateUnderMinAge,
   isoToBirthDateDigits,
+  MIN_REGISTRATION_AGE,
 } from "~/entities/user/lib/registrationBirthDate";
+
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./RegistrationFields.module.css";
 
@@ -28,6 +31,7 @@ export function RegistrationBirthDateInput({
   onBlur,
   className,
 }: RegistrationBirthDateInputProps) {
+  const { t } = useLocale();
   const pickerRef = useRef<HTMLInputElement>(null);
   const [digits, setDigits] = useState(() => isoToBirthDateDigits(value));
   const [focused, setFocused] = useState(false);
@@ -37,7 +41,7 @@ export function RegistrationBirthDateInput({
 
   const showAgeWarning = useMemo(() => {
     const iso = birthDateDigitsToIso(digits);
-    return iso ? isBirthDateUnder18(iso) : false;
+    return iso ? isBirthDateUnderMinAge(iso) : false;
   }, [digits]);
 
   const syncDigits = (nextDigits: string) => {
@@ -94,7 +98,7 @@ export function RegistrationBirthDateInput({
           onBlur={handleBlur}
           onChange={(event) => handleChange(event.target.value)}
           onFocus={() => setFocused(true)}
-          placeholder="ДД.ММ.ГГГГ"
+          placeholder={t("auth.birthPlaceholder")}
           type="text"
           value={display}
         />
@@ -114,7 +118,7 @@ export function RegistrationBirthDateInput({
           value={/^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ""}
         />
         <button
-          aria-label="Выбрать дату"
+          aria-label={t("auth.pickDate")}
           className={styles.dateIconButton}
           onClick={openPicker}
           type="button"
@@ -123,7 +127,9 @@ export function RegistrationBirthDateInput({
         </button>
       </div>
       {showAgeWarning ? (
-        <p className={styles.dateHint}>Вы должны быть старше 18 лет</p>
+        <p className={styles.dateHint}>
+          {t("auth.ageWarning", { n: MIN_REGISTRATION_AGE })}
+        </p>
       ) : null}
     </div>
   );

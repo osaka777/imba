@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { useLocale } from "~/shared/model/useLocale";
 import styles from "./PolymarketPreview.module.css";
 
 type OutcomeView = {
@@ -62,6 +63,7 @@ async function fetchEvents(order: SortMode): Promise<ApiResponse> {
 }
 
 export function PolymarketPreview() {
+  const { t } = useLocale();
   const [order, setOrder] = useState<SortMode>("volume");
 
   const { data, error, isLoading, isFetching, dataUpdatedAt } = useQuery({
@@ -89,15 +91,12 @@ export function PolymarketPreview() {
           <span className={styles.badge}>Preview</span>
           <span className={styles.badgeMuted}>Polymarket · free Gamma API</span>
         </div>
-        <h1 className={styles.title}>Рынок говорит</h1>
-        <p className={styles.lead}>
-          Живые вероятности и объёмы с Polymarket. Не ставки Imba — внешние prediction
-          markets: Yes/No = вероятность события по цене акции.
-        </p>
+        <h1 className={styles.title}>{t("common.pmTitle")}</h1>
+        <p className={styles.lead}>{t("common.pmLead")}</p>
       </header>
 
       <div className={styles.toolbar}>
-        <div className={styles.tabs} role="tablist" aria-label="Сортировка">
+        <div className={styles.tabs} role="tablist" aria-label={t("common.pmSortAria")}>
           <button
             className={`${styles.tab} ${order === "volume" ? styles.tabActive : ""}`}
             onClick={() => setOrder("volume")}
@@ -116,20 +115,21 @@ export function PolymarketPreview() {
           </button>
         </div>
         <div className={styles.meta}>
-          {isFetching ? "Обновление…" : updatedLabel ? `обновлено ${updatedLabel}` : null}
+          {isFetching ? t("common.pmUpdating") : updatedLabel ? t("common.pmUpdated", { time: updatedLabel }) : null}
         </div>
       </div>
 
       <div className={styles.grid}>
         {isLoading ? (
-          <div className={styles.stateBox}>Загрузка рынков…</div>
+          <div className={styles.stateBox}>{t("common.pmLoading")}</div>
         ) : error ? (
           <div className={`${styles.stateBox} ${styles.error}`}>
-            Не удалось загрузить Polymarket:{" "}
-            {error instanceof Error ? error.message : "ошибка"}
+            {t("common.pmLoadFailed", {
+              error: error instanceof Error ? error.message : t("common.pmError"),
+            })}
           </div>
         ) : events.length === 0 ? (
-          <div className={styles.stateBox}>Сейчас нет активных рынков с ценами</div>
+          <div className={styles.stateBox}>{t("common.pmNoMarkets")}</div>
         ) : (
           events.map((event) => (
             <article className={styles.card} key={event.id}>
@@ -191,7 +191,7 @@ export function PolymarketPreview() {
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  Открыть на Polymarket →
+                  {t("common.pmOpen")}
                 </a>
               </div>
             </article>
@@ -199,10 +199,7 @@ export function PolymarketPreview() {
         )}
       </div>
 
-      <p className={styles.disclaimer}>
-        Демо-страница для оценки UX. Данные с публичного API Polymarket, ставки здесь
-        не принимаются. Не путать с линией Imba (Olimpbet).
-      </p>
+      <p className={styles.disclaimer}>{t("common.pmDemoNote")}</p>
     </div>
   );
 }

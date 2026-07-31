@@ -7,16 +7,21 @@
 }
 
 .Tournament_cyber {
-  background: var(--twitch-bg-card, #18181b);
-  border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e1e6ed;
+  border-radius: 8px;
   box-shadow: none;
   overflow: hidden;
+}
+
+:global(html[data-ui-theme="graphite"]) .Tournament_cyber {
+  background: #1c1c1e;
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .body_cyber {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
+  gap: 0;
+  padding: 0;
 }

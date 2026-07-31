@@ -1,10 +1,13 @@
-import { makeMetadata } from "~/shared/lib";
+import type { Metadata } from "next";
 
-export const metadata = makeMetadata("Live-ставки", {
-  description:
-    "Live-ставки на спорт в Imba.bet: футбол, теннис, баскетбол и другие дисциплины с актуальными коэффициентами в режиме реального времени.",
-  path: "/live",
-});
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoLiveTitle", {
+    descriptionKey: "common.seoLiveDesc",
+    path: "/live",
+  });
+}
 
 export default function LiveLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

@@ -25,6 +25,7 @@ export function fingerprintWcListEvent(event: WcOddsEventDto): string {
     event.feedStatus ?? '',
     event.priorityLevel,
     event.hasBroadcast,
+    event.hasLiveTracker,
   ].join('|');
 }
 

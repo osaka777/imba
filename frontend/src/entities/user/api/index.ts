@@ -1,7 +1,7 @@
 export { changePassword } from "./changePassword";
 export { getUser } from "./getUser";
 export { login, verifyTelegram2fa } from "./login";
-export { signUp } from "./signUp";
+export { signUp, type SignUpBody } from "./signUp";
 export {
   authenticateWithTelegram,
   completeTelegramProfile,

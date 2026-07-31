@@ -1,52 +1,47 @@
+"use client";
+
 import Link from "next/link";
 
-import { makeMetadata } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "../guides.module.css";
 
-export const metadata = makeMetadata("Вывод средств", {
-  description:
-    "Как вывести выигрыш с Imba.bet: заявка на вывод, сроки обработки Kaspi и USDT, что проверить перед отправкой.",
-  path: "/guides/vyvod",
-});
-
 export default function WithdrawGuidePage() {
+  const { t } = useLocale();
+
   return (
     <article className={styles.wrapper}>
       <nav className={styles.nav}>
-        <Link href="/guides">← Все инструкции</Link>
+        <Link href="/guides">{t("guides.backGuides")}</Link>
       </nav>
-      <h1 className={styles.title}>Вывод средств с Imba.bet</h1>
-      <p className={styles.lead}>
-        Вывод выполняется через заявку в личном кабинете. Доступные способы зависят от валюты счёта
-        и настроек аккаунта.
-      </p>
+      <h1 className={styles.title}>{t("guides.vyvodTitle")}</h1>
+      <p className={styles.lead}>{t("guides.vyvodLead")}</p>
 
       <section className={styles.section}>
-        <h2>Как оформить вывод</h2>
+        <h2>{t("guides.vyvodHowTitle")}</h2>
         <ol>
-          <li>Откройте профиль → раздел вывода или истории финансов.</li>
-          <li>Выберите способ (KZT, USDT TRC-20 и др.).</li>
-          <li>Укажите сумму и реквизиты.</li>
-          <li>Дождитесь обработки заявки службой поддержки.</li>
+          <li>{t("guides.vyvodHow1")}</li>
+          <li>{t("guides.vyvodHow2")}</li>
+          <li>{t("guides.vyvodHow3")}</li>
+          <li>{t("guides.vyvodHow4")}</li>
         </ol>
       </section>
 
       <section className={styles.section}>
-        <h2>Перед выводом</h2>
+        <h2>{t("guides.vyvodBeforeTitle")}</h2>
         <ul>
-          <li>Убедитесь, что бонусный баланс отыгран, если использовали акцию.</li>
-          <li>Проверьте реквизиты — ошибка в номере карты или кошелька задержит выплату.</li>
-          <li>При первом выводе может потребоваться дополнительная проверка аккаунта.</li>
+          <li>{t("guides.vyvodBefore1")}</li>
+          <li>{t("guides.vyvodBefore2")}</li>
+          <li>{t("guides.vyvodBefore3")}</li>
         </ul>
       </section>
 
       <div className={styles.actions}>
         <Link className={styles.link} href="/profile/financeHistory">
-          История операций
+          {t("guides.financeHistory")}
         </Link>
         <Link className={`${styles.link} ${styles.linkSecondary}`} href="/">
-          На главную
+          {t("guides.home")}
         </Link>
       </div>
     </article>

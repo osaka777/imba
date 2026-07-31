@@ -46,16 +46,24 @@
 
 .btn {
   width: 100%;
-  padding: 12px;
+  padding: 13px 16px;
   border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #108de7, #0a6bb8);
+  border-radius: 12px;
+  background: var(--green-gradient);
+  box-shadow: 0 4px 14px rgba(49, 188, 105, 0.28);
   color: #fff;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:disabled {
   opacity: 0.55;
+  box-shadow: none;
   cursor: not-allowed;
 }

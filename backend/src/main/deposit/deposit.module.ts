@@ -2,7 +2,6 @@ import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthenticationModule } from '~/main/user/authentication/authentication.module';
-import { NirvanaPayPayinModule } from '~/integrations/payment-system/nirvanapay-payin/nirvanapay-payin.module';
 import { PartnersModule } from '~/main/partners/partners.module';
 import { PrismaModule } from '~/prisma/prisma.module';
 import { OperationModule } from '~/main/operation/operation.module';
@@ -23,7 +22,6 @@ import { PushModule } from '../push/push.module';
   imports: [
     ConfigModule,
     AuthenticationModule,
-    NirvanaPayPayinModule,
     PrismaModule,
     OperationModule,
     EventModule,

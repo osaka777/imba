@@ -13,16 +13,28 @@
   align-items: start;
 }
 
-.nav {
-  grid-area: nav;
-  min-width: 0;
-  width: 100%;
+.mainNoCoupon {
+  grid-template-areas:
+    "nav"
+    "content";
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .content {
   grid-area: content;
+  position: relative;
+  z-index: 1;
   min-width: 0;
   width: 100%;
+}
+
+.nav {
+  grid-area: nav;
+  position: relative;
+  z-index: 200;
+  min-width: 0;
+  width: 100%;
+  overflow: visible;
 }
 
 .coupon {
@@ -62,6 +74,10 @@
     gap: 12px;
     padding-top: 0;
     max-width: 100%;
+  }
+
+  .mainNoCoupon {
+    display: flex;
   }
 
   .coupon {

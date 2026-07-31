@@ -27,6 +27,8 @@ export interface Slide {
   showButton?: boolean
   // Кнопка
   buttonText?: string
+  buttonColor?: string
+  buttonTextColor?: string
   buttonPosXPct?: number
   buttonPosYPct?: number
   buttonMobilePosXPct?: number
@@ -41,6 +43,13 @@ export interface Slide {
   textShadow: boolean
   buttonSize?: number
   buttonMobileSize?: number
+  layoutMode?: string
+  showSecondaryButton?: boolean
+  secondaryButtonText?: string
+  secondaryButtonLink?: string
+  secondaryButtonColor?: string
+  secondaryButtonTextColor?: string
+  secondaryButtonOpacity?: number
   createdAt: string
   updatedAt: string
 }
@@ -70,6 +79,8 @@ export interface CreateSlideData {
   showDesc?: boolean
   showButton?: boolean
   buttonText?: string
+  buttonColor?: string
+  buttonTextColor?: string
   buttonPosXPct?: number
   buttonPosYPct?: number
   buttonMobilePosXPct?: number
@@ -83,6 +94,13 @@ export interface CreateSlideData {
   textShadow?: boolean
   buttonSize?: number
   buttonMobileSize?: number
+  layoutMode?: string
+  showSecondaryButton?: boolean
+  secondaryButtonText?: string
+  secondaryButtonLink?: string
+  secondaryButtonColor?: string
+  secondaryButtonTextColor?: string
+  secondaryButtonOpacity?: number
 }
 
 export interface UpdateSlideData extends Partial<CreateSlideData> {}

@@ -8,6 +8,16 @@ import type { SlideFormData } from './slideEditorDefaults'
 type Layer = 'title' | 'desc' | 'button'
 type Viewport = 'desktop' | 'mobile'
 
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace('#', '')
+  const full =
+    normalized.length === 3 ? normalized.split('').map((char) => char + char).join('') : normalized
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 type StepperProps = {
   label: string
   hint?: string
@@ -117,6 +127,88 @@ export function SlideEditorForm({
   const patch = (partial: Partial<SlideFormData>) => setFormData({ ...formData, ...partial })
 
   const isMobile = previewViewport === 'mobile'
+  const isClassic = formData.layoutMode === 'classic'
+  const isCentered = formData.layoutMode === 'centered'
+  const isCustom = formData.layoutMode === 'custom'
+  const isPresetLayout = isClassic || isCentered
+
+  const previewScrimStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    background:
+      'linear-gradient(105deg, rgba(8, 12, 22, 0.88) 0%, rgba(8, 12, 22, 0.62) 34%, rgba(8, 12, 22, 0.18) 62%, rgba(8, 12, 22, 0.04) 100%), linear-gradient(180deg, transparent 58%, rgba(8, 12, 22, 0.35) 100%)',
+  }
+
+  const classicContentStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    padding: isMobile ? '16px 18px' : '24px 40px',
+    maxWidth: isMobile ? '72%' : '58%',
+    boxSizing: 'border-box',
+  }
+
+  const centeredContentStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: isMobile ? '16px 16px 28px' : '24px 24px 40px',
+    boxSizing: 'border-box',
+    textAlign: 'center',
+  }
+
+  const pillBtnStyle = (size: number): React.CSSProperties => ({
+    background: formData.buttonColor,
+    color: formData.buttonTextColor,
+    padding: `${Math.round(size * 0.7)}px ${Math.round(size * 2.2)}px`,
+    borderRadius: 999,
+    fontSize: `${size}px`,
+    fontWeight: 800,
+    border: 'none',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    cursor: 'pointer',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+    whiteSpace: 'nowrap',
+  })
+
+  const primaryBtnPreviewStyle = (size: number, shape: 'rect' | 'pill' = 'rect'): React.CSSProperties => ({
+    background: formData.buttonColor,
+    color: formData.buttonTextColor,
+    padding:
+      shape === 'pill'
+        ? `${Math.round(size * 0.7)}px ${Math.round(size * 2.2)}px`
+        : `${Math.round(size * 0.85)}px ${Math.round(size * 1.5)}px`,
+    borderRadius: shape === 'pill' ? 999 : 10,
+    fontSize: `${size}px`,
+    fontWeight: shape === 'pill' ? 800 : 700,
+    border: 'none',
+    textTransform: 'uppercase',
+    letterSpacing: shape === 'pill' ? '0.04em' : undefined,
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    whiteSpace: 'nowrap',
+  })
+
+  const secondaryBtnPreviewStyle = (
+    size: number,
+    shape: 'rect' | 'pill' = 'rect',
+  ): React.CSSProperties => ({
+    ...primaryBtnPreviewStyle(size, shape),
+    background: hexToRgba(formData.secondaryButtonColor, formData.secondaryButtonOpacity / 100),
+    color: formData.secondaryButtonTextColor,
+    backdropFilter: 'blur(6px)',
+    border: '1px solid rgba(255,255,255,0.14)',
+  })
 
   const activeTitlePos = {
     x: isMobile
@@ -263,6 +355,45 @@ export function SlideEditorForm({
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-500">Макет:</span>
+          <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => patch({ layoutMode: 'classic' })}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                isClassic ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Слева
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                patch({
+                  layoutMode: 'centered',
+                  showButton: true,
+                  buttonText: formData.buttonText || 'GET A BONUS',
+                })
+              }
+              className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-200 ${
+                isCentered ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              По центру
+            </button>
+            <button
+              type="button"
+              onClick={() => patch({ layoutMode: 'custom' })}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-200 ${
+                isCustom ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Свободный
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-500">Слой:</span>
           <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden">
             {layers.map((l) => (
@@ -301,9 +432,9 @@ export function SlideEditorForm({
               overflow: 'hidden',
               boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
             }}
-            onMouseMove={handlePreviewMove}
-            onMouseUp={() => setDragging(null)}
-            onMouseLeave={() => setDragging(null)}
+            onMouseMove={isPresetLayout ? undefined : handlePreviewMove}
+            onMouseUp={isPresetLayout ? undefined : () => setDragging(null)}
+            onMouseLeave={isPresetLayout ? undefined : () => setDragging(null)}
           >
             {!imageUrl && (
               <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
@@ -311,6 +442,139 @@ export function SlideEditorForm({
               </div>
             )}
 
+            {isClassic ? (
+              <>
+                <div style={previewScrimStyle} aria-hidden />
+                <div style={classicContentStyle}>
+                  {formData.showTitle && formData.title ? (
+                    <div
+                      onClick={() => setSelectedLayer('title')}
+                      className={layerRing('title')}
+                      style={{
+                        color: formData.titleColor,
+                        fontSize: `${titleDisplaySize}px`,
+                        fontWeight: 900,
+                        lineHeight: 1.12,
+                        textShadow: formData.textShadow ? '0 2px 12px rgba(0,0,0,0.45)' : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {formData.title}
+                    </div>
+                  ) : null}
+                  {formData.showDesc && formData.description ? (
+                    <div
+                      onClick={() => setSelectedLayer('desc')}
+                      className={layerRing('desc')}
+                      style={{
+                        marginTop: 10,
+                        color: formData.descColor,
+                        fontSize: `${descDisplaySize}px`,
+                        fontWeight: 500,
+                        lineHeight: 1.35,
+                        opacity: 0.95,
+                        maxWidth: '34ch',
+                        textShadow: formData.textShadow ? '0 1px 6px rgba(0,0,0,0.45)' : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {formData.description}
+                    </div>
+                  ) : null}
+                  {(formData.showButton && formData.buttonText) || formData.showSecondaryButton ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 10,
+                        marginTop: 18,
+                      }}
+                    >
+                      {formData.showButton && formData.buttonText ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLayer('button')}
+                          className={layerRing('button')}
+                          style={primaryBtnPreviewStyle(buttonDisplaySize)}
+                        >
+                          {formData.buttonText}
+                        </button>
+                      ) : null}
+                      {formData.showSecondaryButton && formData.secondaryButtonText ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLayer('button')}
+                          style={secondaryBtnPreviewStyle(buttonDisplaySize)}
+                        >
+                          {formData.secondaryButtonText}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            ) : isCentered ? (
+              <>
+                <div style={centeredContentStyle}>
+                  {formData.showTitle && formData.title ? (
+                    <div
+                      onClick={() => setSelectedLayer('title')}
+                      className={layerRing('title')}
+                      style={{
+                        color: formData.titleColor,
+                        fontSize: `${titleDisplaySize}px`,
+                        fontWeight: 900,
+                        lineHeight: 1.12,
+                        marginBottom: 12,
+                        textShadow: formData.textShadow ? '0 2px 12px rgba(0,0,0,0.45)' : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {formData.title}
+                    </div>
+                  ) : null}
+                  {formData.showDesc && formData.description ? (
+                    <div
+                      onClick={() => setSelectedLayer('desc')}
+                      className={layerRing('desc')}
+                      style={{
+                        marginBottom: 14,
+                        color: formData.descColor,
+                        fontSize: `${descDisplaySize}px`,
+                        fontWeight: 500,
+                        lineHeight: 1.35,
+                        opacity: 0.95,
+                        maxWidth: '36ch',
+                        textShadow: formData.textShadow ? '0 1px 6px rgba(0,0,0,0.45)' : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {formData.description}
+                    </div>
+                  ) : null}
+                  {formData.showButton && formData.buttonText ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLayer('button')}
+                      className={layerRing('button')}
+                      style={pillBtnStyle(buttonDisplaySize)}
+                    >
+                      {formData.buttonText}
+                    </button>
+                  ) : null}
+                  {formData.showSecondaryButton && formData.secondaryButtonText ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLayer('button')}
+                      style={{ ...secondaryBtnPreviewStyle(buttonDisplaySize, 'pill'), marginTop: 10 }}
+                    >
+                      {formData.secondaryButtonText}
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <>
             {formData.showTitle && formData.title && (
               <div
                 onMouseDown={(e) => {
@@ -378,8 +642,8 @@ export function SlideEditorForm({
                   left: `${activeButtonPos.x}%`,
                   top: `${activeButtonPos.y}%`,
                   transform: 'translate(-50%, -50%)',
-                  background: 'white',
-                  color: 'black',
+                  background: formData.buttonColor,
+                  color: formData.buttonTextColor,
                   padding: `${Math.round(buttonDisplaySize * 0.6)}px ${Math.round(buttonDisplaySize * 1.1)}px`,
                   borderRadius: 8,
                   fontSize: `${buttonDisplaySize}px`,
@@ -393,9 +657,15 @@ export function SlideEditorForm({
                 {formData.buttonText}
               </button>
             )}
+              </>
+            )}
           </div>
           <p className="text-xs text-gray-500">
-            Перетаскивайте элементы на превью. Размеры и позиции сохраняются отдельно для Desktop и Mobile.
+            {isClassic
+              ? 'Режим слева: текст и кнопки слева. Нажмите на элемент для редактирования.'
+              : isCentered
+                ? 'Режим по центру: золотая pill-кнопка внизу по центру баннера (как GET A BONUS).'
+                : 'Перетаскивайте элементы на превью. Размеры и позиции сохраняются отдельно для Desktop и Mobile.'}
           </p>
         </div>
 
@@ -445,6 +715,7 @@ export function SlideEditorForm({
                     className="block w-full h-10 border border-gray-200 rounded-lg cursor-pointer"
                   />
                 </div>
+                {!isCustom ? null : (
                 <PositionReadout
                   x={activeTitlePos.x}
                   y={activeTitlePos.y}
@@ -456,6 +727,7 @@ export function SlideEditorForm({
                     })
                   }
                 />
+                )}
               </>
             )}
 
@@ -492,6 +764,7 @@ export function SlideEditorForm({
                     className="block w-full h-10 border border-gray-200 rounded-lg cursor-pointer"
                   />
                 </div>
+                {!isCustom ? null : (
                 <PositionReadout
                   x={activeDescPos.x}
                   y={activeDescPos.y}
@@ -503,6 +776,7 @@ export function SlideEditorForm({
                     })
                   }
                 />
+                )}
               </>
             )}
 
@@ -515,14 +789,21 @@ export function SlideEditorForm({
                     onChange={(e) => patch({ showButton: e.target.checked })}
                     className="rounded"
                   />
-                  Показывать кнопку
+                  Показывать основную кнопку
                 </label>
                 <Input
-                  label="Текст кнопки"
+                  label="Текст основной кнопки"
                   value={formData.buttonText}
                   onChange={(e) => patch({ buttonText: e.target.value })}
-                  placeholder="Например: Подробнее"
+                  placeholder="Например: GET BONUS"
                 />
+                {isPresetLayout ? (
+                  <p className="text-xs text-gray-500 -mt-2">
+                    {isCentered
+                      ? 'Золотая pill-кнопка по центру баннера. Ссылка — в общих настройках.'
+                      : 'Ссылка основной кнопки — поле «Ссылка основной кнопки» в общих настройках.'}
+                  </p>
+                ) : null}
                 <StepperControl
                   label="Размер кнопки"
                   hint="Размер шрифта и отступов"
@@ -531,6 +812,100 @@ export function SlideEditorForm({
                   min={10}
                   max={28}
                 />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Фон основной
+                    </label>
+                    <input
+                      type="color"
+                      value={formData.buttonColor}
+                      onChange={(e) => patch({ buttonColor: e.target.value })}
+                      className="block w-full h-10 border border-gray-200 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Текст основной
+                    </label>
+                    <input
+                      type="color"
+                      value={formData.buttonTextColor}
+                      onChange={(e) => patch({ buttonTextColor: e.target.value })}
+                      className="block w-full h-10 border border-gray-200 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-gray-100 space-y-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={formData.showSecondaryButton}
+                      onChange={(e) => patch({ showSecondaryButton: e.target.checked })}
+                      className="rounded"
+                    />
+                    Показывать вторую кнопку
+                  </label>
+                  {formData.showSecondaryButton ? (
+                    <>
+                      <Input
+                        label="Текст второй кнопки"
+                        value={formData.secondaryButtonText}
+                        onChange={(e) => patch({ secondaryButtonText: e.target.value })}
+                        placeholder="Например: MORE DETAILS"
+                      />
+                      <Input
+                        label="Ссылка второй кнопки"
+                        value={formData.secondaryButtonLink}
+                        onChange={(e) => patch({ secondaryButtonLink: e.target.value })}
+                        placeholder="https://... (если пусто — основная ссылка)"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Фон второй
+                          </label>
+                          <input
+                            type="color"
+                            value={formData.secondaryButtonColor}
+                            onChange={(e) => patch({ secondaryButtonColor: e.target.value })}
+                            className="block w-full h-10 border border-gray-200 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Текст второй
+                          </label>
+                          <input
+                            type="color"
+                            value={formData.secondaryButtonTextColor}
+                            onChange={(e) => patch({ secondaryButtonTextColor: e.target.value })}
+                            className="block w-full h-10 border border-gray-200 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Прозрачность второй: {formData.secondaryButtonOpacity}%
+                        </label>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={formData.secondaryButtonOpacity}
+                          onChange={(e) =>
+                            patch({ secondaryButtonOpacity: parseInt(e.target.value, 10) })
+                          }
+                          className="w-full accent-blue-600"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Меньше % — стеклянный эффект, как «LEARN MORE» на 1win.
+                        </p>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+                {isCustom ? (
                 <PositionReadout
                   x={activeButtonPos.x}
                   y={activeButtonPos.y}
@@ -542,6 +917,7 @@ export function SlideEditorForm({
                     })
                   }
                 />
+                ) : null}
               </>
             )}
           </div>
@@ -586,7 +962,7 @@ export function SlideEditorForm({
             <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF, WebP · до 5 MB</p>
           </div>
           <Input
-            label="Ссылка при клике"
+            label={isPresetLayout ? 'Ссылка основной кнопки' : 'Ссылка при клике'}
             value={formData.linkUrl}
             onChange={(e) => patch({ linkUrl: e.target.value })}
             placeholder="https://..."

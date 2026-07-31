@@ -6,6 +6,12 @@ import { isOlimpbetEsportsSportId, olimpbetSportIdToSlug } from './olimpbet-spor
 
 import type { WcGroupedMarkets, WcMarketGroup } from '../wc-odds/wc-odds-markets.util';
 import { finalizeGroupedMarkets } from '../wc-odds/wc-odds-markets.util';
+import {
+  isValidEsportsMapCorrectScore,
+  parseScorePairLabel,
+  stripPlaceholderMapCorrectScoreMarkets,
+  stripFlatPlaceholderEsportsMarkets,
+} from './olimpbet-map-correct-score.util';
 
 import {
   catalogMarketLabel,
@@ -205,13 +211,21 @@ function scoreSetGroupSig(prob: OlimpbetProbability): string {
   return `scoreset|${setNum}|${gameNum}`;
 }
 
+function scoreMapGroupSig(prob: OlimpbetProbability): string {
+  const mapNum = prob.parameters?.find((p) => p.type === 'PARAMETER_MAP_NUMBER')?.value ?? '';
+  return `scoremap|${mapNum}`;
+}
+
 function marketGroupSig(marketKey: string, prob: OlimpbetProbability): string {
   const baseKey = marketKey.replace(/_ot$/i, '');
   const catalogStem = baseKey.replace(/^display_/i, '');
   if (/^NUMBER_OF_SETS/i.test(catalogStem)) {
     return 'number_of_sets';
   }
-  if (/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_WINNER|^WINNER_2GAMES/i.test(catalogStem)) {
+  if (/^SCORE_MAP$/i.test(catalogStem)) {
+    return scoreMapGroupSig(prob);
+  }
+  if (/^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_WINNER|^WINNER_2GAMES|^SCORE_TIE_BREAK|^SCORE_FIRST_X_GAMES/i.test(catalogStem)) {
     return scoreSetGroupSig(prob);
   }
   if (
@@ -453,6 +467,22 @@ function normalizeOutcomeDisplayName(
   const code = outcome?.code ?? '';
   const catalogMarketName = market?.name ?? '';
   let label = substituteCompetitorLabels(name, homeTeam, awayTeam).trim();
+
+  // Olimpbet ships the "any other" bucket of enumerated markets (correct score,
+  // exact points, …) as an unresolved template with empty brackets and no value
+  // to substitute — e.g. "ТочныйСчет[]", "ТКолОчк ГеймСет[]". Without this guard
+  // the raw template string leaks to bettors as an outcome name. Present it as a
+  // readable "other" bucket instead.
+  const hasEmptyTemplate = /\[\s*\]|\{\s*\}/.test(name);
+  const hasSubstitutionValue = line != null && String(line).trim() !== '';
+  if (hasEmptyTemplate && !hasSubstitutionValue) {
+    const ctx = `${name} ${code} ${catalogMarketName}`;
+    if (/CORRECT_SCORE|SCORE_VARIANT|точн\w*\s*сч[её]т|точныйсч[её]т/i.test(ctx)) {
+      return 'Другой счёт';
+    }
+    return 'Другое';
+  }
+
   label = label.replace(/\[\]/g, line ?? '').replace(/\{\}/g, line ?? '').trim();
 
   const resulting = formatResultingComparisonLabel(
@@ -577,7 +607,19 @@ function normalizeOutcomeDisplayName(
   if (/^\d+:\d+$/.test(label)) return label;
   if (/точный\s*сч/i.test(label.replace(/\s/g, ''))) {
     const score = humanizeFallbackOutcomeCode(code);
-    return score && score.includes(':') ? score : label.replace(/точный\s*сч[её]т/i, '').trim() || score;
+    if (score && score.includes(':') && !/[\[\]{}]/.test(score)) return score;
+    const stripped = label.replace(/точный\s*сч[её]т/i, '').trim();
+    if (/^\d+:\d+$/.test(stripped)) return stripped;
+    // Catch-all "any other score" bucket ships as an unresolved template
+    // (code "ТочныйСчет[]"); never leak the raw template to bettors.
+    return 'Другой счёт';
+  }
+
+  // Scope fragments ("3-м сете", "2-й гейм") must never appear as outcome names —
+  // they belong on the group/category. Treat a pure scope label as the catch-all
+  // bucket of an enumerated score book.
+  if (/^\d+\s*[-–—]?\s*м\s+сет[еу]?$/i.test(label) || /^\d+\s*[-–—]?\s*[йи]\s+гейм$/i.test(label)) {
+    return /сч[её]т|score|тай-?брейк/i.test(`${code} ${catalogMarketName}`) ? 'Другой счёт' : 'Другое';
   }
 
   label = label
@@ -590,20 +632,45 @@ function normalizeOutcomeDisplayName(
   if (/^\d+:\d+$/.test(label)) return label;
 
   if (!label || (/^[\d_|:|-]+$/.test(label) && !/^\d+:\d+$/.test(label))) {
-    return humanizeFallbackOutcomeCode(code) || '—';
+    const fallback = humanizeFallbackOutcomeCode(code);
+    if (fallback && /^\d+:\d+$/.test(fallback)) return fallback;
+    // Enumerated markets (correct score, exact points, …) share one template
+    // code ("ТочныйСчет[]") across all outcomes; the real value lives in `name`.
+    // A non-score sentinel name ("-1:-1", "-1") is the "any other" bucket — surface
+    // it as a readable label instead of leaking the template code.
+    if (/\[\s*\]|\{\s*\}/.test(code)) {
+      return /сч[её]т|score/i.test(`${code} ${catalogMarketName}`) ? 'Другой счёт' : 'Другое';
+    }
+    return fallback || '—';
   }
 
   if (/[\[\]{}]|перхгейм/i.test(label)) {
     const score = code.match(/(\d+)_(\d+)(?:_\d+)?$/);
     if (score) return `${score[1]}:${score[2]}`;
+    if (/\[\s*\]|\{\s*\}/.test(code)) {
+      return /сч[её]т|score/i.test(`${code} ${catalogMarketName}`) ? 'Другой счёт' : 'Другое';
+    }
     return '—';
+  }
+
+  // Enumerated markets share one template code across all outcomes; resolved
+  // outcomes carry a value in `name`, but the "any other" bucket falls back to the
+  // template text itself (e.g. name "ТКолОчк_ГеймСет", code "ТКолОчк_ГеймСет[]").
+  // Detect that exact case and surface a readable "other" label.
+  if (/\[\s*\]|\{\s*\}/.test(code)) {
+    const codeText = code.replace(/\[\s*\]|\{\s*\}/g, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+    if (codeText && label.replace(/\s+/g, ' ').trim() === codeText) {
+      return /сч[её]т|score/i.test(`${code} ${catalogMarketName}`) ? 'Другой счёт' : 'Другое';
+    }
   }
 
   return label;
 }
 
 function humanizeFallbackOutcomeCode(code: string): string {
-  const trimmed = code.trim();
+  // Strip Olimpbet's empty template markers ("ТочныйСчет[]" → "ТочныйСчет") so a
+  // raw, unresolved template never leaks to bettors as an outcome name.
+  const trimmed = code.replace(/\[\s*\]|\{\s*\}/g, '').trim();
   if (!trimmed) return '';
   if (/^П[12]$/.test(trimmed)) return trimmed;
   if (trimmed === 'Х' || trimmed === 'X') return 'X';
@@ -1011,6 +1078,16 @@ function halfScopeAlreadyInCategory(category: string, half: string): boolean {
   return false;
 }
 
+/** True when category already names the set (nominative "1-й сет" or locative "в 1-м сете"). */
+function setScopeAlreadyInCategory(category: string, setNum?: string | null): boolean {
+  if (!setNum) return /\d+\s*[-–—]?\s*[йи]\s+сет|\d+\s*[-–—]?\s*м\s+сет/i.test(category);
+  const n = String(setNum);
+  return new RegExp(
+    `(?:^|\\s)(?:в[о]?\\s+)?${n}\\s*[-–—]?\\s*(?:[йи]|м)\\s+сет`,
+    'i',
+  ).test(category);
+}
+
 function buildGroupLabel(
   category: string,
   marketKey: string,
@@ -1044,7 +1121,12 @@ function buildGroupLabel(
   if (resultingGroupLabel !== null) return resultingGroupLabel;
 
   const comboGroupLabel = resolveComboDisplayGroupLabel(catalogStem);
-  if (comboGroupLabel) return comboGroupLabel;
+  if (comboGroupLabel) {
+    if (mapNum && /_TOTAL_MAP$/i.test(catalogStem)) {
+      return `${mapNum}-я карта · ${comboGroupLabel}`;
+    }
+    return comboGroupLabel;
+  }
 
   const specialBetsGroupLabel = resolveSpecialBetsGroupLabel(catalogStem, category);
   if (specialBetsGroupLabel !== null) return specialBetsGroupLabel;
@@ -1076,7 +1158,7 @@ function buildGroupLabel(
       ?? paramValue(parameters, 'PARAMETER_VALUE')
       ?? gameNum;
     const raceLabel = target ? `Гонка до ${target} геймов` : 'Гонка по геймам';
-    if (setNum && !/\d+-[йи]\s+сет/i.test(category)) {
+    if (setNum && !setScopeAlreadyInCategory(category, setNum)) {
       return `${setNum}-й сет · ${raceLabel}`;
     }
     return raceLabel;
@@ -1087,7 +1169,7 @@ function buildGroupLabel(
 
   if (/^DEUSE_POINT/i.test(catalogStem)) {
     const parts: string[] = [];
-    if (setNum && !/\d+-й\s*сет/i.test(category)) parts.push(`${setNum}-й сет`);
+    if (setNum && !setScopeAlreadyInCategory(category, setNum)) parts.push(`${setNum}-й сет`);
     if (gameNum) parts.push(`${gameNum}-й гейм`);
     return parts.length ? parts.join(', ') : '40:40';
   }
@@ -1128,6 +1210,12 @@ function buildGroupLabel(
     return '';
   }
 
+  if (/^SCORE_TIE_BREAK|^TIE_BREAK_SET/i.test(catalogStem)) {
+    // Category already carries set + "тай-брейк" (e.g. "Счет тай-брейка в 3-м сете",
+    // "Тай-брейк во 2-м сете") — don't repeat it as a group sub-label.
+    if (/тай-?брейк/i.test(category)) return '';
+  }
+
   if (/^NUMBER_OF_SETS/i.test(catalogStem)) {
     return 'Количество сетов';
   }
@@ -1140,7 +1228,7 @@ function buildGroupLabel(
 
   if (/^WINNER_2GAMES/i.test(catalogStem) && (setNum || gameNum)) {
     const parts: string[] = [];
-    if (setNum && !/\d+-[йи]\s+сет/i.test(category)) parts.push(`${setNum}-й сет`);
+    if (setNum && !setScopeAlreadyInCategory(category, setNum)) parts.push(`${setNum}-й сет`);
     if (gameNum && !/\d+-[йи]\s+гейм/i.test(category)) parts.push(`${gameNum}-й гейм`);
     return parts.join(', ');
   }
@@ -1152,7 +1240,7 @@ function buildGroupLabel(
     quarter ? quarterCategoryLabel(quarter) : null,
     from != null && to != null ? `${from}–${to} мин` : null,
     line ? String(line) : null,
-    setNum && !/\d+-[йи]\s+сет/i.test(category) ? `${setNum}-й сет` : null,
+    setNum && !setScopeAlreadyInCategory(category, setNum) ? `${setNum}-й сет` : null,
     gameNum && !/\d+-[йи]\s+гейм/i.test(category) ? `${gameNum}-й гейм` : null,
   ].filter(Boolean);
 
@@ -1313,7 +1401,10 @@ function sortExactScoreOutcomes<T extends { name: string; point?: number }>(
     if (outcomes.length < 2) return outcomes;
     return [...outcomes].sort((a, b) => Number(a.point ?? 0) - Number(b.point ?? 0));
   }
-  if (!/^CORRECT_SCORE|^SCORE_VARIANT/i.test(catalogName) && !/CORRECT_SCORE|SCORE_VARIANT/i.test(marketKey)) {
+  if (
+    !/^CORRECT_SCORE|^SCORE_VARIANT|^SCORE_MAP$/i.test(catalogName)
+    && !/CORRECT_SCORE|SCORE_VARIANT|SCORE_MAP|^display_SCORE/i.test(marketKey)
+  ) {
     return outcomes;
   }
   if (outcomes.length < 2) return outcomes;
@@ -1491,6 +1582,9 @@ function parseMarketGroup(
       if (mk === 'h2h') outcomeKey = mapH2hOutcome(p.outcomeTypeId, catalog, market.marketId);
       else if ((mk === 'totals' || mk === 'totals_home' || mk === 'totals_away') && line) {
         outcomeKey = mapTotalsOutcome(p.outcomeTypeId, catalog, market.marketId, line);
+        // Individual-total catalog codes sometimes carry team markers (П1/П2) instead of ТБ/ТМ.
+        if (/^OVER_/i.test(outcomeKey)) name = 'ТБ';
+        else if (/^UNDER_/i.test(outcomeKey)) name = 'ТМ';
       }
       else if (mk === 'even_odd') outcomeKey = mapEvenOddOutcome(p.outcomeTypeId, catalog, market.marketId);
       else if (mk === 'handicap' && line) {
@@ -1545,6 +1639,16 @@ function parseMarketGroup(
           ?? innerSig;
         outcomeKey = `DISPLAY_${market.marketId}_${p.outcomeTypeId}_PARAMETER_VALUE:${setCount}`;
       }
+      else if (/^SCORE_MAP$/i.test(catalogMarket.name)) {
+        const homeScore = paramValue(p.parameters, 'PARAMETER_HOME_SCORE');
+        const awayScore = paramValue(p.parameters, 'PARAMETER_AWAY_SCORE');
+        if (homeScore != null && awayScore != null) {
+          name = `${homeScore}:${awayScore}`;
+          outcomeKey = `SCORE_${homeScore}:${awayScore}`;
+        } else {
+          outcomeKey = `DISPLAY_${market.marketId}_${p.outcomeTypeId}_${innerSig}`;
+        }
+      }
       else outcomeKey = `DISPLAY_${market.marketId}_${p.outcomeTypeId}_${innerSig}`;
 
       let point = probLine != null ? Number(probLine) : line != null ? Number(line) : undefined;
@@ -1569,6 +1673,13 @@ function parseMarketGroup(
         name = outcomeKey === 'YES' ? 'Да' : 'Нет';
       }
 
+      if (/^SCORE_MAP$/i.test(catalogMarket.name)) {
+        const score = parseScorePairLabel(name);
+        if (!score || !isValidEsportsMapCorrectScore(score.home, score.away)) {
+          return null;
+        }
+      }
+
       return {
         name,
         price: p.odd,
@@ -1576,7 +1687,7 @@ function parseMarketGroup(
         outcomeKey,
         suspended: p.tradingStatus === 'PROBABILITY_SUSPENDED' || !!p.suspended,
       };
-    });
+    }).filter((outcome): outcome is NonNullable<typeof outcome> => outcome != null);
 
     const uniqueOutcomes = sortExactScoreOutcomes(
       marketKey,
@@ -1662,7 +1773,12 @@ export async function parseOlimpbetEventToGroupedMarkets(
     grouped[category] = sortCategoryMarketGroups(grouped[category]!);
   }
 
-  return finalizeGroupedMarkets(grouped);
+  let cleaned = stripPlaceholderMapCorrectScoreMarkets(grouped);
+  if (isOlimpbetEsportsSportId(sportId)) {
+    cleaned = stripFlatPlaceholderEsportsMarkets(cleaned);
+  }
+
+  return finalizeGroupedMarkets(cleaned);
 }
 
 export async function parseOlimpbetFullEvent(

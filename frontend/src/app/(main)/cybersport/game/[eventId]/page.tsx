@@ -10,6 +10,7 @@ import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLab
 import { CyberMatchPage } from "~/entities/cybersport/ui/CyberMatchPage";
 import { fetchWcEventDetail } from "~/entities/wc-odds/api/client";
 import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 import styles from "../../CybersportLayout.module.css";
 
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {
     /* ignore */
   }
-  return makeMetadata("Матч");
+  return makeSeoMetadata("common.seoMatch");
 }
 
 export default async function CybersportGamePage({ params }: PageProps) {

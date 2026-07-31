@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
-import { makeMetadata } from '~/shared/lib';
+import { makeSeoMetadata } from '~/shared/i18n/seo-metadata';
 import { BonusHistory } from '~/entities/user/ui/BonusHistory/BonusHistory';
 
-export const metadata: Metadata = makeMetadata('История бонусов');
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoBonusHistory");
+}
 
 export default function PromocodesPage() {
   return <BonusHistory />;

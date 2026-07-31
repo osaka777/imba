@@ -34,7 +34,7 @@
 
 .Footer_LogoSeparator {
   flex: 1;
-  margin-left: 40px;
+  margin-left: 20px;
   margin-right: 18px;
   height: 1px;
   background: linear-gradient(90deg,
@@ -90,6 +90,7 @@
   font-weight: 600;
   font-size: 12px;
   line-height: 14px;
+  color: #fff;
 }
 
 .ContactSection_subtitle {
@@ -97,7 +98,7 @@
   line-height: 14px;
   letter-spacing: 0.2px;
   font-weight: 400;
-  color: #8692aca6;
+  color: rgba(134, 146, 172, 0.65);
   margin-top: 8px;
 }
 
@@ -114,24 +115,47 @@
 @media screen and (max-width: 768px) {
   .Footer_navigationSection {
     margin-left: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 20px;
+    row-gap: 0;
+  }
 
-    flex-direction: column;
+  .Footer_navigationSection .NavigationSection_block {
+    min-width: 0;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .Footer_navigationSection .NavigationSection_blockCategories {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .Footer_navigationSection .NavigationSection_title {
+    margin-bottom: 16px;
+  }
+
+  .Footer_navigationSection .NavigationSection_link {
+    font-size: 12px;
+    white-space: nowrap;
   }
 }
 
 .NavigationInfo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.NavigationInfo>div>a {
-  color: antiquewhite;
 }
 
 .NavigationSection_block {
   margin-right: 35px;
   flex-grow: 0.2;
+}
+
+.NavigationSection_blockCategories {
+  margin-right: 28px;
+  margin-left: -6px;
 }
 
 .NavigationSection_title {
@@ -153,27 +177,29 @@
   display: flex;
 }
 
-.NavigationSection_contactsRow>a {
-  color: antiquewhite;
-}
-
 .NavigationSection_contactsCellName {
   padding-right: 20px;
-  color: #8692aca6;
+  color: rgba(134, 146, 172, 0.65);
+}
+
+.NavigationSection_contactsCellName .NavigationSection_link {
+  color: inherit;
 }
 
 .NavigationSection_contactsCell {
   padding-bottom: 10px;
 }
 
-.NavigationSection_contactsCell>a {
-  color: antiquewhite;
-}
-
+/* 1win: emails + info/category links are white; labels muted via parent */
 .NavigationSection_link {
-  color: #8692aca6;
+  color: #fff;
   font-size: 13px;
   line-height: 16px;
+  text-decoration: none;
+}
+
+.NavigationSection_link:hover {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .NavigationSection_linksRow {
@@ -181,14 +207,8 @@
   line-height: 16px;
 }
 
-.NavigationSection_listCategories {
-  display: flex;
-}
-
-.NavigationSection_listCategoriesColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.NavigationSection_linksRow:not(:last-child) {
+  margin-bottom: 10px;
 }
 
 .ApplicationSection_container {
@@ -199,8 +219,18 @@
   margin: auto 0 auto 30px;
 }
 
-.ApplicationSection_sectionMobile {
-  margin-right: 10px;
+.ApplicationSection_grid {
+  display: grid;
+  grid-template-columns: 175px 110px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.ApplicationSection_mobileColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
 }
 
 .Tooltip_tooltip {
@@ -208,15 +238,39 @@
 }
 
 .FooterMobileApps_container {
-  width: 175px;
-  height: 42px;
+  width: 100%;
+  height: 48px;
   display: flex;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   align-items: center;
-  padding: 0 15px;
-  transition: border 0.25s ease-out;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: border 0.25s ease-out, background 0.25s ease-out;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.FooterMobileApps_container:hover {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.FooterMobileApps_container:hover .FooterMobileApps_question {
+  opacity: 1;
+}
+
+.FooterMobileApps_inactive {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
+
+.FooterMobileApps_inactive:hover {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .icon {
@@ -229,54 +283,153 @@
 }
 
 .FooterMobileApps_icon {
-  width: 27px;
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
+.FooterMobileApps_brandLogo {
+  width: 56px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex: none;
+}
+
+.FooterMobileApps_iconIos {
+  color: #fff;
+  fill: #fff;
+}
+
+.FooterMobileApps_iconIos path {
+  fill: #fff;
+}
+
+.FooterMobileApps_iconAndroid {
+  color: #61da84;
+  fill: #61da84;
+}
+
+.FooterMobileApps_iconAndroid path {
+  fill: #61da84;
 }
 
 .FooterMobileApps_text {
-  margin-left: 8px;
+  margin-left: 10px;
+  min-width: 0;
 }
 
 .FooterMobileApps_title {
-  font-size: 8px;
-  line-height: 10px;
-  color: #ffffff80;
+  font-size: 9px;
+  line-height: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .FooterMobileApps_subtitle {
-  font-weight: 600;
-  font-size: 10px;
-  line-height: 12px;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 14px;
   margin-top: 1px;
+  color: #fff;
 }
 
 .FooterMobileApps_question {
-  width: 10px;
+  width: 12px;
+  height: 12px;
   margin-left: auto;
-  opacity: 0.45;
+  opacity: 0.4;
   transition: opacity 0.25s ease-out;
+  flex: none;
+  color: rgba(255, 255, 255, 0.55);
+  fill: currentColor;
 }
 
-.AndroidIcon>path {
-  fill: rgb(97, 218, 132);
+/* Tall Windows card — desktop reference layout */
+.FooterWindowsApp {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 106px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  text-decoration: none;
+  transition: border 0.25s ease-out, background 0.25s ease-out;
+  box-sizing: border-box;
 }
 
-.ApplicationSection_android {
-  margin-top: 10px;
+.FooterWindowsApp:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.FooterWindowsApp_top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.FooterWindowsApp_badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2b6cff;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(43, 108, 255, 0.35);
+}
+
+.FooterWindowsApp_logo {
+  width: 18px;
+  height: 18px;
+}
+
+.FooterWindowsApp_chevron {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: -2px;
+}
+
+.FooterWindowsApp_text {
+  margin-top: auto;
+}
+
+.FooterWindowsApp_subtitle {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 16px;
+  margin-top: 2px;
+  color: #fff;
 }
 
 .Footer_middleSeparator {
   background: linear-gradient(90deg,
       rgba(255, 255, 255, 0.2) 29.12%,
       rgba(255, 255, 255, 0) 100%);
-  width: 100%;
+  width: 82%;
   height: 1px;
   margin: 40px 0 23px;
+}
+
+/* Thin full-width rule like 1win between sports / payments / trust */
+.Footer_rowSeparator {
+  width: 100%;
+  height: 1px;
+  margin: 14px 0 16px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .Footer_promotionSection {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  margin-bottom: 0;
 }
 
 @media screen and (max-width: 1080px) {
@@ -322,7 +475,7 @@
 
 .SocialItemWrapper_telegram {
   background: linear-gradient(240.2deg, #0fb1d6 0%, #08c 61.34%);
-  box-shadow: 0 5px 16px #4ca2f64d;
+  box-shadow: 0 5px 16px rgba(76, 162, 246, 0.3);
 }
 
 .SocialItemWrapper_instagram {
@@ -330,7 +483,7 @@
       #7e2bf4 7.65%,
       #ed146e 51.93%,
       #ffc90c 95.29%);
-  box-shadow: 0 5px 16px #ba4d654d;
+  box-shadow: 0 5px 16px rgba(186, 77, 101, 0.3);
 }
 
 .SportsPromotionSection_root {
@@ -343,10 +496,23 @@
 
 @media screen and (max-width: 1080px) {
   .SportsPromotionSection_root {
-    flex-wrap: wrap;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    row-gap: 18px;
+    column-gap: 12px;
     margin: 0;
-    justify-content: center;
+  }
+
+  .SportsPromotionSection_root>svg {
+    display: block;
+    width: 100%;
+    height: 24px;
+    max-width: 72px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    overflow: visible;
+    justify-self: center;
+    align-self: center;
   }
 }
 
@@ -393,6 +559,60 @@
 
 .PaymentSection_icon:hover [class$="mono"] {
   opacity: 0;
+}
+
+.TrustStrip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  width: 100%;
+  padding: 4px 0 8px;
+}
+
+.TrustBadges_row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.TrustBadges_item {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.TrustBadges_divider {
+  display: inline-block;
+  width: 1px;
+  height: 26px;
+  margin: 0 12px;
+  background: rgba(148, 166, 205, 0.28);
+  flex-shrink: 0;
+}
+
+.TrustBadges_link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  opacity: 0.92;
+}
+
+.TrustBadges_link:hover {
+  opacity: 1;
+}
+
+.TrustBadges_image {
+  display: block;
+  height: 32px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
 }
 
 .icon {
@@ -444,7 +664,9 @@
 .LicenseSection_container {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 24px;
+  width: 100%;
 }
 
 .LicenseSection_legalBlock {
@@ -453,6 +675,7 @@
   flex-direction: column;
   gap: 8px;
   max-width: 760px;
+  min-width: 0;
 }
 
 .LicenseSection_notice {
@@ -476,7 +699,37 @@
   color: #b8c0d0;
 }
 
+.LicenseSection_aiBan {
+  margin: 8px 0 0;
+  font-size: 9px;
+  line-height: 14px;
+  font-weight: 400;
+  color: #5a647a;
+}
+
+.LicenseSection_aiBan a {
+  font-size: 9px;
+  line-height: 14px;
+  font-weight: 400;
+  color: #8692aca6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.LicenseSection_aiBan a:hover {
+  color: #b8c0d0;
+}
+
+.LicenseSection_aiBanTitle {
+  font-size: 9px;
+  line-height: 14px;
+  font-weight: 600;
+  color: inherit;
+}
+
 .LicenseSection_bold {
+  display: block;
   font-size: 9px;
   line-height: 12px;
   color: #34405e;
@@ -485,12 +738,11 @@
 
 .LicenseSection_leftSection {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex: none;
-  height: -moz-min-content;
-  height: min-content;
   margin-left: auto;
-  padding-top: 2px;
+  padding-top: 0;
+  align-self: flex-start;
 }
 
 .Listings_desktop {
@@ -505,12 +757,11 @@
 }
 
 .Listings_ageLimit {
-  color: #77829b66;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 16px;
-  order: 4;
+  color: #77829b;
   font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 @media (max-width: 1000px) {
@@ -530,23 +781,20 @@
     display: flex;
     flex-direction: column;
     background: linear-gradient(107.15deg,
-        #1e283f 0%,
-        rgba(20, 27, 46, 0.6) 100%);
+        var(--blue-20) 0%,
+        var(--blue-10-transparent) 100%);
     padding: 10px;
     border-radius: 12px;
   }
 
-  .ApplicationSection_sectionMobile {
-    display: flex;
-    gap: 20px;
+  .ApplicationSection_grid {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    max-width: 360px;
   }
 
-  .ApplicationSection_android {
-    margin-top: 0;
-  }
-
-  .SportsPromotionSection_root {
-    justify-content: space-around;
+  .ApplicationSection_mobileColumn {
+    gap: 10px;
   }
 
   .ChangeLanguageSection_container {
@@ -580,12 +828,90 @@
   }
 
   .SportsPromotionSection_root {
-    gap: 25px;
+    row-gap: 16px;
+    column-gap: 10px;
   }
 }
 
 @media (max-width: 768px) {
   .mobileHidden {
     display: none;
+  }
+
+  .Footer_applicationSection {
+    margin: 16px 0 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ApplicationSection_grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 360px;
+    gap: 10px;
+  }
+
+  .ApplicationSection_mobileColumn {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .FooterMobileApps_container {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    height: 48px;
+  }
+
+  .FooterWindowsApp {
+    min-height: 72px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .FooterWindowsApp_top {
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .FooterWindowsApp_chevron {
+    display: none;
+  }
+
+  .FooterWindowsApp_text {
+    margin-top: 0;
+  }
+
+  .LicenseSection_container {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .LicenseSection_leftSection {
+    margin-left: auto;
+    order: 0;
+  }
+
+  .LicenseSection_legalBlock {
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobileOnly {
+    display: flex;
   }
 }

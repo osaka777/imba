@@ -8,8 +8,8 @@ import {
   makeWcGameMetadata,
   stripLegacyHashFromSlug,
 } from "~/entities/wc-odds/lib/wcSlug";
-import { makeMetadata } from "~/shared/lib";
-import { LOCALE_STORAGE_KEY, isAppLocale } from "~/shared/i18n/locale";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
+import { LOCALE_STORAGE_KEY, normalizeAppLocale, toFeedLocale } from "~/shared/i18n/locale";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -21,7 +21,8 @@ async function resolveLocaleHeader(): Promise<string> {
   try {
     const jar = await cookies();
     const raw = jar.get(LOCALE_STORAGE_KEY)?.value;
-    if (isAppLocale(raw)) return raw;
+    const normalized = normalizeAppLocale(raw);
+    if (normalized) return toFeedLocale(normalized);
   } catch {
     // ignore
   }
@@ -55,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {
     /* ignore */
   }
-  return makeMetadata("Матч ЧМ");
+  return makeSeoMetadata("common.seoWcMatch");
 }
 
 export default async function Page({ params }: PageProps) {

@@ -13,6 +13,14 @@ export type CyberTournament = {
   priorityLevel?: number;
 };
 
+export type CyberDiscipline = {
+  apiSport: string;
+  iconUrl: string | null;
+  label: string;
+  olimpbetId: number;
+  pathSlug: string;
+};
+
 function apiOrigin(): string {
   if (typeof window !== "undefined") return window.location.origin;
   return process.env.NEXT_PUBLIC_HOST || "http://localhost:3000";
@@ -28,12 +36,12 @@ export async function fetchCybersportStatus(): Promise<{ enabled: boolean }> {
 }
 
 export async function fetchCybersportLive(
-  sport: string,
+  sport?: string,
   limit = 24,
   tournamentId?: number,
 ): Promise<CyberGame[]> {
   const url = new URL("/api/cybersport/live", apiOrigin());
-  url.searchParams.set("sport", sport);
+  if (sport) url.searchParams.set("sport", sport);
   url.searchParams.set("limit", String(limit));
   if (tournamentId != null && tournamentId > 0) {
     url.searchParams.set("tournament", String(tournamentId));
@@ -76,6 +84,15 @@ export async function fetchCybersportCounts(): Promise<Record<string, number>> {
   });
   if (!res.ok) return {};
   return (await res.json()) as Record<string, number>;
+}
+
+export async function fetchCybersportDisciplines(): Promise<CyberDiscipline[]> {
+  const res = await fetch(`${apiOrigin()}/api/cybersport/disciplines`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return (await res.json()) as CyberDiscipline[];
 }
 
 export async function fetchCybersportTournaments(sport: string): Promise<CyberTournament[]> {

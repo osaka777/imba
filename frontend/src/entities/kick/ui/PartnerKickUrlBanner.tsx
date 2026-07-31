@@ -7,6 +7,7 @@ import { useAuth } from "~/app/providers/AuthProvider";
 import { LiveIcon } from "~/shared/assets";
 
 import { usePartnerKickAttribution } from "~/entities/kick/lib/usePartnerKickAttribution";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { kickPromoGradientStyle } from "./kickPromoTheme";
 import styles from "./PartnerKickUrlBanner.module.css";
@@ -29,6 +30,7 @@ function channelInitial(slug: string) {
 
 export function PartnerKickUrlBanner() {
   const { isAuth } = useAuth();
+  const { t } = useLocale();
   const { partner, isKickTraffic } = usePartnerKickAttribution(false);
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -60,7 +62,7 @@ export function PartnerKickUrlBanner() {
           <button
             type="button"
             className={styles.close}
-            aria-label="Скрыть"
+            aria-label={t("cyber.kickHide")}
             onClick={() => setDismissed(true)}
           >
             ×
@@ -85,19 +87,19 @@ export function PartnerKickUrlBanner() {
           <div className={styles.content}>
             <div className={styles.titleRow}>
               <p className={styles.titleCompact}>
-                Вы по ссылке {displayName}
+                {t("cyber.kickViaLink", { name: displayName })}
               </p>
               {partner.isLive ? (
                 <span className={styles.liveBadge}>
                   <LiveIcon className={styles.liveIcon} />
                 </span>
               ) : (
-                <span className={styles.partnerBadge}>партнёр</span>
+                <span className={styles.partnerBadge}>{t("cyber.kickPartnerBadge")}</span>
               )}
             </div>
             {partner.promoCode ? (
               <p className={styles.subtitleCompact}>
-                Промокод стримера · {partner.promoCode.toUpperCase()}
+                {t("cyber.kickPromo", { code: partner.promoCode.toUpperCase() })}
               </p>
             ) : null}
           </div>
@@ -113,7 +115,7 @@ export function PartnerKickUrlBanner() {
         <button
           type="button"
           className={styles.close}
-          aria-label="Скрыть"
+          aria-label={t("cyber.kickHide")}
           onClick={() => setDismissed(true)}
         >
           ×
@@ -138,7 +140,7 @@ export function PartnerKickUrlBanner() {
         <div className={styles.content}>
           <div className={styles.titleRow}>
             <p className={styles.title}>
-              От стримера {displayName}
+              {t("cyber.kickFromStreamer", { name: displayName })}
             </p>
             {partner.isLive ? (
               <span className={styles.liveBadge}>
@@ -148,7 +150,7 @@ export function PartnerKickUrlBanner() {
           </div>
           <div className={styles.subtitleRow}>
             <p className={styles.subtitle}>
-              {partner.isLive ? "Сейчас в эфире на Kick" : "Партнёрская ссылка imba.bet"}
+              {partner.isLive ? t("cyber.kickLiveNow") : t("cyber.kickPartnerLink")}
             </p>
             {partner.promoCode ? (
               <span className={styles.bonusTag}>{partner.promoCode.toUpperCase()}</span>
@@ -158,10 +160,10 @@ export function PartnerKickUrlBanner() {
 
         <div className={styles.actions}>
           <a className={styles.ctaSecondary} href={registerUrl}>
-            Регистрация
+            {t("auth.register")}
           </a>
           <a className={styles.ctaPrimary} href={partner.shortUrlImba ?? partner.betUrl}>
-            Ставить
+            {t("cyber.kickBetShort")}
           </a>
         </div>
       </div>

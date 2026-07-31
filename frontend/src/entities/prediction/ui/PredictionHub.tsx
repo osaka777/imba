@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { toIntlLocale } from "~/shared/i18n/format";
 import { useCurrency } from "~/shared/model/useCurrency";
@@ -16,15 +16,8 @@ import {
   formatChanceCents,
   formatPredictionVolumeUsd,
 } from "../api/client";
-import { pickPredictionText } from "../lib/i18nText";
 import { resolvePredictionMediaUrl } from "../lib/mediaUrl";
-import { spectacleFlags } from "../lib/spectacleFlags";
-import { ChanceSparkline, useChanceSparkline } from "./ChanceSparkline";
-import { FeaturedMarketBanner } from "./FeaturedMarketBanner";
-import {
-  MarketsLeaderboard,
-  MarketsTradeTape,
-} from "./MarketsSpectacleRail";
+import { pickPredictionText } from "../lib/i18nText";
 import styles from "./Prediction.module.css";
 
 type SortKey = "volume" | "closing" | "chance";
@@ -37,24 +30,6 @@ function formatCloses(closesAt: null | string, intlLocale: string) {
     minute: "2-digit",
     month: "short",
   });
-}
-
-function isClosingSoon(closesAt: string | null) {
-  if (!closesAt) return false;
-  const ms = new Date(closesAt).getTime() - Date.now();
-  return ms > 0 && ms <= 24 * 60 * 60 * 1000;
-}
-
-function isHot(event: PredictionEventDto) {
-  const vol = event.pool?.totalStake ?? 0;
-  const share = event.outcomes[0]?.sharePct ?? 50;
-  return vol >= 500 || share >= 75 || share <= 25;
-}
-
-function isNew(event: PredictionEventDto) {
-  if (!event.createdAt) return false;
-  const created = new Date(event.createdAt).getTime();
-  return Date.now() - created < 3 * 24 * 60 * 60 * 1000;
 }
 
 function EventCard({
@@ -81,20 +56,6 @@ function EventCard({
   const total = event.pool?.totalStake ?? 0;
   const closes = formatCloses(event.closesAt, intlLocale);
 
-  const sparkPoints = useChanceSparkline(event.id, chanceA);
-  const prevChance = useRef(chanceA);
-  const [flash, setFlash] = useState<"up" | "down" | null>(null);
-
-  useEffect(() => {
-    if (!spectacleFlags.priceFlash) return;
-    const prev = prevChance.current;
-    if (chanceA === prev) return;
-    setFlash(chanceA > prev ? "up" : "down");
-    prevChance.current = chanceA;
-    const id = window.setTimeout(() => setFlash(null), 700);
-    return () => window.clearTimeout(id);
-  }, [chanceA]);
-
   const initial = (title.trim()[0] || "?").toUpperCase();
   const imageSrc = resolvePredictionMediaUrl(event.imageUrl);
   const category =
@@ -102,44 +63,12 @@ function EventCard({
       ? t("prediction.categoryDefault")
       : event.category;
 
-  const tags: string[] = [];
-  if (spectacleFlags.urgencyTags) {
-    if (event.status === "OPEN" && isClosingSoon(event.closesAt)) {
-      tags.push("closing");
-    }
-    if (event.status === "OPEN" && isHot(event)) tags.push("hot");
-    if (event.status === "OPEN" && isNew(event)) tags.push("new");
-  }
-
-  const flashClass =
-    flash === "up"
-      ? styles.cardFlashUp
-      : flash === "down"
-        ? styles.cardFlashDown
-        : "";
-
   return (
     <Link
-      className={`${styles.card} ${flashClass}`}
+      className={styles.card}
       href={`/markets/${event.slug}`}
       style={{ "--i": index } as CSSProperties}
     >
-      {tags.length > 0 ? (
-        <div className={styles.cardTags}>
-          {tags.includes("hot") ? (
-            <span className={styles.tagHot}>{t("prediction.tagHot")}</span>
-          ) : null}
-          {tags.includes("closing") ? (
-            <span className={styles.tagClosing}>
-              {t("prediction.tagClosing")}
-            </span>
-          ) : null}
-          {tags.includes("new") ? (
-            <span className={styles.tagNew}>{t("prediction.tagNew")}</span>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className={styles.cardTop}>
         {imageSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -164,12 +93,6 @@ function EventCard({
         <div className={styles.chanceBlock}>
           <div className={styles.chancePct}>{chance}%</div>
           <div className={styles.chanceLabel}>{t("prediction.chance")}</div>
-          {spectacleFlags.sparklines ? (
-            <ChanceSparkline
-              points={sparkPoints}
-              up={sparkPoints[sparkPoints.length - 1]! >= sparkPoints[0]!}
-            />
-          ) : null}
         </div>
       </div>
 
@@ -286,23 +209,7 @@ export function PredictionHub() {
           <h1 className={styles.title}>{t("nav.markets")}</h1>
           <p className={styles.subtitle}>{t("prediction.subtitle")}</p>
         </div>
-        {spectacleFlags.portfolioBookmarks ? (
-          <nav className={styles.hubNav}>
-            <Link className={styles.hubNavLink} href="/markets/portfolio">
-              {t("prediction.portfolioTitle")}
-            </Link>
-            <Link className={styles.hubNavLink} href="/markets/bookmarks">
-              {t("prediction.bookmarksTitle")}
-            </Link>
-          </nav>
-        ) : null}
       </header>
-
-      {spectacleFlags.featuredBanner ? (
-        <FeaturedMarketBanner variant="hub" />
-      ) : null}
-
-      <MarketsTradeTape />
 
       <div className={styles.toolbar}>
         <input
@@ -361,28 +268,21 @@ export function PredictionHub() {
         ) : null}
       </div>
 
-      <div className={styles.hubBody}>
-        <div className={styles.hubMain}>
-          {query.isLoading ? (
-            <div className={styles.empty}>{t("prediction.loading")}</div>
-          ) : events.length === 0 ? (
-            <div className={styles.empty}>
-              {search.trim() || category !== "all"
-                ? t("prediction.noResults")
-                : t("prediction.empty")}
-            </div>
-          ) : (
-            <div className={styles.grid}>
-              {events.map((event, index) => (
-                <EventCard event={event} index={index} key={event.id} />
-              ))}
-            </div>
-          )}
+      {query.isLoading ? (
+        <div className={styles.empty}>{t("prediction.loading")}</div>
+      ) : events.length === 0 ? (
+        <div className={styles.empty}>
+          {search.trim() || category !== "all"
+            ? t("prediction.noResults")
+            : t("prediction.empty")}
         </div>
-        <aside className={styles.hubAside}>
-          <MarketsLeaderboard />
-        </aside>
-      </div>
+      ) : (
+        <div className={styles.grid}>
+          {events.map((event, index) => (
+            <EventCard event={event} index={index} key={event.id} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

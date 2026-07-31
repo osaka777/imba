@@ -38,6 +38,7 @@ const MANUAL_SECTIONS: Array<{
   { key: "RUB", title: "RUB — иностранная карта" },
   { key: "RUB_SBERBANK", title: "RUB — Сбербанк", showRubPerBrl: true },
   { key: "RUB_YANDEX_BANK", title: "RUB — Яндекс Банк" },
+  { key: "RUB_VTB_BANK", title: "RUB — ВТБ" },
   { key: "USDT", title: "USDT TRC-20", showWallet: true },
 ];
 

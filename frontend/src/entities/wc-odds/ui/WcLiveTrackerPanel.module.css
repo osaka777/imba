@@ -1,0 +1,125 @@
+/* ── Inline variant (below the scoreboard meta bar, mobile/tablet) ──── */
+.wrap {
+  width: 100%;
+  background: rgb(0 0 0 / 0.25);
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  position: relative;
+  overflow: hidden;
+}
+
+.wrapInline .frame {
+  aspect-ratio: 16 / 9;
+  max-height: 22rem;
+}
+
+@media (max-width: 640px) {
+  .wrapInline .frame {
+    aspect-ratio: 4 / 3;
+    max-height: 16rem;
+  }
+}
+
+/* Desktop shows the tracker automatically above the coupon sidebar instead.
+   Mobile swipe carousel hosts the inline panel in its own slide. */
+@media (min-width: 1081px) {
+  .wrapInline {
+    display: none;
+  }
+}
+
+/* Inside the mobile swipe slide, keep the iframe compact and full-bleed. */
+@media (max-width: 1080px) {
+  .wrapInline {
+    border-bottom: 0;
+    background: transparent;
+  }
+
+  .wrapInline .frame {
+    aspect-ratio: 4 / 3;
+    max-height: 18rem;
+  }
+}
+
+.frame {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+
+/* ── Sidebar variant (auto-shown above the coupon on desktop) ───────── */
+.card {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #233358, #141b2e);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  /* The sidebar column has a viewport-based max-height + overflow-y:auto —
+     without this, flexbox shrinks the card (and its iframe) below its
+     aspect-ratio size to force-fit the coupon below it, clipping content. */
+  flex-shrink: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.headerIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgb(96 165 250 / 0.16);
+  flex-shrink: 0;
+}
+
+.headerIcon {
+  width: 15px;
+  height: 15px;
+  color: #60a5fa;
+}
+
+.headerText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.league {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.48);
+}
+
+.match {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  padding: 8px;
+  background: rgb(0 0 0 / 0.18);
+}
+
+.body .frame {
+  /* Matches the 1win tracker’s natural layout (court + bottom tabs).
+     Taller ratios leave a large empty band above the tab bar. */
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+}

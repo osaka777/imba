@@ -1,24 +1,45 @@
-import { Body, Controller, Get, NotFoundException, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Patch,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import {
   ApiBearerAuth,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { existsSync, mkdirSync } from 'fs';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 import { AuthenticationGuard } from './authentication/authentication.guard';
 import { UpdatePasswordDto } from './authentication/dto/authenticate.dto';
 import { UserDto } from './dto/user.dto';
+import { NICKNAME_MAX, validateNickname } from './nickname';
 import { UserService } from './user.service';
 import { PhoneVerificationService } from './phone-verification.service';
 
-const AVATAR_PRESETS = ['violet', 'cyan', 'amber', 'rose', 'emerald', 'slate'] as const;
+const AVATAR_DIR = './uploads/avatars';
 
-class UpdateAvatarPresetDto {
+if (!existsSync(AVATAR_DIR)) {
+  mkdirSync(AVATAR_DIR, { recursive: true });
+}
+
+class UpdateNicknameDto {
   @IsOptional()
   @IsString()
-  @IsIn([...AVATAR_PRESETS, ''])
-  preset?: string;
+  @MaxLength(NICKNAME_MAX)
+  nickname?: string | null;
 }
 
 class RequestPhoneCodeDto {
@@ -53,17 +74,57 @@ export class UserController {
     await this.usersService.updatePassword(userId, body);
   }
 
-  @Patch('avatar-preset')
-  async updateAvatarPreset(
+  @Post('avatar')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: AVATAR_DIR,
+        filename: (req, file, cb) => {
+          const userId = (req as { user?: { id?: number } }).user?.id ?? 0;
+          const suffix = Date.now();
+          const ext = extname(file.originalname || '').toLowerCase() || '.jpg';
+          const safeExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)
+            ? ext
+            : '.jpg';
+          cb(null, `u${userId}-${suffix}${safeExt}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(new BadRequestException('Only image files allowed'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadAvatar(
     @Req() req: { user: { id: number } },
-    @Body() body: UpdateAvatarPresetDto,
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    const preset = body.preset?.trim() || null;
-    if (preset && !AVATAR_PRESETS.includes(preset as (typeof AVATAR_PRESETS)[number])) {
-      return { ok: false };
+    if (!file) throw new BadRequestException('No file uploaded');
+    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    await this.usersService.updateAvatarUrl(req.user.id, avatarUrl);
+    return { ok: true, avatarUrl };
+  }
+
+  @Patch('nickname')
+  async updateNickname(
+    @Req() req: { user: { id: number } },
+    @Body() body: UpdateNicknameDto,
+  ) {
+    const parsed = validateNickname(body.nickname ?? '');
+    if (parsed.ok === false) {
+      throw new BadRequestException({
+        code: parsed.code,
+        message: parsed.code,
+      });
     }
-    await this.usersService.updateAvatarPreset(req.user.id, preset);
-    return { ok: true, avatarPreset: preset };
+    const nickname = await this.usersService.updateNickname(
+      req.user.id,
+      parsed.value,
+    );
+    return { ok: true, nickname };
   }
 
   @Get('kyc-limits')
@@ -105,6 +166,8 @@ export class UserController {
       telegramLinked: Boolean(user.telegramLinkedAt),
       telegramUsername: user.telegramUsername,
       avatarPreset: user.avatarPreset,
+      avatarUrl: user.avatarUrl,
+      nickname: user.nickname,
     };
   }
 
@@ -126,6 +189,8 @@ export class UserController {
       telegramNotifyPromo: user?.telegramNotifyPromo,
       telegram2faEnabled: user?.telegram2faEnabled,
       avatarPreset: user?.avatarPreset,
+      avatarUrl: user?.avatarUrl,
+      nickname: user?.nickname,
     });
   }
 }

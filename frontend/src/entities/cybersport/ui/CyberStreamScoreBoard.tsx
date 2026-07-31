@@ -8,6 +8,7 @@ import { WcPrematchKickoffCountdown } from "~/entities/wc-odds/ui/WcPrematchKick
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 import { BroadcastIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CyberStreamScoreBoard.module.css";
 
@@ -22,6 +23,7 @@ export function CyberStreamScoreBoard({
   showBroadcastLink,
   onBroadcastOpen,
 }: CyberStreamScoreBoardProps) {
+  const { t } = useLocale();
   const score = event.parsedScore;
   const isFinished = event.phase === "finished" || isWcMatchEffectivelyFinished(event);
   const isLive = event.phase === "live" && !isFinished;
@@ -37,7 +39,7 @@ export function CyberStreamScoreBoard({
   const seriesHome = Number(event.homeScore ?? score?.currentScore?.[0] ?? 0);
   const seriesAway = Number(event.awayScore ?? score?.currentScore?.[1] ?? 0);
 
-  const currentMapLabel = details.length > 0 ? `Карта ${details.length}` : "Live";
+  const currentMapLabel = details.length > 0 ? t("cyber.mapN", { n: details.length }) : "Live";
   const currentRound =
     currentIdx >= 0 && details[currentIdx]
       ? `${details[currentIdx][0]}:${details[currentIdx][1]}`
@@ -48,7 +50,7 @@ export function CyberStreamScoreBoard({
   return (
     <section className={styles.board}>
       <header className={styles.meta}>
-        <span className={styles.league}>{event.leagueName || "Киберспорт"}</span>
+        <span className={styles.league}>{event.leagueName || t("cyber.title")}</span>
         <div className={styles.metaRight}>
           {isLive ? (
             <span className={styles.liveBadge}>
@@ -56,7 +58,7 @@ export function CyberStreamScoreBoard({
               LIVE
             </span>
           ) : null}
-          {isFinished ? <span className={styles.finishedBadge}>Окончена</span> : null}
+          {isFinished ? <span className={styles.finishedBadge}>{t("wc.finished")}</span> : null}
           {showBroadcast ? (
             <button
               className={styles.broadcastBtn}
@@ -64,7 +66,7 @@ export function CyberStreamScoreBoard({
               type="button"
             >
               <BroadcastIcon className={styles.broadcastIcon} />
-              Трансляция
+              {t("cyber.stream")}
             </button>
           ) : null}
         </div>
@@ -120,7 +122,7 @@ export function CyberStreamScoreBoard({
                 </span>
               </div>
               <span className={styles.scoreCaption}>
-                {isFinished ? "итог по картам" : "счёт по картам"}
+                {isFinished ? t("cyber.mapScoreFinal") : t("cyber.mapScoreLive")}
               </span>
             </>
           )}
@@ -153,7 +155,7 @@ export function CyberStreamScoreBoard({
                 )}
                 key={`map-${index}`}
               >
-                <span className={styles.mapChipLabel}>К{index + 1}</span>
+                <span className={styles.mapChipLabel}>{t("cyber.mapShort", { n: index + 1 })}</span>
                 <span className={styles.mapChipScore}>
                   <span className={cn(home > away && styles.mapWin)}>{home}</span>
                   <span className={styles.mapChipColon}>:</span>

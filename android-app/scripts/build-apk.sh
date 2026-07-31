@@ -33,7 +33,7 @@ if [[ ! -f "$KEYSTORE_FILE" ]]; then
 fi
 
 cat > "$KEYSTORE_PROPS" <<EOF
-storeFile=keystore/imba-release.jks
+storeFile=../keystore/imba-release.jks
 storePassword=imbabet2026
 keyAlias=imba-release
 keyPassword=imbabet2026

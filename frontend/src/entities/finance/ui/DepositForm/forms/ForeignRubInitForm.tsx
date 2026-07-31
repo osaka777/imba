@@ -12,9 +12,11 @@ import {
   uploadRubForeignCardReceipt,
   uploadRubSberbankReceipt,
   uploadRubYandexBankReceipt,
+  uploadRubVtbBankReceipt,
   getMyRubForeignCardOrder,
   getMyRubSberbankOrder,
   getMyRubYandexBankOrder,
+  getMyRubVtbBankOrder,
   getManualDepositConfig,
   type ManualForeignCardMethod,
 } from "~/entities/finance/api/deposit";
@@ -33,7 +35,7 @@ interface FormShape {
   currency: string;
 }
 
-type ForeignRubVariant = "card" | "sberbank" | "yandex";
+type ForeignRubVariant = "card" | "sberbank" | "yandex" | "vtb";
 
 type Translate = (key: MessageKey, params?: TranslateParams) => string;
 
@@ -59,6 +61,13 @@ const getVariantConfig = (t: Translate) =>
       title: t("deposit.titleYandex"),
       getMyOrder: getMyRubYandexBankOrder,
       uploadReceipt: uploadRubYandexBankReceipt,
+    },
+    vtb: {
+      method: "RUB_VTB_BANK" as ManualForeignCardMethod,
+      subtitle: t("deposit.vtbBank"),
+      title: t("deposit.titleVtb"),
+      getMyOrder: getMyRubVtbBankOrder,
+      uploadReceipt: uploadRubVtbBankReceipt,
     },
   }) as const;
 
@@ -100,10 +109,18 @@ export const ForeignRubInitForm = ({
   const [initLoading, setInitLoading] = useState(false);
   const [rubPerBrl, setRubPerBrl] = useState(183);
   const [minAmount, setMinAmount] = useState(1000);
+  const maxAmount = variant === "vtb" ? 40_000 : undefined;
 
   const quickSetAmounts = useMemo(
-    () => (presetAmounts?.length ? presetAmounts : [1000, 2000, 5000]),
-    [presetAmounts],
+    () =>
+      presetAmounts?.length
+        ? presetAmounts
+        : variant === "sberbank"
+          ? [5000, 10000, 15000]
+          : variant === "vtb"
+            ? [1000, 5000, 10000]
+            : [1000, 2000, 5000],
+    [presetAmounts, variant],
   );
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormShape>({
@@ -126,11 +143,16 @@ export const ForeignRubInitForm = ({
       : 0;
 
   useEffect(() => {
-    if (variant !== "sberbank" && variant !== "yandex") return;
+    if (variant !== "sberbank" && variant !== "yandex" && variant !== "vtb") return;
     let cancelled = false;
     (async () => {
       try {
-        const configKey = variant === "yandex" ? "RUB_YANDEX_BANK" : "RUB_SBERBANK";
+        const configKey =
+          variant === "yandex"
+            ? "RUB_YANDEX_BANK"
+            : variant === "vtb"
+              ? "RUB_VTB_BANK"
+              : "RUB_SBERBANK";
         const { data } = await getManualDepositConfig(configKey);
         if (!cancelled) {
           if (variant === "sberbank" && data?.rubPerBrl) setRubPerBrl(data.rubPerBrl);
@@ -164,6 +186,14 @@ export const ForeignRubInitForm = ({
       toast.warn(
         t("deposit.minAmountShort", {
           amount: `${minAmount.toLocaleString()} RUB`,
+        }),
+      );
+      return;
+    }
+    if (maxAmount != null && amount > maxAmount) {
+      toast.warn(
+        t("deposit.maxAmountShort", {
+          amount: `${maxAmount.toLocaleString("ru-RU")} ₽`,
         }),
       );
       return;
@@ -213,7 +243,6 @@ export const ForeignRubInitForm = ({
         </button>
         <ManualForeignCardPage
           asModal
-          closeAfterConfirm
           currency="RUB"
           fallbackMinAmount={1000}
           getMyOrder={config.getMyOrder}
@@ -221,21 +250,17 @@ export const ForeignRubInitForm = ({
           initialOrderId={orderId}
           initialPublicOrderId={publicOrderId}
           method={config.method}
-          onPaymentConfirmed={(confirmedId) => {
+          onPaymentConfirmed={(confirmedId, confirmedPublicId) => {
             const id = confirmedId || orderId;
-            resetPayment();
-            if (embedded) {
-              onDepositComplete?.();
-            } else {
-              closeRef.current?.click();
-            }
             if (id) {
               trackDepositOrder({
                 id,
-                publicOrderId,
+                publicOrderId: confirmedPublicId ?? publicOrderId,
                 currency: "RUB",
+                method: config.method,
               });
             }
+            if (embedded) onDepositComplete?.();
           }}
           onPaymentCancelled={() => {
             if (orderId) untrackDepositOrder(orderId);
@@ -260,9 +285,14 @@ export const ForeignRubInitForm = ({
         <Input
           {...register("amount", {
             min: minAmount,
+            max: maxAmount,
             required: true,
             setValueAs: Number,
-            validate: (value) => !!value && value >= minAmount,
+            validate: (value) => {
+              if (!value || value < minAmount) return false;
+              if (maxAmount != null && value > maxAmount) return false;
+              return true;
+            },
           })}
           className={styles.input}
           label={t("deposit.amount")}
@@ -270,6 +300,14 @@ export const ForeignRubInitForm = ({
           type="number"
         />
       </div>
+
+      {variant === "vtb" && maxAmount != null ? (
+        <p className={styles.limitHint}>
+          {t("deposit.vtbMaxHint", {
+            max: maxAmount.toLocaleString("ru-RU"),
+          })}
+        </p>
+      ) : null}
 
       {variant === "sberbank" && brlPreview > 0 ? (
         <p className={styles.error} style={{ color: "#60a5fa", marginTop: 0 }}>
@@ -292,9 +330,13 @@ export const ForeignRubInitForm = ({
 
       {errors.amount && (
         <p className={styles.error}>
-          {t("deposit.minAmount", {
-            amount: `${minAmount.toLocaleString()} ${getSymbolFromCurrency(currency)}`,
-          })}
+          {maxAmount != null && Number(amountValue) > maxAmount
+            ? t("deposit.maxAmount", {
+                amount: `${maxAmount.toLocaleString("ru-RU")} ₽`,
+              })
+            : t("deposit.minAmount", {
+                amount: `${minAmount.toLocaleString()} ${getSymbolFromCurrency(currency)}`,
+              })}
         </p>
       )}
 

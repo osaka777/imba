@@ -38,9 +38,13 @@
 }
 
 .authLogin {
-  padding: 6px 15px;
-
-  background-color: var(--blue-30);
+  padding: 7px 16px;
+  min-height: 36px;
+  border-radius: 8px;
+  background-color: #2a3550;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 @media screen and (max-width: 768px) {
@@ -50,20 +54,25 @@
   }
 
   .authLogin {
-    background-color: var(--blue-30);
+    background-color: #2a3550;
     padding: 8px 14px;
     font-size: 12px;
   }
 }
 
 .authSignIn {
-  padding: 6px 15px;
+  padding: 7px 16px 7px 12px;
+  min-height: 36px;
+  border-radius: 8px;
   overflow: hidden;
-  background: var(--green-gradient);
+  background: linear-gradient(103deg, #61da84 -20%, #2bb673 100%);
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .authSignIn:before {
@@ -121,6 +130,25 @@ div .authForm {
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.32),
     0 0 0 1px rgba(255, 255, 255, 0.08);
+  scrollbar-width: thin;
+  scrollbar-color: #c5cad3 transparent;
+}
+
+.authDialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.authDialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.authDialog::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: #c5cad3;
+}
+
+.authDialog::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 @media screen and (max-width: 768px) {

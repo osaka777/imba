@@ -15,10 +15,12 @@ import {
 } from "~/shared/lib/supportSiteActions";
 import { scheduleDialogOpen, useDialogOutsideGuard } from "~/shared/lib/openDialogSafe";
 import { Dialog, DialogContent } from "~/shared/ui/Dialog";
+import { useLocale } from "~/shared/model/useLocale";
 
 import depositStyles from "~/widgets/Navigation/Deposit.module.css";
 
 export function SupportChatModalHost() {
+  const { t } = useLocale();
   const router = useRouter();
   const { isAuth } = useAuth();
   const { armGuard, blockIfArmed } = useDialogOutsideGuard();
@@ -89,7 +91,7 @@ export function SupportChatModalHost() {
       <Dialog open={depositOpen} onOpenChange={setDepositOpen}>
         <DialogContent
           className={depositStyles.dialog}
-          title="Пополнение счета"
+          title={t("deposit.title")}
           onInteractOutside={blockIfArmed}
           onPointerDownOutside={blockIfArmed}
         >

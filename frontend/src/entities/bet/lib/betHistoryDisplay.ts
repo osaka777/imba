@@ -1,16 +1,20 @@
 import { createTitleForBet } from "~/entities/bet/lib";
 import { formatCouponMoney } from "~/entities/bet/lib/formatCouponMoney";
 import type { SlipRibbon } from "~/entities/bet/ui/Coupon/OpenBetSlipCard";
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
 
 export type BetHistoryStatus = "PENDING" | "WIN" | "LOSE" | "RETURN" | "CASHOUT";
+
+type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
 
 export function getBetNameFromApiResponse(
   bet: Record<string, unknown>,
   betIndex?: number,
+  t?: TranslateFn,
 ): string {
   try {
     const raw = bet?.betApiResponse;
-    if (!raw) return createTitleForBet(bet.betInfo as string, bet.betType as string);
+    if (!raw) return createTitleForBet(bet.betInfo as string, bet.betType as string, t);
 
     const apiResponse = typeof raw === "string" ? JSON.parse(raw) : raw;
     const list = apiResponse?.BetsContentDataList;
@@ -19,16 +23,18 @@ export function getBetNameFromApiResponse(
       const betData = list[dataIndex];
       if (betData?.BetName) return betData.BetName;
     }
-    return createTitleForBet(bet.betInfo as string, bet.betType as string);
+    return createTitleForBet(bet.betInfo as string, bet.betType as string, t);
   } catch {
-    return createTitleForBet(bet.betInfo as string, bet.betType as string);
+    return createTitleForBet(bet.betInfo as string, bet.betType as string, t);
   }
 }
 
 export function getTeamsFromApiResponse(
   bet: Record<string, unknown>,
   betIndex?: number,
+  t?: TranslateFn,
 ): string {
+  const fallback = t ? t("coupon.matchDefault") : "Матч";
   try {
     const raw = bet?.betApiResponse;
     if (raw) {
@@ -44,10 +50,10 @@ export function getTeamsFromApiResponse(
     const team1 = game?.team1 as string | undefined;
     const team2 = game?.team2 as string | undefined;
     if (team1 && team2) return `${team1} — ${team2}`;
-    return (game?.eventName as string) || "Матч";
+    return (game?.eventName as string) || fallback;
   } catch {
     const game = bet.game as Record<string, unknown> | undefined;
-    return (game?.eventName as string) || "Матч";
+    return (game?.eventName as string) || fallback;
   }
 }
 
@@ -125,24 +131,25 @@ export function getBetGameStatus(bet: Record<string, unknown>): {
 export function getHistoryRibbon(
   status: BetHistoryStatus,
   gameStatus: { isFinished: boolean; isLive: boolean },
+  t: TranslateFn,
 ): SlipRibbon {
   switch (status) {
     case "WIN":
-      return { label: "Выигрыш", variant: "win" };
+      return { label: t("coupon.historyWin"), variant: "win" };
     case "LOSE":
-      return { label: "Проигрыш", variant: "lose" };
+      return { label: t("coupon.historyLose"), variant: "lose" };
     case "RETURN":
-      return { label: "Возврат", variant: "return" };
+      return { label: t("coupon.historyReturn"), variant: "return" };
     case "CASHOUT":
-      return { label: "Продажа", variant: "win" };
+      return { label: t("coupon.historyCashout"), variant: "win" };
     default:
       if (gameStatus.isFinished) {
-        return { label: "Расчёт", variant: "settling" };
+        return { label: t("coupon.historySettling"), variant: "settling" };
       }
       if (gameStatus.isLive) {
         return { label: "Live", variant: "live", pulse: true };
       }
-      return { label: "В игре", variant: "pending" };
+      return { label: t("coupon.historyPending"), variant: "pending" };
   }
 }
 
@@ -151,6 +158,7 @@ export function getHistoryFooter(
   amount: number,
   cf: number,
   currencyCode: string,
+  t: TranslateFn,
   payoutOverride?: number,
 ): {
   footerRightLabel: string;
@@ -163,32 +171,32 @@ export function getHistoryFooter(
   switch (status) {
     case "WIN":
       return {
-        footerRightLabel: "Выигрыш",
+        footerRightLabel: t("coupon.historyWin"),
         footerRightValue: formatCouponMoney(payout, currencyCode),
         footerRightWin: true,
       };
     case "LOSE":
       return {
-        footerRightLabel: "Потеряно",
+        footerRightLabel: t("coupon.historyLost"),
         footerRightValue: formatCouponMoney(amount, currencyCode),
         footerRightWin: false,
         footerRightDanger: true,
       };
     case "RETURN":
       return {
-        footerRightLabel: "Возврат",
+        footerRightLabel: t("coupon.historyReturn"),
         footerRightValue: formatCouponMoney(amount, currencyCode),
         footerRightWin: false,
       };
     case "CASHOUT":
       return {
-        footerRightLabel: "Продажа",
+        footerRightLabel: t("coupon.historyCashout"),
         footerRightValue: formatCouponMoney(payoutOverride ?? amount * cf, currencyCode),
         footerRightWin: true,
       };
     default:
       return {
-        footerRightLabel: "Возм. выигрыш",
+        footerRightLabel: t("coupon.possibleWin"),
         footerRightValue: formatCouponMoney(payout, currencyCode),
         footerRightWin: true,
       };

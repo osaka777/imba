@@ -2,6 +2,7 @@
 
 import { FiChevronLeft } from "react-icons/fi";
 import { TelegramLinkBlock } from "~/entities/user/ui/TelegramLinkBlock/TelegramLinkBlock";
+import { useLocale } from "~/shared/model/useLocale";
 import styles from "./TelegramStyles.module.css";
 
 type TelegramModalProps = {
@@ -12,6 +13,7 @@ type TelegramModalProps = {
 };
 
 export function TelegramModal({ onClose, linked, username, onLinkedChange }: TelegramModalProps) {
+  const { t } = useLocale();
   return (
     <div
       className={styles.modal}
@@ -22,9 +24,9 @@ export function TelegramModal({ onClose, linked, username, onLinkedChange }: Tel
       <div className={styles.topBar}>
         <button className={styles.backBtn} onClick={onClose} type="button">
           <FiChevronLeft className={styles.backIcon} />
-          Настройки
+          {t("profile.settingsTitle")}
         </button>
-        <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Закрыть">
+        <button className={styles.closeBtn} onClick={onClose} type="button" aria-label={t("common.close")}>
           &#x2715;
         </button>
       </div>
@@ -38,7 +40,7 @@ export function TelegramModal({ onClose, linked, username, onLinkedChange }: Tel
           </div>
           <div>
             <h2 className={styles.title}>Telegram</h2>
-            <p className={styles.subtitle}>Уведомления и безопасность через бота</p>
+            <p className={styles.subtitle}>{t("profile.tgModalSubtitle")}</p>
           </div>
         </div>
 

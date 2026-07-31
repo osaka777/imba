@@ -20,6 +20,7 @@ import { WcMatchRow } from "~/entities/wc-odds/ui/WcMatchRow";
 import { WcTournamentHead } from "~/entities/wc-odds/ui/WcTournamentHead";
 import { cn } from "~/shared/lib";
 import { LoadingSpinner } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 
 import menuStyles from "~/entities/game/ui/GamesPrematch/Menu.module.css";
 import gamesStyles from "~/entities/game/ui/GamesPrematch/GamesPrematch.module.css";
@@ -72,6 +73,7 @@ const WcTournamentBlock = memo(function WcTournamentBlock({
 });
 
 export function WcLinePage() {
+  const { t } = useLocale();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [dates, setDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
@@ -161,7 +163,7 @@ export function WcLinePage() {
   if (enabled === false) {
     return (
       <div className={gamesStyles.GamesPrematch}>
-        <p className="p-4 text-center bg-white/5">Линия временно недоступна</p>
+        <p className="p-4 text-center bg-white/5">{t("wc.lineUnavailable")}</p>
       </div>
     );
   }
@@ -188,11 +190,11 @@ export function WcLinePage() {
       {initialLoading && <LoadingSpinner className={gamesStyles.loading} />}
 
       {!initialLoading && visibleEvents.length === 0 && (
-        <p className="p-4 text-center bg-white/5">Матчи не найдены</p>
+        <p className="p-4 text-center bg-white/5">{t("wc.matchesNotFound")}</p>
       )}
 
       {!initialLoading && selectedEvents.length === 0 && visibleEvents.length > 0 && (
-        <p className="p-4 text-center bg-white/5">На выбранную дату матчей нет</p>
+        <p className="p-4 text-center bg-white/5">{t("wc.noMatchesOnDate")}</p>
       )}
 
       {!initialLoading && displayedEvents.length > 0 && (
@@ -211,7 +213,7 @@ export function WcLinePage() {
         >
           <WcTournamentBlock
             events={displayedEvents}
-            title="Линия"
+            title={t("wc.lineTitle")}
           />
         </InfiniteScroll>
       )}

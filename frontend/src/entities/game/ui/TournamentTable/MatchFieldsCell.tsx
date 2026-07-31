@@ -7,6 +7,7 @@ import { components } from "~/shared/api";
 import { AccessIcon } from "~/shared/assets";
 import { wcOddsFlashClasses } from "~/entities/wc-odds/lib/wcCoefFlash";
 import { usePrevious } from "~/shared/model";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 
 import styles from "./MatchRow.module.css";
@@ -32,6 +33,7 @@ export const MatchFieldsCell: React.FC<MatchFieldsCellProps> = ({
   value,
   isLive,
 }) => {
+  const { t } = useLocale();
   const { prevState } = usePrevious(value);
   const [rates, setRates] = useLocalStorage<Rates>("rates", [], {
     initializeWithValue: false,
@@ -54,7 +56,7 @@ export const MatchFieldsCell: React.FC<MatchFieldsCellProps> = ({
             groupedMarket,
             isOpen,
             market,
-            title: createTitleForBet(groupedMarket) || (groupedMarket as any)?.oc_name || (groupedMarket as any)?.name || market,
+            title: createTitleForBet(groupedMarket, undefined, t) || (groupedMarket as any)?.oc_name || (groupedMarket as any)?.name || market,
             isAvailable: isOpen && !(groupedMarket as any)?.oc_block,
             isLive,
             oc_block: (groupedMarket as any)?.oc_block,
@@ -72,7 +74,7 @@ export const MatchFieldsCell: React.FC<MatchFieldsCellProps> = ({
             groupedMarket,
             isOpen,
             market,
-            title: createTitleForBet(groupedMarket) || (groupedMarket as any)?.oc_name || (groupedMarket as any)?.name || market,
+            title: createTitleForBet(groupedMarket, undefined, t) || (groupedMarket as any)?.oc_name || (groupedMarket as any)?.name || market,
             isAvailable: isOpen && !(groupedMarket as any)?.oc_block,
             isLive,
             oc_block: (groupedMarket as any)?.oc_block,
@@ -157,7 +159,7 @@ export const MatchFieldsCell: React.FC<MatchFieldsCellProps> = ({
   const displayText = useMemo(() => {
     // Используем createTitleForBet для всех типов ставок
     if (groupedMarket) {
-      return createTitleForBet(groupedMarket, market);
+      return createTitleForBet(groupedMarket, market, t);
     }
     
     // Fallback для старых типов ставок

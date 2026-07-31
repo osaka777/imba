@@ -1,17 +1,20 @@
-"use server";
+function sessionApiUrl(): string {
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/auth/session`;
+  }
+  return "/auth/session";
+}
 
-import { cookies } from "next/headers";
-import "server-only";
-
-export async function createSession(accessToken: string) {
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const cookieStore = await cookies();
-
-  cookieStore.set("accessToken", accessToken, {
-    expires: expiresAt,
-    httpOnly: true,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+/** Persist httpOnly accessToken via stable route (not a Server Action). */
+export async function createSession(accessToken: string): Promise<void> {
+  const res = await fetch(sessionApiUrl(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ accessToken }),
   });
+
+  if (!res.ok) {
+    throw new Error(`Failed to persist session (${res.status})`);
+  }
 }

@@ -30,7 +30,10 @@ export function isWcEventBettingOpen(
 
 export function isTotalsMarketKey(marketKey: string): boolean {
   const normalized = normalizeWcMarketKey(marketKey);
-  return normalized === "totals" || normalized === "totals_home" || normalized === "totals_away";
+  if (normalized === "totals" || normalized === "totals_home" || normalized === "totals_away") {
+    return true;
+  }
+  return /^map_\d+_totals$/i.test(marketKey.replace(/_ot$/i, ""));
 }
 
 export function isWcBettableMarketKey(marketKey: string): boolean {
@@ -49,6 +52,10 @@ export function isWcBettableMarketKey(marketKey: string): boolean {
     || normalized === "goals_both_half"
     || normalized === "goals_both_teams_both_halves"
     || normalized === "handicap_3way"
+    || /^map_\d+_winner$/i.test(marketKey)
+    || /^map_\d+_(totals|handicap|spreads|even_odd|total_oe)$/i.test(marketKey)
+    || marketKey === "spreads"
+    || marketKey === "total_oe"
   );
 }
 
@@ -126,6 +133,11 @@ export function normalizeWcMarketKey(marketKey: string): string {
   ) {
     return baseKey;
   }
+  if (baseKey === "spreads") return "handicap";
+  if (baseKey === "total_oe") return "even_odd";
+  if (/^map_\d+_spreads$/i.test(baseKey)) return baseKey.replace(/_spreads$/i, "_handicap");
+  if (/^map_\d+_total_oe$/i.test(baseKey)) return baseKey.replace(/_total_oe$/i, "_even_odd");
+  if (/^map_\d+_(winner|totals|handicap|even_odd)$/i.test(baseKey)) return baseKey;
   if (isHandicap3WayMarketKey(baseKey)) return "handicap_3way";
   if (/^display_GOALS_TEAM1/i.test(baseKey)) return "goals_team";
   if (/^display_GOALS_TEAM2/i.test(baseKey)) return "goals_team";
@@ -393,10 +405,10 @@ function extractTotalsLine(outcome: WcMarketOutcome, groupLabel: string): string
 function totalsSideLabel(outcome: WcMarketOutcome): string {
   if (outcome.outcomeKey.startsWith("UNDER")) return "Меньше";
   if (outcome.outcomeKey.startsWith("OVER")) return "Больше";
-  const name = outcome.name.trim();
+  const name = (outcome.name ?? "").trim();
   if (/^тм$|^м$|меньше/i.test(name)) return "Меньше";
   if (/^тб$|^б$|больше/i.test(name)) return "Больше";
-  return outcome.name;
+  return outcome.name ?? "";
 }
 
 function dedupeScopeTokens(label: string): string {
@@ -466,14 +478,14 @@ export function buildWcMarketRateTitle(
     return `${base} — ${side}`;
   }
 
-  if (key === "handicap" && /ф[12]/i.test(outcome.name)) {
+  if (key === "handicap" && /ф[12]/i.test(outcome.name ?? "")) {
     if (/\d+-[яй]\s+(?:четверть|тайм)/i.test(groupLabel)) {
       return `${groupLabel}: ${outcome.name}`;
     }
     return outcome.name;
   }
 
-  const scoreOnly = outcome.name.trim().match(/^(\d+:\d+)/);
+  const scoreOnly = (outcome.name ?? "").trim().match(/^(\d+:\d+)/);
   if (
     scoreOnly
     && (/гейм|сч[её]t/i.test(groupLabel) || /SCORE_SET|EXACT_POINT/i.test(marketKey))
@@ -483,14 +495,14 @@ export function buildWcMarketRateTitle(
     return scoreOnly[1]!;
   }
 
-  if (/WINNER_SET/i.test(marketKey) && /^[ПP][12]$/i.test(outcome.name.trim())) {
+  if (/WINNER_SET/i.test(marketKey) && /^[ПP][12]$/i.test((outcome.name ?? "").trim())) {
     const scope = groupLabel.match(/(\d+-й\s*гейм)/i);
-    if (scope) return `${scope[1]} — ${outcome.name.trim().replace(/^P/i, "П")}`;
-    return outcome.name.trim().replace(/^P/i, "П");
+    if (scope) return `${scope[1]} — ${(outcome.name ?? "").trim().replace(/^P/i, "П")}`;
+    return (outcome.name ?? "").trim().replace(/^P/i, "П");
   }
 
-  if (/MULTISCORE/i.test(marketKey) && /^\d+:\d+(,\s*\d+:\d+)*$/.test(outcome.name.trim())) {
-    return outcome.name.trim();
+  if (/MULTISCORE/i.test(marketKey) && /^\d+:\d+(,\s*\d+:\d+)*$/.test((outcome.name ?? "").trim())) {
+    return (outcome.name ?? "").trim();
   }
 
   return `${groupLabel}: ${outcome.name}`;

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { FiClock } from "react-icons/fi";
 
 import { api, components } from "~/shared/api";
 import { getSessionClient } from "~/entities/user/lib";
@@ -21,6 +22,11 @@ import { useLocale } from "~/shared/model/useLocale";
 
 import { BetHistoryCard } from "./BetHistoryCard";
 import styles from "./BetsHistoryPage.module.css";
+import {
+  HistoryDateFilterSheet,
+  matchesHistoryDateFilter,
+  type HistoryDateFilter,
+} from "./HistoryDateFilterSheet";
 
 type TabType = "all" | "express" | "ordinar";
 type BetDto = components["schemas"]["BetDto"];
@@ -40,10 +46,23 @@ const STATUS_LABEL_KEYS: Record<HistoryStatusFilter, MessageKey> = {
   return: "coupon.historyReturn",
 };
 
+function formatDateFilterHint(
+  filter: HistoryDateFilter,
+  t: (key: MessageKey, params?: { hours?: number }) => string,
+): string | null {
+  if (filter.kind === "all") return null;
+  if (filter.kind === "hours") return t("coupon.dateLastHours", { hours: filter.hours });
+  const [y, m, d] = filter.ymd.split("-").map(Number);
+  if (!y || !m || !d) return filter.ymd;
+  return `${d} ${t(`coupon.monthShort${m}` as MessageKey)} ${y}`;
+}
+
 export const BetsHistory: React.FC = () => {
   const { t } = useLocale();
   const [tab, setTab] = useState<TabType>("all");
   const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<HistoryDateFilter>({ kind: "all" });
+  const [dateSheetOpen, setDateSheetOpen] = useState(false);
 
   const tabs = useMemo(
     () => [
@@ -112,10 +131,17 @@ export const BetsHistory: React.FC = () => {
   }, [mergedBets, tab]);
 
   const filteredBets = useMemo(
-    () => tabFilteredBets.filter((bet) =>
-      matchesHistoryStatusFilter(bet as Record<string, unknown>, statusFilter),
-    ),
-    [tabFilteredBets, statusFilter],
+    () =>
+      tabFilteredBets.filter((bet) => {
+        if (!matchesHistoryStatusFilter(bet as Record<string, unknown>, statusFilter)) {
+          return false;
+        }
+        return matchesHistoryDateFilter(
+          (bet as { createdAt?: string }).createdAt,
+          dateFilter,
+        );
+      }),
+    [tabFilteredBets, statusFilter, dateFilter],
   );
 
   const stats = useMemo(() => {
@@ -140,6 +166,8 @@ export const BetsHistory: React.FC = () => {
   }, [mergedBets]);
 
   const loading = isLoading || wcLoading;
+  const dateHint = formatDateFilterHint(dateFilter, t);
+  const dateActive = dateFilter.kind !== "all";
 
   const pluralBets = (n: number): string => {
     const mod10 = n % 10;
@@ -174,20 +202,6 @@ export const BetsHistory: React.FC = () => {
             value={stats.total}
           />
           <StatPill
-            active={statusFilter === "pending"}
-            label={t("coupon.historyPending")}
-            onClick={() => setStatusFilter("pending")}
-            tone="pending"
-            value={stats.pending}
-          />
-          <StatPill
-            active={statusFilter === "cashout"}
-            label={t("coupon.historyCashout")}
-            onClick={() => setStatusFilter("cashout")}
-            tone="cashout"
-            value={stats.cashout}
-          />
-          <StatPill
             active={statusFilter === "win"}
             label={t("coupon.historyWin")}
             onClick={() => setStatusFilter("win")}
@@ -204,18 +218,37 @@ export const BetsHistory: React.FC = () => {
         </div>
       ) : null}
 
-      <div className={styles.filterBar}>
-        {tabs.map((item) => (
-          <button
-            key={item.id}
-            className={`${styles.filterChip} ${tab === item.id ? styles.filterChipActive : ""}`}
-            onClick={() => setTab(item.id)}
-            type="button"
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className={styles.tabsRow}>
+        <div className={styles.typeTabs} role="tablist" aria-label={t("coupon.historyTitle")}>
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              aria-selected={tab === item.id}
+              className={`${styles.typeTab} ${tab === item.id ? styles.typeTabActive : ""}`}
+              onClick={() => setTab(item.id)}
+              role="tab"
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <button
+          aria-label={t("coupon.dateFilterAria")}
+          className={`${styles.dateBtn} ${dateActive ? styles.dateBtnActive : ""}`}
+          onClick={() => setDateSheetOpen(true)}
+          type="button"
+        >
+          <FiClock size={20} aria-hidden />
+          {dateActive ? <span className={styles.dateBtnDot} aria-hidden /> : null}
+        </button>
       </div>
+
+      {dateHint ? (
+        <p className={styles.dateFilterHint}>
+          {t("coupon.dateFilterShown", { hint: dateHint })}
+        </p>
+      ) : null}
 
       <div className={styles.filterBar}>
         {HISTORY_STATUS_FILTERS.map((item) => (
@@ -238,12 +271,9 @@ export const BetsHistory: React.FC = () => {
           </div>
         ) : !filteredBets.length ? (
           <div className={styles.emptyBlock}>
-            <span className={styles.emptyIcon} aria-hidden>
-              📋
-            </span>
             <p className={styles.emptyTitle}>{t("coupon.emptyTitle")}</p>
             <p className={styles.emptyText}>
-              {statusFilter !== "all" || tab !== "all"
+              {statusFilter !== "all" || tab !== "all" || dateActive
                 ? t("coupon.historyEmptyFiltered")
                 : t("coupon.historyEmpty")}
             </p>
@@ -259,6 +289,13 @@ export const BetsHistory: React.FC = () => {
           })
         )}
       </div>
+
+      <HistoryDateFilterSheet
+        onChange={setDateFilter}
+        onClose={() => setDateSheetOpen(false)}
+        open={dateSheetOpen}
+        value={dateFilter}
+      />
     </div>
   );
 };
@@ -276,8 +313,6 @@ function StatPill({
   onClick: () => void;
   tone?: "pending" | "cashout" | "win" | "lose";
 }) {
-  if (value <= 0 && !active) return null;
-
   return (
     <button
       className={[

@@ -1,11 +1,37 @@
 .avatar {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 50%;
   color: #fff;
   font-weight: 700;
   letter-spacing: 0.02em;
   flex-shrink: 0;
   user-select: none;
+  overflow: hidden;
+  isolation: isolate;
+  /* Hard circular mask — no square corners / soft bleed */
+  clip-path: circle(50% at 50% 50%);
+  -webkit-clip-path: circle(50% at 50% 50%);
+}
+
+.avatarImage {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent !important;
+}
+
+.avatarImage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+  border: 0;
+  box-shadow: none;
+  /* Avoid subpixel square fringe around the raster */
+  transform: translateZ(0);
 }

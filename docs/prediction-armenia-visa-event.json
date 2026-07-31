@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "will-armenia-introduce-visas-for-russia",
+    "title": "Армения введёт визы для России?",
+    "titleEn": "Will Armenia introduce visas for Russia?",
+    "description": "Считается официальное введение визового режима Армении для граждан РФ до 31.10.2026. Сейчас действует безвиз по соглашению 2000 года. Изменение списка документов (только паспорт) — не считается визой.",
+    "descriptionEn": "Counts if Armenia officially introduces a visa requirement for Russian citizens by Oct 31, 2026. Visa-free travel under the 2000 agreement is still in force. Changing the list of entry documents (passport-only) does not count as a visa regime.",
+    "category": "Политика",
+    "closesAt": "2026-10-31T20:59:00.000Z",
+    "outcomes": [
+      { "key": "yes", "label": "Да", "labelEn": "Yes", "odds": 2.9 },
+      { "key": "no", "label": "Нет", "labelEn": "No", "odds": 1.33 }
+    ],
+    "url": "https://imba.bet/events/will-armenia-introduce-visas-for-russia"
+  }
+]

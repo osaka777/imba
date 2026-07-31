@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { requestPasswordReset } from "~/entities/user/api/telegram";
 import { EmailIcon } from "~/shared/assets";
 import { safeToast } from "~/shared/lib/safeToast";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button, Input } from "~/shared/ui";
 
 import styles from "./AuthForm.module.css";
@@ -20,6 +21,7 @@ type FormState = {
 };
 
 export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
+  const { t } = useLocale();
   const [isPending, setIsPending] = useState(false);
   const [sentChannel, setSentChannel] = useState<"telegram" | "none" | null>(null);
   const { handleSubmit, register } = useForm<FormState>({
@@ -32,12 +34,12 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       const result = await requestPasswordReset(data.email.trim());
       setSentChannel(result.channel);
       if (result.channel === "telegram") {
-        safeToast.success("Ссылка для сброса отправлена в Telegram");
+        safeToast.success(t("auth.forgotSentTg"));
       } else {
-        safeToast.info("Проверьте email или привяжите Telegram в настройках профиля");
+        safeToast.info(t("auth.forgotCheckEmailOrTg"));
       }
     } catch {
-      safeToast.error("Не удалось отправить запрос. Попробуйте позже.");
+      safeToast.error(t("auth.forgotSendFailed"));
     } finally {
       setIsPending(false);
     }
@@ -48,11 +50,11 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       <div className={styles.form}>
         <p className={styles.forgotHint}>
           {sentChannel === "telegram"
-            ? "Мы отправили ссылку для сброса пароля в ваш Telegram. Ссылка действует 30 минут."
-            : "Если аккаунт существует, но Telegram не привязан — войдите в аккаунт и привяжите бота в настройках профиля, затем повторите запрос."}
+            ? t("auth.forgotSentTgBody")
+            : t("auth.forgotNoTgBody")}
         </p>
         <Button className={styles.authButton} type="button" onClick={onBack}>
-          Вернуться ко входу
+          {t("auth.forgotBackLogin")}
         </Button>
       </div>
     );
@@ -60,9 +62,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
 
   return (
     <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
-      <p className={styles.forgotHint}>
-        Укажите email аккаунта. Ссылка для сброса придёт в Telegram, если он привязан в настройках профиля.
-      </p>
+      <p className={styles.forgotHint}>{t("auth.forgotHint")}</p>
       <Input
         className={styles.input}
         icon={<EmailIcon className={styles.fieldIcon} />}
@@ -72,10 +72,10 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         {...register("email", { required: true })}
       />
       <Button className={clsx(styles.authButton)} disabled={isPending} type="submit">
-        {isPending ? "Отправка..." : "Отправить ссылку"}
+        {isPending ? t("auth.forgotSending") : t("auth.forgotSendLink")}
       </Button>
       <button className={styles.forgotBackLink} type="button" onClick={onBack}>
-        ← Назад ко входу
+        {t("auth.forgotBackArrow")}
       </button>
     </form>
   );

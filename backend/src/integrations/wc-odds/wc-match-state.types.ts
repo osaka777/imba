@@ -45,11 +45,17 @@ export type WcMatchState = {
   v: 1;
   tennis?: WcMatchStateTennis;
   soccer?: WcMatchStateSoccer;
+  /** 1win / cybersport series format (BO3/BO5/BO7) for safe clinch settlement. */
+  esports?: {
+    bestOf?: number;
+  };
   /** Sport-agnostic result snapshot that survives process restarts and feed expiry. */
   result?: {
     periodScores?: Array<{ home: number; away: number }>;
     parsedScore?: WcParsedScore | null;
     statList?: WcStatListItem[];
+    /** 1win live tracker / statistics tracker available (list stats badge). */
+    hasLiveTracker?: boolean;
     capturedAt: string;
   };
   /** Key: `${marketId}:${outcomeTypeId}:${sortedParams}` */

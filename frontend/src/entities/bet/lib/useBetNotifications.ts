@@ -4,15 +4,16 @@ import { useWebSocketContext } from '~/entities/game/lib/WebSocketContext';
 import { useGamesBettingContext } from '~/app/providers/GamesBetting.provider';
 import { getUser } from '~/entities/user/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { shouldDeferToNativePush } from '~/entities/push/lib/nativeApp';
+import { shouldDeferToNativePush, showNativeNotification } from '~/entities/push/lib/nativeApp';
+import { useLocale } from '~/shared/model/useLocale';
 
 export const useBetNotifications = () => {
+  const { t } = useLocale();
   const { isAuth } = useGamesBettingContext();
   const { sendJsonMessage, addMessageHandler, removeMessageHandler, isConnected } = useWebSocketContext();
   const queryClient = useQueryClient();
   const isSubscribedRef = useRef(false);
   
-  // Получаем данные пользователя для userId
   const { data: userData } = useQuery({
     queryFn: getUser,
     queryKey: ['user'],
@@ -22,17 +23,14 @@ export const useBetNotifications = () => {
   useEffect(() => {
     if (!isAuth || !isConnected || !userData?.id || isSubscribedRef.current) return;
 
-    console.log('🔌 Setting up bet notifications for user:', userData.id);
     isSubscribedRef.current = true;
 
-    // Подписываемся на уведомления пользователя
     sendJsonMessage({
       type: 'subscribe_user',
       userId: userData.id.toString(),
     });
 
     const handleBetMessage = (message: any) => {
-      // Игнорируем служебные сообщения (subscribed, heartbeat и т.д.)
       if (message.status === 'success' || message.type === 'heartbeat') {
         return;
       }
@@ -43,27 +41,25 @@ export const useBetNotifications = () => {
         window.dispatchEvent(
           new CustomEvent('imba:telegram-linked', { detail: { username } }),
         );
-        toast.success('Telegram успешно привязан', {
+        toast.success(t('notify.telegramLinked'), {
           position: 'top-right',
           autoClose: 4000,
         });
         return;
       }
 
-      // Проверяем, что это уведомление о ставке для текущего пользователя
       if (!message.eventId || message.eventId !== `user_${userData.id}`) {
         return;
       }
 
-      console.log('✅ Received bet notification:', message.type, message.payload);
-
       if (message.type === 'bet_created') {
         if (!shouldDeferToNativePush()) {
-          toast.success('Ставка принята', {
+          toast.success(t('notify.betAccepted'), {
             position: 'top-right',
             autoClose: 3000,
           });
         }
+        showNativeNotification(t('notify.nativeBrand'), t('notify.betAccepted'));
       } else if (message.type === 'bet_status_changed') {
         const { status, amount, currencyCode } = message.payload;
         
@@ -72,27 +68,27 @@ export const useBetNotifications = () => {
         
         switch (status) {
           case 'WIN':
-            statusText = `Выигрыш: +${amount} ${currencyCode}`;
+            statusText = t('notify.betWin', { amount, currency: currencyCode });
             toastType = 'success';
             break;
           case 'LOSE':
-            statusText = 'Ставка проиграла';
+            statusText = t('notify.betLose');
             toastType = 'error';
             break;
           case 'RETURN':
-            statusText = `Возврат: ${amount} ${currencyCode}`;
+            statusText = t('notify.betReturn', { amount, currency: currencyCode });
             toastType = 'info';
             break;
           case 'CASHOUT':
-            statusText = `Продажа: +${amount} ${currencyCode}`;
+            statusText = t('notify.betCashout', { amount, currency: currencyCode });
             toastType = 'success';
             break;
           case 'PENDING':
-            statusText = 'Ставка обрабатывается';
+            statusText = t('notify.betPending');
             toastType = 'info';
             break;
           default:
-            statusText = `Статус: ${status}`;
+            statusText = t('notify.betStatus', { status });
             toastType = 'info';
         }
         
@@ -102,6 +98,7 @@ export const useBetNotifications = () => {
             autoClose: 5000,
           });
         }
+        showNativeNotification(t('notify.nativeBrand'), statusText);
 
         queryClient.invalidateQueries({ queryKey: ['user'] });
         queryClient.invalidateQueries({ queryKey: ['wc-bets'] });
@@ -113,7 +110,6 @@ export const useBetNotifications = () => {
       }
     };
 
-    // Подписываемся на уведомления о ставках
     sendJsonMessage({
       type: 'subscribe',
       filter: { eventIds: [`user_${userData.id}`] },
@@ -124,7 +120,6 @@ export const useBetNotifications = () => {
     return () => {
       if (!isSubscribedRef.current) return;
       
-      console.log('🔌 Cleaning up bet notifications for user:', userData?.id);
       isSubscribedRef.current = false;
       removeMessageHandler(handleBetMessage);
       
@@ -135,5 +130,5 @@ export const useBetNotifications = () => {
         });
       }
     };
-  }, [isAuth, isConnected, userData?.id]);
+  }, [isAuth, isConnected, userData?.id, t]);
 };

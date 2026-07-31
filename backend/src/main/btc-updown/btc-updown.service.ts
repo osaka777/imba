@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
@@ -18,10 +19,15 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { OperationService } from '~/main/operation/operation.service';
 import { PrismaService } from '~/prisma/prisma.service';
 import { computeMainAccountBetDebit } from '~/shared/utils/balance-fractional-reserve.util';
+import { displayPublicName } from '~/main/user/nickname';
 
 import { BtcUpdownPriceService } from './btc-updown-price.service';
 import {
+  BTC_UPDOWN_DAILY_HOUSE_LOSS_PAUSE,
+  BTC_UPDOWN_MAX_SIDE_EXPOSURE,
   BTC_UPDOWN_MAX_STAKE,
+  BTC_UPDOWN_MAX_USER_BETS_PER_ROUND,
+  BTC_UPDOWN_MAX_USER_STAKE_PER_ROUND,
   BTC_UPDOWN_MIN_STAKE,
   BTC_UPDOWN_ODDS,
   BTC_UPDOWN_ROUND_MS,
@@ -32,9 +38,13 @@ import {
   CRYPTO_UPDOWN_SLIPPAGE_BPS,
   CRYPTO_UPDOWN_SYMBOLS,
   floorWindowStart,
-  isCryptoUpdownRoundMs,
+  isRoundAllowedForSymbol,
   isCryptoUpdownSymbol,
   lockMsForRound,
+  roundsForSymbol,
+  maxStakeForCurrency,
+  minStakeForCurrency,
+  oddsForRound,
   type CryptoUpdownRoundMs,
   type CryptoUpdownSymbol,
 } from './btc-updown.constants';
@@ -43,6 +53,10 @@ import {
 export class BtcUpdownService implements OnModuleInit {
   private readonly logger = new Logger(BtcUpdownService.name);
   private settling = false;
+  /** Cached UTC-day house net; refreshed lazily. */
+  private houseDayKey: string | null = null;
+  private houseDayNet = 0;
+  private bettingPaused = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -52,6 +66,7 @@ export class BtcUpdownService implements OnModuleInit {
 
   async onModuleInit() {
     try {
+      await this.refreshHouseDayNet(true);
       for (const market of CRYPTO_UPDOWN_MARKETS) {
         await this.ensureCurrentRound(market.symbol, market.roundMs);
       }
@@ -63,14 +78,32 @@ export class BtcUpdownService implements OnModuleInit {
     }
   }
 
-  getConfig() {
+  getConfig(roundMs: number = BTC_UPDOWN_ROUND_MS) {
+    const odds = oddsForRound(roundMs);
     return {
       symbol: BTC_UPDOWN_SYMBOL,
       roundMs: BTC_UPDOWN_ROUND_MS,
-      lockMs: lockMsForRound(BTC_UPDOWN_ROUND_MS),
-      odds: BTC_UPDOWN_ODDS,
+      lockMs: lockMsForRound(roundMs),
+      odds,
+      oddsByRoundMs: {
+        60000: oddsForRound(60_000),
+        300000: oddsForRound(300_000),
+        900000: oddsForRound(900_000),
+      },
       minStake: BTC_UPDOWN_MIN_STAKE,
       maxStake: BTC_UPDOWN_MAX_STAKE,
+      maxStakeByCurrency: {
+        KZT: maxStakeForCurrency('KZT'),
+        USD: maxStakeForCurrency('USD'),
+        USDT: maxStakeForCurrency('USDT'),
+        RUB: maxStakeForCurrency('RUB'),
+      },
+      maxSideExposure: BTC_UPDOWN_MAX_SIDE_EXPOSURE,
+      maxUserStakePerRound: BTC_UPDOWN_MAX_USER_STAKE_PER_ROUND,
+      maxUserBetsPerRound: BTC_UPDOWN_MAX_USER_BETS_PER_ROUND,
+      dailyHouseLossPause: BTC_UPDOWN_DAILY_HOUSE_LOSS_PAUSE,
+      bettingPaused: this.bettingPaused,
+      houseDayNet: Number(this.houseDayNet.toFixed(2)),
       currencyDefault: 'KZT',
       source: 'binance',
       quoteValidMs: CRYPTO_UPDOWN_QUOTE_VALID_MS,
@@ -81,6 +114,7 @@ export class BtcUpdownService implements OnModuleInit {
         symbol: m.symbol,
         roundMs: m.roundMs,
         lockMs: lockMsForRound(m.roundMs),
+        odds: oddsForRound(m.roundMs),
         label: this.marketLabel(m.symbol, m.roundMs),
       })),
       settleRule:
@@ -116,12 +150,12 @@ export class BtcUpdownService implements OnModuleInit {
         `symbol must be one of ${CRYPTO_UPDOWN_SYMBOLS.join(', ')}`,
       );
     }
-    if (!isCryptoUpdownRoundMs(roundMs)) {
+    if (!isRoundAllowedForSymbol(symbol, roundMs)) {
       throw new BadRequestException(
-        `roundMs must be one of ${CRYPTO_UPDOWN_ROUND_MS.join(', ')}`,
+        `roundMs for ${symbol} must be one of ${roundsForSymbol(symbol).join(', ')}`,
       );
     }
-    return { symbol, roundMs };
+    return { symbol, roundMs: roundMs as CryptoUpdownRoundMs };
   }
 
   async getPublicState(
@@ -139,11 +173,7 @@ export class BtcUpdownService implements OnModuleInit {
       round.status === BtcUpdownRoundStatus.OPEN &&
       now < round.endsAt.getTime() - lockMs;
 
-    const ticks = this.price.getTicks(
-      symbol,
-      round.startsAt.getTime() - 60_000,
-      round.endsAt.getTime() + 5_000,
-    );
+    const ticks = this.price.getChartTicks(symbol, 150_000, 2_400);
 
     let myBets: ReturnType<BtcUpdownService['toBetDto']>[] = [];
     if (userId) {
@@ -167,10 +197,11 @@ export class BtcUpdownService implements OnModuleInit {
     return {
       serverNow: new Date(now).toISOString(),
       config: {
-        ...this.getConfig(),
+        ...this.getConfig(roundMs),
         symbol,
         roundMs,
         lockMs,
+        odds: oddsForRound(roundMs),
       },
       market: {
         symbol,
@@ -284,6 +315,446 @@ export class BtcUpdownService implements OnModuleInit {
     };
   }
 
+  /** Public Imba-wide PnL board (masked names) for the trading hub. */
+  async getPublicPnlBoard(params?: {
+    range?: string;
+    currencyCode?: string;
+    limit?: number;
+  }) {
+    const currency = (params?.currencyCode || 'KZT').toUpperCase();
+    const range = (params?.range || '1d').toLowerCase();
+    const limit = Math.min(20, Math.max(3, Number(params?.limit) || 8));
+    const now = Date.now();
+    const rangeMs =
+      range === '1w'
+        ? 7 * 86_400_000
+        : range === '1m'
+          ? 30 * 86_400_000
+          : range === 'all'
+            ? null
+            : 86_400_000;
+    const since =
+      rangeMs != null ? new Date(now - rangeMs) : undefined;
+
+    const bets = await this.prisma.btcUpdownBet.findMany({
+      where: {
+        currencyCode: currency,
+        status: {
+          in: [BtcUpdownBetStatus.WIN, BtcUpdownBetStatus.LOSE],
+        },
+        ...(since
+          ? {
+              OR: [
+                { settledAt: { gte: since } },
+                { settledAt: null, createdAt: { gte: since } },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        userId: true,
+        stake: true,
+        potentialPayout: true,
+        status: true,
+        settledAt: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            telegramUsername: true,
+            nickname: true,
+            avatarPreset: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 8_000,
+    });
+
+    type Agg = {
+      userId: number;
+      name: string;
+      nickname: string | null;
+      avatarPreset: string | null;
+      avatarUrl: string | null;
+      bets: number;
+      wins: number;
+      losses: number;
+      stakeTotal: number;
+      pnl: number;
+    };
+
+    const byUser = new Map<number, Agg>();
+    const seriesEvents: Array<{ t: number; d: number }> = [];
+    let stakeTotal = 0;
+    let wins = 0;
+    let losses = 0;
+    let pnlTotal = 0;
+
+    for (const bet of bets) {
+      const stake = Number(bet.stake);
+      const delta =
+        bet.status === BtcUpdownBetStatus.WIN
+          ? Number(bet.potentialPayout) - stake
+          : -stake;
+      const t = (bet.settledAt ?? bet.createdAt).getTime();
+      seriesEvents.push({ t, d: delta });
+      stakeTotal += stake;
+      pnlTotal += delta;
+      if (bet.status === BtcUpdownBetStatus.WIN) wins += 1;
+      else losses += 1;
+
+      const prev = byUser.get(bet.userId);
+      if (prev) {
+        prev.bets += 1;
+        prev.stakeTotal += stake;
+        prev.pnl += delta;
+        if (bet.status === BtcUpdownBetStatus.WIN) prev.wins += 1;
+        else prev.losses += 1;
+      } else {
+        byUser.set(bet.userId, {
+          userId: bet.userId,
+          name: this.publicPlayerName(bet.user),
+          nickname: bet.user.nickname ?? null,
+          avatarPreset: bet.user.avatarPreset ?? null,
+          avatarUrl: bet.user.avatarUrl ?? null,
+          bets: 1,
+          wins: bet.status === BtcUpdownBetStatus.WIN ? 1 : 0,
+          losses: bet.status === BtcUpdownBetStatus.LOSE ? 1 : 0,
+          stakeTotal: stake,
+          pnl: delta,
+        });
+      }
+    }
+
+    seriesEvents.sort((a, b) => a.t - b.t);
+    const firstT = seriesEvents[0]?.t ?? now;
+    const startT =
+      rangeMs != null ? Math.min(now - rangeMs, firstT) : firstT;
+    let running = 0;
+    const series: Array<{ t: number; v: number }> = [{ t: startT, v: 0 }];
+    for (const ev of seriesEvents) {
+      running += ev.d;
+      series.push({ t: ev.t, v: Number(running.toFixed(2)) });
+    }
+    if (series.length === 1) series.push({ t: now, v: 0 });
+
+    const players = [...byUser.values()]
+      .map((p) => ({
+        userId: p.userId,
+        name: p.name,
+        nickname: p.nickname,
+        avatarPreset: p.avatarPreset,
+        avatarUrl: p.avatarUrl,
+        bets: p.bets,
+        wins: p.wins,
+        losses: p.losses,
+        stakeTotal: Number(p.stakeTotal.toFixed(2)),
+        pnl: Number(p.pnl.toFixed(2)),
+        winRate:
+          p.wins + p.losses > 0
+            ? Number(((p.wins / (p.wins + p.losses)) * 100).toFixed(1))
+            : null,
+      }))
+      .sort((a, b) => b.pnl - a.pnl || b.stakeTotal - a.stakeTotal)
+      .slice(0, limit);
+
+    return {
+      range: range === '1w' || range === '1m' || range === 'all' ? range : '1d',
+      currencyCode: currency,
+      summary: {
+        players: byUser.size,
+        bets: wins + losses,
+        wins,
+        losses,
+        stakeTotal: Number(stakeTotal.toFixed(2)),
+        pnl: Number(pnlTotal.toFixed(2)),
+        winRate:
+          wins + losses > 0
+            ? Number(((wins / (wins + losses)) * 100).toFixed(1))
+            : null,
+      },
+      series,
+      players,
+    };
+  }
+
+  private publicPlayerName(user: {
+    id: number;
+    email: string;
+    telegramUsername: string | null;
+    nickname?: string | null;
+  }): string {
+    return displayPublicName(user);
+  }
+
+  /** Public Polymarket-style trader profile (masked identity + PnL). */
+  async getPublicTraderProfile(params: {
+    idOrNick?: string;
+    userId?: number;
+    range?: string;
+    currencyCode?: string;
+  }) {
+    const raw = (params.idOrNick ?? "").trim();
+    const asId = Number(params.userId ?? raw);
+    const looksLikeId = Number.isFinite(asId) && asId > 0 && String(asId) === raw;
+
+    let user = null as null | {
+      id: number;
+      email: string;
+      telegramUsername: string | null;
+      nickname: string | null;
+      avatarPreset: string | null;
+      avatarUrl: string | null;
+      createdAt: Date;
+    };
+
+    if (raw && !looksLikeId) {
+      user = await this.prisma.user.findFirst({
+        where: { nickname: { equals: raw, mode: 'insensitive' } },
+        select: {
+          id: true,
+          email: true,
+          telegramUsername: true,
+          nickname: true,
+          avatarPreset: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      });
+    }
+
+    // Legacy links used truncated display names (email/tg) when nickname was unset.
+    if (!user && raw && !looksLikeId) {
+      const tg = raw.replace(/^@+/, '');
+      const byTelegram = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { telegramUsername: { equals: tg, mode: 'insensitive' } },
+            { telegramUsername: { equals: `@${tg}`, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          email: true,
+          telegramUsername: true,
+          nickname: true,
+          avatarPreset: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      });
+      if (byTelegram) {
+        user = byTelegram;
+      } else {
+        const candidates = await this.prisma.user.findMany({
+          where: {
+            OR: [
+              { email: { startsWith: raw, mode: 'insensitive' } },
+              { telegramUsername: { startsWith: tg, mode: 'insensitive' } },
+              {
+                telegramUsername: {
+                  startsWith: `@${tg}`,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          },
+          select: {
+            id: true,
+            email: true,
+            telegramUsername: true,
+            nickname: true,
+            avatarPreset: true,
+            avatarUrl: true,
+            createdAt: true,
+          },
+          take: 40,
+        });
+        const needle = raw.toLowerCase();
+        user =
+          candidates.find(
+            (u) => displayPublicName(u).toLowerCase() === needle,
+          ) ?? null;
+      }
+    }
+
+    if (!user) {
+      const userId = looksLikeId
+        ? asId
+        : Number(params.userId);
+      if (!Number.isFinite(userId) || userId <= 0) {
+        throw new NotFoundException('Trader not found');
+      }
+      user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          telegramUsername: true,
+          nickname: true,
+          avatarPreset: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      });
+    }
+    if (!user) {
+      throw new NotFoundException('Trader not found');
+    }
+
+    const currency = (params.currencyCode || 'KZT').toUpperCase();
+    const rangeRaw = (params.range || 'all').toLowerCase();
+    const range =
+      rangeRaw === '1d' ||
+      rangeRaw === '1w' ||
+      rangeRaw === '1m' ||
+      rangeRaw === '1y' ||
+      rangeRaw === 'ytd' ||
+      rangeRaw === 'all'
+        ? rangeRaw
+        : 'all';
+    const now = Date.now();
+    const since =
+      range === 'all'
+        ? undefined
+        : range === 'ytd'
+          ? new Date(new Date(now).getFullYear(), 0, 1)
+          : new Date(
+              now -
+                (range === '1d'
+                  ? 86_400_000
+                  : range === '1w'
+                    ? 7 * 86_400_000
+                    : range === '1m'
+                      ? 30 * 86_400_000
+                      : 365 * 86_400_000),
+            );
+
+    const bets = await this.prisma.btcUpdownBet.findMany({
+      where: {
+        userId: user.id,
+        currencyCode: currency,
+        status: {
+          in: [BtcUpdownBetStatus.WIN, BtcUpdownBetStatus.LOSE],
+        },
+        ...(since
+          ? {
+              OR: [
+                { settledAt: { gte: since } },
+                { settledAt: null, createdAt: { gte: since } },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        round: {
+          select: {
+            symbol: true,
+            roundMs: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 2_000,
+    });
+
+    let stakeTotal = 0;
+    let wins = 0;
+    let losses = 0;
+    let pnl = 0;
+    let biggestWin = 0;
+    const seriesEvents: Array<{ t: number; d: number }> = [];
+    const recent: Array<{
+      id: number;
+      side: string;
+      symbol: string;
+      roundMs: number;
+      stake: number;
+      payout: number;
+      pnl: number;
+      status: string;
+      settledAt: string | null;
+    }> = [];
+
+    for (const bet of bets) {
+      const stake = Number(bet.stake);
+      const delta =
+        bet.status === BtcUpdownBetStatus.WIN
+          ? Number(bet.potentialPayout) - stake
+          : -stake;
+      const t = (bet.settledAt ?? bet.createdAt).getTime();
+      seriesEvents.push({ t, d: delta });
+      stakeTotal += stake;
+      pnl += delta;
+      if (delta > biggestWin) biggestWin = delta;
+      if (bet.status === BtcUpdownBetStatus.WIN) wins += 1;
+      else losses += 1;
+    }
+
+    const settledDesc = [...bets].reverse().slice(0, 50);
+    for (const bet of settledDesc) {
+      const stake = Number(bet.stake);
+      const delta =
+        bet.status === BtcUpdownBetStatus.WIN
+          ? Number(bet.potentialPayout) - stake
+          : -stake;
+      recent.push({
+        id: bet.id,
+        side: bet.side,
+        symbol: bet.round.symbol,
+        roundMs: bet.round.roundMs,
+        stake,
+        payout: Number(bet.potentialPayout),
+        pnl: Number(delta.toFixed(2)),
+        status: bet.status,
+        settledAt: bet.settledAt?.toISOString() ?? bet.createdAt.toISOString(),
+      });
+    }
+
+    seriesEvents.sort((a, b) => a.t - b.t);
+    const firstT = seriesEvents[0]?.t ?? now;
+    const sinceMs = since?.getTime();
+    const startT =
+      sinceMs != null ? Math.min(sinceMs, firstT) : firstT;
+    let running = 0;
+    const series: Array<{ t: number; v: number }> = [{ t: startT, v: 0 }];
+    for (const ev of seriesEvents) {
+      running += ev.d;
+      series.push({ t: ev.t, v: Number(running.toFixed(2)) });
+    }
+    if (series.length === 1) series.push({ t: now, v: 0 });
+
+    return {
+      user: {
+        id: user.id,
+        name: this.publicPlayerName(user),
+        nickname: user.nickname ?? null,
+        avatarPreset: user.avatarPreset ?? null,
+        avatarUrl: user.avatarUrl ?? null,
+        joinedAt: user.createdAt.toISOString(),
+      },
+      range,
+      currencyCode: currency,
+      summary: {
+        bets: wins + losses,
+        wins,
+        losses,
+        stakeTotal: Number(stakeTotal.toFixed(2)),
+        pnl: Number(pnl.toFixed(2)),
+        biggestWin: Number(biggestWin.toFixed(2)),
+        winRate:
+          wins + losses > 0
+            ? Number(((wins / (wins + losses)) * 100).toFixed(1))
+            : null,
+      },
+      series,
+      recent,
+    };
+  }
+
   async placeBet(params: {
     userId: number;
     side: 'UP' | 'DOWN';
@@ -294,17 +765,27 @@ export class BtcUpdownService implements OnModuleInit {
     expectedPrice?: number;
   }) {
     const stake = Number(params.stake);
+    const currencyCode = (params.currencyCode || 'KZT').toUpperCase();
+    const minStake = minStakeForCurrency(currencyCode);
+    const maxStake = maxStakeForCurrency(currencyCode);
     if (
       !Number.isFinite(stake) ||
-      stake < BTC_UPDOWN_MIN_STAKE ||
-      stake > BTC_UPDOWN_MAX_STAKE
+      stake < minStake ||
+      stake > maxStake
     ) {
       throw new BadRequestException(
-        `Stake must be between ${BTC_UPDOWN_MIN_STAKE} and ${BTC_UPDOWN_MAX_STAKE}`,
+        `Stake must be between ${minStake} and ${maxStake}`,
       );
     }
     if (params.side !== 'UP' && params.side !== 'DOWN') {
       throw new BadRequestException('side must be UP or DOWN');
+    }
+
+    await this.refreshHouseDayNet(false);
+    if (this.bettingPaused) {
+      throw new BadRequestException(
+        'Crypto Up/Down временно на паузе (лимит дневного риска). Попробуйте позже.',
+      );
     }
 
     const { symbol, roundMs } = this.parseMarket(params.symbol, params.roundMs);
@@ -341,7 +822,6 @@ export class BtcUpdownService implements OnModuleInit {
       }
     }
 
-    const currencyCode = (params.currencyCode || 'KZT').toUpperCase();
     const balance = await this.prisma.balance.findUnique({
       where: {
         userId_currencyCode: { userId: params.userId, currencyCode },
@@ -359,8 +839,46 @@ export class BtcUpdownService implements OnModuleInit {
       throw new BadRequestException('Insufficient funds');
     }
 
-    const odds = new Decimal(BTC_UPDOWN_ODDS);
+    const odds = new Decimal(oddsForRound(roundMs));
     const potentialPayout = effectiveStake.mul(odds).toDecimalPlaces(2);
+
+    const pendingInRound = await this.prisma.btcUpdownBet.findMany({
+      where: {
+        roundId: round.id,
+        status: BtcUpdownBetStatus.PENDING,
+      },
+      select: {
+        userId: true,
+        side: true,
+        stake: true,
+        potentialPayout: true,
+      },
+    });
+
+    const userPending = pendingInRound.filter((b) => b.userId === params.userId);
+    if (userPending.length >= BTC_UPDOWN_MAX_USER_BETS_PER_ROUND) {
+      throw new BadRequestException(
+        `Лимит ставок в раунде: максимум ${BTC_UPDOWN_MAX_USER_BETS_PER_ROUND}`,
+      );
+    }
+    const userStakeSum = userPending.reduce(
+      (acc, b) => acc + Number(b.stake),
+      0,
+    );
+    if (userStakeSum + Number(effectiveStake) > BTC_UPDOWN_MAX_USER_STAKE_PER_ROUND) {
+      throw new BadRequestException(
+        `Лимит суммы в раунде: максимум ${BTC_UPDOWN_MAX_USER_STAKE_PER_ROUND}`,
+      );
+    }
+
+    const sideExposure = pendingInRound
+      .filter((b) => b.side === (params.side as BtcUpdownSide))
+      .reduce((acc, b) => acc + Number(b.potentialPayout), 0);
+    if (sideExposure + Number(potentialPayout) > BTC_UPDOWN_MAX_SIDE_EXPOSURE) {
+      throw new BadRequestException(
+        `Сторона ${params.side} переполнена на этот раунд. Выберите другую сторону или меньшую сумму.`,
+      );
+    }
 
     const bet = await this.prisma.$transaction(async (tx) => {
       const live = await tx.btcUpdownRound.findUnique({
@@ -623,6 +1141,52 @@ export class BtcUpdownService implements OnModuleInit {
     this.logger.log(
       `Settled ${round.symbol}/${round.roundMs}ms #${roundId}: market=${result} open=${openPrice} close=${closePrice} bets=${pending.length}`,
     );
+
+    // Recompute house day PnL after settle (includes this batch).
+    await this.refreshHouseDayNet(true);
+    if (this.bettingPaused) {
+      this.logger.warn(
+        `Crypto Up/Down paused: houseDayNet=${this.houseDayNet.toFixed(2)}`,
+      );
+    }
+  }
+
+  private utcDayKey(d = new Date()): string {
+    return d.toISOString().slice(0, 10);
+  }
+
+  private async refreshHouseDayNet(force: boolean) {
+    const key = this.utcDayKey();
+    if (!force && this.houseDayKey === key) return;
+    this.houseDayKey = key;
+    const start = new Date(`${key}T00:00:00.000Z`);
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+
+    const settled = await this.prisma.btcUpdownBet.findMany({
+      where: {
+        settledAt: { gte: start, lt: end },
+        status: {
+          in: [BtcUpdownBetStatus.WIN, BtcUpdownBetStatus.LOSE],
+        },
+      },
+      select: {
+        status: true,
+        stake: true,
+        potentialPayout: true,
+      },
+    });
+
+    let net = 0;
+    for (const bet of settled) {
+      const stakeN = Number(bet.stake);
+      if (bet.status === BtcUpdownBetStatus.WIN) {
+        net -= Number(bet.potentialPayout) - stakeN;
+      } else {
+        net += stakeN;
+      }
+    }
+    this.houseDayNet = net;
+    this.bettingPaused = net <= -BTC_UPDOWN_DAILY_HOUSE_LOSS_PAUSE;
   }
 
   private async voidRound(roundId: number) {

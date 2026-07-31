@@ -72,3 +72,7 @@ android-app/local.properties
 android-app/.gradle/
 android-app/app/build/
 android-app/build/
+
+# Desktop installers (hosted on site, not in git)
+*.exe
+*.blockmap

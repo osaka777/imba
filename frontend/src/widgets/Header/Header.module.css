@@ -23,11 +23,51 @@
   width: 100%;
 }
 
+/* Cyber featured hero replaces promo slider on home */
+.Header .cyberHero {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  padding: 4px 0 12px;
+  box-sizing: border-box;
+}
+
+.Header .cyberHero :global([class*="wrap"]) {
+  margin: 0;
+  max-width: none;
+}
+
 /* Placeholder while slides are loading */
 .Header .slider:empty {
   background: rgb(255 255 255 / 0.04);
   border-radius: 8px;
 }
+
+/* Home: reserve space while featured cyber live is resolving (no slides flash) */
+.Header .bannerShell {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 280px;
+  border-radius: 16px;
+  background: rgb(14 18 28 / 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 640px) {
+  .Header .bannerShell {
+    min-height: 340px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .Header .bannerShell {
+    min-height: 420px;
+  }
+}
+
 
 /* Make promos have fixed or bounded width on desktop */
 .mobilePromos {

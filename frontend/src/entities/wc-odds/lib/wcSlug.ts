@@ -89,6 +89,8 @@ export function stripLegacyHashFromSlug(slug: string): string {
 /** Feed events (slug / masked id) vs numeric BetAPI event ids. */
 export function isOlimpbetGameRef(ref: string): boolean {
   const decoded = decodeURIComponent(ref);
+  // 1win cybersport uses its own /cybersport/game/cyber-* pages — not WC/Olimpbet.
+  if (/^cyber-\d+$/i.test(decoded)) return false;
   if (isLegacyWcEventId(decoded)) return true;
   if (/^\d+$/.test(decoded)) return false;
   if (/^m[a-z0-9]+$/i.test(decoded)) return true;
@@ -165,9 +167,11 @@ export const fetchWcEventByRef = cache(async function fetchWcEventByRef(
   let locale = "ru";
   try {
     const { cookies } = await import("next/headers");
+    const { normalizeAppLocale, toFeedLocale } = await import("~/shared/i18n/locale");
     const jar = await cookies();
     const raw = jar.get("imba_locale")?.value;
-    if (raw === "en" || raw === "ru") locale = raw;
+    const normalized = normalizeAppLocale(raw);
+    if (normalized) locale = toFeedLocale(normalized);
   } catch {
     // SSR cookie unavailable in some contexts
   }

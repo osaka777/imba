@@ -3,6 +3,7 @@ import { useLocalStorage } from "usehooks-ts";
 import { components } from "~/shared/api";
 import { Rate, Rates } from "~/entities/bet/types/types";
 import { usePrevious } from "~/shared/model";
+import { useLocale } from "~/shared/model/useLocale";
 import { MarketPairRow } from "~/entities/markets/ui/MarketPairRow";
 
 import styles from "~/entities/game/ui/Match/Match.module.css";
@@ -30,6 +31,7 @@ export const OverUnderPair: React.FC<OverUnderPairProps> = ({
   groupName,
   isLive,
 }) => {
+  const { t } = useLocale();
   const [rates, setRates] = useLocalStorage<Rates>("rates", [], {
     initializeWithValue: false,
   });
@@ -97,7 +99,7 @@ export const OverUnderPair: React.FC<OverUnderPairProps> = ({
       left={
         underMarket
           ? {
-              label: "меньше",
+              label: t("common.under"),
               value: underValue,
               selected: rates.some((bet) => bet.market === underMarket.market),
               bettable: isUnderAvailable,
@@ -109,7 +111,7 @@ export const OverUnderPair: React.FC<OverUnderPairProps> = ({
       right={
         overMarket
           ? {
-              label: "больше",
+              label: t("common.over"),
               value: overValue,
               selected: rates.some((bet) => bet.market === overMarket.market),
               bettable: isOverAvailable,

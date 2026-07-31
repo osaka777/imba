@@ -14,12 +14,15 @@ import {
   isNativeApp,
   requestNativeNotificationPermission,
 } from "~/entities/push/lib/nativeApp";
+import type { MessageKey } from "~/shared/i18n/messages";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./AppPushSettingsBlock.module.css";
 
 type ToggleKey = "bets" | "deposit" | "withdraw" | "promo" | "liveMatch";
 
 export function AppPushSettingsBlock() {
+  const { t } = useLocale();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [prefs, setPrefs] = useState({
@@ -85,7 +88,7 @@ export function AppPushSettingsBlock() {
       await updatePushNotifications(token, fcmToken, { [key]: value });
     } catch {
       setPrefs((prev) => ({ ...prev, [key]: !value }));
-      toast.error("Не удалось сохранить настройку");
+      toast.error(t("notify.pushSaveError"));
     }
   };
 
@@ -93,10 +96,8 @@ export function AppPushSettingsBlock() {
     <section className={styles.block}>
       <div className={styles.head}>
         <div>
-          <h3 className={styles.title}>Push в приложении</h3>
-          <p className={styles.desc}>
-            Уведомления на телефон, когда приложение свёрнуто.
-          </p>
+          <h3 className={styles.title}>{t("notify.pushTitle")}</h3>
+          <p className={styles.desc}>{t("notify.pushDesc")}</p>
         </div>
         {!enabled ? (
           <button
@@ -104,24 +105,26 @@ export function AppPushSettingsBlock() {
             onClick={() => requestNativeNotificationPermission()}
             type="button"
           >
-            Включить
+            {t("notify.pushEnable")}
           </button>
         ) : (
-          <span className={styles.enabledBadge}>Включено</span>
+          <span className={styles.enabledBadge}>{t("notify.pushEnabled")}</span>
         )}
       </div>
 
       {enabled ? (
         <div className={loading ? styles.prefsMuted : styles.prefs}>
-          {([
-            ["bets", "Расчёт ставок"],
-            ["deposit", "Пополнения"],
-            ["withdraw", "Выводы"],
-            ["promo", "Акции и бонусы"],
-            ["liveMatch", "Live-матчи"],
-          ] as const).map(([key, label]) => (
+          {(
+            [
+              ["bets", "notify.pushBets"],
+              ["deposit", "notify.pushDeposit"],
+              ["withdraw", "notify.pushWithdraw"],
+              ["promo", "notify.pushPromo"],
+              ["liveMatch", "notify.pushLive"],
+            ] as const satisfies ReadonlyArray<readonly [ToggleKey, MessageKey]>
+          ).map(([key, labelKey]) => (
             <label className={styles.row} key={key}>
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
               <input
                 checked={prefs[key]}
                 disabled={loading}

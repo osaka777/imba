@@ -3,11 +3,55 @@ import type { WcEvent, WcEventDetail, WcGroupedMarkets, WcMarketGroup } from "~/
 export type MarketScope =
   | { kind: "quarter"; index: number }
   | { kind: "half"; index: number }
-  | { kind: "set"; index: number };
+  | { kind: "set"; index: number }
+  | { kind: "game"; setIndex: number; gameIndex: number }
+  | { kind: "point"; setIndex: number; gameIndex: number; pointIndex: number };
 
 const PURE_SCOPE_CATEGORY = /^\d+-[йи]\s+(?:сет|тайм)$|^\d+-я\s+четверть$/i;
 
+const TENNIS_POINT_RANK: Record<number, number> = {
+  0: 0,
+  15: 1,
+  30: 2,
+  40: 3,
+  50: 4,
+};
+
+/**
+ * Prefer the most specific scope (point > game > set) so "1-й сет, 7-й гейм"
+ * does not collapse to set-only.
+ */
 export function parseMarketScopeFromText(text: string): MarketScope | null {
+  const point = text.match(
+    /(\d+)\s*[-–—]?\s*[йи]\s+сет[\s\S]*?(\d+)\s*[-–—]?\s*[йи]\s+гейм[\s\S]*?(\d+)\s*[-–—]?\s*(?:[еейя]-?\s*)?очк/i,
+  );
+  if (point) {
+    const setIndex = Number(point[1]);
+    const gameIndex = Number(point[2]);
+    const pointIndex = Number(point[3]);
+    if (
+      Number.isFinite(setIndex) && setIndex >= 1
+      && Number.isFinite(gameIndex) && gameIndex >= 1
+      && Number.isFinite(pointIndex) && pointIndex >= 1
+    ) {
+      return { kind: "point", setIndex, gameIndex, pointIndex };
+    }
+  }
+
+  const game = text.match(
+    /(\d+)\s*[-–—]?\s*[йи]\s+сет[\s\S]*?(\d+)\s*[-–—]?\s*[йи]\s+гейм/i,
+  );
+  if (game) {
+    const setIndex = Number(game[1]);
+    const gameIndex = Number(game[2]);
+    if (
+      Number.isFinite(setIndex) && setIndex >= 1
+      && Number.isFinite(gameIndex) && gameIndex >= 1
+    ) {
+      return { kind: "game", setIndex, gameIndex };
+    }
+  }
+
   const set = text.match(/(\d+)-[йи]\s+сет/i);
   if (set) {
     const index = Number(set[1]);
@@ -38,6 +82,21 @@ function parseScopeFromParamTail(tail: string): MarketScope | null {
   }
 
   const setNum = Number(params.PARAMETER_SET_NUMBER);
+  const gameNum = Number(params.PARAMETER_GAME_NUMBER);
+  const pointNum = Number(params.PARAMETER_POINT_NUMBER);
+
+  if (
+    Number.isFinite(setNum) && setNum >= 1
+    && Number.isFinite(gameNum) && gameNum >= 1
+    && Number.isFinite(pointNum) && pointNum >= 1
+  ) {
+    return { kind: "point", setIndex: setNum, gameIndex: gameNum, pointIndex: pointNum };
+  }
+
+  if (Number.isFinite(setNum) && setNum >= 1 && Number.isFinite(gameNum) && gameNum >= 1) {
+    return { kind: "game", setIndex: setNum, gameIndex: gameNum };
+  }
+
   if (Number.isFinite(setNum) && setNum >= 1) return { kind: "set", index: setNum };
 
   const half = params.PARAMETER_HALF_NUMBER;
@@ -101,6 +160,72 @@ function periodRowsFromEvent(event: WcEvent): Array<[number, number]> {
     .filter(([home, away]) => Number.isFinite(home) && Number.isFinite(away));
 }
 
+function estimateTennisPointsPlayed(gameScoreRaw: string | null | undefined): number | null {
+  if (!gameScoreRaw?.trim()) return null;
+  const parts = gameScoreRaw.trim().split(":");
+  if (parts.length !== 2) return null;
+
+  const parseToken = (raw: string): number | null => {
+    const core = raw.replace(/\*/g, "").trim();
+    if (!core) return null;
+    if (core === "A" || core === "50") return 50;
+    const n = Number(core);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const home = parseToken(parts[0]!);
+  const away = parseToken(parts[1]!);
+  if (home == null || away == null) return null;
+
+  const homeRank = TENNIS_POINT_RANK[home];
+  const awayRank = TENNIS_POINT_RANK[away];
+  if (homeRank == null || awayRank == null) return null;
+  return homeRank + awayRank;
+}
+
+function resolveTennisLiveGameCursor(event: WcEvent): {
+  setIndex: number;
+  currentGameIndex: number;
+  pointsPlayed: number | null;
+} | null {
+  const periods = periodRowsFromEvent(event);
+  if (!periods.length) return null;
+
+  const setIndex = periods.length;
+  const current = periods[setIndex - 1]!;
+  const gamesCompleted = current[0] + current[1];
+  const liveScore =
+    event.parsedScore?.text?.liveScore
+    ?? (typeof event.parsedScore?.liveScore === "string" ? event.parsedScore.liveScore : null);
+
+  return {
+    setIndex,
+    currentGameIndex: gamesCompleted + 1,
+    pointsPlayed: estimateTennisPointsPlayed(liveScore),
+  };
+}
+
+function isTennisGameOrPointScopeFinalized(
+  event: WcEvent,
+  scope: Extract<MarketScope, { kind: "game" | "point" }>,
+): boolean {
+  if (event.completed) return true;
+
+  const cursor = resolveTennisLiveGameCursor(event);
+  if (!cursor) return false;
+
+  if (scope.setIndex < cursor.setIndex) return true;
+  if (scope.setIndex > cursor.setIndex) return false;
+
+  if (scope.gameIndex < cursor.currentGameIndex) return true;
+  if (scope.gameIndex > cursor.currentGameIndex) return false;
+
+  if (scope.kind === "game") return false;
+
+  if (cursor.pointsPlayed == null) return false;
+  return scope.pointIndex <= cursor.pointsPlayed;
+}
+
 export function isScopeFinalizedForEvent(event: WcEvent, scope: MarketScope): boolean {
   if (event.phase !== "live" || event.completed) return false;
 
@@ -121,6 +246,10 @@ export function isScopeFinalizedForEvent(event: WcEvent, scope: MarketScope): bo
       return false;
     }
     return event.completed;
+  }
+
+  if (scope.kind === "game" || scope.kind === "point") {
+    return isTennisGameOrPointScopeFinalized(event, scope);
   }
 
   return false;

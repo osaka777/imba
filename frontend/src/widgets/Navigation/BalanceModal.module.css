@@ -1,0 +1,287 @@
+.dialog {
+  width: min(400px, calc(100vw - 32px)) !important;
+  max-width: min(400px, calc(100vw - 32px)) !important;
+  max-height: min(86dvh, 720px) !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+  border-radius: 24px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28) !important;
+  /* Dialog itself must be the scrollport — nested overflow breaks mouse wheel
+     under Radix RemoveScroll (scrollbar drag still works, wheel does not). */
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  color: #111827;
+  font-family:
+    "SF Pro Display",
+    "Open Sans",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Helvetica Neue",
+    sans-serif !important;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+.dialog::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dialog::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 12px 0;
+}
+
+.dialog::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+}
+
+.dialog::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.75);
+}
+
+.dialog *,
+.dialog button,
+.dialog h2,
+.dialog h3,
+.dialog p,
+.dialog span {
+  font-family: inherit !important;
+  letter-spacing: normal;
+}
+
+.dialog :global(button[class*="closeBtn"]),
+.dialog :global(.closeBtn) {
+  color: #9ca3af !important;
+  right: 18px;
+  top: 18px;
+}
+
+/* Radix Dialog close is a direct button child */
+.dialog > button {
+  color: #9ca3af !important;
+}
+
+.dialog > button:hover {
+  color: #6b7280 !important;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 12px;
+  min-height: 0;
+  overflow: visible;
+  font-family: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding-right: 36px;
+  margin-bottom: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 600;
+  color: #111827;
+}
+
+.subtitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #9ca3af !important;
+  font-weight: 400;
+}
+
+.subtitleText {
+  color: #9ca3af !important;
+}
+
+.dot {
+  display: inline;
+  margin: 0 6px;
+  color: #9ca3af !important;
+}
+
+.mainAmount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 4px 0 18px;
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+.mainSymbol {
+  font-size: 0.72em;
+  font-weight: 600;
+}
+
+.depositBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 22px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.depositBtn:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.28);
+}
+
+.depositBtn:active {
+  transform: scale(0.99);
+}
+
+.depositPlus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.accountList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.accountRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid #eef2f6;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 400;
+  transition: background 0.12s ease;
+}
+
+.accountList li:last-child .accountRow {
+  border-bottom: none;
+}
+
+.accountRow:hover {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.accountIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f3f4f6;
+}
+
+.accountMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.accountName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.accountCode {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+.accountBalance {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 480px) {
+  .dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    border-radius: 20px !important;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .mainAmount {
+    font-size: 28px;
+  }
+
+  .root {
+    padding: 18px 16px 8px;
+  }
+}

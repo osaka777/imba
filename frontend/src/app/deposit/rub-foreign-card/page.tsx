@@ -5,10 +5,12 @@ import {
   getMyRubForeignCardOrder,
   uploadRubForeignCardReceipt,
 } from "~/entities/finance/api/deposit";
+import { useLocale } from "~/shared/model/useLocale";
 import { ManualForeignCardPage } from "~/entities/finance/ui/ManualForeignCardPage/ManualForeignCardPage";
 
 export default function RubForeignCardPage() {
   const router = useRouter();
+  const { t } = useLocale();
   return (
     <ManualForeignCardPage
       currency="RUB"
@@ -16,7 +18,7 @@ export default function RubForeignCardPage() {
       getMyOrder={getMyRubForeignCardOrder}
       method="RUB_FOREIGN_CARD"
       onPaymentCancelled={() => router.push("/")}
-      title="Пополнение — Перевод в RUB"
+      title={t("common.seoDepositRub")}
       uploadReceipt={uploadRubForeignCardReceipt}
     />
   );

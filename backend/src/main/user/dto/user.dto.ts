@@ -44,6 +44,10 @@ export class UserDto extends Dto<UserDto> {
 
   avatarPreset?: string | null;
 
+  avatarUrl?: string | null;
+
+  nickname?: string | null;
+
   @Exclude()
   password: string;
   updatedAt: Date;

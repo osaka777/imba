@@ -12,6 +12,6 @@ import { BtcUpdownService } from './btc-updown.service';
   imports: [PrismaModule, OperationModule, AuthenticationModule],
   controllers: [BtcUpdownController],
   providers: [BtcUpdownPriceService, BtcUpdownService],
-  exports: [BtcUpdownService],
+  exports: [BtcUpdownService, BtcUpdownPriceService],
 })
 export class BtcUpdownModule {}

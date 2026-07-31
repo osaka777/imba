@@ -3,6 +3,7 @@
 import { buildKickEmbedUrl } from "~/entities/wc-odds/lib/kickEmbedUrl";
 
 import type { KickPartnerWidget } from "~/entities/kick/api/client";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./PartnerKickPlayer.module.css";
 
@@ -12,6 +13,8 @@ type PartnerKickPlayerProps = {
 };
 
 export function PartnerKickPlayer({ partner, compact = false }: PartnerKickPlayerProps) {
+  const { t } = useLocale();
+
   if (!partner.channelSlug) return null;
 
   const embedUrl = buildKickEmbedUrl(partner.channelSlug);
@@ -21,7 +24,9 @@ export function PartnerKickPlayer({ partner, compact = false }: PartnerKickPlaye
     <div className={styles.partnerCard}>
       <div className={styles.header}>
         <p className={styles.title}>
-          {compact ? "Эфир партнёра" : `Стрим партнёра ${channelLabel}`}
+          {compact
+            ? t("cyber.kickPartnerAir")
+            : t("cyber.kickPartnerStream", { channel: channelLabel })}
         </p>
         <span className={styles.liveBadge}>LIVE</span>
       </div>

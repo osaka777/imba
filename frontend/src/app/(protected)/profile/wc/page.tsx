@@ -5,13 +5,15 @@ import Link from "next/link";
 
 import { fetchWcMyTournament } from "~/entities/wc-odds/api/client";
 import { getSessionClient } from "~/entities/user/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 export default function WcTournamentPage() {
+  const { t } = useLocale();
   const { data, isLoading, error } = useQuery({
     queryKey: ["wc-my-tournament"],
     queryFn: async () => {
       const token = getSessionClient();
-      if (!token) throw new Error("Необходима авторизация");
+      if (!token) throw new Error(t("coupon.wcAuthRequired"));
       return fetchWcMyTournament(token);
     },
     refetchInterval: 60_000,
@@ -20,7 +22,7 @@ export default function WcTournamentPage() {
   if (isLoading) {
     return (
       <div style={{ padding: "2rem", textAlign: "center" }}>
-        Загрузка…
+        {t("coupon.loadingShort")}
       </div>
     );
   }
@@ -28,7 +30,7 @@ export default function WcTournamentPage() {
   if (error || !data) {
     return (
       <div style={{ padding: "2rem", textAlign: "center", color: "#f87171" }}>
-        {error instanceof Error ? error.message : "Ошибка загрузки"}
+        {error instanceof Error ? error.message : t("coupon.wcLoadError")}
       </div>
     );
   }
@@ -38,7 +40,7 @@ export default function WcTournamentPage() {
   return (
     <div style={{ padding: "1.5rem", maxWidth: "720px", margin: "0 auto" }}>
       <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "1rem" }}>
-        Мой ЧМ-2026
+        {t("coupon.wcTitle")}
       </h1>
 
       <div
@@ -49,11 +51,11 @@ export default function WcTournamentPage() {
           marginBottom: "1.5rem",
         }}
       >
-        <StatCard label="Ставок" value={String(summary.totalBets)} />
-        <StatCard label="Выигрыши" value={String(summary.wins)} accent="#4ade80" />
-        <StatCard label="Проигрыши" value={String(summary.losses)} accent="#f87171" />
-        <StatCard label="В игре" value={String(summary.pending)} accent="#38bdf8" />
-        <StatCard label="Оборот" value={`${summary.totalStaked}`} />
+        <StatCard label={t("coupon.wcStatBets")} value={String(summary.totalBets)} />
+        <StatCard label={t("coupon.wcStatWins")} value={String(summary.wins)} accent="#4ade80" />
+        <StatCard label={t("coupon.wcStatLosses")} value={String(summary.losses)} accent="#f87171" />
+        <StatCard label={t("coupon.wcStatPending")} value={String(summary.pending)} accent="#38bdf8" />
+        <StatCard label={t("coupon.wcStatTurnover")} value={`${summary.totalStaked}`} />
         {summary.roiPercent != null ? (
           <StatCard
             label="ROI"
@@ -65,16 +67,29 @@ export default function WcTournamentPage() {
 
       {favoriteTeam ? (
         <p style={{ marginBottom: "1.5rem", color: "#94a3b8" }}>
-          Чаще всего ставите на: <strong style={{ color: "#e2e8f0" }}>{favoriteTeam.name}</strong>
+          {t("coupon.wcFavorite")}{" "}
+          <strong style={{ color: "#e2e8f0" }}>{favoriteTeam.name}</strong>
           {" "}({favoriteTeam.betCount})
         </p>
       ) : null}
 
-      <BetSection title="Активные ставки" bets={openBets} empty="Нет открытых ставок" />
-      <BetSection title="Недавние" bets={recentSettled} empty="Пока нет расчётов" />
+      <BetSection
+        title={t("coupon.wcOpenBets")}
+        bets={openBets}
+        empty={t("coupon.wcNoOpen")}
+        betFallback={t("coupon.wcBetFallback")}
+        toMatch={t("coupon.wcToMatch")}
+      />
+      <BetSection
+        title={t("coupon.wcRecent")}
+        bets={recentSettled}
+        empty={t("coupon.wcNoSettled")}
+        betFallback={t("coupon.wcBetFallback")}
+        toMatch={t("coupon.wcToMatch")}
+      />
 
       <Link href="/line/soccer" style={{ color: "#38bdf8", marginTop: "1.5rem", display: "inline-block" }}>
-        Перейти к линии ЧМ →
+        {t("coupon.wcGoLine")}
       </Link>
     </div>
   );
@@ -108,6 +123,8 @@ function BetSection({
   title,
   bets,
   empty,
+  betFallback,
+  toMatch,
 }: {
   title: string;
   bets: Array<{
@@ -119,6 +136,8 @@ function BetSection({
     event?: { homeTeam?: string; awayTeam?: string; slug?: string } | null;
   }>;
   empty: string;
+  betFallback: string;
+  toMatch: string;
 }) {
   return (
     <section style={{ marginBottom: "1.5rem" }}>
@@ -141,14 +160,14 @@ function BetSection({
                 {bet.event?.homeTeam} — {bet.event?.awayTeam}
               </div>
               <div style={{ fontSize: "0.875rem", color: "#94a3b8", marginTop: "0.25rem" }}>
-                {bet.outcomeName || "Ставка"} @ {bet.odds} · {bet.stake} · {bet.status}
+                {bet.outcomeName || betFallback} @ {bet.odds} · {bet.stake} · {bet.status}
               </div>
               {bet.event?.slug ? (
                 <Link
                   href={`/game/${bet.event.slug}`}
                   style={{ fontSize: "0.8rem", color: "#38bdf8", marginTop: "0.35rem", display: "inline-block" }}
                 >
-                  К матчу
+                  {toMatch}
                 </Link>
               ) : null}
             </li>

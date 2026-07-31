@@ -1,0 +1,194 @@
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: calc(100dvh - 140px);
+  padding: 48px 20px 64px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 20% auto auto 50%;
+  width: min(520px, 90vw);
+  height: 280px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgb(16 141 231 / 0.28) 0%,
+    rgb(8 85 196 / 0.12) 42%,
+    transparent 72%
+  );
+  filter: blur(8px);
+  animation: glowPulse 4.5s ease-in-out infinite;
+}
+
+.art {
+  position: relative;
+  width: min(280px, 72vw);
+  margin-bottom: 8px;
+  animation: artFloat 5s ease-in-out infinite;
+}
+
+.art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.code {
+  position: relative;
+  margin: 0;
+  font-size: clamp(72px, 18vw, 120px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  background: linear-gradient(
+    180deg,
+    #ffffff 12%,
+    var(--blue-50) 48%,
+    var(--blue-40) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: codeIn 0.55s ease-out both;
+}
+
+.title {
+  position: relative;
+  margin: 16px 0 0;
+  font-size: clamp(18px, 4.2vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  animation: fadeUp 0.5s ease-out 0.08s both;
+}
+
+.desc {
+  position: relative;
+  max-width: 360px;
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.55);
+  animation: fadeUp 0.5s ease-out 0.14s both;
+}
+
+.cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 14px 36px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--blue-40) 0%, var(--blue-30) 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  box-shadow: 0 10px 28px rgb(8 85 196 / 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+  animation: fadeUp 0.5s ease-out 0.2s both;
+}
+
+.cta:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 12px 32px rgb(8 85 196 / 0.45);
+  transform: translateY(-1px);
+}
+
+.cta:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.links {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  margin-top: 22px;
+  animation: fadeUp 0.5s ease-out 0.26s both;
+}
+
+.link {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.45);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.link:hover {
+  color: var(--blue-50);
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.06);
+  }
+}
+
+@keyframes artFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes codeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    min-height: calc(100dvh - 180px);
+    padding: 32px 16px 48px;
+  }
+
+  .cta {
+    width: 100%;
+    max-width: 320px;
+  }
+}

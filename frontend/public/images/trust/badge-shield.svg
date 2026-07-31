@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <path d="M24 2L42 10v14c0 12-8 20-18 22C14 44 6 36 6 24V10L24 2z" fill="#1a2332" stroke="#c9a227" stroke-width="2"/>
+  <text x="24" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.5" font-weight="700" fill="#e8c547">CRICKET</text>
+  <text x="24" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-size="5" font-weight="600" fill="#fff">Betting.org</text>
+  <circle cx="24" cy="36" r="3" fill="#e8c547"/>
+  <path d="M22 36h4M24 34v4" stroke="#1a2332" stroke-width="1"/>
+</svg>

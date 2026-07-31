@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-
-import { LoadingScreen } from "~/shared/ui";
-import { fetchWcEventDetail, type WcEventDetail } from "~/entities/wc-odds/api/client";
-import { mergeWcEventDetail } from "~/entities/wc-odds/lib/wcEventDetail";
-import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
-import { useWcOddsEventStream } from "~/entities/wc-odds/lib/useWcOddsStream";
-import { wcOddsFeedStore } from "~/entities/wc-odds/lib/wcOddsFeedStore";
-import { useLocale } from "~/shared/model/useLocale";
-import { WcScoreBoard } from "~/entities/wc-odds/ui/WcScoreBoard";
-import { WcOddsSection } from "~/entities/wc-odds/ui/WcOddsSection";
-import { WcMatchTelegramSubscribe } from "~/entities/wc-odds/ui/WcMatchTelegramSubscribe";
+import { useEffect, useState } from "react";
 
 import matchStyles from "~/entities/game/ui/Match/Match.module.css";
+import { type WcEventDetail, fetchWcEventDetail } from "~/entities/wc-odds/api/client";
+import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
+import { useWcLiveTrackerContext } from "~/entities/wc-odds/lib/WcLiveTrackerContext";
+import { useWcLiveTracker } from "~/entities/wc-odds/lib/useWcLiveTracker";
+import { useWcOddsEventStream } from "~/entities/wc-odds/lib/useWcOddsStream";
+import { mergeWcEventDetail } from "~/entities/wc-odds/lib/wcEventDetail";
+import { wcOddsFeedStore } from "~/entities/wc-odds/lib/wcOddsFeedStore";
 import pageStyles from "~/entities/wc-odds/ui/WcMatchPage.module.css";
+import { WcMatchTelegramSubscribe } from "~/entities/wc-odds/ui/WcMatchTelegramSubscribe";
+import { WcOddsSection } from "~/entities/wc-odds/ui/WcOddsSection";
+import { WcScoreBoard } from "~/entities/wc-odds/ui/WcScoreBoard";
+import { useLocale } from "~/shared/model/useLocale";
+import { LoadingScreen } from "~/shared/ui";
 
 function broadcastMeta(event: WcEventDetail) {
   return {
@@ -26,27 +27,27 @@ function broadcastMeta(event: WcEventDetail) {
 }
 
 type WcMatchPageProps = {
-  slug: string;
   initialData?: WcEventDetail | null;
   /** @deprecated kept for call-site compat */
   initialSynced?: boolean;
+  slug: string;
 };
 
 export function WcMatchPage({
-  slug,
   initialData,
+  slug,
 }: WcMatchPageProps) {
   const broadcast = useWcBroadcast();
   const register = broadcast?.register;
   const unregister = broadcast?.unregister;
   const openBroadcast = broadcast?.openBroadcast;
   const { locale, ready: localeReady, t } = useLocale();
-  const { event, connected, setEvent, marketsReady } = useWcOddsEventStream(
+  const { connected, event, marketsReady, setEvent } = useWcOddsEventStream(
     slug,
     initialData ?? null,
   );
   const [loading, setLoading] = useState(!initialData);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
 
   // Locale-aware labels only — does not gate betting.
   // Skip redundant HTTP when SSR already provided the event.
@@ -144,6 +145,33 @@ export function WcMatchPage({
     register(slug, true, broadcastMeta(event));
   }, [slug, event?.awayTeam, event?.homeTeam, event?.leagueName, event?.hasBroadcast, register]);
 
+  const trackerCtx = useWcLiveTrackerContext();
+  // Pull the stable register/unregister fns out rather than depending on the
+  // whole context value — that value's identity changes on every register()
+  // call, which previously caused this effect to loop forever (register →
+  // new context value → effect re-fires → unregister → register → ...).
+  const trackerRegister = trackerCtx?.register;
+  const trackerUnregister = trackerCtx?.unregister;
+  const trackerUrl = useWcLiveTracker(event?.slug || slug, event?.phase === "live");
+
+  useEffect(() => {
+    if (!trackerRegister || !trackerUnregister) return undefined;
+    if (!trackerUrl) {
+      trackerUnregister(slug);
+      return () => trackerUnregister(slug);
+    }
+    trackerRegister(slug, trackerUrl, event ? broadcastMeta(event) : undefined);
+    return () => trackerUnregister(slug);
+  }, [
+    slug,
+    trackerUrl,
+    trackerRegister,
+    trackerUnregister,
+    event?.homeTeam,
+    event?.awayTeam,
+    event?.leagueName,
+  ]);
+
   if (loading && !event && !initialData) {
     return <LoadingScreen />;
   }
@@ -152,7 +180,7 @@ export function WcMatchPage({
     return (
       <div className={matchStyles.err}>
         <p>{error || t("common.matchNotFound")}</p>
-        <Link href="/line/soccer" className="text-blue-400 underline mt-4 inline-block">
+        <Link className="text-blue-400 underline mt-4 inline-block" href="/line/soccer">
           {t("common.backToLine")}
         </Link>
       </div>
@@ -179,18 +207,19 @@ export function WcMatchPage({
         telegramAction={
           <WcMatchTelegramSubscribe eventRef={event.slug || slug} variant="meta" />
         }
+        trackerUrl={trackerUrl}
       />
       <section className={matchStyles.TournamentOdds}>
         {event.completed || event.phase === "finished" ? (
           <div className={pageStyles.finishedState}>
-            <strong>Матч завершён</strong>
-            <span>Итоговый счёт, периоды и доступная статистика показаны выше.</span>
-            <Link href="/results">Вернуться к результатам</Link>
+            <strong>{t("wc.matchFinished")}</strong>
+            <span>{t("wc.finishedHint")}</span>
+            <Link href="/results">{t("wc.backToResults")}</Link>
           </div>
         ) : oddsUnlocked ? (
           <WcOddsSection event={event} />
         ) : (
-          <div className={pageStyles.marketsSyncing} aria-busy="true">
+          <div aria-busy="true" className={pageStyles.marketsSyncing}>
             <div className={pageStyles.marketsSyncingBar} />
             <div className={pageStyles.marketsSyncingBar} />
             <div className={pageStyles.marketsSyncingBar} />

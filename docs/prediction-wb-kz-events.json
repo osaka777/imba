@@ -1,0 +1,19 @@
+[
+  {
+    "slug": "wb-kz-warehouses-oct-2026",
+    "title": "WB займёт склады Казахстана?",
+    "titleEn": "Will WB take Kazakhstan's warehouses?",
+    "description": "До 31 октября 2026 Wildberries официально арендует в Казахстане склады на 20 000 м² или больше. Считается только подтверждённая аренда. Собственные стройки WB в Алматы и Астане — не считаются.",
+    "descriptionEn": "By October 31, 2026 Wildberries officially leases 20,000 m² or more of warehouse space in Kazakhstan. Only a confirmed lease counts. WB's own builds in Almaty and Astana do not count.",
+    "category": "Экономика",
+    "resolveRule": "ДА — если до 23:59 31.10.2026 (по Астане) Wildberries/RWB подтвердит аренду складских площадей в Казахстане суммарно ≥20 000 м²: официальный пресс-релиз компании ИЛИ публикации минимум двух из источников (Kursiv, Коммерсантъ, Reuters, Interfax) с указанием площади и факта заключённой аренды. Собственные строящиеся/вводимые объекты WB (Алматы, Астана и др.) НЕ считаются. Письма о намерениях, «ведёт переговоры», «ищет площади», бронирование без договора — НЕ считаются. Иначе — НЕТ.",
+    "resolveRuleEn": "YES — if by 23:59 Oct 31, 2026 (Astana time) Wildberries/RWB confirms leased warehouse space in Kazakhstan totalling ≥20,000 m²: an official company press release OR reports by at least two of (Kursiv, Kommersant, Reuters, Interfax) stating the area and the signed lease. WB's own facilities under construction or commissioning (Almaty, Astana, etc.) do NOT count. Letters of intent, \"in talks\", \"searching for space\", holds without a signed lease do NOT count. Otherwise — NO.",
+    "closesAt": "2026-10-31T18:59:00.000Z",
+    "resolvesAt": "2026-11-07T12:00:00.000Z",
+    "outcomes": [
+      { "key": "yes", "label": "Да", "labelEn": "Yes", "odds": 2.9, "sortOrder": 0 },
+      { "key": "no", "label": "Нет", "labelEn": "No", "odds": 1.38, "sortOrder": 1 }
+    ],
+    "publish": false
+  }
+]

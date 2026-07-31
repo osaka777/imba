@@ -5,6 +5,7 @@ import { v4 as uuid4 } from 'uuid';
 import { Logger } from 'winston';
 import { Data, WebSocket } from 'ws';
 import { GameService } from '../game/game.service';
+import { isAiBotUserAgent } from '../../common/security/ai-bot-detection.util';
 
 @WebSocketGateway({
   path: '/api/events',
@@ -392,6 +393,12 @@ export class EventGateway implements OnGatewayConnection, OnGatewayDisconnect, O
    * @param {IncomingMessage} request - The incoming request object.
    */
   async handleConnection(socket: WebSocket, request: IncomingMessage) {
+    // Refuse AI agents/crawlers from inspecting the events sync protocol.
+    if (isAiBotUserAgent(request.headers['user-agent'])) {
+      socket.close(4403, 'AI_ACCESS_DENIED');
+      return;
+    }
+
     const defaultLogMeta = {
       class: 'EventGateway',
       method: 'handleConnection',
@@ -590,25 +597,6 @@ export class EventGateway implements OnGatewayConnection, OnGatewayDisconnect, O
     let failedCount = 0;
     let totalClients = 0;
 
-    this.logger.log('[BET_NOTIFICATION] Sending user notification:', {
-      userId,
-      type: notification.type,
-      totalClients: this.connectedClients.size,
-      notification: JSON.stringify(notification)
-    });
-
-    // Логируем всех подключенных клиентов
-    const clientsList: any[] = [];
-    this.connectedClients.forEach(({ userId: clientUserId, socket }, clientId) => {
-      clientsList.push({
-        clientId,
-        userId: clientUserId,
-        hasUserId: !!clientUserId,
-        socketState: socket.readyState
-      });
-    });
-    this.logger.log('[BET_NOTIFICATION] Connected clients:', clientsList);
-
     this.connectedClients.forEach(({ userId: clientUserId, socket }, clientId) => {
       totalClients++;
       
@@ -620,12 +608,6 @@ export class EventGateway implements OnGatewayConnection, OnGatewayDisconnect, O
         });
         return;
       }
-
-      this.logger.log('[BET_NOTIFICATION] Sending notification to client', { 
-        clientId, 
-        userId,
-        type: notification.type 
-      });
 
       if (this.send(socket, notification)) {
         sentCount++;

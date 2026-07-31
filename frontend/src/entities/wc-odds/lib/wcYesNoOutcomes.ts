@@ -23,7 +23,8 @@ export function isYesNoLikeGroup(group: WcMarketGroup): boolean {
 export function isYesOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey === "YES" || /^DISPLAY_YES/i.test(outcome.outcomeKey)) return true;
 
-  const name = outcome.name.trim();
+  const name = (outcome.name ?? "").trim();
+  if (!name) return false;
   if (/^да$/i.test(name) || /^да[:\s·-]/i.test(name)) return true;
   if (/\bда\b/i.test(name) && !/\bнет\b/i.test(name)) return true;
 
@@ -36,7 +37,8 @@ export function isYesOutcome(outcome: WcMarketOutcome): boolean {
 export function isNoOutcome(outcome: WcMarketOutcome): boolean {
   if (outcome.outcomeKey === "NO" || /^DISPLAY_NO/i.test(outcome.outcomeKey)) return true;
 
-  const name = outcome.name.trim();
+  const name = (outcome.name ?? "").trim();
+  if (!name) return false;
   if (/^нет$/i.test(name) || /^нет[:\s·-]/i.test(name)) return true;
   if (/\bнет\b/i.test(name) && !/\bда\b/i.test(name)) return true;
 

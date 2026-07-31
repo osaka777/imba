@@ -18,6 +18,7 @@ import {
 } from "./welcomeBonusDeposit";
 import { formatWelcomeMoney, getWelcomeLimit } from "./welcomeBonusLimits";
 import { WELCOME_BONUS_STICKY_BANNER_ENABLED } from "./welcomeBonusCopy";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./WelcomeBonusStickyBanner.module.css";
 
@@ -33,6 +34,7 @@ type BonusBalance = {
 };
 
 export function WelcomeBonusStickyBanner() {
+  const { t } = useLocale();
   const { isAuth } = useAuth();
   const { currency } = useCurrency();
   const pathname = usePathname();
@@ -79,8 +81,8 @@ export function WelcomeBonusStickyBanner() {
   }, [visible, bonus?.expiresAt]);
 
   const timeLeft = useMemo(
-    () => formatBonusTimeLeft(bonus?.expiresAt),
-    [bonus?.expiresAt, tick],
+    () => formatBonusTimeLeft(bonus?.expiresAt, t),
+    [bonus?.expiresAt, tick, t],
   );
 
   const wagerPct = getWagerProgressPercent(bonus?.totalWagered, bonus?.requiredWager);
@@ -93,7 +95,7 @@ export function WelcomeBonusStickyBanner() {
 
   return (
     <>
-      <div className={styles.bar} role="region" aria-label="Welcome-бонус">
+      <div className={styles.bar} role="region" aria-label={t("promo.welcomeStickyAria")}>
         <div className={styles.inner}>
           <div className={styles.icon} aria-hidden>
             🎁
@@ -101,24 +103,21 @@ export function WelcomeBonusStickyBanner() {
           <div className={styles.body}>
             <div className={styles.titleRow}>
               <p className={styles.title}>
-                {locked ? "Welcome-бонус ждёт депозита" : "Отыгрыш welcome-бонуса"}
+                {locked ? t("promo.welcomeStickyLockedTitle") : t("promo.welcomeStickyWagerTitle")}
               </p>
               <span className={styles.badge}>40%</span>
             </div>
             <p className={styles.subtitle}>
-              {locked ? (
-                <>
-                  Пополни от{" "}
-                  <strong>{formatWelcomeMoney(limit.minDeposit, limit.currency)}</strong>
-                  {" "}— получи до{" "}
-                  <strong>{formatWelcomeMoney(limit.maxBonus, limit.currency)}</strong> бонусом
-                </>
-              ) : (
-                <>
-                  Осталось отыграть {100 - wagerPct}% · бонус{" "}
-                  <strong>{bonus?.amount}</strong> {currency}
-                </>
-              )}
+              {locked
+                ? t("promo.welcomeStickyLockedSub", {
+                    min: formatWelcomeMoney(limit.minDeposit, limit.currency),
+                    max: formatWelcomeMoney(limit.maxBonus, limit.currency),
+                  })
+                : t("promo.welcomeStickyWagerSub", {
+                    pct: 100 - wagerPct,
+                    amount: bonus?.amount ?? "",
+                    currency,
+                  })}
               {timeLeft ? (
                 <>
                   {" · "}
@@ -134,14 +133,14 @@ export function WelcomeBonusStickyBanner() {
           </div>
           <div className={styles.actions}>
             <button type="button" className={styles.cta} onClick={goDeposit}>
-              {locked ? "Пополнить" : "В профиль"}
+              {locked ? t("promo.welcomeStickyDeposit") : t("promo.welcomeStickyProfile")}
             </button>
             <button
               type="button"
               className={styles.linkBtn}
               onClick={() => setModalOpen(true)}
             >
-              Условия
+              {t("promo.welcomeStickyTerms")}
             </button>
           </div>
         </div>

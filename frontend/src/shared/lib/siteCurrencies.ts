@@ -1,5 +1,11 @@
-/** Temporarily hidden from registration and currency selectors. */
-export const HIDDEN_SITE_CURRENCY_CODES = [
+/** Reserved for temporarily hiding currencies from selectors. */
+export const HIDDEN_SITE_CURRENCY_CODES = [] as const;
+
+/** Active currencies on imba.bet (USD removed — use USDT). */
+export const VISIBLE_SITE_CURRENCY_CODES = [
+  "USDT",
+  "KZT",
+  "RUB",
   "UAH",
   "TRY",
   "UZS",
@@ -7,9 +13,6 @@ export const HIDDEN_SITE_CURRENCY_CODES = [
   "KGS",
   "TJS",
 ] as const;
-
-/** Active currencies on imba.bet (USD removed — use USDT). */
-export const VISIBLE_SITE_CURRENCY_CODES = ["KZT", "RUB", "USDT"] as const;
 
 /** Shown in header selector, registration, profile switcher. */
 export const SITE_CURRENCY_CODES = VISIBLE_SITE_CURRENCY_CODES;
@@ -25,9 +28,7 @@ export type SiteCurrencyCode = (typeof ALL_SITE_CURRENCY_CODES)[number];
 export const DEFAULT_SITE_CURRENCY: VisibleSiteCurrencyCode = "KZT";
 
 export function isHiddenSiteCurrency(code: string): boolean {
-  return HIDDEN_SITE_CURRENCY_CODES.includes(
-    code.toUpperCase() as (typeof HIDDEN_SITE_CURRENCY_CODES)[number],
-  );
+  return (HIDDEN_SITE_CURRENCY_CODES as readonly string[]).includes(code.toUpperCase());
 }
 
 export function isVisibleSiteCurrency(code: string): boolean {

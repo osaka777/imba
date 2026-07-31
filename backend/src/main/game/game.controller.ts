@@ -40,6 +40,7 @@ function formatAlmatyDate(date: Date): string {
 import { GameMarketsService } from './game-markets.service';
 import { EventMarketsService } from './event-markets.service';
 import { MatchResultsService } from './match-results.service';
+import { CybersportService } from '~/integrations/cybersport/cybersport.service';
 
 @ApiTags('Game')
 @Controller('')
@@ -53,6 +54,7 @@ export class GameController {
     private readonly matchResultsService: MatchResultsService,
     private readonly prismaService: PrismaService,
     private readonly betApiService: BetApiService,
+    private readonly cybersportService: CybersportService,
   ) {}
 
   @Patch('/game/:eventId/:priority')
@@ -212,6 +214,12 @@ export class GameController {
   ): Promise<GameDtoWithGroupedMarkets> {
     try {
       this.logger.log(`Requested game with id: ${eventId}`);
+
+      if (eventId.startsWith('cyber-')) {
+        const cyberGame = await this.cybersportService.getGame(eventId);
+        if (cyberGame) return cyberGame;
+        throw new NotFoundException(`Cybersport game ${eventId} not found`);
+      }
       
       // Получаем базовую информацию об игре из базы данных
       const { markets, groupedMarkets, ...game } = await this.gameService.getGame(eventId);

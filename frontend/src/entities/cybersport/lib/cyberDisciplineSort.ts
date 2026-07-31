@@ -1,16 +1,16 @@
 import type { CyberDisciplineConfig } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import type { CyberSportItem } from "~/entities/cybersport/lib/cyberSportsList";
 
-/** Popular disciplines — fixed order when shown in menus. */
+/** Popular disciplines — fixed order when shown in menus (1win only). */
 export const CYBER_TOP_API_SPORTS: readonly string[] = [
   "esports.cs",
   "esports.dota2",
   "esports.valorant",
   "esports.lol",
-  "esports.r6",
   "esports.mobile-legends",
-  "esports.cod",
+  "esports.kog",
   "esports.overwatch2",
+  "esports.r6",
 ];
 
 export const CYBER_FILTER_QUICK_LIMIT = 8;
@@ -113,9 +113,17 @@ export function pickQuickCyberSports(
 export function cyberMoreSports(
   sorted: CyberSportItem[],
   quick: CyberSportItem[],
+  counts?: Record<string, number>,
 ): CyberSportItem[] {
   const quickSet = new Set(quick.map((item) => item.name));
-  return sorted.filter((item) => !quickSet.has(item.name));
+  return sorted.filter((item) => {
+    if (quickSet.has(item.name)) return false;
+    // Hide empty 1win slots from «Ещё» unless we have no counts yet.
+    if (counts && Object.keys(counts).length > 0) {
+      return (counts[item.name] ?? 0) > 0;
+    }
+    return true;
+  });
 }
 
 export function countActiveCyberDisciplines(counts: Record<string, number>): number {

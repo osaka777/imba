@@ -10,6 +10,8 @@ import {
   type RegistrationCountry,
 } from "~/entities/user/lib/registrationCountries";
 
+import { useLocale } from "~/shared/model/useLocale";
+
 import { RegistrationCountryFlag } from "./RegistrationCountryFlag";
 import styles from "./RegistrationCurrencyModal.module.css";
 
@@ -26,6 +28,7 @@ export function RegistrationCountryModal({
   value,
   onSelect,
 }: RegistrationCountryModalProps) {
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export function RegistrationCountryModal({
         >
           <div className={styles.registrationCurrencyModal_header}>
             <DialogPrimitive.Title className={styles.registrationCurrencyModal_title}>
-              Выбор страны
+              {t("auth.selectCountry")}
             </DialogPrimitive.Title>
           </div>
 
@@ -71,7 +74,7 @@ export function RegistrationCountryModal({
               autoFocus
               className={styles.registrationCurrencyModal_searchInput}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск"
+              placeholder={t("auth.search")}
               type="search"
               value={query}
             />
@@ -109,12 +112,12 @@ export function RegistrationCountryModal({
             </ul>
           ) : (
             <p className={styles.registrationCurrencyModal_empty}>
-              Ничего не найдено
+              {t("auth.nothingFound")}
             </p>
           )}
 
           <DialogPrimitive.Close
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
             className={styles.registrationCurrencyModal_close}
           >
             <FiX aria-hidden />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useMemo } from "react";
 import { useLocale } from "~/shared/model/useLocale";
 
+import type { AppLocale } from "~/shared/i18n";
 import { gamesList } from "~/entities/game/lib/gamesList";
 import type { SocialPulseItem } from "~/entities/social-pulse/api/client";
 import type { WcEvent } from "~/entities/wc-odds/api/client";
@@ -24,6 +25,7 @@ import {
   type TopEventItem,
 } from "~/entities/wc-odds/ui/topEventsUtils";
 import { BroadcastIcon, CSIcon, StatsIcon } from "~/shared/assets";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { cn } from "~/shared/lib";
 
 import styles from "~/entities/wc-odds/ui/WcTopEventCard.module.css";
@@ -35,7 +37,7 @@ type WcTopEventCardProps = {
   pulse?: SocialPulseItem;
 };
 
-function resolveCardMeta(item: TopEventItem, locale: "ru" | "en" = "ru") {
+function resolveCardMeta(item: TopEventItem, locale: AppLocale = "ru") {
   if (item.kind === "wc") {
     const event = item.event;
     const isLive = event.phase === "live";
@@ -75,10 +77,7 @@ function resolveCardMeta(item: TopEventItem, locale: "ru" | "en" = "ru") {
     awayIcon: event.team2Icon ?? null,
     isLive: item.isLive,
     hasStats: false,
-    hasBroadcast: Boolean(
-      (event.meta as { hasBroadcast?: boolean; wcHasBroadcast?: boolean } | undefined)?.hasBroadcast
-      || (event.meta as { wcHasBroadcast?: boolean } | undefined)?.wcHasBroadcast,
-    ),
+    hasBroadcast: cyberGameHasVideo(event),
     oddsHome: odds.home,
     oddsDraw: odds.draw,
     oddsAway: odds.away,
@@ -91,7 +90,7 @@ function resolveCardMeta(item: TopEventItem, locale: "ru" | "en" = "ru") {
 function resolveScoreBlock(
   item: TopEventItem,
   isLive: boolean,
-  locale: "ru" | "en" = "ru",
+  locale: AppLocale = "ru",
 ) {
   if (item.kind === "wc") {
     const event = item.event;
@@ -142,7 +141,7 @@ export const WcTopEventCard = memo(function WcTopEventCard({
   item,
   pulse,
 }: WcTopEventCardProps) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const meta = useMemo(() => resolveCardMeta(item, locale), [item, locale]);
   const isTwoWay = topEventIsTwoWay(item);
   const scoreBlock = useMemo(
@@ -158,24 +157,21 @@ export const WcTopEventCard = memo(function WcTopEventCard({
   }, [meta.oddsAway, meta.oddsDraw, meta.oddsHome]);
   const pulseCopy = useMemo(() => {
     if (!pulse || pulseProbability === null) return null;
-    if (locale === "en") {
-      return {
-        count: pulse.betCount,
-        noun: pulse.betCount === 1 ? "bet" : "bets",
-        title: "Match pulse",
-        chance: "line",
-      };
-    }
     const mod10 = pulse.betCount % 10;
     const mod100 = pulse.betCount % 100;
-    const noun =
+    const nounKey =
       mod10 === 1 && mod100 !== 11
-        ? "ставка"
+        ? "wc.betWord1"
         : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
-          ? "ставки"
-          : "ставок";
-    return { count: pulse.betCount, noun, title: "Пульс матча", chance: "по линии" };
-  }, [locale, pulse, pulseProbability]);
+          ? "wc.betWord2"
+          : "wc.betWord5";
+    return {
+      count: pulse.betCount,
+      noun: t(nounKey),
+      title: t("wc.matchPulse"),
+      chance: t("wc.byLine"),
+    };
+  }, [pulse, pulseProbability, t]);
 
   return (
     <article className={cn(styles.card, pulseCopy && styles.card_pulse)}>
@@ -203,7 +199,7 @@ export const WcTopEventCard = memo(function WcTopEventCard({
       ) : meta.badge ? (
         <div aria-hidden className={styles.topCap}>
           <span className={`${styles.topCapLine} ${styles.topCapLine_left}`} />
-          <span className={styles.topBadge}>Имба</span>
+          <span className={styles.topBadge}>{t("wc.imbaBadge")}</span>
           <span className={`${styles.topCapLine} ${styles.topCapLine_right}`} />
         </div>
       ) : null}
@@ -218,12 +214,12 @@ export const WcTopEventCard = memo(function WcTopEventCard({
         {(meta.hasStats || meta.hasBroadcast) && (
           <div className={styles.headIcons}>
             {meta.hasStats && (
-              <span className={styles.headIcon} title="Статистика">
+              <span className={styles.headIcon} title={t("wc.stats")}>
                 <StatsIcon className={styles.headIconSvg} />
               </span>
             )}
             {meta.hasBroadcast && (
-              <span className={styles.headIcon} title="Трансляция">
+              <span className={styles.headIcon} title={t("wc.broadcastShort")}>
                 <BroadcastIcon className={styles.headIconSvg} />
               </span>
             )}

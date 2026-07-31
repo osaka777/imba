@@ -1,11 +1,24 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/widgets/Button'
-import { Table } from '@/widgets/Table'
-import { toast } from 'react-toastify'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import {
+  ArrowDownCircle,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react'
 import { AuthGuard } from '@/shared/components/AuthGuard'
 import { apiCall } from '@/shared/utils/api'
+import { formatMoney } from '@/shared/lib/format'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { KpiCard } from '@/shared/ui/KpiCard'
+import { LoadingBlock } from '@/shared/ui/LoadingBlock'
+import { PageHeader } from '@/shared/ui/PageHeader'
+import { PageShell } from '@/shared/ui/PageShell'
+import { toast } from 'react-toastify'
 
 interface Withdrawal {
   id: string
@@ -13,461 +26,357 @@ interface Withdrawal {
   userEmail: string
   amount: number
   currency: string
+  currencyCode?: string
   method: string
   cardNumber: string
   cardType?: string
   reason?: string
   createdAt: string
   status: string
-  processedAt?: string
   isAffiliate?: boolean
   requiresReview?: boolean
-  meta?: {
-    method?: string
-    cardType?: string
-    cardNumber?: string
-    title?: string
-    withdrawalId?: number
-  }
 }
 
-// Основные методы вывода
-const WITHDRAWAL_METHODS = {
-  CARD: 'CARD',
-  CRYPTO: 'CRYPTO'
-}
-
-// Типы карт и криптовалют (соответствует enum CardType в backend)
-const CARD_TYPES = {
-  FOREIGN: 'FOREIGN',
-  KAZAKHSTAN: 'KAZAKHSTAN',
-  TRC20: 'TRC20',
-  TRON: 'TRON'
-}
-
-// Названия методов
-const METHOD_NAMES = {
-  [WITHDRAWAL_METHODS.CARD]: 'Банковская карта',
-  [WITHDRAWAL_METHODS.CRYPTO]: 'Криптовалюта',
+const METHOD_NAMES: Record<string, string> = {
+  CARD: 'Банковская карта',
+  CRYPTO: 'Криптовалюта',
   affiliate: 'Партнёрский (USDT)',
 }
 
-// Названия типов карт и криптовалют
-const CARD_TYPE_NAMES = {
-  [CARD_TYPES.FOREIGN]: 'Зарубежная карта',
-  [CARD_TYPES.KAZAKHSTAN]: 'Карта Казахстана',
-  [CARD_TYPES.TRC20]: 'TRC-20',
-  [CARD_TYPES.TRON]: 'TRON'
+const CARD_TYPE_NAMES: Record<string, string> = {
+  FOREIGN: 'Зарубежная карта',
+  KAZAKHSTAN: 'Карта Казахстана',
+  RUSSIA: 'Карта России',
+  TRC20: 'TRC-20',
+  TRON: 'TRON',
 }
 
-// Для обратной совместимости со старыми типами
-const LEGACY_WITHDRAWAL_TYPES = {
-  CARD: 'card',
-  CARDS_RU: 'cards_ru',
-  CARDS_FOREIGN: 'cards_foreign',
-  CARDS_KZ: 'cards_kz',
-  CARDS_UA: 'cards_ua',
-  SBP: 'sbp',
-  USDT: 'usdt',
-  USDT_TRC20: 'usdt_trc20',
-  USDT_TRON: 'usdt_tron',
-  NIRVANAPAY: 'NIRVANAPAY',
-  MANUAL: 'manual'
+type StatusFilter = 'all' | 'pending' | 'processing' | 'completed' | 'rejected'
+
+function statusBadgeClass(status: string) {
+  switch (status) {
+    case 'pending':
+      return 'bg-amber-50 text-amber-700'
+    case 'processing':
+      return 'bg-sky-50 text-sky-700'
+    case 'completed':
+      return 'bg-emerald-50 text-emerald-700'
+    case 'rejected':
+      return 'bg-rose-50 text-rose-700'
+    default:
+      return 'bg-slate-100 text-slate-600'
+  }
 }
 
-const LEGACY_TYPE_NAMES = {
-  [LEGACY_WITHDRAWAL_TYPES.CARD]: 'Карта',
-  [LEGACY_WITHDRAWAL_TYPES.CARDS_RU]: 'Карта (РФ)',
-  [LEGACY_WITHDRAWAL_TYPES.CARDS_FOREIGN]: 'Карта (Зарубеж)',
-  [LEGACY_WITHDRAWAL_TYPES.CARDS_KZ]: 'Карта (Казахстан)',
-  [LEGACY_WITHDRAWAL_TYPES.CARDS_UA]: 'Карта (Украина)',
-  [LEGACY_WITHDRAWAL_TYPES.SBP]: 'СБП',
-  [LEGACY_WITHDRAWAL_TYPES.USDT]: 'USDT',
-  [LEGACY_WITHDRAWAL_TYPES.USDT_TRC20]: 'USDT TRC-20',
-  [LEGACY_WITHDRAWAL_TYPES.USDT_TRON]: 'USDT TRON',
-  [LEGACY_WITHDRAWAL_TYPES.NIRVANAPAY]: 'NirvanaPay (KZT)',
-  [LEGACY_WITHDRAWAL_TYPES.MANUAL]: 'Ручной'
+function statusLabel(status: string) {
+  switch (status) {
+    case 'pending':
+      return 'Ожидает'
+    case 'processing':
+      return 'В обработке'
+    case 'completed':
+      return 'Выполнен'
+    case 'rejected':
+      return 'Отклонён'
+    default:
+      return status
+  }
 }
 
 export default function WithdrawalsPage() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
-  const [filteredWithdrawals, setFilteredWithdrawals] = useState<Withdrawal[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeFilter, setActiveFilter] = useState('all')
-
-  useEffect(() => {
-    loadWithdrawals()
-  }, [])
-
-  useEffect(() => {
-    filterWithdrawals()
-  }, [withdrawals, activeFilter])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>('all')
+  const [query, setQuery] = useState('')
 
   const loadWithdrawals = async () => {
-    setIsLoading(true)
+    setLoading(true)
     try {
-      const response = await apiCall(`${process.env.NEXT_PUBLIC_API_URL}/api/withdrawals/all`)
-      if (response.ok) {
-        const result = await response.json()
-        // API возвращает объект с полем data, которое содержит массив
-        setWithdrawals(result.data || [])
-      } else {
-        toast.error('Ошибка загрузки выводов')
-      }
-    } catch (error: any) {
-      toast.error(`Ошибка подключения: ${error.message}`)
+      const response = await apiCall(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/withdrawals/all`)
+      if (!response.ok) throw new Error(await response.text())
+      const result = await response.json()
+      const list = (result.withdrawals || result.data || []).map((item: Withdrawal) => ({
+        ...item,
+        currency: item.currency || item.currencyCode || '',
+        currencyCode: item.currencyCode || item.currency,
+      }))
+      setWithdrawals(list)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ошибка загрузки'
+      toast.error(message)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const filterWithdrawals = () => {
-    if (activeFilter === 'all') {
-      setFilteredWithdrawals(withdrawals)
-    } else {
-      setFilteredWithdrawals(withdrawals.filter(w => w.status === activeFilter))
-    }
-  }
+  useEffect(() => {
+    void loadWithdrawals()
+  }, [])
 
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter)
+  const filtered = useMemo(() => {
+    let rows = withdrawals
+    if (activeFilter !== 'all') {
+      rows = rows.filter((w) => w.status === activeFilter)
+    }
+    const q = query.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((w) =>
+      w.id.includes(q)
+      || w.userId.includes(q)
+      || w.userEmail?.toLowerCase().includes(q)
+      || w.cardNumber?.toLowerCase().includes(q)
+      || w.method?.toLowerCase().includes(q)
+      || (w.currencyCode || w.currency)?.toLowerCase().includes(q),
+    )
+  }, [withdrawals, activeFilter, query])
+
+  const counts = useMemo(() => ({
+    all: withdrawals.length,
+    pending: withdrawals.filter((w) => w.status === 'pending').length,
+    processing: withdrawals.filter((w) => w.status === 'processing').length,
+    completed: withdrawals.filter((w) => w.status === 'completed').length,
+    rejected: withdrawals.filter((w) => w.status === 'rejected').length,
+  }), [withdrawals])
+
+  const markProcessing = async (id: string) => {
+    setBusyId(id)
+    try {
+      const response = await apiCall(`${process.env.NEXT_PUBLIC_API_URL}/api/withdrawals/${id}/processing`, {
+        method: 'POST',
+      })
+      if (!response.ok) throw new Error(await response.text())
+      toast.success('Статус: в обработке')
+      await loadWithdrawals()
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Ошибка')
+    } finally {
+      setBusyId(null)
+    }
   }
 
   const approveWithdrawal = async (id: string) => {
+    setBusyId(id)
     try {
       const response = await apiCall(`${process.env.NEXT_PUBLIC_API_URL}/api/withdrawals/${id}/approve`, {
-        method: 'POST'
+        method: 'POST',
       })
-
-      if (response.ok) {
-        toast.success('Вывод одобрен')
-        loadWithdrawals()
-      } else {
-        const errorText = await response.text()
-        toast.error(`Ошибка одобрения: ${errorText}`)
-      }
-    } catch (error: any) {
-      toast.error(`Ошибка подключения: ${error.message}`)
+      if (!response.ok) throw new Error(await response.text())
+      toast.success('Вывод одобрен')
+      await loadWithdrawals()
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Ошибка')
+    } finally {
+      setBusyId(null)
     }
   }
 
-  const rejectWithdrawal = async (id: string, reason: string) => {
-    if (!reason.trim()) {
-      toast.error('Укажите причину отклонения')
-      return
-    }
+  const rejectWithdrawal = async (id: string) => {
+    const reason = prompt('Укажите причину отклонения:')
+    if (!reason?.trim()) return
 
+    setBusyId(id)
     try {
       const response = await apiCall(`${process.env.NEXT_PUBLIC_API_URL}/api/withdrawals/${id}/reject`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
       })
-
-      if (response.ok) {
-        toast.success('Вывод отклонен')
-        loadWithdrawals()
-      } else {
-        const errorText = await response.text()
-        toast.error(`Ошибка отклонения: ${errorText}`)
-      }
-    } catch (error: any) {
-      toast.error(`Ошибка подключения: ${error.message}`)
+      if (!response.ok) throw new Error(await response.text())
+      toast.success('Вывод отклонён')
+      await loadWithdrawals()
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Ошибка')
+    } finally {
+      setBusyId(null)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  const formatMethod = (item: Withdrawal) => {
+    const methodName = METHOD_NAMES[item.method] || item.method
+    const typeName = item.cardType ? CARD_TYPE_NAMES[item.cardType] : null
+    return { methodName, typeName }
   }
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency',
-      currency: currency
-    }).format(amount)
-  }
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'pending': {
-        classes: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300',
-        icon: '⏳',
-        name: 'Ожидает'
-      },
-      'completed': {
-        classes: 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300',
-        icon: '✅',
-        name: 'Выполнен'
-      },
-      'rejected': {
-        classes: 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300',
-        icon: '❌',
-        name: 'Отклонен'
-      },
-      'processing': {
-        classes: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300',
-        icon: '🔄',
-        name: 'В обработке'
-      }
-    }
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || {
-      classes: 'bg-gray-100 text-gray-800 border border-gray-300',
-      icon: '❓',
-      name: status
-    }
-    
-    return (
-      <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${config.classes}`}>
-        <span className="mr-1.5">{config.icon}</span>
-        {config.name}
-      </span>
-    )
-  }
-
-  const withdrawalColumns = [
-    { header: 'ID', accessor: 'id' as keyof Withdrawal, render: (item: Withdrawal) => (
-      <span className="font-mono text-sm">{item.id}</span>
-    )},
-    { header: 'Пользователь', accessor: 'userEmail' as keyof Withdrawal, render: (item: Withdrawal) => (
-      <div className="flex flex-col gap-1">
-        <span>{item.userEmail}</span>
-        {item.isAffiliate && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 w-fit">
-            affiliate
-          </span>
-        )}
-        {item.requiresReview && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 w-fit">
-            первый вывод
-          </span>
-        )}
-      </div>
-    )},
-    { header: 'Сумма', accessor: 'amount' as keyof Withdrawal, render: (item: Withdrawal) => 
-      formatCurrency(item.amount, item.currency)
-    },
-    { header: 'Метод', accessor: 'method' as keyof Withdrawal, render: (item: Withdrawal) => {
-      // Получаем название метода (CARD/CRYPTO)
-      const methodName = METHOD_NAMES[item.method as keyof typeof METHOD_NAMES];
-      
-      // Получаем название типа карты/криптовалюты из поля cardType (которое соответствует полю bank в backend)
-      const typeName = item.cardType ? CARD_TYPE_NAMES[item.cardType as keyof typeof CARD_TYPE_NAMES] : null;
-      
-      // Fallback для старых записей
-      const legacyName = LEGACY_TYPE_NAMES[item.method as keyof typeof LEGACY_TYPE_NAMES];
-      
-      return (
-        <div className="flex flex-col">
-          <span className="font-medium">
-            {methodName || legacyName || item.method}
-          </span>
-          {typeName && (
-            <span className={`text-xs mt-1 ${
-              item.method === 'CARD' ? 'text-blue-600' : 'text-green-600'
-            }`}>
-              {typeName}
-            </span>
-          )}
-          {!typeName && item.method === 'CRYPTO' && (
-            <span className="text-xs text-green-600 mt-1">
-              Криптовалюта
-            </span>
-          )}
-        </div>
-      );
-    }},
-    { header: 'Кошелек/Карта', accessor: 'cardNumber' as keyof Withdrawal, render: (item: Withdrawal) => (
-      <div className="max-w-xs">
-        {item.cardNumber && item.cardNumber.trim() ? 
-          <div 
-            className="bg-gray-50 rounded-lg p-3 border border-gray-200 cursor-help hover:bg-gray-100 transition-colors" 
-            title={item.cardNumber}
-          >
-            <span className="text-gray-900 break-all font-mono text-xs">
-              {item.cardNumber}
-            </span>
-          </div> :
-          <span className="text-gray-400 italic">Не указан</span>
-        }
-      </div>
-    )},
-    { header: 'Дата', accessor: 'createdAt' as keyof Withdrawal, render: (item: Withdrawal) => 
-      formatDate(item.createdAt)
-    },
-    { header: 'Статус', accessor: 'status' as keyof Withdrawal, render: (item: Withdrawal) => 
-      getStatusBadge(item.status)
-    },
-    { header: 'Причина отклонения', accessor: 'reason' as keyof Withdrawal, render: (item: Withdrawal) => (
-      <div className="max-w-xs">
-        {item.reason ? 
-          <div 
-            className="bg-red-50 rounded-lg p-3 border border-red-200 cursor-help hover:bg-red-100 transition-colors" 
-            title={item.reason}
-          >
-            <span className="text-red-700 text-xs break-words">
-              {item.reason.length > 50 ? `${item.reason.slice(0, 50)}...` : item.reason}
-            </span>
-          </div> :
-          <span className="text-gray-400 text-sm">-</span>
-        }
-      </div>
-    )},
-    { header: 'Действия', accessor: 'id' as keyof Withdrawal, render: (item: Withdrawal) => {
-      if (item.status === 'pending') {
-        return (
-          <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
-            <button
-              onClick={() => approveWithdrawal(item.id)}
-              className="inline-flex items-center justify-center px-2 md:px-3 py-1.5 md:py-2 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-green-600 rounded-lg hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-all duration-200 shadow-sm min-w-0"
-            >
-              <span className="mr-1">✅</span>
-              <span className="hidden sm:inline">Одобрить</span>
-              <span className="sm:hidden">✓</span>
-            </button>
-            <button
-              onClick={() => {
-                const reason = prompt('Укажите причину отклонения:')
-                if (reason) {
-                  rejectWithdrawal(item.id, reason)
-                }
-              }}
-              className="inline-flex items-center justify-center px-2 md:px-3 py-1.5 md:py-2 text-xs font-medium text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 shadow-sm min-w-0"
-            >
-              <span className="mr-1">❌</span>
-              <span className="hidden sm:inline">Отклонить</span>
-              <span className="sm:hidden">✗</span>
-            </button>
-          </div>
-        )
-      }
-      return (
-        <span className="text-gray-500 text-sm">
-          {item.status === 'completed' ? 'Выполнен' : 
-           item.status === 'rejected' ? 'Отклонен' : 'В обработке'}
-        </span>
-      )
-    }}
-  ]
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">💳 Управление выводами</h1>
-            <p className="text-gray-600">Одобрение и отклонение заявок на вывод средств</p>
-          </div>
+      <PageShell>
+        <PageHeader
+          title="Выводы"
+          description="Одобрение и отклонение заявок. Суммы в валюте пользователя."
+          actions={
+            <button
+              type="button"
+              onClick={() => void loadWithdrawals()}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-accent"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Обновить
+            </button>
+          }
+        />
 
-          {/* Статистика */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-              <div className="flex items-center">
-                <div className="p-2 md:p-3 rounded-full bg-blue-100 text-blue-600 text-lg md:text-xl">
-                  📊
-                </div>
-                <div className="ml-3 md:ml-4">
-                  <p className="text-xs md:text-sm font-medium text-gray-600">Всего заявок</p>
-                  <p className="text-xl md:text-2xl font-bold text-gray-900">{withdrawals.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-               <div className="flex items-center">
-                 <div className="p-2 md:p-3 rounded-full bg-yellow-100 text-yellow-600 text-lg md:text-xl">
-                   ⏳
-                 </div>
-                 <div className="ml-3 md:ml-4">
-                   <p className="text-xs md:text-sm font-medium text-gray-600">Ожидающие</p>
-                   <p className="text-xl md:text-2xl font-bold text-gray-900">{withdrawals.filter(w => w.status === 'pending').length}</p>
-                 </div>
-               </div>
-             </div>
-             <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-               <div className="flex items-center">
-                 <div className="p-2 md:p-3 rounded-full bg-green-100 text-green-600 text-lg md:text-xl">
-                   ✅
-                 </div>
-                 <div className="ml-3 md:ml-4">
-                   <p className="text-xs md:text-sm font-medium text-gray-600">Выполненные</p>
-                   <p className="text-xl md:text-2xl font-bold text-gray-900">{withdrawals.filter(w => w.status === 'completed').length}</p>
-                 </div>
-               </div>
-             </div>
-             <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-               <div className="flex items-center">
-                 <div className="p-2 md:p-3 rounded-full bg-red-100 text-red-600 text-lg md:text-xl">
-                   ❌
-                 </div>
-                 <div className="ml-3 md:ml-4">
-                   <p className="text-xs md:text-sm font-medium text-gray-600">Отклоненные</p>
-                   <p className="text-xl md:text-2xl font-bold text-gray-900">{withdrawals.filter(w => w.status === 'rejected').length}</p>
-                 </div>
-               </div>
-             </div>
-          </div>
+        <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <KpiCard label="Всего" value={String(counts.all)} icon={ArrowDownCircle} accent="slate" />
+          <KpiCard label="Ожидают" value={String(counts.pending)} icon={Clock} accent="amber" />
+          <KpiCard label="В обработке" value={String(counts.processing)} icon={Loader2} accent="sky" />
+          <KpiCard label="Выполнены" value={String(counts.completed)} icon={CheckCircle2} accent="emerald" />
+          <KpiCard label="Отклонены" value={String(counts.rejected)} icon={XCircle} accent="rose" />
+        </section>
 
-          {/* Фильтры */}
-          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
-            <h2 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Фильтры</h2>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'all', label: 'Все' },
-                { key: 'pending', label: 'Ожидающие' },
-                { key: 'completed', label: 'Выполненные' },
-                { key: 'rejected', label: 'Отклоненные' },
-                { key: 'processing', label: 'В обработке' }
-              ].map(filter => (
-                <Button
-                  key={filter.key}
-                  onClick={() => handleFilterChange(filter.key)}
-                  variant={activeFilter === filter.key ? 'primary' : 'secondary'}
-                  size="sm"
-                  className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5"
-                >
-                  {filter.label}
-                </Button>
-              ))}
-            </div>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex rounded-xl border border-border bg-card p-1">
+            {([
+              ['all', 'Все'],
+              ['pending', 'Ожидают'],
+              ['processing', 'В обработке'],
+              ['completed', 'Выполнены'],
+              ['rejected', 'Отклонены'],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveFilter(key)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  activeFilter === key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {label}
+                {key !== 'all' ? ` (${counts[key]})` : ''}
+              </button>
+            ))}
           </div>
-
-          {/* Список выводов */}
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-base md:text-xl font-semibold">
-                  Выводы {activeFilter !== 'all' && `(${filteredWithdrawals.length})`}
-                </h2>
-                <Button onClick={loadWithdrawals} disabled={isLoading}>
-                  Обновить
-                </Button>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <Table data={filteredWithdrawals} columns={withdrawalColumns} />
-            </div>
-          </div>
-
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-2">Информация</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>Ожидающие</strong> - заявки, требующие одобрения администратора</li>
-              <li>• <strong>Выполненные</strong> - успешно обработанные выводы</li>
-              <li>• <strong>Отклоненные</strong> - заявки, отклоненные администратором</li>
-              <li>• <strong>В обработке</strong> - заявки, отправленные в обработку</li>
-            </ul>
-          </div>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск: email, id, карта, валюта…"
+            className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-sm"
+          />
         </div>
-      </div>
+
+        <div className="admin-card overflow-hidden">
+          {loading ? (
+            <LoadingBlock heightClass="h-48" />
+          ) : filtered.length === 0 ? (
+            <div className="p-4">
+              <EmptyState title="Заявок не найдено" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Пользователь</th>
+                    <th>Сумма</th>
+                    <th>Метод</th>
+                    <th>Реквизиты</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((item) => {
+                    const { methodName, typeName } = formatMethod(item)
+                    const currency = item.currencyCode || item.currency
+                    const isActionable = item.status === 'pending' || item.status === 'processing'
+
+                    return (
+                      <tr key={item.id}>
+                        <td className="font-mono text-xs">{item.id}</td>
+                        <td>
+                          <Link href={`/users/${item.userId}`} className="font-medium text-primary hover:underline">
+                            {item.userEmail}
+                          </Link>
+                          <div className="text-xs text-muted-foreground">#{item.userId}</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {item.isAffiliate ? (
+                              <span className="rounded-full bg-violet-50 px-2 py-0.5 text-xs text-violet-700">
+                                affiliate
+                              </span>
+                            ) : null}
+                            {item.requiresReview ? (
+                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                                первый вывод
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap font-semibold">
+                          {formatMoney(item.amount, currency)}
+                        </td>
+                        <td>
+                          <div className="font-medium">{methodName}</div>
+                          {typeName ? (
+                            <div className="text-xs text-muted-foreground">{typeName}</div>
+                          ) : null}
+                        </td>
+                        <td className="max-w-[200px]">
+                          {item.cardNumber?.trim() ? (
+                            <code className="block break-all rounded-lg border border-border bg-muted/30 px-2 py-1 text-xs">
+                              {item.cardNumber}
+                            </code>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                          {item.reason ? (
+                            <div className="mt-1 text-xs text-rose-600">{item.reason}</div>
+                          ) : null}
+                        </td>
+                        <td className="whitespace-nowrap text-sm">
+                          {new Date(item.createdAt).toLocaleString('ru-RU')}
+                        </td>
+                        <td>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeClass(item.status)}`}>
+                            {statusLabel(item.status)}
+                          </span>
+                        </td>
+                        <td>
+                          {isActionable ? (
+                            <div className="flex flex-wrap gap-2">
+                              {item.status === 'pending' ? (
+                                <button
+                                  type="button"
+                                  disabled={busyId === item.id}
+                                  onClick={() => void markProcessing(item.id)}
+                                  className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                                >
+                                  В работу
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                disabled={busyId === item.id}
+                                onClick={() => void approveWithdrawal(item.id)}
+                                className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                              >
+                                OK
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === item.id}
+                                onClick={() => void rejectWithdrawal(item.id)}
+                                className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
+                              >
+                                Отклонить
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </PageShell>
     </AuthGuard>
   )
 }

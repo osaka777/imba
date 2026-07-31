@@ -11,6 +11,8 @@ import {
   getRegistrationCurrencyListName,
 } from "~/entities/user/lib/registrationCountries";
 
+import { useLocale } from "~/shared/model/useLocale";
+
 import styles from "./RegistrationCurrencyModal.module.css";
 
 type CurrencyOption = {
@@ -33,6 +35,7 @@ export function RegistrationCurrencyModal({
   value,
   onSelect,
 }: RegistrationCurrencyModalProps) {
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -42,8 +45,8 @@ export function RegistrationCurrencyModal({
   }, [open]);
 
   const filteredOptions = useMemo(
-    () => filterRegistrationCurrencies(options, query),
-    [options, query],
+    () => filterRegistrationCurrencies(options, query, t),
+    [options, query, t],
   );
 
   const handleSelect = (isoCode: string) => {
@@ -65,7 +68,7 @@ export function RegistrationCurrencyModal({
         >
           <div className={styles.registrationCurrencyModal_header}>
             <DialogPrimitive.Title className={styles.registrationCurrencyModal_title}>
-              Выбор валюты
+              {t("auth.selectCurrency")}
             </DialogPrimitive.Title>
           </div>
 
@@ -78,7 +81,7 @@ export function RegistrationCurrencyModal({
               autoFocus
               className={styles.registrationCurrencyModal_searchInput}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск"
+              placeholder={t("auth.search")}
               type="search"
               value={query}
             />
@@ -113,7 +116,7 @@ export function RegistrationCurrencyModal({
                     </span>
                     <span className={styles.registrationCurrencyModal_text}>
                       <span className={styles.registrationCurrencyModal_name}>
-                        {getRegistrationCurrencyListName(item.isoCode, item.name)}
+                        {getRegistrationCurrencyListName(item.isoCode, t, item.name)}
                       </span>
                       <span className={styles.registrationCurrencyModal_code}>
                         {item.isoCode}
@@ -125,12 +128,12 @@ export function RegistrationCurrencyModal({
             </ul>
           ) : (
             <p className={styles.registrationCurrencyModal_empty}>
-              Ничего не найдено
+              {t("auth.nothingFound")}
             </p>
           )}
 
           <DialogPrimitive.Close
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
             className={styles.registrationCurrencyModal_close}
           >
             <FiX aria-hidden />

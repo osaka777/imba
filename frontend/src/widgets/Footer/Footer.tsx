@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { LogoWhiteIcon } from "~/shared/assets";
 
 import {
+  AndroidIcon,
+  AppleIcon,
   ApplePayIcon,
   AstropayIcon,
   AtpIcon,
@@ -26,6 +29,7 @@ import {
   PayerrIcon,
   PiastrixIcon,
   QiwiIcon,
+  QuestionIcon,
   SkrillIcon,
   TelegramIcon,
   TetherIcon,
@@ -35,13 +39,20 @@ import {
   WebmoneyIcon,
   WtaIcon,
 } from "~/shared/assets/icons";
+import { isNativeApp } from "~/entities/push/lib/nativeApp";
 import { ScrollToTopButton } from "~/shared/ui/Button";
 import { useLocale } from "~/shared/model/useLocale";
 
+import { TrustBadgesRow } from "./TrustBadgesRow";
 import styles from "./Footer.module.css";
 
 export const Footer = () => {
   const { t } = useLocale();
+  const [showAppLinks, setShowAppLinks] = useState(true);
+
+  useEffect(() => {
+    setShowAppLinks(!isNativeApp());
+  }, []);
 
   return (
     <footer className={styles.Footer}>
@@ -55,16 +66,20 @@ export const Footer = () => {
         </div>
         <div className={styles.Footer_LogoSeparator}></div>
       </div>
+
       <div className={styles.Footer_navSection}>
         <div className={styles.Footer_leftSection}>
           <div
             className={`${styles.ContactSection_container} ${styles.Footer_contactSection}`}
           >
-            <div className={styles.ContactSection_title}>{t("footer.support247")}</div>
+            <div className={styles.ContactSection_title}>
+              {t("footer.support247")}
+            </div>
             <Link className={styles.ContactSection_subtitle} href="#support">
               {t("footer.supportHint")}
             </Link>
           </div>
+
           <div
             className={`${styles.NavigationSection_root} ${styles.Footer_navigationSection}`}
           >
@@ -126,8 +141,26 @@ export const Footer = () => {
                     </a>
                   </div>
                 </div>
+                <div className={styles.NavigationSection_contactsRow}>
+                  <div
+                    className={`${styles.NavigationSection_contactsCellName} ${styles.NavigationSection_contactsCell}`}
+                  >
+                    <span className={styles.NavigationSection_link}>
+                      {t("footer.partners")}
+                    </span>
+                  </div>
+                  <div className={styles.NavigationSection_contactsCell}>
+                    <a
+                      className={styles.NavigationSection_link}
+                      href="mailto:partners@imbalance.click"
+                    >
+                      partners@imbalance.click
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
+
             <div className={styles.NavigationSection_block}>
               <p className={styles.NavigationSection_title}>{t("footer.info")}</p>
               <div className={styles.NavigationInfo}>
@@ -139,6 +172,14 @@ export const Footer = () => {
                     target="_blank"
                   >
                     {t("footer.rules")}
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link
+                    className={styles.NavigationSection_link}
+                    href="/legal/ai-usage-policy"
+                  >
+                    {t("footer.aiPolicyLink")}
                   </Link>
                 </div>
                 <div className={styles.NavigationSection_linksRow}>
@@ -173,30 +214,146 @@ export const Footer = () => {
                 </div>
               </div>
             </div>
-            <div className={styles.NavigationSection_block}>
-              <p className={styles.NavigationSection_title}>{t("footer.categories")}</p>
-              <div className={styles.NavigationSection_listCategories}>
-                <div className={styles.NavigationSection_listCategoriesColumn}>
-                  <div className={styles.NavigationSection_contactsRow}>
-                    <Link className={styles.NavigationSection_link} href="/live">
-                      Live
-                    </Link>
-                  </div>
-                  <div className={styles.NavigationSection_contactsRow}>
-                    <Link
-                      className={styles.NavigationSection_link}
-                      href="/line"
-                    >
-                      {t("nav.line")}
-                    </Link>
-                  </div>
+
+            <div
+              className={`${styles.NavigationSection_block} ${styles.NavigationSection_blockCategories}`}
+            >
+              <p className={styles.NavigationSection_title}>
+                {t("footer.categories")}
+              </p>
+              <div className={styles.NavigationInfo}>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link className={styles.NavigationSection_link} href="/live">
+                    Live
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link className={styles.NavigationSection_link} href="/line">
+                    {t("nav.line")}
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link
+                    className={styles.NavigationSection_link}
+                    href="/cybersport"
+                  >
+                    {t("nav.cyberShort")}
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link
+                    className={styles.NavigationSection_link}
+                    href="/markets"
+                  >
+                    {t("nav.markets")}
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link
+                    className={styles.NavigationSection_link}
+                    href="/trading"
+                  >
+                    {t("nav.btc")}
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link
+                    className={styles.NavigationSection_link}
+                    href="/trading/race"
+                  >
+                    {t("nav.imbaGames")}
+                  </Link>
+                </div>
+                <div className={styles.NavigationSection_linksRow}>
+                  <Link
+                    className={styles.NavigationSection_link}
+                    href="/results"
+                  >
+                    {t("nav.results")}
+                  </Link>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {showAppLinks ? (
+          <div
+            className={`${styles.ApplicationSection_container} ${styles.Footer_applicationSection}`}
+          >
+            <div className={styles.ApplicationSection_grid}>
+              <div className={styles.ApplicationSection_mobileColumn}>
+                <div
+                  className={`${styles.FooterMobileApps_container} ${styles.FooterMobileApps_inactive}`}
+                  aria-disabled="true"
+                >
+                  <AppleIcon
+                    className={`${styles.FooterMobileApps_icon} ${styles.FooterMobileApps_iconIos}`}
+                  />
+                  <div className={styles.FooterMobileApps_text}>
+                    <div className={styles.FooterMobileApps_title}>
+                      {t("footer.appLabel")}
+                    </div>
+                    <div className={styles.FooterMobileApps_subtitle}>
+                      {t("footer.appIos")}
+                    </div>
+                  </div>
+                  <QuestionIcon className={styles.FooterMobileApps_question} />
+                </div>
+                <Link
+                  className={styles.FooterMobileApps_container}
+                  href="/app"
+                >
+                  <AndroidIcon
+                    className={`${styles.FooterMobileApps_icon} ${styles.FooterMobileApps_iconAndroid}`}
+                  />
+                  <div className={styles.FooterMobileApps_text}>
+                    <div className={styles.FooterMobileApps_title}>
+                      {t("footer.appLabel")}
+                    </div>
+                    <div className={styles.FooterMobileApps_subtitle}>
+                      {t("footer.appAndroid")}
+                    </div>
+                  </div>
+                  <QuestionIcon className={styles.FooterMobileApps_question} />
+                </Link>
+              </div>
+
+              <Link
+                className={styles.FooterWindowsApp}
+                href="/windows"
+                aria-label={t("footer.downloadWindows")}
+              >
+                <div className={styles.FooterWindowsApp_top}>
+                  <span className={styles.FooterWindowsApp_badge} aria-hidden>
+                    <svg
+                      className={styles.FooterWindowsApp_logo}
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.2-1.3L21 2.8v8.7h-9.8V4.2ZM3 13.5h7.5v7.1L3 19.5v-6Zm8.2 0H21v8.7l-9.8-1.4v-7.3Z" />
+                    </svg>
+                  </span>
+                  <span className={styles.FooterWindowsApp_chevron} aria-hidden>
+                    ›
+                  </span>
+                </div>
+                <div className={styles.FooterWindowsApp_text}>
+                  <div className={styles.FooterMobileApps_title}>
+                    {t("footer.appLabel")}
+                  </div>
+                  <div className={styles.FooterWindowsApp_subtitle}>
+                    {t("footer.appWindows")}
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </div>
+
       <div className={styles.Footer_middleSeparator}></div>
+
       <div className={styles.Footer_promotionSection}>
         <div className={styles.SocialList_root}>
           <ul className={styles.SocialList_list}>
@@ -214,7 +371,7 @@ export const Footer = () => {
             <li className={styles.SocialList_item}>
               <a
                 className={`${styles.SocialList_link} ${styles.SocialItemWrapper_instagram}`}
-                href="https://www.instagram.com/"
+                href="https://www.instagram.com/imba.bets/"
                 rel="noopener noreferrer"
                 target="_blank"
               >
@@ -252,6 +409,11 @@ export const Footer = () => {
           <ScrollToTopButton />
         </div>
       </div>
+
+      <div
+        className={`${styles.Footer_rowSeparator} ${styles.mobileHidden}`}
+        aria-hidden
+      />
 
       <div
         className={`${styles.PaymentSection_container} ${styles.mobileHidden}`}
@@ -311,16 +473,23 @@ export const Footer = () => {
           className={`${styles.icon} ${styles.iconPaymentFullAstropayIcon} ${styles.PaymentSection_icon}`}
         />
       </div>
+
+      <div
+        className={`${styles.Footer_rowSeparator} ${styles.mobileHidden}`}
+        aria-hidden
+      />
+
+      <div className={`${styles.TrustStrip} ${styles.mobileHidden}`}>
+        <TrustBadgesRow />
+      </div>
+
       <div className={styles.Footer_middleSeparator}></div>
+
       <div className={styles.LicenseSection_container}>
         <div className={styles.LicenseSection_legalBlock}>
           <span className={styles.LicenseSection_bold}>© 2024-2026 IMBA.BET</span>
           <p className={styles.LicenseSection_notice}>
-            Имба осуществляет деятельность по всему миру через отдельные юридические лица.
-            Сервис ставок на спорт и киберспорт. Доступен пользователям старше 18 лет.
-            Играйте ответственно и в пределах своего бюджета — ставки не являются способом
-            заработка. Если игра перестала приносить удовольствие или вы чувствуете потерю
-            контроля, обратитесь за бесплатной конфиденциальной поддержкой:{" "}
+            {t("footer.legalNotice")}{" "}
             <a
               href="https://www.gamblingtherapy.org/ru/"
               rel="noopener noreferrer"
@@ -330,10 +499,23 @@ export const Footer = () => {
             </a>
             .
           </p>
+          <p className={styles.LicenseSection_aiBan}>
+            <strong className={styles.LicenseSection_aiBanTitle}>
+              {t("footer.aiBanTitle")}
+            </strong>{" "}
+            {t("footer.aiBanNotice")}
+          </p>
+          <p className={styles.LicenseSection_aiBan}>
+            <strong className={styles.LicenseSection_aiBanTitle}>
+              {t("footer.aiBanApiTitle")}
+            </strong>{" "}
+            {t("footer.aiBanApiNotice")}{" "}
+            <Link href="/legal/ai-usage-policy">{t("footer.aiPolicyLink")}</Link>
+          </p>
         </div>
         <div className={styles.LicenseSection_leftSection}>
-          <span className={styles.Listings_ageLimit} aria-label="Только 18+">
-            18+
+          <span className={styles.Listings_ageLimit} aria-label={t("footer.ageOnlyAria")}>
+            21+
           </span>
         </div>
       </div>

@@ -3,6 +3,7 @@ import {
   getWagerProgressPercent,
   isBonusExpired,
 } from "~/entities/user/lib/bonusExpiry";
+import type { MessageKey, TranslateParams } from "~/shared/i18n/messages";
 
 import { formatWelcomeMoney, getWelcomeLimit } from "./welcomeBonusLimits";
 
@@ -19,6 +20,8 @@ export type WelcomeBonusSnapshot = {
 
 export type TimelineStepStatus = "done" | "current" | "upcoming" | "expired";
 
+export type WelcomeCtaAction = "register" | "deposit" | "bets" | "profile";
+
 export type WelcomeTimelineStep = {
   n: number;
   title: string;
@@ -33,59 +36,71 @@ export type WelcomeTimelineState = {
   headline: string;
   subline: string;
   ctaLabel: string;
+  ctaAction: WelcomeCtaAction;
   steps: WelcomeTimelineStep[];
   timeLeft: string | null;
+  timeExpired: boolean;
   wagerPct: number;
 };
 
-const BASE_STEPS = [
+type TranslateFn = (key: MessageKey, params?: TranslateParams) => string;
+
+const STEP_KEYS = [
   {
     n: 1,
-    title: "Регистрация",
-    text: "Выбери валюту — welcome появится в профиле",
-    doneText: "Аккаунт создан, бонус ждёт вас",
+    title: "promo.tlStep1Title",
+    text: "promo.tlStep1Text",
+    doneText: "promo.tlStep1Done",
   },
   {
     n: 2,
-    title: "Пополнение",
-    text: "Внеси депозит от минимума в течение 24 ч",
-    doneText: "Депозит зачислен на основной счёт",
+    title: "promo.tlStep2Title",
+    text: "promo.tlStep2Text",
+    doneText: "promo.tlStep2Done",
   },
   {
     n: 3,
-    title: "Активация",
-    text: "40% бонусом на бонусный счёт",
-    doneText: "Бонус начислен — можно ставить",
+    title: "promo.tlStep3Title",
+    text: "promo.tlStep3Text",
+    doneText: "promo.tlStep3Done",
   },
   {
     n: 4,
-    title: "Отыгрыш",
-    text: "Ставь с бонуса на исход или тотал до вейджера ×8",
-    doneText: "Вейджер выполнен — вывод доступен",
+    title: "promo.tlStep4Title",
+    text: "promo.tlStep4Text",
+    doneText: "promo.tlStep4Done",
   },
-] as const;
+] as const satisfies ReadonlyArray<{
+  n: number;
+  title: MessageKey;
+  text: MessageKey;
+  doneText: MessageKey;
+}>;
 
 function buildSteps(
   current: number,
   expiredStep: number | null,
+  t: TranslateFn,
 ): WelcomeTimelineStep[] {
-  return BASE_STEPS.map((step) => {
+  return STEP_KEYS.map((step) => {
     let status: TimelineStepStatus = "upcoming";
     if (expiredStep === step.n) status = "expired";
     else if (step.n < current) status = "done";
     else if (step.n === current) status = "current";
 
     const text =
-      status === "done" ? step.doneText
-      : status === "expired" ? "Срок истёк — бонус сгорел"
-      : step.text;
+      status === "done"
+        ? t(step.doneText)
+        : status === "expired"
+          ? t("promo.tlStepExpired")
+          : t(step.text);
 
     return {
       n: step.n,
-      title: step.title,
+      title: t(step.title),
       text,
       status,
-      actionLabel: status === "current" ? "Сейчас ваш шаг" : undefined,
+      actionLabel: status === "current" ? t("promo.tlCurrentStep") : undefined,
     };
   });
 }
@@ -94,12 +109,14 @@ export function resolveWelcomeTimeline(params: {
   isAuthenticated: boolean;
   bonus?: WelcomeBonusSnapshot | null;
   currency: string;
+  t: TranslateFn;
 }): WelcomeTimelineState {
-  const { isAuthenticated, bonus, currency } = params;
+  const { isAuthenticated, bonus, currency, t } = params;
   const limit = getWelcomeLimit(currency);
   const minDeposit = formatWelcomeMoney(limit.minDeposit, limit.currency);
   const maxBonus = formatWelcomeMoney(limit.maxBonus, limit.currency);
-  const timeLeft = formatBonusTimeLeft(bonus?.expiresAt);
+  const timeLeft = formatBonusTimeLeft(bonus?.expiresAt, t);
+  const timeExpired = timeLeft === t("promo.timeExpired");
   const wagerPct = getWagerProgressPercent(bonus?.totalWagered, bonus?.requiredWager);
   const expired = bonus ? isBonusExpired(bonus.expiresAt) : false;
 
@@ -107,11 +124,13 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 1,
       progressPct: 8,
-      headline: "Шаг 1 из 4 — регистрация",
-      subline: "Создай аккаунт за минуту — welcome-бонус сразу появится в профиле",
-      ctaLabel: "Зарегистрироваться",
-      steps: buildSteps(1, null),
+      headline: t("promo.tlGuestHeadline"),
+      subline: t("promo.tlGuestSubline"),
+      ctaLabel: t("promo.tlGuestCta"),
+      ctaAction: "register",
+      steps: buildSteps(1, null, t),
       timeLeft: null,
+      timeExpired: false,
       wagerPct: 0,
     };
   }
@@ -136,11 +155,13 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 2,
       progressPct: 25,
-      headline: "Время вышло",
-      subline: "Депозит не внесён вовремя — welcome-бонус сгорел",
-      ctaLabel: "В профиль",
-      steps: buildSteps(2, 2),
-      timeLeft: "истёк",
+      headline: t("promo.tlExpiredDepositHeadline"),
+      subline: t("promo.tlExpiredDepositSubline"),
+      ctaLabel: t("promo.tlProfileCta"),
+      ctaAction: "profile",
+      steps: buildSteps(2, 2, t),
+      timeLeft: t("promo.timeExpired"),
+      timeExpired: true,
       wagerPct: 0,
     };
   }
@@ -149,11 +170,13 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 4,
       progressPct: 75,
-      headline: "Срок отыгрыша истёк",
-      subline: "Бонус не отыгран вовремя — остаток сгорел",
-      ctaLabel: "В профиль",
-      steps: buildSteps(4, 4),
-      timeLeft: "истёк",
+      headline: t("promo.tlExpiredWagerHeadline"),
+      subline: t("promo.tlExpiredWagerSubline"),
+      ctaLabel: t("promo.tlProfileCta"),
+      ctaAction: "profile",
+      steps: buildSteps(4, 4, t),
+      timeLeft: t("promo.timeExpired"),
+      timeExpired: true,
       wagerPct,
     };
   }
@@ -162,11 +185,13 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 5,
       progressPct: 100,
-      headline: "Готово — бонус отыгран!",
-      subline: "Вывод выигрыша с бонуса — до 1.5× суммы депозита",
-      ctaLabel: "В профиль",
-      steps: buildSteps(5, null),
+      headline: t("promo.tlCompletedHeadline"),
+      subline: t("promo.tlCompletedSubline"),
+      ctaLabel: t("promo.tlProfileCta"),
+      ctaAction: "profile",
+      steps: buildSteps(5, null, t),
       timeLeft: null,
+      timeExpired: false,
       wagerPct: 100,
     };
   }
@@ -176,13 +201,15 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 4,
       progressPct: 62 + Math.round(wagerPct * 0.38),
-      headline: `Шаг 4 из 4 — осталось ${remaining}% вейджера`,
-      subline: timeLeft
-        ? `Ставь с бонусного счёта · сгорит через ${timeLeft}`
-        : "Ставь с бонусного счёта на исход или тотал",
-      ctaLabel: "Перейти к ставкам",
-      steps: buildSteps(4, null),
+      headline: t("promo.tlWageringHeadline", { remaining }),
+      subline: timeLeft && !timeExpired
+        ? t("promo.tlWageringSublineTimed", { time: timeLeft })
+        : t("promo.tlWageringSubline"),
+      ctaLabel: t("promo.tlWageringCta"),
+      ctaAction: "bets",
+      steps: buildSteps(4, null, t),
       timeLeft,
+      timeExpired,
       wagerPct,
     };
   }
@@ -191,13 +218,15 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 2,
       progressPct: 28,
-      headline: "Шаг 2 из 4 — пополнение",
-      subline: timeLeft
-        ? `Пополни от ${minDeposit} — получи до ${maxBonus} бонусом · осталось ${timeLeft}`
-        : `Пополни от ${minDeposit} — получи до ${maxBonus} бонусом`,
-      ctaLabel: `Пополнить от ${minDeposit}`,
-      steps: buildSteps(2, null),
+      headline: t("promo.tlDepositHeadline"),
+      subline: timeLeft && !timeExpired
+        ? t("promo.tlDepositSublineTimed", { minDeposit, maxBonus, time: timeLeft })
+        : t("promo.tlDepositSubline", { minDeposit, maxBonus }),
+      ctaLabel: t("promo.tlDepositCta", { minDeposit }),
+      ctaAction: "deposit",
+      steps: buildSteps(2, null, t),
       timeLeft,
+      timeExpired,
       wagerPct: 0,
     };
   }
@@ -206,11 +235,16 @@ export function resolveWelcomeTimeline(params: {
     return {
       currentStep: 4,
       progressPct: 55,
-      headline: "Шаг 4 из 4 — начни отыгрыш",
-      subline: `Бонус ${bonus.amount} ${currency} на счёте — сделай первую ставку`,
-      ctaLabel: "Сделать ставку",
-      steps: buildSteps(4, null),
+      headline: t("promo.tlStartWagerHeadline"),
+      subline: t("promo.tlStartWagerSubline", {
+        bonus: bonus.amount,
+        currency,
+      }),
+      ctaLabel: t("promo.tlStartWagerCta"),
+      ctaAction: "bets",
+      steps: buildSteps(4, null, t),
       timeLeft,
+      timeExpired,
       wagerPct: 0,
     };
   }
@@ -218,11 +252,13 @@ export function resolveWelcomeTimeline(params: {
   return {
     currentStep: 2,
     progressPct: 22,
-    headline: "Шаг 2 из 4 — пополнение",
-    subline: `Пополни от ${minDeposit} и активируй welcome до ${maxBonus}`,
-    ctaLabel: `Пополнить от ${minDeposit}`,
-    steps: buildSteps(2, null),
+    headline: t("promo.tlDepositHeadline"),
+    subline: t("promo.tlDepositActivateSubline", { minDeposit, maxBonus }),
+    ctaLabel: t("promo.tlDepositCta", { minDeposit }),
+    ctaAction: "deposit",
+    steps: buildSteps(2, null, t),
     timeLeft,
+    timeExpired,
     wagerPct: 0,
   };
 }

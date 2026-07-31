@@ -25,6 +25,87 @@ function openTelegramDeepLink(deepLink: string) {
   }
 }
 
+function BenefitWithdrawIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+      <path
+        d="M4 10h16"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 15h3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function BenefitLockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect
+        x="5"
+        y="10"
+        width="14"
+        height="10"
+        rx="2.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+      <path
+        d="M8 10V8a4 4 0 0 1 8 0v2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="15" r="1.25" fill="currentColor" />
+    </svg>
+  );
+}
+
+function BenefitBetsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M7 4.75h7.5A3.75 3.75 0 0 1 18.25 8.5v10a.75.75 0 0 1-1.2.6l-1.8-1.35H7A2.25 2.25 0 0 1 4.75 15.5v-8.5A2.25 2.25 0 0 1 7 4.75Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path d="M8.5 9.5h6M8.5 13h4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BenefitGoalsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M12 3.75v3.5M12 16.75v3.5M3.75 12h3.5M16.75 12h3.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 8.25 14.6 10l-.9 3.1H10.3L9.4 10 12 8.25Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 type TelegramLinkBlockProps = {
   linked?: boolean;
   username?: string | null;
@@ -76,10 +157,10 @@ export function TelegramLinkBlock({
 
   const benefits = useMemo(
     () => [
-      { icon: "💰", label: t("profile.tgBenefitWithdraw") },
-      { icon: "🔐", label: t("profile.tgBenefitReset") },
-      { icon: "🔔", label: t("profile.tgBenefitBets") },
-      { icon: "⚽", label: t("profile.tgBenefitGoals") },
+      { Icon: BenefitWithdrawIcon, label: t("profile.tgBenefitWithdraw") },
+      { Icon: BenefitLockIcon, label: t("profile.tgBenefitReset") },
+      { Icon: BenefitBetsIcon, label: t("profile.tgBenefitBets") },
+      { Icon: BenefitGoalsIcon, label: t("profile.tgBenefitGoals") },
     ],
     [t],
   );
@@ -340,39 +421,42 @@ export function TelegramLinkBlock({
         <div className={tgStyles.benefits}>
           {benefits.map((item) => (
             <div className={tgStyles.benefit} key={item.label}>
-              <span className={tgStyles.benefitIcon} aria-hidden>{item.icon}</span>
+              <span className={tgStyles.benefitIcon} aria-hidden>
+                <item.Icon />
+              </span>
               <span className={tgStyles.benefitLabel}>{item.label}</span>
             </div>
           ))}
         </div>
       ) : null}
 
-      {awaitingLink && !linked && pendingDeepLink ? (
-        <div className={tgStyles.desktopQr}>
-          <img
-            alt={t("profile.tgQrAlt")}
-            className={tgStyles.desktopQrImg}
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pendingDeepLink)}`}
-          />
-          <p className={tgStyles.desktopQrHint}>
-            {t("profile.tgQrHint")}
-          </p>
-        </div>
-      ) : null}
-
       {awaitingLink && !linked ? (
-        <div className={tgStyles.steps}>
-          <div className={tgStyles.step}>
-            <span className={tgStyles.stepNum}>1</span>
-            <span>{t("profile.tgStep1")}</span>
-          </div>
-          <div className={tgStyles.step}>
-            <span className={tgStyles.stepNum}>2</span>
-            <span>{t("profile.tgStep2")}</span>
-          </div>
-          <div className={tgStyles.step}>
-            <span className={tgStyles.stepNum}>3</span>
-            <span>{t("profile.tgStep3")}</span>
+        <div className={tgStyles.desktopConnectRow}>
+          {pendingDeepLink ? (
+            <div className={tgStyles.desktopQr}>
+              <img
+                alt={t("profile.tgQrAlt")}
+                className={tgStyles.desktopQrImg}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pendingDeepLink)}`}
+              />
+              <p className={tgStyles.desktopQrHint}>
+                {t("profile.tgQrHint")}
+              </p>
+            </div>
+          ) : null}
+          <div className={tgStyles.steps}>
+            <div className={tgStyles.step}>
+              <span className={tgStyles.stepNum}>1</span>
+              <span>{t("profile.tgStep1")}</span>
+            </div>
+            <div className={tgStyles.step}>
+              <span className={tgStyles.stepNum}>2</span>
+              <span>{t("profile.tgStep2")}</span>
+            </div>
+            <div className={tgStyles.step}>
+              <span className={tgStyles.stepNum}>3</span>
+              <span>{t("profile.tgStep3")}</span>
+            </div>
           </div>
         </div>
       ) : null}

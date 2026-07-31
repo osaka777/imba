@@ -82,7 +82,7 @@ export function isWcBetPlacementBlockedOutcome(
   if (!outcomeKey) return false;
 
   const normalized = normalizeWcMarketKey(marketKey);
-  if (normalized === "handicap") {
+  if (normalized === "handicap" || /^map_\d+_(?:handicap|spreads)$/i.test(marketKey)) {
     return !/^(HOME|AWAY)_HCP_/.test(outcomeKey);
   }
   if (normalized === "handicap_3way") {
@@ -113,6 +113,11 @@ function normalizeWcMarketKey(marketKey: string): string {
   ) {
     return baseKey;
   }
+  if (baseKey === "spreads") return "handicap";
+  if (baseKey === "total_oe") return "even_odd";
+  if (/^map_\d+_spreads$/i.test(baseKey)) return baseKey.replace(/_spreads$/i, "_handicap");
+  if (/^map_\d+_total_oe$/i.test(baseKey)) return baseKey.replace(/_total_oe$/i, "_even_odd");
+  if (/^map_\d+_(winner|totals|handicap|even_odd)$/i.test(baseKey)) return baseKey;
   if (/HANDICAP_3WAY/i.test(baseKey)) return "handicap_3way";
   if (baseKey.startsWith("display_GOALS_BOTH_BOTHHALF")) return "goals_both_teams_both_halves";
   if (baseKey.startsWith("display_GOALS_BOTHHALF")) return "goals_both_half";

@@ -11,6 +11,7 @@ export enum WithdrawalMethod {
 export enum CardType {
   FOREIGN = 'FOREIGN', // Иностранная карта
   KAZAKHSTAN = 'KAZAKHSTAN', // Казахстанская карта
+  RUSSIA = 'RUSSIA', // Российская карта
   TRC20 = 'TRC20', // TRC-20 криптовалюта
   TRON = 'TRON', // TRON криптовалюта
 }
@@ -18,6 +19,7 @@ export enum CardType {
 // Поддерживаемые валюты
 export enum CurrencyCode {
   USD = 'USD',
+  USDT = 'USDT',
   KZT = 'KZT',
   RUB = 'RUB',
   UAH = 'UAH',
@@ -28,6 +30,7 @@ export enum CurrencyCode {
 // Быстрый выбор сумм
 export const QUICK_AMOUNTS = {
   USD: [50, 100, 200, 500, 1000],
+  USDT: [50, 100, 200, 500, 1000],
   KZT: [10000, 25000, 50000, 100000, 250000],
   RUB: [5000, 10000, 25000, 50000, 100000],
   UAH: [2000, 5000, 10000, 25000, 50000],

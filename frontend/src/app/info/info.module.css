@@ -13,3 +13,23 @@
 }
 .container {
 }
+
+.legalBody {
+  line-height: 1.55;
+  font-size: 14px;
+}
+.legalBody p {
+  margin: 0 0 0.75em;
+}
+.legalBody ol,
+.legalBody ul {
+  margin: 0 0 0.75em;
+  padding-left: 1.25em;
+}
+.legalBody li {
+  margin-bottom: 0.35em;
+}
+.legalBody h2 {
+  font-size: 1.1em;
+  margin: 1.25em 0 0.5em;
+}

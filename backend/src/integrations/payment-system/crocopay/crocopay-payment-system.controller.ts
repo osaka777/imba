@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   HttpException,
@@ -14,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 
 import { AuthenticationGuard } from '~/main/user/authentication/authentication.guard';
+import { isPaymentMethodEnabled } from '~/main/payment-settings/payment-settings.store';
 
 import { CrocoPayPaymentSystemService } from './crocopay-payment-system.service';
 import {
@@ -27,6 +29,12 @@ export class CrocoPayPaymentSystemController {
   constructor(
     private readonly crocoPayPaymentSystemService: CrocoPayPaymentSystemService,
   ) {}
+
+  private assertEnabled() {
+    if (!isPaymentMethodEnabled('Crocopay')) {
+      throw new BadRequestException('Crocopay отключён');
+    }
+  }
 
   @Post('callback')
   async callback(
@@ -44,6 +52,7 @@ export class CrocoPayPaymentSystemController {
     @Body() dto: CrocopayPaymentSystemDepositDto,
     @Req() req: { user: { id: number } },
   ) {
+    this.assertEnabled();
     return this.crocoPayPaymentSystemService.deposite(dto, req.user.id);
   }
 }

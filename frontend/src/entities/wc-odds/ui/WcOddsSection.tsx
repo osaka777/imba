@@ -4,8 +4,10 @@ import { memo, useEffect, useMemo, useState } from "react";
 
 import { ArrowIcon, ArrowTopIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 import type { WcEventDetail, WcMarketGroup } from "~/entities/wc-odds/api/client";
+import { localizeWcLabel } from "~/entities/wc-odds/lib/localizeWcLabel";
 import {
   buildMarketTabs,
   filterGroupedMarketsByTab,
@@ -46,7 +48,10 @@ import matchStyles from "~/entities/game/ui/Match/Match.module.css";
 
 type WcOddsTableProps = {
   event: WcEventDetail;
+  /** Visible accordion title (may be localized). */
   name: string;
+  /** Original RU/feed category name for market matching logic. */
+  categoryName?: string;
   groups: WcMarketGroup[];
   isParentExpanded: boolean;
   bettingOpen: boolean;
@@ -59,6 +64,7 @@ type WcOddsTableProps = {
 const WcOddsTable = memo(function WcOddsTable({
   event,
   name,
+  categoryName,
   groups,
   isParentExpanded,
   bettingOpen,
@@ -68,10 +74,11 @@ const WcOddsTable = memo(function WcOddsTable({
   kickChip = false,
 }: WcOddsTableProps) {
   const [isFolded, setIsFolded] = useState(defaultFolded);
+  const logicName = categoryName ?? name;
 
   useEffect(() => {
     setIsFolded(defaultFolded);
-  }, [event.id, name, defaultFolded]);
+  }, [event.id, logicName, defaultFolded]);
 
   useEffect(() => {
     if (!isParentExpanded) {
@@ -113,7 +120,7 @@ const WcOddsTable = memo(function WcOddsTable({
           {showContent ? (
             <WcOddsItem
               bettingOpen={bettingOpen}
-              categoryName={title ?? name}
+              categoryName={logicName}
               event={event}
               groups={groups}
               kickChip={kickChip}
@@ -125,6 +132,7 @@ const WcOddsTable = memo(function WcOddsTable({
   );
 }, (prev, next) => {
   if (prev.name !== next.name) return false;
+  if (prev.categoryName !== next.categoryName) return false;
   if (prev.bettingOpen !== next.bettingOpen) return false;
   if (prev.isParentExpanded !== next.isParentExpanded) return false;
   if (prev.defaultFolded !== next.defaultFolded) return false;
@@ -148,6 +156,7 @@ function stackEntryPriority(name: string): number {
 }
 
 export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps) {
+  const { t } = useLocale();
   const isMobile = useWcMatchMobileLayout();
   const [allExpanded, setAllExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<WcMarketTabId>("all");
@@ -288,7 +297,7 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
   if (!Object.keys(event.groupedMarkets || {}).length) {
     return (
       <h3 className="py-4 font-medium text-center text-md">
-        Ставок больше нет
+        {t("wc.noMoreBets")}
       </h3>
     );
   }
@@ -305,10 +314,12 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
                 tab.id === "all"
                   ? visibleEntries.length
                   : tabCounts.get(tab.id) ?? 0;
+              const rawLabel =
+                tab.id === "all" ? t("wc.tabAll") : localizeWcLabel(tab.label, t);
               const compactLabel =
                 isStack && tab.id !== "all"
-                  ? formatCyberTabCompactLabel(tab.label)
-                  : tab.label;
+                  ? formatCyberTabCompactLabel(rawLabel)
+                  : rawLabel;
               const tabLabel =
                 isStack && count > 0 ? `${compactLabel} (${count})` : compactLabel;
 
@@ -318,7 +329,7 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
                   type="button"
                   className={activeTab === tab.id ? matchStyles.activeButton : ""}
                   onClick={() => setActiveTab(tab.id)}
-                  title={tab.label}
+                  title={rawLabel}
                 >
                   {tab.isFastEvents ? (
                     <FireIcon className={matchStyles.fireIcon} />
@@ -343,9 +354,10 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
           <div className={matchStyles.oddsPinnedBar} data-cyber-odds-pinned>
             {pinnedEntries.map(([name, groups]) => {
               const fullName = formatWcCategoryDisplayName(name, categoryOptions);
+              const displayName = localizeWcLabel(fullName, t);
               return (
                 <div className={matchStyles.oddsPinnedBlock} key={name}>
-                  <p className={matchStyles.oddsPinnedLabel}>{fullName}</p>
+                  <p className={matchStyles.oddsPinnedLabel}>{displayName}</p>
                   <WcOddsItem
                     bettingOpen={bettingOpen}
                     categoryName={fullName}
@@ -362,11 +374,11 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
 
       {sortedEntries.length === 0 ? (
         <h3 className="py-4 font-medium text-center text-md">
-          Нет рынков в этой категории
+          {t("wc.noMarketsInTab")}
         </h3>
       ) : freshEntries.length === 0 ? (
         <h3 className="py-4 font-medium text-center text-md text-slate-400">
-          Ожидание обновления рынков…
+          {t("wc.waitingMarkets")}
         </h3>
       ) : isStack ? (
         <div
@@ -380,7 +392,9 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
                   className={matchStyles.oddsCyberSectionHead}
                   data-active={section.isActive || undefined}
                 >
-                  <span className={matchStyles.oddsCyberSectionLabel}>{section.label}</span>
+                  <span className={matchStyles.oddsCyberSectionLabel}>
+                    {localizeWcLabel(section.label, t)}
+                  </span>
                   {section.isActive ? (
                     <span className={matchStyles.oddsCyberSectionLive}>LIVE</span>
                   ) : null}
@@ -388,10 +402,12 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
                 {section.entries.map(([name, groups]) => {
                   const meta = categoryMeta.get(name);
                   const fullName = formatWcCategoryDisplayName(name, categoryOptions);
-                  const displayName = formatWcCategoryCompactName(fullName);
+                  const displayFull = localizeWcLabel(fullName, t);
+                  const displayName = formatWcCategoryCompactName(displayFull);
                   return (
                     <WcOddsTable
                       bettingOpen={bettingOpen}
+                      categoryName={fullName}
                       defaultFolded={meta?.defaultFolded ?? false}
                       event={event}
                       groups={groups}
@@ -400,7 +416,7 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
                       key={name}
                       lazyMount={isMobile}
                       name={displayName}
-                      title={displayName !== fullName ? fullName : undefined}
+                      title={displayName !== displayFull ? displayFull : undefined}
                     />
                   );
                 })}
@@ -418,13 +434,14 @@ export function WcOddsSection({ event, layout = "default" }: WcOddsSectionProps)
                 <div className={matchStyles.oddsCategorySlot} key={name}>
                   <div className={matchStyles.oddsTable}>
                     <WcOddsTable
+                      bettingOpen={bettingOpen}
+                      categoryName={fullName}
+                      defaultFolded={meta?.defaultFolded ?? false}
                       event={event}
-                      name={fullName}
                       groups={groups}
                       isParentExpanded={allExpanded}
-                      bettingOpen={bettingOpen}
-                      defaultFolded={meta?.defaultFolded ?? false}
                       lazyMount={isMobile}
+                      name={localizeWcLabel(fullName, t)}
                     />
                   </div>
                 </div>

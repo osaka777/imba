@@ -6,22 +6,19 @@
 }
 
 .TournamentOdds {
-  border-radius: 8px;
-
-  padding: 10px;
-
+  border-radius: 10px;
+  padding: 12px;
   background-color: var(--black-blue);
-
   width: 100%;
-
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 12px;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.18);
 }
 
 @media screen and (min-width: 768px) {
   .TournamentOdds {
-    padding: 15px;
+    padding: 14px;
   }
 }
 
@@ -58,14 +55,10 @@
 
 .filter {
   border-radius: 8px;
-
-  padding: 0 10px;
-
+  padding: 0 12px;
   background: var(--blue-gray);
-  transition: 0.2s;
-
-  height: 30px;
-
+  transition: background 180ms ease;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -103,7 +96,7 @@
 }
 
 .oddMenuList {
-  padding: 10px 0;
+  padding: 2px 0 8px;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -135,11 +128,12 @@
 
 .oddMenuList button {
   flex-shrink: 0;
-  height: 30px;
+  height: 32px;
   padding: 0 12px;
   font-size: 12px;
+  font-weight: 600;
   background: var(--blue-gray);
-  border-radius: 999px;
+  border-radius: 8px;
   min-width: max-content;
   display: flex;
   align-items: center;
@@ -159,7 +153,7 @@
 .oddsTables {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
   align-items: start;
   justify-content: center;
   grid-auto-rows: min-content;
@@ -375,7 +369,7 @@
   .oddsHandicapRow .oddCoef {
     min-width: 0;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .oddsHandicapRow .pairSideLabel_start,
@@ -417,21 +411,21 @@
 }
 
 .oddsTable {
-  border-radius: 8px;
-
+  position: relative;
+  isolation: isolate;
+  border-radius: 10px;
   overflow: hidden;
-
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
+  background: var(--white-20);
 }
 
 .oddFold {
+  min-height: 38px;
   padding: 9px 12px;
-
   background: var(--light-blue-gradient);
-
   width: 100%;
 
   display: flex;
@@ -440,7 +434,7 @@
 }
 
 .oddGroupName {
-  font-weight: 500;
+  font-weight: 700;
   font-size: 13px;
   color: #ffffff;
 }
@@ -559,12 +553,12 @@
 .oddsTotalsRow {
   column-gap: 0;
   align-items: stretch;
-  background: #e4ebff;
-  border-bottom: 1px solid #eef3ff;
+  background: #edf2f8;
+  border-bottom: 1px solid #d9e0eb;
 }
 
 .oddsTotalsGroup > .oddsTotalsRow:nth-child(even) {
-  background: #edf1ff;
+  background: #f6f8fb;
 }
 
 .oddsTotalsRow > .oddsItem {
@@ -619,8 +613,8 @@
   min-width: 0;
   flex: 0 0 auto;
   padding: 0;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 600;
   color: #111827 !important;
 }
 
@@ -673,8 +667,8 @@
   column-gap: 0;
   align-items: stretch;
   overflow: hidden;
-  background-color: #e4ebff;
-  border-bottom: 1px solid var(--black);
+  background-color: #edf2f8;
+  border-bottom: 1px solid #d9e0eb;
 }
 
 .oddsHandicapRow > .oddsItem {
@@ -682,15 +676,15 @@
   display: flex;
   flex: 1 1 0;
   min-width: 0;
-  background: #e4ebff;
+  background: #edf2f8;
 }
 
 .oddsTotalsGroup > *:nth-child(even) .oddsHandicapRow {
-  background-color: #edf1ff;
+  background-color: #f6f8fb;
 }
 
 .oddsTotalsGroup > *:nth-child(even) .oddsHandicapRow > .oddsItem {
-  background: #edf1ff;
+  background: #f6f8fb;
 }
 
 .oddsHandicapRow > .oddsItem:first-child {
@@ -721,7 +715,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  z-index: 2;
+  z-index: 0;
   flex: 0 0 auto;
   pointer-events: none;
   white-space: nowrap;
@@ -782,7 +776,7 @@
   flex: 0 0 auto;
   padding: 0;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: #111827 !important;
 }
 
@@ -797,6 +791,7 @@
   flex-grow: 0;
   min-width: 0;
   width: 100%;
+  border-right: none;
 }
 
 .oddsBlockPairOU.oddsTotalsRow,
@@ -845,8 +840,8 @@
 }
 
 .oddsScopedTeamCard {
-  background: #e4ebff;
-  border-bottom: 1px solid #eef3ff;
+  background: #edf2f8;
+  border-bottom: 1px solid #d9e0eb;
 }
 
 .oddsScopedTeamCard .oddsTotalsRow {
@@ -886,8 +881,8 @@
 }
 .oddsItem {
   position: relative;
-  border-bottom: 1px solid var(--black);
-
+  border-right: 1px solid #d9e0eb;
+  border-bottom: 1px solid #d9e0eb;
   display: flex;
   align-items: stretch;
   gap: 5px;
@@ -907,20 +902,21 @@
 }
 
 @media (hover: hover) {
-  .oddsItem:hover .odd {
-    background: var(--white-30);
+  .oddsItem:hover .odd:not(.odd_added) {
+    background: linear-gradient(
+      138deg,
+      rgb(16 141 231 / 0.18) -63%,
+      rgb(8 85 196 / 0.22) 97%
+    );
   }
 
-  .oddsItem:hover .odd p {
+  .oddsItem:hover .odd:not(.odd_added) p {
     color: #111827;
   }
 
   .oddsItem:hover .odd:not(.odd_added) .oddCoef:not(.oddCoef_added) {
-    background-image: linear-gradient(
-      138deg,
-      rgb(16 141 231 / 0.3) -63%,
-      rgb(8 85 196 / 0.3) 97%
-    );
+    background: transparent;
+    background-image: none;
   }
 
   .oddsItem:hover .odd_added p {
@@ -956,7 +952,7 @@
   padding: 4px 0;
   border-radius: 20px;
   border-bottom: 1px solid var(--black);
-  z-index: 1;
+  z-index: 0;
 }
 
 .oddsHandicapRow .totalsPivot {
@@ -982,8 +978,9 @@
 }
 
 .odd {
-  padding-left: 6px;
-  padding-right: 6px;
+  min-height: 42px;
+  padding-left: 10px;
+  padding-right: 8px;
   width: 100%;
 
   background: var(--white-30);
@@ -993,20 +990,21 @@
 }
 
 @media (hover: hover) {
-  .odd:hover {
-    background: var(--white-30);
+  .odd:not(.odd_added):hover {
+    background: linear-gradient(
+      138deg,
+      rgb(16 141 231 / 0.18) -63%,
+      rgb(8 85 196 / 0.22) 97%
+    );
   }
 
-  .odd:hover p {
+  .odd:not(.odd_added):hover p {
     color: #111827;
   }
 
   .odd:not(.odd_added):hover .oddCoef:not(.oddCoef_added) {
-    background-image: linear-gradient(
-      138deg,
-      rgb(16 141 231 / 0.3) -63%,
-      rgb(8 85 196 / 0.3) 97%
-    );
+    background: transparent;
+    background-image: none;
   }
 
   .odd_added:hover p {
@@ -1021,18 +1019,19 @@
 .oddName {
   width: 250px;
 
-  color: #111827;
-  font-size: 11px;
+  color: #27344b;
+  font-size: 12px;
+  line-height: 1.25;
 }
 
 .oddCoef {
-  min-width: 25px;
-  padding: 8px 6px;
-  border-radius: 7px;
+  min-width: 34px;
+  padding: 7px 8px;
+  border-radius: 8px;
   background-color: transparent;
   color: var(--black);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   position: relative;
   display: flex;
   justify-content: center;
@@ -1290,7 +1289,7 @@
   .oddCoef {
     min-width: 40px;
     padding: 10px 0;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   /* 1X2 / двойной шанс — компактнее в три колонки */

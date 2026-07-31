@@ -102,6 +102,10 @@ model User {
   telegramNotifyPreMatch  Boolean          @default(true)
   telegram2faEnabled     Boolean           @default(false)
   avatarPreset           String?
+  /// Public trading nickname (2–6 chars, letters/digits only)
+  nickname               String?           @unique
+  /// Uploaded avatar image path, e.g. /uploads/avatars/…
+  avatarUrl              String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   affilator        Affilator?        @relation("affilatorData")
@@ -120,6 +124,15 @@ model User {
   wcOddsExpressBets WcOddsExpressBet[]
   snakeRounds      SnakeRound[]
   btcUpdownBets    BtcUpdownBet[]
+  raceBets         RaceBet[]
+  predictionBets   PredictionBet[]
+  predictionComments PredictionComment[]
+  predictionCommentLikes PredictionCommentLike[]
+  predictionBookmarks PredictionBookmark[]
+  streamComments       StreamComment[]
+  streamLikes          StreamLike[]
+  streamCommentReports StreamCommentReport[]
+  streamCommentHides   StreamCommentHide[]
   telegramLinkTokens       TelegramLinkToken[]
   passwordResetTokens      PasswordResetToken[]
   trustedDevices           UserTrustedDevice[]
@@ -869,11 +882,35 @@ model Slide {
   textShadow      Boolean  @default(true)
   buttonSize      Int      @default(14)
   buttonMobileSize Int?
+  buttonColor     String?
+  buttonTextColor String   @default("#ffffff")
+  layoutMode      String   @default("classic")
+  showSecondaryButton Boolean @default(false)
+  secondaryButtonText String?
+  secondaryButtonLink String?
+  secondaryButtonColor String?
+  secondaryButtonTextColor String @default("#ffffff")
+  secondaryButtonOpacity Int @default(20)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([isActive, order])
   @@map("slide")
+}
+
+model FooterBadge {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  imageUrl  String?
+  imagePath String?
+  linkUrl   String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, order])
+  @@map("footer_badge")
 }
 
 enum GameStatus {
@@ -932,6 +969,7 @@ enum AffiliatePostbackStatus {
 
 enum OperationStatus {
   WAITING
+  PROCESSING
   SUCCESS
   FAILED
 }
@@ -957,6 +995,8 @@ enum OperationSource {
   WC_BET
   SNAKE
   BTC_UPDOWN
+  RACE
+  PREDICTION
 }
 
 model WcOddsEvent {
@@ -1045,6 +1085,8 @@ model WcOddsBet {
   settledAt       DateTime?
   placementContextJson Json?
   isProbe             Boolean         @default(false)
+  /// Ставка с бонусного счёта (отыгрыш)
+  isBonus             Boolean         @default(false)
   wcExpressBetId      Int?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -1057,6 +1099,7 @@ model WcOddsBet {
   @@index([status])
   @@index([isProbe])
   @@index([wcExpressBetId])
+  @@index([isBonus])
 }
 
 enum PartnerLandingTemplate {
@@ -1211,6 +1254,279 @@ model BtcUpdownBet {
 
   @@index([userId, status])
   @@index([roundId, status])
+  @@index([userId, createdAt])
+}
+
+enum RaceRoundStatus {
+  OPEN
+  LOCKED
+  SETTLED
+  VOID
+}
+
+enum RaceSide {
+  A
+  B
+}
+
+enum RaceBetStatus {
+  PENDING
+  WIN
+  LOSE
+  VOID
+}
+
+/// "Связка" markets — a head-to-head race between two crypto symbols.
+/// Winner = whichever leg has the larger % change from round open to round close.
+model RaceRound {
+  id          Int             @id @default(autoincrement())
+  /// e.g. "BTCUSDT_DOGEUSDT" — identifies the pair regardless of roundMs.
+  pairKey     String
+  symbolA     String
+  symbolB     String
+  roundMs     Int             @default(300000)
+  startsAt    DateTime
+  endsAt      DateTime
+  openPriceA  Decimal?        @db.Decimal(18, 8)
+  openPriceB  Decimal?        @db.Decimal(18, 8)
+  closePriceA Decimal?        @db.Decimal(18, 8)
+  closePriceB Decimal?        @db.Decimal(18, 8)
+  status      RaceRoundStatus @default(OPEN)
+  result      RaceSide?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  bets        RaceBet[]
+
+  @@unique([pairKey, startsAt, roundMs])
+  @@index([status, endsAt])
+  @@index([pairKey, roundMs, startsAt])
+}
+
+model RaceBet {
+  id              Int           @id @default(autoincrement())
+  userId          Int
+  roundId         Int
+  /// Which leg the player backed to outperform the other.
+  side            RaceSide
+  stake           Decimal       @db.Decimal(16, 2)
+  currencyCode    String
+  odds            Decimal       @db.Decimal(8, 2)
+  potentialPayout Decimal       @db.Decimal(16, 2)
+  status          RaceBetStatus @default(PENDING)
+  settledAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id])
+  round           RaceRound     @relation(fields: [roundId], references: [id])
+
+  @@index([userId, status])
+  @@index([roundId, status])
+  @@index([userId, createdAt])
+}
+
+enum PredictionEventStatus {
+  DRAFT
+  OPEN
+  LOCKED
+  SETTLED
+  VOID
+}
+
+enum PredictionBetStatus {
+  PENDING
+  WIN
+  LOSE
+  VOID
+}
+
+/// House-odds event markets (Polymarket-style UX, fixed odds, admin settle).
+model PredictionEvent {
+  id               Int                   @id @default(autoincrement())
+  slug             String                @unique
+  /// Russian (primary)
+  title            String
+  titleEn          String?
+  description      String?
+  descriptionEn    String?
+  category         String                @default("other")
+  imageUrl         String?
+  bannerUrl        String?
+  /// Optional home-hero / detail video (mp4 URL or YouTube/Twitch/Kick embed)
+  videoUrl         String?
+  resolveRule      String?
+  resolveRuleEn    String?
+  status           PredictionEventStatus @default(DRAFT)
+  closesAt         DateTime?
+  resolvesAt       DateTime?
+  winningOutcomeId Int?
+  settledAt        DateTime?
+  /// Soft-hide from public hub/detail; keep history & admin access.
+  archivedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  outcomes         PredictionOutcome[]
+  bets             PredictionBet[]
+  comments         PredictionComment[]
+  bookmarks        PredictionBookmark[]
+
+  @@index([status, closesAt])
+  @@index([category, status])
+  @@index([archivedAt])
+}
+
+model PredictionComment {
+  id        Int                     @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  /// Optional parent for one-level replies (Polymarket-style threads).
+  parentId  Int?
+  body      String                  @db.VarChar(280)
+  /// Optional GIF from allowlisted CDN (Tenor/Giphy).
+  gifUrl    String?                 @db.VarChar(512)
+  status    PredictionCommentStatus @default(VISIBLE)
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  event     PredictionEvent         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    PredictionComment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PredictionComment[]     @relation("CommentReplies")
+  likes     PredictionCommentLike[]
+
+  @@index([eventId, createdAt])
+  @@index([userId, createdAt])
+  @@index([eventId, status, createdAt])
+  @@index([parentId, createdAt])
+}
+
+model PredictionCommentLike {
+  id        Int               @id @default(autoincrement())
+  commentId Int
+  userId    Int
+  createdAt DateTime          @default(now())
+  comment   PredictionComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([userId, createdAt])
+  @@index([commentId])
+}
+
+model PredictionBookmark {
+  id        Int             @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime        @default(now())
+  event     PredictionEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+}
+
+enum PredictionCommentStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+model PredictionOutcome {
+  id        Int             @id @default(autoincrement())
+  eventId   Int
+  key       String
+  /// Russian (primary)
+  label     String
+  labelEn   String?
+  odds      Decimal         @db.Decimal(8, 2)
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  event     PredictionEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  bets      PredictionBet[]
+
+  @@unique([eventId, key])
+  @@index([eventId, sortOrder])
+}
+
+model PredictionBet {
+  id              Int                 @id @default(autoincrement())
+  userId          Int
+  eventId         Int
+  outcomeId       Int
+  stake           Decimal             @db.Decimal(16, 2)
+  currencyCode    String
+  odds            Decimal             @db.Decimal(8, 2)
+  potentialPayout Decimal             @db.Decimal(16, 2)
+  status          PredictionBetStatus @default(PENDING)
+  settledAt       DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  user            User                @relation(fields: [userId], references: [id])
+  event           PredictionEvent     @relation(fields: [eventId], references: [id])
+  outcome         PredictionOutcome   @relation(fields: [outcomeId], references: [id])
+
+  @@index([userId, status])
+  @@index([eventId, status])
+  @@index([outcomeId, status])
+  @@index([userId, createdAt])
+}
+
+/// Overlay chat/likes for any live broadcast (keyed by WC eventRef / stream id).
+model StreamComment {
+  id        Int                 @id @default(autoincrement())
+  streamKey String              @db.VarChar(128)
+  userId    Int
+  body      String              @db.VarChar(120)
+  status    StreamCommentStatus @default(VISIBLE)
+  createdAt DateTime            @default(now())
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports   StreamCommentReport[]
+  hides     StreamCommentHide[]
+
+  @@index([streamKey, createdAt])
+  @@index([streamKey, status, createdAt])
+  @@index([userId, createdAt])
+}
+
+enum StreamCommentStatus {
+  VISIBLE
+  HIDDEN
+}
+
+model StreamCommentReport {
+  id        Int           @id @default(autoincrement())
+  commentId Int
+  userId    Int
+  reason    String?       @db.VarChar(64)
+  createdAt DateTime      @default(now())
+  comment   StreamComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId, createdAt])
+}
+
+model StreamCommentHide {
+  id        Int           @id @default(autoincrement())
+  commentId Int
+  userId    Int
+  createdAt DateTime      @default(now())
+  comment   StreamComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([userId, commentId])
+}
+
+model StreamLike {
+  id        Int      @id @default(autoincrement())
+  streamKey String   @db.VarChar(128)
+  userId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([streamKey, userId])
+  @@index([streamKey])
   @@index([userId, createdAt])
 }
 

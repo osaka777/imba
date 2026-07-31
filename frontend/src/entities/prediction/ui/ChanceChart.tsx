@@ -51,9 +51,16 @@ export function ChanceChart({
   const yesVals = points.length ? points.map((p) => p.v) : [50];
   const noVals = yesVals.map((v) => 100 - v);
   const allVals = [...yesVals, ...noVals];
-  const dataMin = Math.min(...allVals);
-  const dataMax = Math.max(...allVals);
-  const padY = Math.max(4, (dataMax - dataMin) * 0.18);
+  let dataMin = Math.min(...allVals);
+  let dataMax = Math.max(...allVals);
+  /* Keep vertical room so flat/near-flat markets don't look like two rails. */
+  const MIN_SPAN = 28;
+  if (dataMax - dataMin < MIN_SPAN) {
+    const mid = (dataMin + dataMax) / 2;
+    dataMin = mid - MIN_SPAN / 2;
+    dataMax = mid + MIN_SPAN / 2;
+  }
+  const padY = Math.max(4, (dataMax - dataMin) * 0.14);
   const min = Math.max(0, dataMin - padY);
   const max = Math.min(100, dataMax + padY);
   const span = Math.max(1e-9, max - min);

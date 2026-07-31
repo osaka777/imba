@@ -1,0 +1,2 @@
+ALTER TABLE "PredictionEvent" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;
+ALTER TABLE "PredictionEvent" ADD COLUMN IF NOT EXISTS "bannerUrl" TEXT;

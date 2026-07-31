@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import cardStyles from "~/entities/wc-odds/ui/WcTeamCardBadges.module.css";
 
@@ -17,6 +20,7 @@ export function WcTeamCardBadges({
   red = 0,
   countMode = "always",
 }: WcTeamCardBadgesProps) {
+  const { t } = useLocale();
   if (yellow <= 0 && red <= 0) return null;
 
   return (
@@ -27,7 +31,7 @@ export function WcTeamCardBadges({
       )}
     >
       {yellow > 0 && (
-        <span className={cn(cardStyles.badge, cardStyles.badgeYellow)} title="Жёлтые карточки">
+        <span className={cn(cardStyles.badge, cardStyles.badgeYellow)} title={t("wc.yellowCards")}>
           <img alt="" className={cardStyles.icon} src={YELLOW_CARD_SRC} />
           <span className={cardStyles.count} data-card-count={countMode === "hover" ? "" : undefined}>
             {yellow}
@@ -35,7 +39,7 @@ export function WcTeamCardBadges({
         </span>
       )}
       {red > 0 && (
-        <span className={cn(cardStyles.badge, cardStyles.badgeRed)} title="Красные карточки">
+        <span className={cn(cardStyles.badge, cardStyles.badgeRed)} title={t("wc.redCards")}>
           <img alt="" className={cardStyles.icon} src={RED_CARD_SRC} />
           <span className={cardStyles.count} data-card-count={countMode === "hover" ? "" : undefined}>
             {red}

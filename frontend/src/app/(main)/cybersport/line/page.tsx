@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import { apiSportToDisciplineSlug } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import { DEFAULT_CYBER_SPORT } from "~/entities/cybersport/lib/cyberSportsList";
 import { CybersportLineHub } from "~/entities/cybersport/ui/CybersportLineHub";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
-export const metadata: Metadata = makeMetadata("Киберспорт — Линия", {
-  description: "Prematch-линия киберспорта на Imba.bet: CS2, Dota 2, Valorant и другие дисциплины.",
-  path: "/cybersport/line",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoCyberLineTitle", {
+    descriptionKey: "common.seoCyberLineDesc",
+    path: "/cybersport/line",
+  });
+}
 
 type LinePageProps = {
   searchParams: Promise<{ sport?: string }>;

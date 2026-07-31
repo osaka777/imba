@@ -4,10 +4,22 @@ import { CreateWithdrawalDto, WithdrawalMethod, CardType, CurrencyCode } from '.
 import { OperationStatus, OperationSource, OperationType } from '@prisma/client';
 import { OperationService } from '~/main/operation/operation.service';
 import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
+import { TelegramNotifyService } from '~/main/telegram/telegram-notify.service';
 import { PushUserNotifyService } from '~/main/push/push-user-notify.service';
 import { BonusBalanceService } from '~/main/bonus-balance/bonus-balance.service';
 import { PhoneVerificationService } from '~/main/user/phone-verification.service';
+import { loadPaymentSettings } from '~/main/payment-settings/payment-settings.store';
 import { Decimal } from '@prisma/client/runtime/library';
+
+const WITHDRAWAL_ALERT_THRESHOLDS: Record<string, number> = {
+  KZT: 50_000,
+  RUB: 10_000,
+  USD: 100,
+  USDT: 100,
+  UAH: 5_000,
+  TRY: 3_000,
+  UZS: 1_000_000,
+};
 
 @Injectable()
 export class WithdrawalService {
@@ -15,6 +27,7 @@ export class WithdrawalService {
     private readonly prisma: PrismaService,
     private readonly operationService: OperationService,
     private readonly telegramUserNotify: TelegramUserNotifyService,
+    private readonly telegramNotify: TelegramNotifyService,
     private readonly pushUserNotify: PushUserNotifyService,
     private readonly bonusBalanceService: BonusBalanceService,
     private readonly phoneVerification: PhoneVerificationService,
@@ -117,7 +130,7 @@ export class WithdrawalService {
     const pendingWithdrawals = await this.prisma.withdrawRequest.count({
       where: {
         userId,
-        status: OperationStatus.WAITING,
+        status: { in: [OperationStatus.WAITING, OperationStatus.PROCESSING] },
       },
     });
 
@@ -180,7 +193,59 @@ export class WithdrawalService {
       status: withdrawRequest.status
     });
 
+    void this.notifyAdminWithdrawal({
+      id: withdrawRequest.id,
+      userId,
+      amount: dto.amount,
+      currency: dto.currency,
+      method: dto.method,
+      cardType: dto.cardType,
+      cardNumber: dto.cardNumber,
+    }).catch(() => undefined);
+
     return withdrawRequest;
+  }
+
+  private isLargeWithdrawal(amount: number, currency: string): boolean {
+    const threshold = WITHDRAWAL_ALERT_THRESHOLDS[currency] ?? 10_000;
+    return amount >= threshold;
+  }
+
+  private async notifyAdminWithdrawal(args: {
+    id: number;
+    userId: number;
+    amount: number;
+    currency: string;
+    method: string;
+    cardType?: string;
+    cardNumber: string;
+  }) {
+    const settings = loadPaymentSettings();
+    if (!settings.notifications.telegramWithdrawNotify) return;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: args.userId },
+      select: { email: true },
+    });
+
+    const large = this.isLargeWithdrawal(args.amount, args.currency);
+    const headline = large ? 'Крупная заявка на вывод' : 'Новая заявка на вывод';
+    const adminUrl = `https://cdn.imba.bet/users/${args.userId}`;
+
+    const lines = [
+      `💸 ${headline}`,
+      `ID: ${args.id}`,
+      `User: #${args.userId}${user?.email ? ` (${user.email})` : ''}`,
+      `Сумма: ${args.amount} ${args.currency}`,
+      `Метод: ${args.method}${args.cardType ? ` / ${args.cardType}` : ''}`,
+      `Реквизиты: ${args.cardNumber}`,
+      `Admin: ${adminUrl}`,
+    ];
+
+    await this.telegramNotify.sendSystemAlert(
+      large ? `🚨 ${headline}` : headline,
+      lines.join('\n'),
+    );
   }
 
 
@@ -194,6 +259,73 @@ export class WithdrawalService {
         createdAt: 'desc',
       },
     });
+  }
+
+  /** Пользователь отменяет свою заявку в статусе WAITING — средства возвращаются на баланс. */
+  async cancelByUser(userId: number, withdrawRequestId: number) {
+    const existing = await this.prisma.withdrawRequest.findFirst({
+      where: { id: withdrawRequestId, userId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Заявка на вывод не найдена');
+    }
+
+    if (existing.status !== OperationStatus.WAITING) {
+      throw new BadRequestException('Отменить можно только заявку в статусе «Ожидает»');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.withdrawRequest.updateMany({
+        where: {
+          id: withdrawRequestId,
+          userId,
+          status: OperationStatus.WAITING,
+        },
+        data: {
+          status: OperationStatus.FAILED,
+          reason: 'Отменено пользователем',
+        },
+      });
+
+      if (updated.count !== 1) {
+        throw new BadRequestException('Заявка уже обработана или отменена');
+      }
+
+      await this.operationService.create(tx, userId, {
+        type: OperationType.INCOME,
+        amount: existing.amount,
+        currencyCode: existing.currencyCode,
+        source: OperationSource.PAYMENT_SYSTEM,
+        status: OperationStatus.SUCCESS,
+        meta: {
+          title: 'Отмена вывода',
+          withdrawalId: withdrawRequestId,
+          action: 'withdrawal_cancelled_by_user',
+          method: existing.type,
+          wallet: existing.wallet,
+        },
+      });
+    });
+
+    void this.telegramUserNotify.notifyWithdraw({
+      userId,
+      withdrawId: withdrawRequestId,
+      status: 'cancelled',
+      amount: Number(existing.amount),
+      currency: existing.currencyCode,
+      reason: 'Отменено пользователем',
+    }).catch(() => undefined);
+
+    void this.pushUserNotify.notifyWithdraw({
+      userId,
+      withdrawId: withdrawRequestId,
+      status: 'cancelled',
+      amount: Number(existing.amount),
+      currency: existing.currencyCode,
+    }).catch(() => undefined);
+
+    return { ok: true, id: withdrawRequestId, refunded: Number(existing.amount) };
   }
 
   // Admin methods
@@ -242,12 +374,32 @@ export class WithdrawalService {
       throw new NotFoundException('Withdrawal request not found');
     }
 
+    const current = withdrawRequest.status;
+    if (current === OperationStatus.SUCCESS || current === OperationStatus.FAILED) {
+      throw new BadRequestException('Заявка уже закрыта');
+    }
+    if (
+      operationStatus === OperationStatus.PROCESSING
+      && current !== OperationStatus.WAITING
+    ) {
+      throw new BadRequestException('В обработку можно взять только новую заявку');
+    }
+    if (
+      (operationStatus === OperationStatus.SUCCESS || operationStatus === OperationStatus.FAILED)
+      && current !== OperationStatus.WAITING
+      && current !== OperationStatus.PROCESSING
+    ) {
+      throw new BadRequestException('Нельзя изменить статус этой заявки');
+    }
+
     await this.prisma.$transaction(async (tx) => {
-      const updateData: any = { status: operationStatus };
+      const updateData: { status: OperationStatus; reason?: string } = {
+        status: operationStatus,
+      };
       if (reason) {
         updateData.reason = reason;
       }
-      
+
       await tx.withdrawRequest.update({
         where: { id },
         data: updateData,
@@ -284,7 +436,7 @@ export class WithdrawalService {
           },
         });
       } else if (operationStatus === OperationStatus.SUCCESS) {
-        // Создаем операцию подтверждения вывода (средства уже списаны при создании запроса)
+        // Средства уже списаны при создании запроса — фиксируем факт выплаты
         await tx.operation.create({
           data: {
             userId: withdrawRequest.userId,
@@ -302,19 +454,35 @@ export class WithdrawalService {
           },
         });
       }
+      // PROCESSING — только смена статуса, без движения баланса
     }, {
       timeout: 10000,
       isolationLevel: 'Serializable'
     });
 
-    // Все выводы обрабатываются только через админку
-    console.log('[WithdrawalService] Withdrawal status updated, admin processing required:', {
+    console.log('[WithdrawalService] Withdrawal status updated:', {
       withdrawRequestId: id,
+      from: current,
       status: operationStatus,
       currency: withdrawRequest.currencyCode
     });
 
-    if (operationStatus === OperationStatus.SUCCESS) {
+    if (operationStatus === OperationStatus.PROCESSING) {
+      void this.telegramUserNotify.notifyWithdraw({
+        userId: withdrawRequest.userId,
+        withdrawId: id,
+        status: 'processing',
+        amount: Number(withdrawRequest.amount),
+        currency: withdrawRequest.currencyCode,
+      }).catch(() => undefined);
+      void this.pushUserNotify.notifyWithdraw({
+        userId: withdrawRequest.userId,
+        withdrawId: id,
+        status: 'processing',
+        amount: Number(withdrawRequest.amount),
+        currency: withdrawRequest.currencyCode,
+      }).catch(() => undefined);
+    } else if (operationStatus === OperationStatus.SUCCESS) {
       void this.telegramUserNotify.notifyWithdraw({
         userId: withdrawRequest.userId,
         withdrawId: id,
@@ -419,13 +587,19 @@ export class WithdrawalService {
   private mapStatus(status?: string): OperationStatus {
     switch (status?.toUpperCase()) {
       case 'PENDING':
+      case 'WAITING':
         return OperationStatus.WAITING;
+      case 'PROCESSING':
+      case 'IN_PROGRESS':
+        return OperationStatus.PROCESSING;
       case 'COMPLETED':
+      case 'SUCCESS':
         return OperationStatus.SUCCESS;
       case 'REJECTED':
+      case 'FAILED':
         return OperationStatus.FAILED;
       default:
-        return OperationStatus.WAITING;
+        throw new BadRequestException(`Неизвестный статус вывода: ${status}`);
     }
   }
 
@@ -433,6 +607,8 @@ export class WithdrawalService {
     switch (status) {
       case OperationStatus.WAITING:
         return 'pending';
+      case OperationStatus.PROCESSING:
+        return 'processing';
       case OperationStatus.SUCCESS:
         return 'completed';
       case OperationStatus.FAILED:
@@ -446,10 +622,14 @@ export class WithdrawalService {
     switch (status) {
       case OperationStatus.WAITING:
         return 'PENDING';
+      case OperationStatus.PROCESSING:
+        return 'PROCESSING';
       case OperationStatus.SUCCESS:
         return 'COMPLETED';
       case OperationStatus.FAILED:
         return 'REJECTED';
+      default:
+        return 'PENDING';
     }
   }
 

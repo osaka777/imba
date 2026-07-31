@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 
 import {
   WC_LINE_TIME_OPTIONS,
@@ -47,6 +48,7 @@ export function OlimpbetLineFilter({
   onDateChange,
   className,
 }: OlimpbetLineFilterProps) {
+  const { t, locale } = useLocale();
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const segmented = isSegmentedLineFilterDesign();
@@ -80,10 +82,12 @@ export function OlimpbetLineFilter({
   };
 
   const dateButtonLabel =
-    isDateActive && dateFilter ? formatLineDateLabel(dateFilter) : "Дата";
+    isDateActive && dateFilter ? formatLineDateLabel(dateFilter, locale) : t("wc.filterDate");
 
   const timeButtonLabel =
-    isTimeActive ? (activeTimeOption?.shortLabel ?? "Время") : "Время";
+    isTimeActive
+      ? (activeTimeOption ? t(activeTimeOption.shortLabelKey) : t("wc.filterTime"))
+      : t("wc.filterTime");
 
   return (
     <div
@@ -94,9 +98,9 @@ export function OlimpbetLineFilter({
       )}
       ref={rootRef}
     >
-      {segmented ? <div className={styles.sectionTitle}>Период</div> : null}
+      {segmented ? <div className={styles.sectionTitle}>{t("wc.filterPeriod")}</div> : null}
 
-      <div className={styles.filterBar} role="group" aria-label="Фильтр линии">
+      <div className={styles.filterBar} role="group" aria-label={t("wc.lineFilter")}>
         <button
           type="button"
           className={cn(styles.segment, isAllActive && styles.segment_active)}
@@ -106,7 +110,7 @@ export function OlimpbetLineFilter({
             onSelectAll();
           }}
         >
-          Все
+          {t("common.all")}
         </button>
 
         <div className={styles.segmentWrap}>
@@ -146,7 +150,7 @@ export function OlimpbetLineFilter({
                       setOpenMenu(null);
                     }}
                   >
-                    <span>{option.label}</span>
+                    <span>{t(option.labelKey)}</span>
                     <span className={styles.count}>{count}</span>
                   </button>
                 );
@@ -186,7 +190,7 @@ export function OlimpbetLineFilter({
                       setOpenMenu(null);
                     }}
                   >
-                    <span>{formatLineDateLabel(date)}</span>
+                    <span>{formatLineDateLabel(date, locale)}</span>
                   </button>
                 );
               })}

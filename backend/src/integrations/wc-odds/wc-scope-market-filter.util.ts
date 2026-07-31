@@ -3,6 +3,7 @@ import {
   isMarketScopeFinalized,
   parseMarketScopeFromText,
   type MarketScope,
+  type TennisMatchStateCursorSource,
 } from '../olimpbet-wc/olimpbet-score-scope.util';
 import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
 
@@ -19,6 +20,21 @@ function parseScopeFromParamTail(tail: string): MarketScope | null {
   }
 
   const setNum = Number(params.PARAMETER_SET_NUMBER);
+  const gameNum = Number(params.PARAMETER_GAME_NUMBER);
+  const pointNum = Number(params.PARAMETER_POINT_NUMBER);
+
+  if (
+    Number.isFinite(setNum) && setNum >= 1
+    && Number.isFinite(gameNum) && gameNum >= 1
+    && Number.isFinite(pointNum) && pointNum >= 1
+  ) {
+    return { kind: 'point', setIndex: setNum, gameIndex: gameNum, pointIndex: pointNum };
+  }
+
+  if (Number.isFinite(setNum) && setNum >= 1 && Number.isFinite(gameNum) && gameNum >= 1) {
+    return { kind: 'game', setIndex: setNum, gameIndex: gameNum };
+  }
+
   if (Number.isFinite(setNum) && setNum >= 1) return { kind: 'set', index: setNum };
 
   const half = params.PARAMETER_HALF_NUMBER;
@@ -103,17 +119,19 @@ export function isScopedMarketGroupFinalized(
   category: string,
   group: WcMarketGroup,
   detail?: OlimpbetEventDetail | null,
+  matchState?: TennisMatchStateCursorSource | null,
 ): boolean {
   if (!detail) return false;
   const scope = resolveMarketGroupScope(category, group);
   if (!scope) return false;
-  return isMarketScopeFinalized(detail, scope);
+  return isMarketScopeFinalized(detail, scope, matchState);
 }
 
-/** Remove live markets for periods that already finished (set / half / quarter). */
+/** Remove live markets for periods that already finished (set / half / quarter / game / point). */
 export function filterFinalizedScopeMarkets(
   grouped: WcGroupedMarkets,
   detail?: OlimpbetEventDetail | null,
+  matchState?: TennisMatchStateCursorSource | null,
 ): WcGroupedMarkets {
   if (!detail) return grouped;
 
@@ -123,12 +141,14 @@ export function filterFinalizedScopeMarkets(
     const trimmedCategory = category.trim();
     if (PURE_SCOPE_CATEGORY.test(trimmedCategory)) {
       const categoryScope = parseMarketScopeFromText(trimmedCategory);
-      if (categoryScope && isMarketScopeFinalized(detail, categoryScope)) {
+      if (categoryScope && isMarketScopeFinalized(detail, categoryScope, matchState)) {
         continue;
       }
     }
 
-    const kept = groups.filter((group) => !isScopedMarketGroupFinalized(category, group, detail));
+    const kept = groups.filter(
+      (group) => !isScopedMarketGroupFinalized(category, group, detail, matchState),
+    );
     if (kept.length > 0) result[category] = kept;
   }
 

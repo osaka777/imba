@@ -8,6 +8,7 @@ import { formatWcCompactOdd } from "~/entities/wc-odds/lib/wcCompactFormat";
 import { useWcBettingOpen } from "~/entities/wc-odds/lib/useWcBettingOpen";
 import { WcHomeOddCell } from "~/entities/wc-odds/ui/WcHomeOddCell";
 import { WcSingleBetRow } from "~/entities/wc-odds/ui/WcSingleBetRow";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CyberMatchRow.module.css";
 
@@ -29,6 +30,7 @@ function h2hEventFromDetail(
 }
 
 export function CyberRowQuickOddsCells({ detail, quick }: CyberRowQuickOddsCellsProps) {
+  const { t } = useLocale();
   const bettingOpen = useWcBettingOpen(detail);
 
   if (quick.kind === "h2h") {
@@ -41,7 +43,6 @@ export function CyberRowQuickOddsCells({ detail, quick }: CyberRowQuickOddsCells
           <WcHomeOddCell
             event={h2hEvent}
             pick="HOME"
-            tone="kick"
             value={formatWcCompactOdd(quick.home, "--")}
           />
         </div>
@@ -50,7 +51,6 @@ export function CyberRowQuickOddsCells({ detail, quick }: CyberRowQuickOddsCells
             <WcHomeOddCell
               event={h2hEvent}
               pick="DRAW"
-              tone="kick"
               value={formatWcCompactOdd(quick.draw, "--")}
             />
           </div>
@@ -59,7 +59,6 @@ export function CyberRowQuickOddsCells({ detail, quick }: CyberRowQuickOddsCells
           <WcHomeOddCell
             event={h2hEvent}
             pick="AWAY"
-            tone="kick"
             value={formatWcCompactOdd(quick.away, "--")}
           />
         </div>
@@ -76,7 +75,7 @@ export function CyberRowQuickOddsCells({ detail, quick }: CyberRowQuickOddsCells
           group={quick.group}
           is1X2
           outcome={quick.homeOutcome}
-          title={`К${quick.mapNum}·П1`}
+          title={t("cyber.quickP1", { n: quick.mapNum })}
         />
       </div>
       <div className={styles.oddSlot}>
@@ -86,7 +85,7 @@ export function CyberRowQuickOddsCells({ detail, quick }: CyberRowQuickOddsCells
           group={quick.group}
           is1X2
           outcome={quick.awayOutcome}
-          title={`К${quick.mapNum}·П2`}
+          title={t("cyber.quickP2", { n: quick.mapNum })}
         />
       </div>
     </>
@@ -99,6 +98,7 @@ type CyberRowMarketsLinkProps = {
 };
 
 export function CyberRowMarketsLink({ gameHref, marketsCount }: CyberRowMarketsLinkProps) {
+  const { t } = useLocale();
   if (marketsCount <= 0) return null;
 
   return (
@@ -107,7 +107,7 @@ export function CyberRowMarketsLink({ gameHref, marketsCount }: CyberRowMarketsL
       href={gameHref}
       onClick={(e) => e.stopPropagation()}
     >
-      <span className={styles.marketsLinkLabel}>Рынки</span>
+      <span className={styles.marketsLinkLabel}>{t("cyber.markets")}</span>
       <span className={styles.marketsLinkCount}>{`+${marketsCount}`}</span>
     </Link>
   );

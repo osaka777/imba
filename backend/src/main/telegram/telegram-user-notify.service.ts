@@ -91,28 +91,28 @@ export class TelegramUserNotifyService {
     const orderLabel = input.publicOrderId ?? input.orderId;
     const amountLine =
       input.amount != null && input.currency
-        ? `\nСумма: ${this.formatAmount(input.amount, input.currency)}`
-        : '';
+        ? this.formatAmount(input.amount, input.currency)
+        : null;
 
-    const statusText =
+    const message =
       input.status === 'approved'
-        ? '✅ Пополнение зачислено'
+        ? `💰 Пополнение · IMBA BET\n${amountLine ? `+${amountLine} зачислено на ваш счёт` : `Заявка #${orderLabel} зачислена`}`
         : input.status === 'rejected'
-          ? '❌ Пополнение отклонено'
-          : '⏱ Пополнение истекло';
+          ? `❌ Пополнение отклонено · IMBA BET\nЗаявка #${orderLabel}${amountLine ? ` · ${amountLine}` : ''}`
+          : `⏱ Время пополнения истекло · IMBA BET\nЗаявка #${orderLabel}${amountLine ? ` · ${amountLine}` : ''}`;
 
     await this.deliver({
       userId: input.userId,
       telegramUserId: ctx.telegramUserId,
       type: 'deposit',
-      message: `${statusText}\nЗаявка #${orderLabel}${amountLine}`,
+      message,
     });
   }
 
   async notifyWithdraw(input: {
     userId: number;
     withdrawId: number;
-    status: 'completed' | 'rejected';
+    status: 'completed' | 'rejected' | 'cancelled' | 'processing';
     amount: number;
     currency: string;
     reason?: string;
@@ -127,8 +127,12 @@ export class TelegramUserNotifyService {
     const amountLine = this.formatAmount(input.amount, input.currency);
     const message =
       input.status === 'completed'
-        ? `✅ Вывод выполнен\nЗаявка #${input.withdrawId}\nСумма: ${amountLine}`
-        : `❌ Вывод отклонён\nЗаявка #${input.withdrawId}\nСумма: ${amountLine}${input.reason ? `\nПричина: ${input.reason}` : ''}`;
+        ? `✅ Вывод · IMBA BET\n${amountLine} отправлены на карту / кошелёк\nЗаявка #${input.withdrawId}`
+        : input.status === 'processing'
+          ? `🔄 Вывод в обработке · IMBA BET\n${amountLine}\nЗаявка #${input.withdrawId}`
+          : input.status === 'cancelled'
+            ? `↩️ Вывод отменён · IMBA BET\n${amountLine} снова на вашем счёте\nЗаявка #${input.withdrawId}`
+            : `❌ Вывод отклонён · IMBA BET\n${amountLine} возвращены на баланс\nЗаявка #${input.withdrawId}${input.reason ? `\nПричина: ${input.reason}` : ''}`;
 
     await this.deliver({
       userId: input.userId,

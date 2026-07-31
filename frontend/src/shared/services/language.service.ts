@@ -3,14 +3,16 @@
  * Manages language configuration and provides consistent language handling
  */
 
-export type SupportedLanguage = 'en' | 'ru' | 'tr';
+import type { AppLocale } from "~/shared/i18n/locale";
+import { APP_LOCALES, normalizeAppLocale } from "~/shared/i18n/locale";
+
+export type SupportedLanguage = AppLocale;
 
 export class LanguageService {
   private static instance: LanguageService;
-  private defaultLanguage: SupportedLanguage = 'ru';
+  private defaultLanguage: SupportedLanguage = "ru";
 
   private constructor() {
-    // Initialize default language from environment or fallback
     this.initializeDefaultLanguage();
   }
 
@@ -22,10 +24,10 @@ export class LanguageService {
   }
 
   private initializeDefaultLanguage(): void {
-    // Try to get from environment variable or use fallback
-    const envLang = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE as SupportedLanguage;
-    if (envLang && this.isSupportedLanguage(envLang)) {
-      this.defaultLanguage = envLang;
+    const envLang = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE;
+    const normalized = normalizeAppLocale(envLang);
+    if (normalized) {
+      this.defaultLanguage = normalized;
     }
   }
 
@@ -34,14 +36,15 @@ export class LanguageService {
   }
 
   public isSupportedLanguage(lang: string): lang is SupportedLanguage {
-    return ['en', 'ru', 'tr'].includes(lang);
+    return normalizeAppLocale(lang) !== null;
   }
 
   public getLanguageWithFallback(lang?: string): SupportedLanguage {
-    if (lang && this.isSupportedLanguage(lang)) {
-      return lang;
-    }
-    return this.defaultLanguage;
+    return normalizeAppLocale(lang) ?? this.defaultLanguage;
+  }
+
+  public getSupportedLanguages(): SupportedLanguage[] {
+    return [...APP_LOCALES];
   }
 
   /**
@@ -49,38 +52,44 @@ export class LanguageService {
    */
   public getLocale(lang?: SupportedLanguage): string {
     const language = lang || this.defaultLanguage;
-    
+
     switch (language) {
-      case 'en':
-        return 'en-US';
-      case 'ru':
-        return 'ru-RU';
-      case 'tr':
-        return 'tr-TR';
+      case "en":
+        return "en-US";
+      case "ru":
+        return "ru-RU";
+      case "kk":
+        return "kk-KZ";
+      case "uz":
+        return "uz-UZ";
+      case "tr":
+        return "tr-TR";
+      case "uk":
+        return "uk-UA";
+      case "az":
+        return "az-AZ";
+      case "es":
+        return "es-ES";
+      case "pt":
+        return "pt-BR";
       default:
-        return 'ru-RU';
+        return "ru-RU";
     }
   }
 
-  /**
-   * Get number format for the specified language
-   */
   public getNumberFormat(lang?: SupportedLanguage): Intl.NumberFormat {
-    const locale = this.getLocale(lang);
-    return new Intl.NumberFormat(locale);
+    return new Intl.NumberFormat(this.getLocale(lang));
   }
 
-  /**
-   * Get currency format for the specified language
-   */
-  public getCurrencyFormat(currency: string = 'RUB', lang?: SupportedLanguage): Intl.NumberFormat {
-    const locale = this.getLocale(lang);
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currency,
+  public getCurrencyFormat(
+    currency: string = "RUB",
+    lang?: SupportedLanguage,
+  ): Intl.NumberFormat {
+    return new Intl.NumberFormat(this.getLocale(lang), {
+      style: "currency",
+      currency,
     });
   }
 }
 
-// Export singleton instance
 export const languageService = LanguageService.getInstance();

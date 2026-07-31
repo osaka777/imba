@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
+import { useLocale } from "~/shared/model/useLocale";
 
 interface DepositStatus {
   id: string;
@@ -12,6 +13,7 @@ interface DepositStatus {
 }
 
 export const useDepositNotifications = () => {
+  const { t } = useLocale();
   const processedDeposits = useRef<Set<string>>(new Set());
 
   const showDepositNotification = (deposit: DepositStatus) => {
@@ -27,7 +29,7 @@ export const useDepositNotifications = () => {
 
     switch (status) {
       case 'SUCCESS':
-        toast.success(`✅ Депозит успешно зачислен! Сумма: ${formattedAmount}`, {
+        toast.success(t("deposit.toastCredited", { amount: formattedAmount }), {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: false,
@@ -38,7 +40,7 @@ export const useDepositNotifications = () => {
         break;
 
       case 'ACCEPTED':
-        toast.info(`⏳ Депозит принят к обработке. Сумма: ${formattedAmount}`, {
+        toast.info(t("deposit.toastProcessing", { amount: formattedAmount }), {
           position: "top-right",
           autoClose: 7000,
           hideProgressBar: false,
@@ -49,7 +51,7 @@ export const useDepositNotifications = () => {
         break;
 
       case 'ERROR':
-        toast.error(`❌ Ошибка при обработке депозита. Сумма: ${formattedAmount}`, {
+        toast.error(t("deposit.toastFailed", { amount: formattedAmount }), {
           position: "top-right",
           autoClose: 8000,
           hideProgressBar: false,
@@ -60,7 +62,7 @@ export const useDepositNotifications = () => {
         break;
 
       default:
-        toast.warning(`⚠️ Неизвестный статус депозита: ${status}. Сумма: ${formattedAmount}`, {
+        toast.warning(t("deposit.toastUnknown", { status, amount: formattedAmount }), {
           position: "top-right",
           autoClose: 6000,
           hideProgressBar: false,

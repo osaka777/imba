@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { KickLivePartner } from "~/entities/kick/api/client";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./KickPartnersLive.module.css";
 
 export function KickPartnersLive() {
+  const { t } = useLocale();
   const [partners, setPartners] = useState<KickLivePartner[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,14 +39,14 @@ export function KickPartnersLive() {
 
   if (loading) {
     return (
-      <section className={styles.section} aria-busy="true" aria-label="Партнёры в эфире">
+      <section className={styles.section} aria-busy="true" aria-label={t("cyber.kickPartnersAria")}>
         <div className={styles.head}>
           <h2 className={styles.title}>
             <span className={styles.livePill}>LIVE</span>
-            Партнёры imba в эфире
+            {t("cyber.kickPartnersTitle")}
           </h2>
         </div>
-        <p className={styles.muted}>Загружаем партнёрские трансляции...</p>
+        <p className={styles.muted}>{t("cyber.kickLoading")}</p>
       </section>
     );
   }
@@ -52,11 +54,11 @@ export function KickPartnersLive() {
   if (partners.length === 0) return null;
 
   return (
-    <section className={styles.section} aria-label="Партнёры в эфире">
+    <section className={styles.section} aria-label={t("cyber.kickPartnersAria")}>
       <div className={styles.head}>
         <h2 className={styles.title}>
           <span className={styles.livePill}>LIVE</span>
-          Партнёры imba в эфире
+          {t("cyber.kickPartnersTitle")}
         </h2>
       </div>
 
@@ -66,19 +68,23 @@ export function KickPartnersLive() {
             <div className={styles.cardHead}>
               <span className={styles.channel}>@{partner.channelSlug}</span>
               <span className={styles.viewers}>
-                {partner.viewerCount != null ? `${partner.viewerCount} зрит.` : "LIVE"}
+                {partner.viewerCount != null
+                  ? t("cyber.kickViewers", { n: partner.viewerCount })
+                  : "LIVE"}
               </span>
             </div>
-            <p className={styles.streamTitle}>{partner.streamTitle || "Прямой эфир на Kick"}</p>
+            <p className={styles.streamTitle}>
+              {partner.streamTitle || t("cyber.kickDefaultTitle")}
+            </p>
             {partner.hasBranding ? (
               <span className={styles.branding}>imba branding active</span>
             ) : null}
             <div className={styles.actions}>
               <a className={styles.secondary} href={partner.kickUrl} rel="noreferrer" target="_blank">
-                Смотреть Kick
+                {t("cyber.kickWatch")}
               </a>
               <Link className={styles.primary} href={partner.betUrl}>
-                Ставить на imba
+                {t("cyber.kickBet")}
               </Link>
             </div>
           </article>

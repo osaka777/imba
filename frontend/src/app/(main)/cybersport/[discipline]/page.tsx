@@ -7,7 +7,7 @@ import {
   type CyberDisciplineSlug,
 } from "~/entities/cybersport/lib/cyberDisciplineSlugs";
 import { CybersportDisciplineSection } from "~/entities/cybersport/ui/CybersportDisciplineSection";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 type PageProps = {
   params: Promise<{ discipline: string }>;
@@ -22,13 +22,14 @@ export function generateStaticParams(): { discipline: CyberDisciplineSlug }[] {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { discipline } = await params;
   if (!isCyberDisciplineSlug(discipline)) {
-    return makeMetadata("Киберспорт", { path: "/cybersport" });
+    return makeSeoMetadata("common.seoCyberTitle", { path: "/cybersport" });
   }
 
   const config = CYBER_DISCIPLINES[discipline];
-  return makeMetadata(`Ставки на ${config.label}`, {
-    description: `${config.label} — live и линия на Imba.bet. Коэффициенты, трансляции и ставки на киберспорт.`,
+  return makeSeoMetadata("common.seoDisciplineBets", {
+    descriptionKey: "common.seoDisciplineDesc",
     path: `/cybersport/${discipline}`,
+    params: { name: config.label },
   });
 }
 

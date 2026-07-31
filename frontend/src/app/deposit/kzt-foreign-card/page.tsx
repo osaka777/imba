@@ -5,10 +5,12 @@ import {
   getMyKztForeignCardOrder,
   uploadKztForeignCardReceipt,
 } from "~/entities/finance/api/deposit";
+import { useLocale } from "~/shared/model/useLocale";
 import { ManualForeignCardPage } from "~/entities/finance/ui/ManualForeignCardPage/ManualForeignCardPage";
 
 export default function KztForeignCardPage() {
   const router = useRouter();
+  const { t } = useLocale();
   return (
     <ManualForeignCardPage
       currency="KZT"
@@ -16,7 +18,7 @@ export default function KztForeignCardPage() {
       getMyOrder={getMyKztForeignCardOrder}
       method="KZT_FOREIGN_CARD"
       onPaymentCancelled={() => router.push("/")}
-      title="Пополнение — Перевод в KZT"
+      title={t("common.seoDepositKzt")}
       uploadReceipt={uploadKztForeignCardReceipt}
     />
   );

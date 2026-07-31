@@ -24,7 +24,7 @@ export class DepositCleanupService {
       const stale = await this.prisma.deposit.findMany({
         where: {
           paymentSystem: {
-            in: ['KZT_FOREIGN_CARD', 'KZT_KASPI', 'RUB_FOREIGN_CARD', 'RUB_SBERBANK', 'RUB_YANDEX_BANK', 'USDT_TRC20'] as any,
+            in: ['KZT_FOREIGN_CARD', 'KZT_KASPI', 'RUB_FOREIGN_CARD', 'RUB_SBERBANK', 'RUB_YANDEX_BANK', 'RUB_VTB_BANK', 'USDT_TRC20'] as any,
           },
           status: { in: ['PENDING', 'PROCESSING'] as any },
           createdAt: { lt: cutoff },

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "react-toastify";
 
 import { components } from "~/shared/api";
 import {
@@ -24,7 +25,7 @@ import {
 } from "~/shared/lib/cardNumber";
 import { useLocale } from "~/shared/model/useLocale";
 
-import { withdraw } from "../../api";
+import { cancelWithdrawal, fetchUserWithdrawals, forfeitBonus, isBonusWagerWithdrawError, withdraw } from "../../api";
 import { CardBrandIcon } from "./CardBrandIcon";
 import styles from "./BovaForm.module.css";
 import { useCurrency } from "~/shared/model/useCurrency";
@@ -49,7 +50,6 @@ const CRYPTO_TYPES = [
   { label: "TRON", value: "usdt_tron", currency: "USDT" },
 ] as const;
 
-const SUPPORTED_CURRENCIES = ["RUB", "UAH", "KZT", "AZN", "KGS"] as const;
 const SUBMIT_COOLDOWN = 3000;
 const REQUEST_TRACKING = new Map<string, { timestamp: number; count: number }>();
 
@@ -80,12 +80,69 @@ const isDuplicateRequest = (data: FormData): boolean => {
 export const BovaForm = () => {
   const { t } = useLocale();
   const { currency } = useCurrency();
+  const queryClient = useQueryClient();
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [error, setError] = useState<string>("");
+  const [bonusBlock, setBonusBlock] = useState(false);
+
+  const { data: withdrawals = [] } = useQuery({
+    queryKey: ["user-withdrawals"],
+    queryFn: fetchUserWithdrawals,
+    refetchInterval: 15_000,
+  });
+
+  const recentWithdrawals = useMemo(
+    () => withdrawals.slice(0, 8),
+    [withdrawals],
+  );
+
+  const statusLabel = useCallback(
+    (status: string) => {
+      const key = String(status).toUpperCase();
+      if (key === "WAITING" || key === "PENDING") return t("deposit.withdrawStatusWaiting");
+      if (key === "PROCESSING") return t("deposit.withdrawStatusProcessing");
+      if (key === "SUCCESS" || key === "COMPLETED") return t("deposit.withdrawStatusCompleted");
+      if (key === "FAILED" || key === "REJECTED") return t("deposit.withdrawStatusRejected");
+      return status;
+    },
+    [t],
+  );
+
+  const statusClass = (status: string) => {
+    const key = String(status).toUpperCase();
+    if (key === "WAITING" || key === "PENDING") return styles.statusWaiting;
+    if (key === "PROCESSING") return styles.statusProcessing;
+    if (key === "SUCCESS" || key === "COMPLETED") return styles.statusCompleted;
+    if (key === "FAILED" || key === "REJECTED") return styles.statusRejected;
+    return styles.statusWaiting;
+  };
+
+  const canCancelStatus = (status: string) => {
+    const key = String(status).toUpperCase();
+    return key === "WAITING" || key === "PENDING";
+  };
+
+  const cancelPendingMutation = useMutation({
+    mutationFn: cancelWithdrawal,
+    onSuccess: async () => {
+      toast.success(t("deposit.cancelWithdrawOk"));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user-withdrawals"] }),
+        queryClient.invalidateQueries({ queryKey: ["operations"] }),
+        queryClient.invalidateQueries({ queryKey: ["user"] }),
+      ]);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || t("deposit.cancelWithdrawFail"));
+    },
+    onSettled: () => setCancellingId(null),
+  });
   const displayCurrency = currency === "USDT" ? "USDT" : currency;
 
   const methods = useMemo(
     () => [
       { label: t("deposit.methodCard"), value: "card" as const },
-      { label: t("deposit.crypto"), value: "crypto" as const },
+      { label: t("deposit.cryptoUsdt"), value: "crypto" as const },
     ],
     [t],
   );
@@ -93,19 +150,25 @@ export const BovaForm = () => {
   const cardTypes = useMemo(
     () => [
       { label: t("deposit.cardKz"), value: "cards_kz" as const, currency: "auto" as const },
+      { label: t("deposit.cardRu"), value: "cards_ru" as const, currency: "auto" as const },
       { label: t("deposit.cardForeign"), value: "cards_foreign" as const, currency: "auto" as const },
     ],
     [t],
   );
 
+  const defaultCardType = useMemo(() => {
+    if (currency === "RUB") return cardTypes[1]; // Россия
+    if (currency === "KZT") return cardTypes[0]; // Казахстан
+    return cardTypes[2]; // Иностранная
+  }, [currency, cardTypes]);
+
   const [selectValue, setSelectValue] = useState<(typeof methods)[number]>(methods[0]);
   const [selectCardType, setSelectCardType] = useState<(typeof cardTypes)[number]>(
-    cardTypes[0],
+    defaultCardType,
   );
   const [selectCryptoType, setSelectCryptoType] = useState<(typeof CRYPTO_TYPES)[number]>(
     CRYPTO_TYPES[0],
   );
-  const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cardBrand, setCardBrand] = useState<CardBrand>("unknown");
 
@@ -114,24 +177,20 @@ export const BovaForm = () => {
   }, [methods]);
 
   useEffect(() => {
-    setSelectCardType((prev) => cardTypes.find((c) => c.value === prev.value) ?? cardTypes[0]);
-  }, [cardTypes]);
+    setSelectCardType((prev) => cardTypes.find((c) => c.value === prev.value) ?? defaultCardType);
+  }, [cardTypes, defaultCardType]);
 
-  const availableCardTypes = useMemo(() => {
-    if (SUPPORTED_CURRENCIES.includes(currency as (typeof SUPPORTED_CURRENCIES)[number])) {
-      return cardTypes;
-    }
-    return [cardTypes[1]];
-  }, [currency, cardTypes]);
+  // Всегда доступны КЗ / РФ / иностранная + USDT отдельно методом
+  const availableCardTypes = cardTypes;
 
   useEffect(() => {
     if (
       !selectCardType ||
       !availableCardTypes.some((card) => card.value === selectCardType.value)
     ) {
-      setSelectCardType(availableCardTypes[0]);
+      setSelectCardType(defaultCardType);
     }
-  }, [availableCardTypes, selectCardType]);
+  }, [availableCardTypes, selectCardType, defaultCardType]);
 
   useEffect(() => {
     if (currency === "USDT" && selectValue.value !== "crypto") {
@@ -145,10 +204,14 @@ export const BovaForm = () => {
     return "";
   }, [selectValue, selectCardType, selectCryptoType]);
 
+  /** Для крипты всегда USDT-баланс; для карты — текущая валюта аккаунта */
+  const withdrawCurrency = selectValue.value === "crypto" ? "USDT" : currency;
+  const headingCurrency = selectValue.value === "crypto" ? "USDT" : displayCurrency;
+
   const minAmount = useMemo(() => {
     if (selectValue.value === "crypto") return 500;
-    return currency === "KZT" ? 3000 : 500;
-  }, [selectValue, currency]);
+    return withdrawCurrency === "KZT" ? 3000 : 500;
+  }, [selectValue, withdrawCurrency]);
 
   const maxAmount = useMemo(
     () => (selectValue.value === "crypto" ? 5000 : 75000),
@@ -157,8 +220,8 @@ export const BovaForm = () => {
 
   const quickSetAmounts = useMemo(() => {
     if (selectValue.value === "crypto") return [500, 1000, 2000];
-    return currency === "KZT" ? [3000, 6000, 9000] : [500, 1000, 2000];
-  }, [selectValue, currency]);
+    return withdrawCurrency === "KZT" ? [3000, 6000, 9000] : [500, 1000, 2000];
+  }, [selectValue, withdrawCurrency]);
 
   const submitCountRef = useRef(0);
   const lastSubmitTimeRef = useRef(0);
@@ -224,9 +287,9 @@ export const BovaForm = () => {
   useEffect(() => {
     setValue("wallet", "");
     setValue("method", currentMethod);
-    setValue("currency", currency);
+    setValue("currency", withdrawCurrency);
     setCardBrand("unknown");
-  }, [selectValue.value, setValue, selectCardType?.value, selectCryptoType?.value, currentMethod, currency]);
+  }, [selectValue.value, setValue, selectCardType?.value, selectCryptoType?.value, currentMethod, withdrawCurrency]);
 
   const onSubmit = useCallback(
     async (dto: FormData) => {
@@ -240,6 +303,7 @@ export const BovaForm = () => {
 
       lastSubmitTimeRef.current = now;
       setError("");
+      setBonusBlock(false);
       isSubmittingRef.current = true;
       setIsSubmitting(true);
 
@@ -251,7 +315,7 @@ export const BovaForm = () => {
             : formData.wallet.trim();
         const requestData = {
           amount: Number(formData.amount),
-          currency,
+          currency: withdrawCurrency,
           method: currentMethod,
           wallet: walletValue,
         };
@@ -263,19 +327,26 @@ export const BovaForm = () => {
         pendingRequestRef.current = null;
 
         if (response?.data) {
-          reset({ currency, amount: 0, wallet: "" });
+          reset({ currency: withdrawCurrency, amount: 0, wallet: "" });
           setCardBrand("unknown");
           setError("");
+          setBonusBlock(false);
+          await queryClient.invalidateQueries({ queryKey: ["user-withdrawals"] });
         } else if (response?.error) {
           const message = Array.isArray(response.error.message)
             ? response.error.message[0]
             : response.error.message;
-          setError(message || t("deposit.withdrawError"));
+          const msg = message || t("deposit.withdrawError");
+          setError(msg);
+          setBonusBlock(isBonusWagerWithdrawError(msg));
         } else {
           setError(t("deposit.withdrawError"));
+          setBonusBlock(false);
         }
       } catch (err: any) {
-        setError(err?.message || t("deposit.withdrawError"));
+        const msg = err?.message || t("deposit.withdrawError");
+        setError(msg);
+        setBonusBlock(isBonusWagerWithdrawError(msg));
       } finally {
         pendingRequestRef.current = null;
         setTimeout(() => {
@@ -285,8 +356,25 @@ export const BovaForm = () => {
         }, 2000);
       }
     },
-    [isPending, currentMethod, currency, mutateAsync, reset, getValues, selectValue.value, t],
+    [isPending, currentMethod, withdrawCurrency, mutateAsync, reset, getValues, selectValue.value, t, queryClient],
   );
+
+  const forfeitBonusMutation = useMutation({
+    mutationFn: () => forfeitBonus(withdrawCurrency),
+    onSuccess: async (result) => {
+      toast.success(result.message || t("deposit.forfeitBonusOk"));
+      setError("");
+      setBonusBlock(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user"] }),
+        queryClient.invalidateQueries({ queryKey: ["operations"] }),
+        queryClient.invalidateQueries({ queryKey: ["user-withdrawals"] }),
+      ]);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || t("deposit.forfeitBonusFail"));
+    },
+  });
 
   const quickSet = useCallback(
     (amount: number) => (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -300,7 +388,50 @@ export const BovaForm = () => {
 
   return (
     <form className={styles.BovaForm} onSubmit={handleSubmit(onSubmit)}>
-      <h2 className={styles.heading}>{t("deposit.withdrawHeading", { currency: displayCurrency })}</h2>
+      <h2 className={styles.heading}>{t("deposit.withdrawHeading", { currency: headingCurrency })}</h2>
+
+      {recentWithdrawals.length > 0 && (
+        <div className={styles.pendingBox}>
+          <p className={styles.pendingTitle}>{t("deposit.myWithdrawals")}</p>
+          {recentWithdrawals.map((w) => {
+            const id = Number(w.id);
+            const isCancelling = cancellingId === id && cancelPendingMutation.isPending;
+            const cancellable = canCancelStatus(String(w.status));
+            return (
+              <div className={styles.pendingRow} key={id}>
+                <div className={styles.pendingInfo}>
+                  <span className={styles.pendingAmount}>
+                    {Number(w.amount).toLocaleString("ru-RU")} {w.currencyCode}
+                  </span>
+                  <span className={styles.pendingMeta}>
+                    {w.wallet
+                      ? `•••• ${String(w.wallet).replace(/\s/g, "").slice(-4)}`
+                      : w.type || "CARD"}
+                  </span>
+                  <span className={`${styles.statusBadge} ${statusClass(String(w.status))}`}>
+                    {statusLabel(String(w.status))}
+                  </span>
+                </div>
+                {cancellable ? (
+                  <button
+                    className={styles.pendingCancel}
+                    disabled={cancelPendingMutation.isPending}
+                    onClick={() => {
+                      setCancellingId(id);
+                      cancelPendingMutation.mutate(id);
+                    }}
+                    type="button"
+                  >
+                    {isCancelling
+                      ? t("deposit.cancellingWithdraw")
+                      : t("deposit.cancelWithdraw")}
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className={styles.formGroup}>
         <label className={styles.label}>{t("deposit.withdrawMethod")}</label>
@@ -425,7 +556,7 @@ export const BovaForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>{t("deposit.amountIn", { currency: displayCurrency })}</label>
+        <label className={styles.label}>{t("deposit.amountIn", { currency: headingCurrency })}</label>
         <div className={styles.inputField}>
           <Input
             {...register("amount", { valueAsNumber: true })}
@@ -466,7 +597,26 @@ export const BovaForm = () => {
             : t("deposit.invalidCard")}
         </p>
       )}
-      {error && <p className={styles.error}>{error}</p>}
+      {error && (
+        <div className={styles.errorBox}>
+          <p className={styles.error}>{error}</p>
+          {bonusBlock && (
+            <div className={styles.forfeitBox}>
+              <p className={styles.forfeitHint}>{t("deposit.forfeitBonusHint")}</p>
+              <button
+                className={styles.forfeitButton}
+                disabled={forfeitBonusMutation.isPending || isLoading}
+                onClick={() => forfeitBonusMutation.mutate()}
+                type="button"
+              >
+                {forfeitBonusMutation.isPending
+                  ? t("deposit.forfeitBonusPending")
+                  : t("deposit.forfeitBonus")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <Button
         className={styles.submit}

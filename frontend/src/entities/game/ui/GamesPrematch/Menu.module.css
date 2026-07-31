@@ -48,9 +48,15 @@
 
 .icon {
   fill: var(--white);
+  color: var(--white);
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+}
+
+.icon :global(path),
+.icon :global([fill]) {
+  fill: currentColor;
 }
 
 .text {

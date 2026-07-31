@@ -1,13 +1,41 @@
 .withdrawDialog {
   padding: 0 !important;
-  max-width: min(440px, calc(100vw - 32px)) !important;
+  max-width: min(420px, calc(100vw - 28px)) !important;
   width: 100% !important;
-  border-radius: 22px !important;
+  border-radius: 16px !important;
   overflow: visible !important;
-  background: #ffffff !important;
+  background: linear-gradient(145deg, #233358 0%, #141b2e 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.32),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.withdrawDialog > button:last-of-type {
+  right: 12px !important;
+  top: 12px !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+}
+
+.withdrawDialog > button:last-of-type:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+}
+
+.withdrawDialog > button:last-of-type svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #cbd5e1 !important;
+  stroke: #cbd5e1 !important;
+}
+
+.withdrawDialog > button:last-of-type:hover svg {
+  color: #fff !important;
+  stroke: #fff !important;
 }
 
 .withdrawDialogScroll {
@@ -16,20 +44,8 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: inherit;
-}
-
-@media screen and (max-width: 768px) {
-  .withdrawDialog {
-    max-width: min(360px, calc(100vw - 36px)) !important;
-    border-radius: 20px !important;
-  }
-}
-
-@media screen and (max-width: 480px) {
-  .withdrawDialog {
-    max-width: min(340px, calc(100vw - 32px)) !important;
-    border-radius: 18px !important;
-  }
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 .DepositForm {
@@ -37,4 +53,26 @@
   min-height: fit-content;
   display: flex;
   align-items: stretch;
+}
+
+@media screen and (max-width: 768px) {
+  .withdrawDialog {
+    max-width: min(360px, calc(100vw - 24px)) !important;
+    border-radius: 14px !important;
+  }
+
+  .withdrawDialog > button:last-of-type {
+    right: 10px !important;
+    top: 10px !important;
+    width: 28px !important;
+    height: 28px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .withdrawDialog {
+    max-width: min(100vw - 16px, 340px) !important;
+    border-radius: 12px !important;
+  }
 }

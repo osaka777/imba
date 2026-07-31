@@ -1,11 +1,13 @@
 import { Metadata } from "next";
 
 import { ChangePasswordForm } from "~/entities/user";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 import styles from "./ChangePasswordPage.module.css";
 
-export const metadata: Metadata = makeMetadata("Изменить пароль");
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoChangePassword");
+}
 
 export default async function ChangePasswordPage() {
   return (

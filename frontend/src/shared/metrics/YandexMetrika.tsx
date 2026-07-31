@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-const METRIKA_ID = 98703324;
+const METRIKA_ID = 111057273;
 
 function sendHit(url: string): boolean {
   if (typeof window.ym === "function") {

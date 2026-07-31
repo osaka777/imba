@@ -6,6 +6,25 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.disciplineTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e1e6ed;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.disciplineTitle {
+  margin: 0;
+  color: #101828;
+  font-size: 18px;
+  font-weight: 700;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -317,4 +336,89 @@
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/* Shared sportsbook surfaces */
+.panelHeader,
+.sharedSportFilter,
+.topRow {
+  border: 1px solid #e1e6ed;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.tabPrimary {
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: none;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tabPrimary_prematch {
+  border-color: #d7dde5;
+  background: #eef2f7;
+  color: #344054;
+}
+
+.tabSecondary {
+  border-radius: 6px;
+  color: #667085;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tabSecondary:hover {
+  background: #eef4ff;
+  color: #2563eb;
+}
+
+.mobileFeedTab {
+  border-color: #d7dde5;
+  border-radius: 6px;
+  background: #f3f5f8;
+  color: #667085;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.mobileFeedTabs .mobileFeedTab:first-child.mobileFeedTab_active,
+.mobileFeedTabs .mobileFeedTab:last-child.mobileFeedTab_active {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: none;
+}
+
+.card {
+  border: 1px solid #e1e6ed;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.tableBody {
+  background: #f8fafc;
+}
+
+.hero {
+  border: 1px solid #e1e6ed;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.heroGlow {
+  display: none;
+}
+
+.heroEyebrow,
+.heroSubtitle {
+  color: #667085;
+}
+
+.heroTitle {
+  color: #101828;
+  font-weight: 700;
+  text-transform: none;
 }

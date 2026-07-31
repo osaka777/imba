@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { tRequest } from '~/shared/i18n/request-locale';
+
 import { resolveSupportUserContext } from '../_lib/userContext';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
   const rateKey = userContext.userId ? `user:${userContext.userId}` : `ip:${ip}`;
   if (!checkRateLimit(rateKey)) {
     return NextResponse.json(
-      { ok: false, error: 'Слишком много сообщений. Попробуйте через минуту.' },
+      { ok: false, error: tRequest(request, 'common.errTooManyMessages') },
       { status: 429 },
     );
   }
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: 'Некорректный запрос' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: tRequest(request, 'common.errBadRequest') }, { status: 400 });
   }
 
   const text = body.message?.trim() || '';
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
   const sessionId = body.sessionId?.trim() || '';
   if ((!text && !imageUrl) || text.length > 2000) {
     return NextResponse.json(
-      { ok: false, error: 'Сообщение или скрин обязательны (до 2000 символов)' },
+      { ok: false, error: tRequest(request, 'common.errMessageOrScreenRequired') },
       { status: 400 },
     );
   }
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          error: 'Оператор offline. Попробуйте позже или напишите в Telegram.',
+          error: tRequest(request, 'common.errOperatorOffline'),
           telegramUrl:
             process.env.SUPPORT_TELEGRAM_URL ||
             process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM_URL ||
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[support-chat] notify error', error);
     return NextResponse.json(
-      { ok: false, error: 'Ошибка сети. Попробуйте ещё раз.' },
+      { ok: false, error: tRequest(request, 'common.errNetworkRetry') },
       { status: 502 },
     );
   }

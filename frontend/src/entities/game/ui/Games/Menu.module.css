@@ -107,6 +107,13 @@
   width: 18px;
   height: 18px;
   fill: var(--white);
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.icon :global(path),
+.icon :global([fill]) {
+  fill: currentColor;
 }
 
 .text {

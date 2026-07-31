@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useLocale } from "~/shared/model/useLocale";
+
 import styles from "./AppPushOptInModal.module.css";
 
 type AppPushOptInModalProps = {
@@ -21,6 +23,7 @@ function BellIcon() {
 }
 
 export function AppPushOptInModal({ onEnable, onDismiss }: AppPushOptInModalProps) {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
 
   const handleEnable = async () => {
@@ -41,26 +44,24 @@ export function AppPushOptInModal({ onEnable, onDismiss }: AppPushOptInModalProp
           </div>
           <div>
             <h2 className={styles.pushTitle} id="push-optin-title">
-              Включить уведомления?
+              {t("notify.pushOptInTitle")}
             </h2>
-            <p className={styles.pushSubtitle}>
-              Узнавайте о расчёте ставок, пополнениях и акциях прямо в приложении — даже когда оно свёрнуто.
-            </p>
+            <p className={styles.pushSubtitle}>{t("notify.pushOptInLead")}</p>
           </div>
         </div>
 
         <div className={styles.pushList}>
           <div className={styles.pushItem}>
             <span className={styles.pushDot} />
-            Расчёт ставок и выигрыши
+            {t("notify.pushOptInGoals")}
           </div>
           <div className={styles.pushItem}>
             <span className={styles.pushDot} />
-            Пополнения и выводы
+            {t("notify.pushOptInSettle")}
           </div>
           <div className={styles.pushItem}>
             <span className={styles.pushDot} />
-            Акции и бонусы
+            {t("notify.pushOptInFinance")}
           </div>
         </div>
 
@@ -71,7 +72,7 @@ export function AppPushOptInModal({ onEnable, onDismiss }: AppPushOptInModalProp
             onClick={() => void handleEnable()}
             type="button"
           >
-            {loading ? "Подключаем..." : "Включить уведомления"}
+            {loading ? t("notify.pushOptInConnecting") : t("notify.pushOptInEnable")}
           </button>
           <button
             className={styles.pushSecondary}
@@ -79,7 +80,7 @@ export function AppPushOptInModal({ onEnable, onDismiss }: AppPushOptInModalProp
             onClick={onDismiss}
             type="button"
           >
-            Не сейчас
+            {t("notify.pushOptInLater")}
           </button>
         </div>
       </div>

@@ -17,6 +17,15 @@ import {
 } from './wc-public.util';
 import { SyncMsg } from './wc-sync.protocol';
 import type { WcOddsEventDetailDto, WcOddsEventDto } from './wc-odds.types';
+import { isAiBotUserAgent } from '../../common/security/ai-bot-detection.util';
+import {
+  FEED_COOKIE_NAME,
+  isNativeAppUserAgent,
+  isPrivateOrLoopbackIp,
+  parseCookieHeader,
+  verifyFeedToken,
+} from '../../common/security/feed-access.util';
+import { feedWsConnectRateLimiter } from '../../common/security/feed-rate-limit';
 
 type WcClient = {
   socket: WebSocket;
@@ -350,7 +359,64 @@ export class WcOddsGateway
     }
   }
 
-  handleConnection(socket: WebSocket, _request: IncomingMessage) {
+  private resolveClientIp(request: IncomingMessage): string {
+    const cf = request.headers['cf-connecting-ip'];
+    if (typeof cf === 'string' && cf.trim()) return cf.trim();
+    const forwarded = request.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string' && forwarded.trim()) {
+      return forwarded.split(',')[0]?.trim() || 'unknown';
+    }
+    return request.socket.remoteAddress || 'unknown';
+  }
+
+  private hasFeedAccess(request: IncomingMessage): boolean {
+    const ua = request.headers['user-agent'];
+    if (isNativeAppUserAgent(ua)) return true;
+
+    const ip = this.resolveClientIp(request);
+    if (isPrivateOrLoopbackIp(ip)) return true;
+
+    const headerToken = request.headers['x-imba-feed-token'];
+    if (typeof headerToken === 'string' && verifyFeedToken(headerToken.trim())) {
+      return true;
+    }
+
+    const cookieToken = parseCookieHeader(request.headers.cookie, FEED_COOKIE_NAME);
+    if (verifyFeedToken(cookieToken)) return true;
+
+    // Logged-in players may open WS before feed session refresh.
+    if (parseCookieHeader(request.headers.cookie, 'accessToken')) return true;
+
+    try {
+      const host = request.headers.host || 'localhost';
+      const url = new URL(request.url || '/', `http://${host}`);
+      const q = url.searchParams.get('ft');
+      if (verifyFeedToken(q)) return true;
+    } catch {
+      // ignore
+    }
+
+    return false;
+  }
+
+  handleConnection(socket: WebSocket, request: IncomingMessage) {
+    // Refuse AI agents/crawlers from inspecting the live-odds sync protocol.
+    if (isAiBotUserAgent(request.headers['user-agent'])) {
+      socket.close(4403, 'AI_ACCESS_DENIED');
+      return;
+    }
+
+    const ip = this.resolveClientIp(request);
+    if (!feedWsConnectRateLimiter.try(`ws:${ip}`)) {
+      socket.close(4429, 'FEED_WS_RATE_LIMIT');
+      return;
+    }
+
+    if (!this.hasFeedAccess(request)) {
+      socket.close(4401, 'FEED_SESSION_REQUIRED');
+      return;
+    }
+
     const clientId = uuid4();
     this.clients.set(clientId, {
       socket,

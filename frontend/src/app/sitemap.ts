@@ -17,7 +17,10 @@ type CyberGameSitemap = {
 const CYBER_SITEMAP_SPORTS = ["esports.cs", "esports.dota2", "esports.valorant"] as const;
 
 async function fetchEventsForSitemap(): Promise<FeedEvent[]> {
-  const host = process.env.NEXT_PUBLIC_HOST || "https://imba.bet";
+  const host =
+    process.env.BACKEND_URL
+    || process.env.NEXT_PUBLIC_HOST
+    || "https://imba.bet";
   try {
     const res = await fetch(`${host}/api/feed/events`, { cache: "no-store" });
     if (!res.ok) return [];
@@ -189,6 +192,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       priority: 0.4,
       url: `${host}/info`,
+    },
+    {
+      changeFrequency: "monthly",
+      lastModified: now,
+      priority: 0.7,
+      url: `${host}/app`,
+    },
+    {
+      changeFrequency: "monthly",
+      lastModified: now,
+      priority: 0.7,
+      url: `${host}/windows`,
     },
   ];
 

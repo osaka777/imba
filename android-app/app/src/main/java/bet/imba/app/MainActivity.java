@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         activeInstance = this;
         setContentView(R.layout.activity_main);
 
-        ImbaFirebaseMessagingService.ensureChannel(this);
+        ImbaFirebaseMessagingService.ensureChannels(this);
 
         webView = findViewById(R.id.webview);
         progressBar = findViewById(R.id.progress_bar);
@@ -102,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
         cookieManager.setAcceptThirdPartyCookies(webView, true);
 
         webView.addJavascriptInterface(new AppBridge(), "ImbaApp");
+
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
+            openExternal(Uri.parse(url));
+        });
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -211,8 +215,9 @@ public class MainActivity extends AppCompatActivity {
         String token = latestFcmToken == null ? "" : latestFcmToken.replace("'", "\\'");
         boolean granted = hasNotificationPermission();
         int statusBarHeight = getStatusBarHeightPx();
+        String version = BuildConfig.VERSION_NAME == null ? "" : BuildConfig.VERSION_NAME.replace("'", "\\'");
         String script = "(function(){"
-                + "window.__IMBA_APP__={native:true,notifications:" + granted + ",fcmToken:'" + token + "',statusBarHeight:" + statusBarHeight + "};"
+                + "window.__IMBA_APP__={native:true,notifications:" + granted + ",fcmToken:'" + token + "',statusBarHeight:" + statusBarHeight + ",appVersion:'" + version + "',platform:'android'};"
                 + "window.dispatchEvent(new CustomEvent('imba:app-ready',{detail:window.__IMBA_APP__}));"
                 + (token.isEmpty() ? "" : "window.dispatchEvent(new CustomEvent('imba:fcm-token',{detail:{token:'" + token + "'}}));")
                 + "})();";
@@ -316,6 +321,19 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public String getAppVersion() {
             return BuildConfig.VERSION_NAME;
+        }
+
+        @JavascriptInterface
+        public String getPlatform() {
+            return "android";
+        }
+
+        @JavascriptInterface
+        public void openUrl(String url) {
+            if (url == null || url.isEmpty()) {
+                return;
+            }
+            runOnUiThread(() -> openExternal(Uri.parse(url)));
         }
     }
 }

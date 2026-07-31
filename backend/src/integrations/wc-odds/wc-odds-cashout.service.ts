@@ -21,6 +21,7 @@ import { EventGateway } from '~/main/event/event.gateway';
 import { OperationService } from '~/main/operation/operation.service';
 import { TelegramUserNotifyService } from '~/main/telegram/telegram-user-notify.service';
 import { PrismaService } from '~/prisma/prisma.service';
+import { completeBonusWageringIfNeeded } from '~/main/bonus-balance/complete-bonus-wagering.util';
 
 import { isMarketScopeFinalized } from '../olimpbet-wc/olimpbet-score-scope.util';
 import type { OlimpbetEventDetail } from '../olimpbet-wc/olimpbet-wc.types';
@@ -49,11 +50,12 @@ import { olimpbetIdFromWcEventId } from './wc-slug.util';
 import { toPublicEventId } from './wc-public.util';
 import type { WcBetSettlementInput } from './wc-odds-settlement.util';
 
-const QUOTE_TTL_MS = 8_000;
+const QUOTE_TTL_MS = 5_000;
 const EXECUTE_TOLERANCE = 0.02;
-const CASHOUT_CONTEXT_TTL_MS = 20_000;
+const CASHOUT_CONTEXT_TTL_MS = 6_000;
+const CASHOUT_ODDS_MAX_AGE_MS = 2_000;
 const PLACEMENT_DETAIL_TTL_MS = 30_000;
-const CASHOUT_PUSH_DEBOUNCE_MS = 1_500;
+const CASHOUT_PUSH_DEBOUNCE_MS = 350;
 const SLOW_OP_MS = 2_000;
 
 type CashoutEventContext = Awaited<ReturnType<WcOddsCashoutService['buildCashoutEventContext']>>;
@@ -108,7 +110,11 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
 
   private schedulePushQuotesForEvent(eventId: string): void {
     if (this.config.get<string>('WC_CASHOUT_ENABLED', 'true') !== 'true') return;
-    if (this.pushDebounce.has(eventId)) return;
+
+    this.eventContextCache.delete(eventId);
+
+    const existing = this.pushDebounce.get(eventId);
+    if (existing) clearTimeout(existing);
 
     this.pushDebounce.set(
       eventId,
@@ -142,7 +148,7 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
 
     for (const [userId, betIds] of byUser) {
       try {
-        const quotes = await this.getCashoutQuotesForUser(userId, betIds);
+        const quotes = await this.getCashoutQuotesForUser(userId, betIds, { freshOdds: true });
         this.eventGateway.sendUserNotification(String(userId), {
           eventId: `user_${userId}`,
           type: 'wc_cashout_quotes',
@@ -173,15 +179,15 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
 
   private getCashoutConfig() {
     return {
-      margin: Number(this.config.get<string>('WC_CASHOUT_MARGIN', '0.05')),
-      winMargin: Number(this.config.get<string>('WC_CASHOUT_WIN_MARGIN', '0.02')),
+      margin: Number(this.config.get<string>('WC_CASHOUT_MARGIN', '0.12')),
+      winMargin: Number(this.config.get<string>('WC_CASHOUT_WIN_MARGIN', '0.06')),
       minStakeRatio: Number(this.config.get<string>('WC_CASHOUT_MIN_RATIO', '0.05')),
     };
   }
 
   async getCashoutQuote(userId: number, betId: number): Promise<WcCashoutQuoteDto> {
     this.assertEnabled();
-    const quotes = await this.getCashoutQuotesForUser(userId, [betId]);
+    const quotes = await this.getCashoutQuotesForUser(userId, [betId], { freshOdds: true });
     const quote = quotes[betId];
     if (!quote) {
       throw new NotFoundException('Bet not found');
@@ -192,6 +198,7 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
   async getCashoutQuotesForUser(
     userId: number,
     betIds?: number[],
+    options?: { freshOdds?: boolean },
   ): Promise<Record<number, WcCashoutQuoteDto>> {
     const startedAt = Date.now();
     this.assertEnabled();
@@ -228,7 +235,7 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
 
     for (const eventBets of byEvent.values()) {
       const event = eventBets[0]!.event!;
-      const ctx = await this.loadCashoutEventContext(event);
+      const ctx = await this.loadCashoutEventContext(event, options);
 
       for (const bet of eventBets) {
         result[bet.id] = this.toQuoteDto(this.evaluateCashoutForBet(bet, ctx));
@@ -280,19 +287,46 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
         throw new BadRequestException('Ставка уже закрыта');
       }
 
-      await this.operationService.create(tx, userId, {
-        amount: new Decimal(amount),
-        currencyCode: fresh.currencyCode,
-        source: OperationSource.WC_BET,
-        status: OperationStatus.SUCCESS,
-        type: OperationType.INCOME,
-        meta: {
-          wcBetId: fresh.id,
-          eventId: fresh.eventId,
-          marketKey: fresh.marketKey,
-          cashout: true,
-        },
-      });
+      if (fresh.isBonus) {
+        await tx.bonusBalance.updateMany({
+          where: {
+            userId,
+            currencyCode: fresh.currencyCode,
+            isActive: true,
+            isTokenBased: false,
+          },
+          data: { amount: { increment: new Decimal(amount) } },
+        });
+        await this.operationService.createWithoutBalanceUpdate(tx, userId, {
+          amount: new Decimal(amount),
+          currencyCode: fresh.currencyCode,
+          source: OperationSource.BONUS_BET,
+          status: OperationStatus.SUCCESS,
+          type: OperationType.INCOME,
+          meta: {
+            wcBetId: fresh.id,
+            eventId: fresh.eventId,
+            marketKey: fresh.marketKey,
+            cashout: true,
+            accountType: 'bonus',
+          },
+        });
+        await completeBonusWageringIfNeeded(tx, userId, fresh.currencyCode);
+      } else {
+        await this.operationService.create(tx, userId, {
+          amount: new Decimal(amount),
+          currencyCode: fresh.currencyCode,
+          source: OperationSource.WC_BET,
+          status: OperationStatus.SUCCESS,
+          type: OperationType.INCOME,
+          meta: {
+            wcBetId: fresh.id,
+            eventId: fresh.eventId,
+            marketKey: fresh.marketKey,
+            cashout: true,
+          },
+        });
+      }
 
       return fresh;
     });
@@ -318,7 +352,30 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private async loadCashoutEventContext(event: {
+  private patchContextWithLiveOdds(
+    ctx: CashoutEventContext,
+    event: { id: string; slug: string | null },
+  ): CashoutEventContext | null {
+    const publicRef = event.slug?.trim() || toPublicEventId(event.id);
+    const live = this.realtime.getEventCache(publicRef);
+    if (!live?.oddsUpdatedAt) return null;
+
+    const ctxUpdatedAt = ctx.refreshed?.oddsUpdatedAt;
+    if (ctxUpdatedAt && Date.parse(live.oddsUpdatedAt) <= Date.parse(ctxUpdatedAt)) {
+      return null;
+    }
+
+    const groupedMarkets = (live.groupedMarkets ?? ctx.groupedMarkets) as WcGroupedMarkets;
+    return {
+      ...ctx,
+      refreshed: live,
+      groupedMarkets,
+      bettingClosed: ctx.bettingClosed || live.bettingOpen === false,
+    };
+  }
+
+  private async loadCashoutEventContext(
+    event: {
     id: string;
     slug: string | null;
     homeScore: number | null;
@@ -330,10 +387,15 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
     oddsHome: Decimal | null;
     oddsDraw: Decimal | null;
     oddsAway: Decimal | null;
-  }): Promise<CashoutEventContext> {
-    const cached = this.eventContextCache.get(event.id);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.ctx;
+  },
+    options?: { freshOdds?: boolean },
+  ): Promise<CashoutEventContext> {
+    if (!options?.freshOdds) {
+      const cached = this.eventContextCache.get(event.id);
+      if (cached && cached.expiresAt > Date.now()) {
+        const patched = this.patchContextWithLiveOdds(cached.ctx, event);
+        return patched ?? cached.ctx;
+      }
     }
 
     const ctx = await this.buildCashoutEventContext(event);
@@ -364,7 +426,7 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
       ? Date.now() - new Date(refreshed.oddsUpdatedAt).getTime()
       : Number.POSITIVE_INFINITY;
 
-    if (!refreshed || cacheAgeMs > CASHOUT_CONTEXT_TTL_MS) {
+    if (!refreshed || cacheAgeMs > CASHOUT_ODDS_MAX_AGE_MS) {
       refreshed = await this.realtime.refreshEvent(publicRef, false, {
         oddsOnly: true,
         persistOdds: false,
@@ -461,7 +523,7 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
         outcomeName: bet.outcomeName,
         totalsGroupLabel: placementCtx?.totalsGroupLabel ?? null,
       });
-      if (scope && isMarketScopeFinalized(ctx.placementDetail, scope)) {
+      if (scope && isMarketScopeFinalized(ctx.placementDetail, scope, ctx.matchState)) {
         return {
           available: false,
           reason: 'Ожидается расчёт ставки',
@@ -549,7 +611,7 @@ export class WcOddsCashoutService implements OnModuleInit, OnModuleDestroy {
       return { available: false, reason: 'Событие недоступно', code: 'event_missing' };
     }
 
-    const ctx = await this.loadCashoutEventContext(bet.event);
+    const ctx = await this.loadCashoutEventContext(bet.event, { freshOdds: true });
     return this.evaluateCashoutForBet(bet, ctx);
   }
 

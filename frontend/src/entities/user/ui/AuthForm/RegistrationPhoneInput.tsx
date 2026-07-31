@@ -2,6 +2,8 @@
 
 import clsx from "clsx";
 import { useMemo, useState } from "react";
+
+import { useLocale } from "~/shared/model/useLocale";
 import { FiChevronDown } from "react-icons/fi";
 
 import {
@@ -30,6 +32,7 @@ export function RegistrationPhoneInput({
   onBlur,
   className,
 }: RegistrationPhoneInputProps) {
+  const { t } = useLocale();
   const initialCountry = useMemo(() => {
     const matched = REGISTRATION_COUNTRIES.find((country) => value.startsWith(country.dialCode));
     return matched ?? DEFAULT_REGISTRATION_COUNTRY;
@@ -71,7 +74,7 @@ export function RegistrationPhoneInput({
         >
           <button
             aria-haspopup="dialog"
-            aria-label={`Страна: ${country.name}`}
+            aria-label={t("common.countryAria", { name: country.name })}
             className={styles.countryButton}
             onClick={() => setOpen(true)}
             type="button"

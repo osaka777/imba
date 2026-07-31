@@ -17,7 +17,7 @@
   box-sizing: border-box;
   font-size: 13px;
   font-weight: 400;
-  letter-spacing: 0.7px;
+  letter-spacing: normal;
   text-decoration: none;
   color: var(--white);
   font-family:
@@ -111,7 +111,7 @@ body,
 }
 
 .custom-toast {
-  background: rgb(14, 20, 36) !important;
+  background: var(--surface-toast) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 14px !important;
   color: #f1f5f9 !important;
@@ -219,4 +219,27 @@ html[data-native-app="true"] .Toastify__toast-container--top-right,
 html[data-native-app="true"] .Toastify__toast-container--top-center,
 html[data-native-app="true"] .Toastify__toast-container--top-left {
   top: calc(10px + var(--app-safe-area-top, 28px)) !important;
+}
+
+/* Soft content switching, matching the restrained 1win motion style. */
+:where([role="tabpanel"][data-state="active"], [role="tabpanel"]:not([data-state])) {
+  animation: softPanelIn 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes softPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([role="tabpanel"][data-state="active"], [role="tabpanel"]:not([data-state])) {
+    animation-duration: 1ms;
+  }
 }

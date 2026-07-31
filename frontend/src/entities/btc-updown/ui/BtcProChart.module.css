@@ -1,0 +1,152 @@
+.wrap {
+  --pro-line: rgba(255, 255, 255, 0.12);
+  --pro-muted: #8b9bb4;
+  --pro-text: #eaecef;
+  --pro-elev: rgba(255, 255, 255, 0.06);
+  --pro-accent: var(--asset-accent, #0acf97);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  gap: 6px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  z-index: 2;
+}
+
+.group {
+  display: inline-flex;
+  border: 1px solid var(--pro-line);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.btn,
+.btnOn {
+  appearance: none;
+  min-height: 32px;
+  min-width: 52px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid var(--pro-line);
+  background: transparent;
+  color: var(--pro-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.btn:last-child,
+.btnOn:last-child {
+  border-right: 0;
+}
+
+.btn:hover {
+  color: var(--pro-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btnOn {
+  color: var(--pro-text);
+  background: var(--pro-elev);
+  box-shadow: inset 0 -2px 0 var(--pro-accent);
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 240px;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.chartHost {
+  position: absolute;
+  inset: 0;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stageCursor {
+  cursor: crosshair;
+}
+
+.stageDraw {
+  cursor: cell;
+}
+
+.hint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 3;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pro-muted);
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 6px;
+    width: 100%;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .btn,
+  .btnOn {
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    border: 1px solid var(--pro-line);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+  }
+
+  .btn:last-child,
+  .btnOn:last-child {
+    border-right: 1px solid var(--pro-line);
+  }
+
+  .btnOn {
+    border-color: color-mix(in srgb, var(--pro-accent) 65%, transparent);
+    background: color-mix(in srgb, var(--pro-accent) 14%, transparent);
+    color: #fff;
+  }
+}

@@ -1,15 +1,17 @@
 .MatchRow {
-  border-bottom: 1px solid rgb(0 0 0 / 0.06);
-
-  background-color: var(--white-20);
-
-  height: 44px;
+  border-bottom: 1px solid #e3e8ef;
+  background-color: #fff;
+  min-height: 48px;
 
   display: grid;
   align-content: center;
   grid-template-columns: 1fr auto;
 
   transition: background-color 0.12s ease;
+}
+
+.MatchRow:nth-child(even) {
+  background-color: #f5f7fa;
 }
 .statsc{
   fill: var(--blue-60);
@@ -38,33 +40,17 @@
 }
 @media screen and (min-width: 1024px) {
   .MatchRow:hover {
-    background-color: var(--black-blue);
-  }
-  .MatchRow:hover
-    *:not(
-      .oddCell_special,
-      .oddCell_special > .oddCoefficient,
-      .oddCell_up,
-      .oddCell_down,
-      .matchScorePeriods,
-      .teamBadge,
-      .matchAdditional,
-      .statusIconsText,
-      .matchAdditional *
-    ) {
-    background-color: var(--black-blue);
-
-    color: var(--white);
+    background-color: #eef4ff;
   }
   .MatchRow:hover .oddCell_special {
-    background-color: var(--black-20);
+    background-color: rgb(37 99 235 / 0.08);
   }
   .MatchRow:hover .oddCell_special > .oddCoefficient {
-    background-color: var(--black-20);
-    color: var(--white);
+    background-color: rgb(37 99 235 / 0.08);
+    color: var(--black);
   }
   .MatchRow:hover .broadcastIcon {
-    fill: var(--white);
+    fill: var(--blue-40);
   }
 }
 .matchInfo {
@@ -78,7 +64,7 @@
 }
 
 .matchInfoLink {
-  height: 40px;
+  min-height: 46px;
   width: 100%;
 
   display: flex;
@@ -114,7 +100,7 @@
   height: 22px;
   border-radius: 2px;
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 1;
 }
 .matchTeamsBlock {
   width: 100%;
@@ -389,11 +375,12 @@
   padding: 4px 8px;
   border-radius: 8px;
   box-sizing: border-box;
-  font-weight: 700;
-  font-size: 11px;
+  font-weight: 600;
+  font-size: 12px;
   text-align: center;
   line-height: 1;
-  background: rgb(0 0 0 / 0.04);
+  background: #eef2f7;
+  border: 1px solid #e1e7ef;
   transition: background 0.12s ease;
 }
 
@@ -665,5 +652,143 @@
   
   .subGamesContainer {
     margin: 0 -8px;
+  }
+}
+
+/* ── Graphite: dark match rows ── */
+
+:global(html[data-ui-theme="graphite"]) .MatchRow {
+  background-color: #252528;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+:global(html[data-ui-theme="graphite"]) .MatchRow:nth-child(even) {
+  background-color: #1e1e21;
+}
+
+:global(html[data-ui-theme="graphite"]) .MatchRow * {
+  color: #e8e8ea;
+}
+
+:global(html[data-ui-theme="graphite"]) .matchStartDate {
+  color: #94949b;
+  opacity: 1;
+}
+
+:global(html[data-ui-theme="graphite"]) .matchScorePeriods {
+  color: #8b8b92;
+}
+
+:global(html[data-ui-theme="graphite"]) .matchAdditionalDetails {
+  color: #4ade80;
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCoefficient {
+  background: #323236;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f2f2f4;
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCell:hover .oddCoefficient {
+  background: rgb(37 99 235 / 0.28);
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCell_special {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+:global(html[data-ui-theme="graphite"]) .marketsCount {
+  background: rgb(37 99 235 / 0.22);
+  color: #93c5fd;
+  border-color: rgb(96 165 250 / 0.35);
+}
+
+:global(html[data-ui-theme="graphite"]) .matchAdditional {
+  background-color: rgb(37 99 235 / 0.28);
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCoefficient_added {
+  background: rgb(37 99 235 / 0.28);
+  color: #93c5fd !important;
+  border-color: rgb(96 165 250 / 0.45);
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCell_added .oddCoefficient {
+  color: #93c5fd !important;
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCell_added > .addedGameName {
+  color: #93c5fd;
+}
+
+:global(html[data-ui-theme="graphite"]) .statsc,
+:global(html[data-ui-theme="graphite"]) .statsIcon,
+:global(html[data-ui-theme="graphite"]) .broadcastIcon,
+:global(html[data-ui-theme="graphite"]) .timeIcon {
+  fill: #94a3b8;
+}
+
+@media screen and (min-width: 1024px) {
+  :global(html[data-ui-theme="graphite"]) .MatchRow:hover {
+    background-color: #2e2e33;
+  }
+
+  :global(html[data-ui-theme="graphite"]) .MatchRow:hover .oddCell_special {
+    background-color: rgb(37 99 235 / 0.14);
+  }
+
+  :global(html[data-ui-theme="graphite"]) .MatchRow:hover .oddCell_special > .oddCoefficient {
+    background-color: rgb(37 99 235 / 0.18);
+    color: #f2f2f4;
+  }
+
+  :global(html[data-ui-theme="graphite"]) .MatchRow:hover .broadcastIcon {
+    fill: #60a5fa;
+  }
+}
+
+@keyframes coefPillUpGraphite {
+  0%,
+  40% {
+    background-color: rgba(45, 184, 86, 0.22);
+    color: #4ade80;
+  }
+  100% {
+    background-color: #323236;
+    color: #f2f2f4;
+  }
+}
+
+@keyframes coefPillDownGraphite {
+  0%,
+  40% {
+    background-color: rgba(232, 93, 93, 0.22);
+    color: #f87171;
+  }
+  100% {
+    background-color: #323236;
+    color: #f2f2f4;
+  }
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCoefficient_up {
+  animation-name: coefPillUpGraphite;
+}
+
+:global(html[data-ui-theme="graphite"]) .oddCoefficient_down {
+  animation-name: coefPillDownGraphite;
+}
+
+@media screen and (max-width: 768px) {
+  :global(html[data-ui-theme="graphite"]) .oddCell {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  :global(html[data-ui-theme="graphite"]) .oddCell_added {
+    background: rgb(37 99 235 / 0.22);
+  }
+
+  :global(html[data-ui-theme="graphite"]) .cells {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
   }
 }

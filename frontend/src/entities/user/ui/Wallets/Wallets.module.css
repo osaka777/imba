@@ -966,10 +966,10 @@ div.dialog {
 }
 
 div.dialog:has([data-payment-step="active"]) {
-  background: #13151f !important;
-  background-color: #13151f !important;
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.65) !important;
-  border: 2px solid #13151f !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16) !important;
+  border: 1px solid #eef2f6 !important;
   outline: none !important;
   animation: none !important;
   transform: translate(-50%, -50%) !important;
@@ -987,8 +987,8 @@ div.dialog:has([data-usdt-payment-step="active"]) {
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] {
-  color: rgba(255, 255, 255, 0.88) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  color: #64748b !important;
+  background: #f1f5f9 !important;
   border-radius: 10px;
 }
 
@@ -998,8 +998,8 @@ div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] {
 }
 
 div.dialog:has([data-payment-step="active"]) [data-radix-dialog-close] svg {
-  color: rgba(255, 255, 255, 0.92) !important;
-  stroke: rgba(255, 255, 255, 0.92) !important;
+  color: #475569 !important;
+  stroke: #475569 !important;
 }
 
 div.dialog:has([data-usdt-payment-step="active"]) [data-radix-dialog-close] svg {

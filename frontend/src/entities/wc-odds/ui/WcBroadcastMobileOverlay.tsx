@@ -1,18 +1,48 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
 import { WcBroadcastPlayer } from "~/entities/wc-odds/ui/WcBroadcastPlayer";
-
-import { MQ_DESKTOP } from "~/shared/lib/layoutBreakpoints";
-
 import styles from "~/entities/wc-odds/ui/WcBroadcastSidebar.module.css";
+import { MQ_DESKTOP } from "~/shared/lib/layoutBreakpoints";
+import { useLocale } from "~/shared/model/useLocale";
 
-/** Full-screen mobile/tablet player — mounted at provider level (not inside coupon column). */
+function sidebarHostsMatchPlayer(pathname: null | string): boolean {
+  if (!pathname) return true;
+  if (
+    pathname.startsWith("/trader/")
+    || pathname.startsWith("/user/")
+    || pathname === "/trader"
+    || pathname === "/user"
+  ) {
+    return false;
+  }
+  if (
+    pathname === "/trading"
+    || pathname === "/trading/"
+    || pathname === "/casino/btc-updown"
+    || pathname === "/casino/btc-updown/"
+  ) {
+    return false;
+  }
+  if (/^\/trading\/[a-z0-9-]+\/?$/i.test(pathname)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Persistent broadcast window: stays open across route changes until X is pressed.
+ * Mobile: floating mini-player (does not block page navigation).
+ * Desktop: only when the coupon sidebar is not hosting the match player.
+ */
 export function WcBroadcastMobileOverlay() {
+  const { t } = useLocale();
   const broadcast = useWcBroadcast();
+  const pathname = usePathname();
   const [isDesktop, setIsDesktop] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -28,30 +58,20 @@ export function WcBroadcastMobileOverlay() {
   const showPlayer = Boolean(
     broadcast?.hasBroadcast && broadcast.eventRef && broadcast.visible,
   );
+  const desktopNeedsFloat = isDesktop && !sidebarHostsMatchPlayer(pathname);
+  const showHere = showPlayer && (!isDesktop || desktopNeedsFloat);
 
-  useEffect(() => {
-    if (!mounted || isDesktop || !showPlayer) return undefined;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [mounted, isDesktop, showPlayer]);
-
-  if (!mounted || isDesktop || !showPlayer || !broadcast?.eventRef) {
+  if (!mounted || !showHere || !broadcast?.eventRef) {
     return null;
   }
 
   return createPortal(
     <div
-      className={styles.mobileOverlay}
-      onClick={broadcast.close}
-      role="presentation"
+      className={styles.persistentFloat}
+      role="complementary"
+      aria-label={t("wc.videoBroadcast")}
     >
-      <div
-        className={styles.mobileOverlayInner}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={styles.persistentFloatInner}>
         <WcBroadcastPlayer
           compactModal
           eventRef={broadcast.eventRef}

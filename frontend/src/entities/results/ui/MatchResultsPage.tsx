@@ -8,6 +8,7 @@ import { gamesList } from "~/entities/game";
 import { WcTeamImage } from "~/entities/wc-odds/ui/WcTeamImage";
 import { cn } from "~/shared/lib";
 import { LoadingSpinner } from "~/shared/ui";
+import { useLocale } from "~/shared/model/useLocale";
 
 import {
   fetchMatchResults,
@@ -126,10 +127,12 @@ function ResultRow({
   match,
   sport,
   maxPeriods,
+  t,
 }: {
   match: MatchResultItem;
   sport: ResultsSportSlug;
   maxPeriods: number;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   const periods = resolvePeriods(match, sport);
   const periodSlots = Array.from({ length: maxPeriods }, (_, index) => periods[index] ?? null);
@@ -172,7 +175,10 @@ function ResultRow({
               {match.hasBroadcast && <span className={styles.metaBadge}>TV</span>}
               {match.penaltyScore && (
                 <span className={styles.metaBadge}>
-                  Пен. {match.penaltyScore.home}:{match.penaltyScore.away}
+                  {t("common.resultsPen", {
+                    home: match.penaltyScore.home,
+                    away: match.penaltyScore.away,
+                  })}
                 </span>
               )}
             </span>
@@ -216,6 +222,7 @@ function ResultRow({
 }
 
 export function MatchResultsPage({ className }: { className?: string }) {
+  const { t } = useLocale();
   const today = useMemo(() => formatAlmatyDateInput(), []);
   const [date, setDate] = useState(today);
   const [sport, setSport] = useState<ResultsSportSlug>("soccer");
@@ -254,19 +261,19 @@ export function MatchResultsPage({ className }: { className?: string }) {
 
   const emptyText =
     mode === "live"
-      ? `Сейчас нет live-матчей (${sportLabel(sport).toLowerCase()}).`
-      : `За ${formatDisplayDate(date)} завершённых матчей нет.`;
+      ? t("common.resultsNoLive", { sport: sportLabel(sport).toLowerCase() })
+      : t("common.resultsNoFinished", { date: formatDisplayDate(date) });
 
   const subtitle =
     mode === "live"
-      ? `Live-счёт · ${sportLabel(sport).toLowerCase()}`
+      ? t("common.resultsLiveScore", { sport: sportLabel(sport).toLowerCase() })
       : `${formatDisplayDate(date)} · ${sportLabel(sport).toLowerCase()}`;
 
   return (
     <div className={cn(styles.page, className)}>
       <div className={styles.pageTop}>
         <div className={styles.tabGroup}>
-          <h1 className={styles.tabPrimary}>Результаты</h1>
+          <h1 className={styles.tabPrimary}>{t("common.resultsTitle")}</h1>
         </div>
 
         <div className={styles.toolbarCard}>
@@ -277,7 +284,7 @@ export function MatchResultsPage({ className }: { className?: string }) {
                 onClick={() => setMode("finished")}
                 type="button"
               >
-                Завершённые
+                {t("common.resultsFinished")}
               </button>
               <button
                 className={cn(styles.modeTab, mode === "live" && styles.modeTab_active)}
@@ -285,7 +292,7 @@ export function MatchResultsPage({ className }: { className?: string }) {
                 type="button"
               >
                 {mode === "live" && <span className={styles.liveDot} />}
-                Live
+                {t("common.live")}
               </button>
             </div>
 
@@ -344,16 +351,16 @@ export function MatchResultsPage({ className }: { className?: string }) {
         <LoadingSpinner className={styles.loader} />
       ) : isError ? (
         <div className={styles.emptyCard}>
-          <p className={styles.emptyTitle}>Не удалось загрузить результаты</p>
-          <p className={styles.emptyHint}>Проверьте соединение и попробуйте снова.</p>
+          <p className={styles.emptyTitle}>{t("common.resultsLoadFailed")}</p>
+          <p className={styles.emptyHint}>{t("common.resultsCheckConnection")}</p>
           <button className={styles.retryBtn} onClick={() => void refetch()} type="button">
-            Повторить
+            {t("common.retry")}
           </button>
         </div>
       ) : !data?.groups.length ? (
         <div className={styles.emptyCard}>
           <p className={styles.emptyTitle}>{emptyText}</p>
-          <p className={styles.emptyHint}>Попробуйте другую дату или вид спорта.</p>
+          <p className={styles.emptyHint}>{t("common.resultsTryOther")}</p>
         </div>
       ) : (
         <div className={styles.groups}>
@@ -372,7 +379,7 @@ export function MatchResultsPage({ className }: { className?: string }) {
                       </div>
                     ))}
                     <div className={styles.headCell}>
-                      {mode === "live" ? "Live" : "Итог"}
+                      {mode === "live" ? t("common.live") : t("common.resultsFinal")}
                     </div>
                   </div>
                 )}
@@ -383,6 +390,7 @@ export function MatchResultsPage({ className }: { className?: string }) {
                   match={match}
                   maxPeriods={maxPeriods}
                   sport={sport}
+                  t={t}
                 />
               ))}
             </section>

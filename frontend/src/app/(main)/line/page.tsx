@@ -2,16 +2,17 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 
 import { LineGames } from "~/entities/game";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 import { LoadingSpinner } from "~/shared/ui";
 
 import styles from "./layout.module.css";
 
-export const metadata: Metadata = makeMetadata("Линия", {
-  description:
-    "Прематч-линия Imba.bet: ставки на футбол, теннис, хоккей и другие виды спорта до начала матча.",
-  path: "/line",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoLineTitle", {
+    descriptionKey: "common.seoLineDesc",
+    path: "/line",
+  });
+}
 
 export default function Line() {
   return (

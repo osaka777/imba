@@ -4,6 +4,7 @@ import { WithdrawalService } from './withdrawal.service';
 import { CreateWithdrawalDto, QUICK_AMOUNTS, WithdrawalMethod, CardType } from './dto/create-withdrawal.dto';
 import { AuthenticationGuard } from '../user/authentication/authentication.guard';
 import { SuperuserGuard } from '../user/authentication/superuser.guard';
+import { AdminAuditService } from '../admin/admin-audit.service';
 import { Request } from 'express';
 
 @Controller()
@@ -11,8 +12,27 @@ import { Request } from 'express';
 export class WithdrawalController {
   constructor(
     private readonly withdrawalService: WithdrawalService,
+    private readonly auditService: AdminAuditService,
   ) {
     console.log('WithdrawalController initialized');
+  }
+
+  private async logAdminAction(
+    req: any,
+    action: string,
+    entityId: string | number,
+    metadata?: Record<string, unknown>,
+  ) {
+    await this.auditService.log({
+      actorRole: req?.adminRole || 'superadmin',
+      actorToken: req?.adminToken,
+      action,
+      entityType: 'withdrawal',
+      entityId,
+      ip: req?.ip || null,
+      userAgent: req?.headers?.['user-agent'] || null,
+      metadata: metadata || {},
+    });
   }
 
   @Post('withdraw')
@@ -95,8 +115,9 @@ export class WithdrawalController {
   }
 
   private mapMethodToCardType(method: string): CardType {
-    const typeMap = {
+    const typeMap: Record<string, CardType> = {
       'cards_kz': CardType.KAZAKHSTAN,
+      'cards_ru': CardType.RUSSIA,
       'cards_foreign': CardType.FOREIGN,
       'usdt_trc20': CardType.TRC20,
       'usdt_tron': CardType.TRON,
@@ -155,6 +176,26 @@ export class WithdrawalController {
   async getUserWithdrawals(@Req() req: Request & { user: { id: number } }) {
     console.log('Get user withdrawals request received');
     return this.withdrawalService.getUserWithdrawals(req.user.id);
+  }
+
+  @Post('withdrawals/:id/cancel')
+  @UseGuards(AuthenticationGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Отменить свою заявку на вывод (WAITING)' })
+  async cancelWithdrawal(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { id: number } },
+  ) {
+    const withdrawId = Number(id);
+    if (!Number.isFinite(withdrawId) || withdrawId <= 0) {
+      throw new BadRequestException('Некорректный ID заявки');
+    }
+    const result = await this.withdrawalService.cancelByUser(req.user.id, withdrawId);
+    return {
+      success: true,
+      data: result,
+      message: 'Заявка на вывод отменена, средства возвращены на баланс',
+    };
   }
 
   // Admin endpoints
@@ -222,7 +263,7 @@ export class WithdrawalController {
          cardNumber: withdrawal.cardNumber,
          cardType: withdrawal.cardType, // Добавляем поле cardType для админ-панели
          reason: withdrawal.reason, // Добавляем поле reason для отображения причины отклонения
-         status: this.formatStatus(withdrawal.status),
+         status: withdrawal.status,
          createdAt: withdrawal.createdAt,
          processedAt: withdrawal.processedAt
        }))
@@ -230,21 +271,37 @@ export class WithdrawalController {
   }
 
   private formatStatus(status: string): string {
-    const statusMap = {
-      'WAITING': 'Ожидает обработки',
-      'SUCCESS': 'Выполнено',
-      'FAILED': 'Отклонено',
-      'PROCESSING': 'В обработке'
+    const statusMap: Record<string, string> = {
+      WAITING: 'Ожидает обработки',
+      PROCESSING: 'В обработке',
+      SUCCESS: 'Выполнено',
+      FAILED: 'Отклонено',
+      pending: 'Ожидает обработки',
+      processing: 'В обработке',
+      completed: 'Выполнено',
+      rejected: 'Отклонено',
     };
     return statusMap[status] || status;
+  }
+
+  @Post('withdrawals/:id/processing')
+  @UseGuards(SuperuserGuard)
+  @ApiBearerAuth('Admin')
+  @ApiOperation({ summary: 'Перевести заявку в статус «В обработке»' })
+  async markProcessing(@Param('id') id: string, @Req() req: any) {
+    await this.withdrawalService.updateStatus(Number(id), 'processing');
+    await this.logAdminAction(req, 'withdrawal.processing', id);
+    return { success: true, status: 'processing' };
   }
 
   @Post('withdrawals/:id/approve')
   @UseGuards(SuperuserGuard)
   @ApiBearerAuth('Admin')
-  async approveWithdrawal(@Param('id') id: string) {
+  async approveWithdrawal(@Param('id') id: string, @Req() req: any) {
     console.log('Approve withdrawal request received', { id });
-    return this.withdrawalService.updateStatus(Number(id), 'completed');
+    const result = await this.withdrawalService.updateStatus(Number(id), 'completed');
+    await this.logAdminAction(req, 'withdrawal.approve', id);
+    return result;
   }
 
   @Post('withdrawals/:id/reject')
@@ -253,8 +310,11 @@ export class WithdrawalController {
   async rejectWithdrawal(
     @Param('id') id: string,
     @Body('reason') reason: string,
+    @Req() req: any,
   ) {
     console.log('Reject withdrawal request received', { id, reason });
-    return this.withdrawalService.updateStatus(Number(id), 'rejected', reason);
+    const result = await this.withdrawalService.updateStatus(Number(id), 'rejected', reason);
+    await this.logAdminAction(req, 'withdrawal.reject', id, { reason: reason || null });
+    return result;
   }
 }

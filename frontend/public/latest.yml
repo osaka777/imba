@@ -1,0 +1,8 @@
+version: 1.4.0
+files:
+  - url: imba-bet-windows-setup.exe
+    sha512: extOuWhCRUt39XyUEVpv5TQ2lNDFEdULQMPSpV2VeSlxqUiiJ2Pu/F2Dd8t3rpxIQaWL6kXps8d63UlemQCekw==
+    size: 82155720
+path: imba-bet-windows-setup.exe
+sha512: extOuWhCRUt39XyUEVpv5TQ2lNDFEdULQMPSpV2VeSlxqUiiJ2Pu/F2Dd8t3rpxIQaWL6kXps8d63UlemQCekw==
+releaseDate: '2026-07-31T22:55:16.811Z'

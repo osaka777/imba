@@ -11,22 +11,38 @@ type CurrencyContextType = {
 
 export const CurrencyContext = createContext<CurrencyContextType | null>(null);
 
+function readStoredCurrency(): string {
+  try {
+    const saved = localStorage.getItem("currency");
+    if (!saved) return DEFAULT_SITE_CURRENCY;
+    try {
+      const parsed = JSON.parse(saved) as unknown;
+      if (typeof parsed === "string") return normalizeSiteCurrency(parsed);
+    } catch {
+      // Legacy/plain values like KZT without JSON quotes.
+    }
+    return normalizeSiteCurrency(saved.replace(/^"|"$/g, ""));
+  } catch {
+    return DEFAULT_SITE_CURRENCY;
+  }
+}
+
 export const CurrencyProvider = ({ children }: { children: React.ReactNode }) => {
   const [currency, setCurrencyState] = useState(DEFAULT_SITE_CURRENCY);
 
   useEffect(() => {
-    const saved = localStorage.getItem("currency");
-    if (saved) {
-      const parsed = JSON.parse(saved) as string;
-      setCurrencyState(normalizeSiteCurrency(parsed));
-    }
+    setCurrencyState(readStoredCurrency());
   }, []);
 
   const setCurrency = (newCurrency: string) => {
     const normalized = normalizeSiteCurrency(newCurrency);
-    localStorage.setItem("currency", JSON.stringify(normalized));
+    try {
+      localStorage.setItem("currency", JSON.stringify(normalized));
+    } catch {
+      /* ignore quota / private mode */
+    }
     setCurrencyState(normalized);
-    window.dispatchEvent(new Event("currencyChanged")); 
+    window.dispatchEvent(new Event("currencyChanged"));
   };
 
   return (

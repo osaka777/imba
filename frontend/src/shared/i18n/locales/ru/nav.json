@@ -1,11 +1,16 @@
 {
   "home": "Главная",
   "live": "Лайв",
-  "line": "Линия",
+  "line": "Прематч",
+  "results": "Результаты",
   "cybersport": "Киберспорт",
   "cyberShort": "Кибер",
   "snake": "Snake",
-  "btc": "BTC 5м",
+  "btc": "Трейдинг",
+  "more": "Ещё",
+  "imbaGames": "Imba Games",
+  "games": "Games",
   "history": "История",
-  "freeMoney": "Free money"
+  "freeMoney": "Free money",
+  "markets": "Маркеты"
 }

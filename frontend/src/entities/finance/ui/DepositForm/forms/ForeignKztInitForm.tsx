@@ -173,7 +173,6 @@ export const ForeignKztInitForm = ({
         </button>
         <ManualForeignCardPage
           asModal
-          closeAfterConfirm
           currency="KZT"
           fallbackMinAmount={3000}
           getMyOrder={config.getMyOrder}
@@ -181,21 +180,17 @@ export const ForeignKztInitForm = ({
           initialOrderId={orderId}
           initialPublicOrderId={publicOrderId}
           method={config.method}
-          onPaymentConfirmed={(confirmedId) => {
+          onPaymentConfirmed={(confirmedId, confirmedPublicId) => {
             const id = confirmedId || orderId;
-            resetPayment();
-            if (embedded) {
-              onDepositComplete?.();
-            } else {
-              closeRef.current?.click();
-            }
             if (id) {
               trackDepositOrder({
                 id,
-                publicOrderId,
+                publicOrderId: confirmedPublicId ?? publicOrderId,
                 currency: "KZT",
+                method: config.method,
               });
             }
+            if (embedded) onDepositComplete?.();
           }}
           onPaymentCancelled={() => {
             if (orderId) untrackDepositOrder(orderId);

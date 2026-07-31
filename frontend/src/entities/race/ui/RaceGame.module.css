@@ -1,0 +1,529 @@
+.game {
+  --panel: rgba(255, 255, 255, 0.02);
+  --panel-soft: rgba(255, 255, 255, 0.03);
+  --line: rgba(255, 255, 255, 0.1);
+  --text: #eaecef;
+  --muted: #8b9bb4;
+  --font: var(
+    --btc-font,
+    "SF Pro Display",
+    "Open Sans",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
+
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 16px 32px;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  font-family: var(--font);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.game,
+.game *,
+.game *::before,
+.game *::after {
+  font-family: inherit;
+}
+
+.pairTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.pairTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.backLink {
+  flex: 0 0 auto;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 10px;
+}
+
+.pairTab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pairTabLogos {
+  display: flex;
+}
+.pairTabLogos img:last-child {
+  margin-left: -6px;
+}
+
+.pairTabActive {
+  color: var(--text);
+  border-color: rgba(var(--a-rgb), 0.5);
+  background: rgba(var(--a-rgb), 0.12);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 14px 16px;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.logos {
+  display: flex;
+  flex: 0 0 auto;
+}
+.logoB {
+  margin-left: -12px;
+  border: 2px solid rgb(18, 24, 40);
+  border-radius: 50%;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.tagline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.roundChips {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.roundChip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.roundChipActive {
+  color: #fff;
+  background: #0085ff;
+  border-color: #0085ff;
+}
+
+.timerRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 4px;
+  gap: 12px;
+}
+
+.timerLabel {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  padding-bottom: 2px;
+}
+
+.timer {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.timerUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.timerValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  width: max-content;
+  min-width: max-content;
+  /* NumberFlow rolls need room beyond font-size — fixed 24px + overflow:hidden clipped tops */
+  height: auto;
+  min-height: 1.2em;
+  padding-block: 0.1em;
+  overflow: visible;
+  font-family: var(--btc-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 24px;
+  font-weight: 600;
+  color: #eaecef;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.timerValue :global(span) {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+}
+
+.timerValue :global(number-flow-react),
+.timerValue .flowNum:global(number-flow-react) {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  /* Soft fade for flip only — don’t eat the glyph tops */
+  --number-flow-mask-height: 0.02em;
+  --number-flow-mask-width: 0.2em;
+}
+
+.timerUnitLabel {
+  color: rgba(234, 236, 239, 0.55);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.timerLocked .timerValue {
+  color: #eaecef;
+  opacity: 0.55;
+}
+
+.timerUrgent .timerValue {
+  color: #fff;
+  filter: brightness(1.08);
+}
+
+.priceRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.priceCell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.priceIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.priceValue {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  overflow: visible;
+}
+
+.priceValue :global(number-flow-react),
+.flowNum:global(number-flow-react),
+.pendingStake :global(number-flow-react),
+.pendingPayout :global(number-flow-react) {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  line-height: 1;
+  --number-flow-mask-height: 0.06em;
+  --number-flow-mask-width: 0.25em;
+}
+
+.flowNum {
+  font: inherit;
+  color: inherit;
+}
+
+.flowFallback {
+  font: inherit;
+  color: inherit;
+}
+
+.statusCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.statusLink {
+  color: #0085ff;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sizeRow {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sizeBtn {
+  border: 0;
+  background: var(--elev, var(--panel));
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
+.sizeBtn:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sizeValue {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-inline: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+  padding: 0 12px;
+}
+
+.sizeValue :global(number-flow-react),
+.sizeValue .flowNum:global(number-flow-react) {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+.sizeInput {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-inline: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  padding: 0 12px;
+}
+
+.sizeInput::-webkit-outer-spin-button,
+.sizeInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.sizeInput[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.betButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.betBtnA,
+.betBtnB {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: #fff;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease;
+}
+
+.betBtnA {
+  background: linear-gradient(135deg, rgba(var(--a-rgb), 0.92), rgba(var(--a-rgb), 0.55));
+}
+
+.betBtnB {
+  background: linear-gradient(135deg, rgba(var(--b-rgb), 0.92), rgba(var(--b-rgb), 0.55));
+}
+
+.betBtnA:active:not(:disabled),
+.betBtnB:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.betBtnA:disabled,
+.betBtnB:disabled {
+  filter: grayscale(0.55) brightness(0.65);
+  cursor: not-allowed;
+}
+
+.betBtnAsset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.errorCard {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(239, 71, 58, 0.12);
+  border: 1px solid rgba(239, 71, 58, 0.35);
+  color: #ff9b91;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.flashCard {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(10, 207, 151, 0.12);
+  border: 1px solid rgba(10, 207, 151, 0.35);
+  color: #6ff0c9;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.pendingTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.pendingItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dotA {
+  color: var(--a);
+}
+.dotB {
+  color: var(--b);
+}
+
+.pendingStake {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.pendingPayout {
+  color: #0acf97;
+}
+
+.rule {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.rule p {
+  margin: 0;
+}
+
+.rule p + p {
+  margin-top: 6px;
+  color: rgba(139, 155, 180, 0.78);
+}

@@ -1,16 +1,11 @@
-/** World Cup promo image from /public/fifa01.png */
-export const LUCKY_DRIVE_IMAGE = "/fifa01.png";
+/** Default promo banner image (admin settings can override). */
+export const LUCKY_DRIVE_IMAGE = "/images/markets.png";
 
-/** Full banner for World Cup modal */
-export const WORLD_CUP_MODAL_IMAGE = "/fifa01.png";
+export const IMBA_GAMES_MODAL_IMAGE = "/images/markets.png";
 
-export const WORLD_CUP_PROMO_TITLE = "World Cup";
-export const WORLD_CUP_PROMO_SUBTITLE = "Дарим 100$ долларов на первый депозит";
+export const IMBA_GAMES_PROMO_TITLE = "Imba Markets";
+export const IMBA_GAMES_PROMO_HIGHLIGHT = "";
 
-export const WORLD_CUP_MODAL_TITLE = "World Cup 2026 — бонус $100";
-export const WORLD_CUP_MODAL_SUBTITLE =
-  "Зарегистрируйся, пополни счёт от 5 000 ₽ и получи 100 $ на баланс";
-export const WORLD_CUP_MODAL_STEP_REGISTER = "Зарегистрируйся на imba.bet";
-export const WORLD_CUP_MODAL_STEP_DEPOSIT = "Пополни счёт от 5 000 ₽";
-export const WORLD_CUP_MODAL_CTA = "Получить бонус";
+export const IMBA_GAMES_MODAL_TITLE = "Imba Markets";
 
+export const IMBA_MARKETS_HREF = "/markets";

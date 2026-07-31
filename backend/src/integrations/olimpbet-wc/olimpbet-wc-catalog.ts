@@ -78,6 +78,17 @@ function isScopedScoreInGameMarket(catalogName: string): boolean {
   return /^SCORE_SET|^EXACT_POINT_GAME_SET|^SCORE_FIRST_X_GAMES_SET/i.test(catalogName);
 }
 
+/** Markets whose outcomes are concrete scores (N:N); never fall back to set/game scope text. */
+function isEnumeratedScoreMarket(catalogName: string): boolean {
+  return (
+    /^SCORE_TIE_BREAK/i.test(catalogName)
+    || /^SCORE_VARIANT|^CORRECT_SCORE/i.test(catalogName)
+    || /^SCORE_MAP$/i.test(catalogName)
+    || /^SCORE_SET|^SCORE_FIRST_X_GAMES|^SCORE_WINNER/i.test(catalogName)
+    || /^MULTISCORE/i.test(catalogName)
+  );
+}
+
 const TECHNICAL_OUTCOME_SUFFIX: Record<string, string> = {
   Аут: 'Аут',
   Фол: 'Фол',
@@ -339,7 +350,12 @@ export function formatOutcomeLabel(
   if (homeScore != null && awayScore != null) {
     const fmtPoint = (v: string) => (v === '50' ? 'A' : v);
     const score = `${fmtPoint(homeScore)}:${fmtPoint(awayScore)}`;
-    if (looksLikeTemplate(label) || /счет/i.test(label) || isScopedScoreInGameMarket(catalogName)) {
+    if (
+      /^SCORE_MAP$/i.test(catalogName)
+      || looksLikeTemplate(label)
+      || /сч[её]т/i.test(label)
+      || isScopedScoreInGameMarket(catalogName)
+    ) {
       return score;
     }
     if (!label.includes(':')) return `${label} ${score}`.trim();
@@ -398,6 +414,10 @@ export function formatOutcomeLabel(
     if (/^П[12]_?/i.test(code)) return code.startsWith('П') ? code.replace(/_.*/, '') : humanizeOutcomeCode(code);
     if (/^Ф[12]/i.test(code)) return code.replace(/\s.*/, '');
     if (/^К[12]/.test(code)) return code.replace(/_.*/, '');
+    // Enumerated score books (tiebreak correct score, …) share a template code; the
+    // unresolved "any other" bucket has no HOME/AWAY score. Never surface set/game
+    // scope ("3-м сете") as the outcome name — that belongs on the group/category.
+    if (isEnumeratedScoreMarket(catalogName)) return 'Другой счёт';
     if (contextParts.length) return contextParts.join(', ');
     return humanizeOutcomeCode(code) || label.replace(/[\[\]{}]/g, '').trim();
   }
@@ -456,6 +476,11 @@ const CATALOG_MARKET_LABELS: Record<string, string> = {
   WINNER_ROUND: 'Исход раунда',
   TOTAL_MAP: 'Тотал раундов на карте',
   TOTAL_ROUNDS: 'Тотал раундов',
+  SCORE_MAP: 'Счёт на карте',
+  SCORE_TIE_BREAK_SET: 'Счёт тай-брейка',
+  TIE_BREAK_SET: 'Тай-брейк',
+  POINT_RANGE_SET_YES_NO: 'Диапазон очков в сете: да/нет',
+  POINT_RANGE_SET: 'Диапазон очков в сете',
 };
 
 function stripCatalogSuffixes(name: string): string {
@@ -1219,6 +1244,9 @@ export function humanizeCatalogMarketName(
       .replace(/\bGOALS\b/gi, 'Голы')
       .replace(/\bGOAL\b/gi, 'Гол')
       .replace(/\bRANGE\b/gi, 'диапазон')
+      .replace(/\bPOINT\b/gi, 'очко')
+      .replace(/\bSET\b/gi, 'сет')
+      .replace(/\bGAME\b/gi, 'гейм')
       .replace(/\bEXACT\b/gi, 'Точное')
       .replace(/\bTEAM1\b/gi, 'команда 1')
       .replace(/\bTEAM2\b/gi, 'команда 2')

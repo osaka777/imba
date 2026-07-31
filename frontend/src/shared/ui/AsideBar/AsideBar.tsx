@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 
 import { Support } from "~/shared/assets";
+import { useLocale } from "~/shared/model/useLocale";
 
 import { Button } from "../Button";
 import { Category } from "./AsideBar.d";
@@ -17,15 +20,17 @@ const AsideBar: React.FC<AsideBarProps> = ({
   onCategorySelect,
   selectedCategory,
 }) => {
+  const { t } = useLocale();
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.support}>
-        <h3>Поддержка 24/7</h3>
-        <p>Свяжитесь с нами, если у вас остались вопросы</p>
+        <h3>{t("support.247")}</h3>
+        <p>{t("info.contactHint")}</p>
         <Image alt="" className={styles.support_img} src={Support} />
       </div>
       <aside className={styles.asideBar}>
-        <h2 className={styles.title}>ПРАВИЛА</h2>
+        <h2 className={styles.title}>{t("info.rulesHeading")}</h2>
         <ul className={styles.categoryList} style={{ position: "relative" }}>
           {categories.map((category) => (
             <li

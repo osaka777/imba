@@ -12,11 +12,14 @@ export type PaymentMethodKey =
   | 'RUB_FOREIGN_CARD'
   | 'RUB_SBERBANK'
   | 'RUB_YANDEX_BANK'
+  | 'RUB_VTB_BANK'
   | 'USDT_TRC20'
   | 'NirvanaPay'
+  | 'Bova'
   | 'Aaio'
   | 'Greengo'
-  | 'Crocopay';
+  | 'Crocopay'
+  | 'PayGateCore';
 
 export interface PaymentSettingsFile {
   manualDeposit: Record<ManualDepositCurrency, ManualDepositConfigItem & { enabled: boolean }>;
@@ -95,12 +98,20 @@ export function getDefaultPaymentSettings(): PaymentSettingsFile {
         qrImageUrl: '',
         minAmount: 1000,
         rubPerBrl: 183,
-        enabled: true,
+        enabled: false,
       },
       RUB_YANDEX_BANK: {
         cardNumber: '',
         holderName: DEFAULT_HOLDER,
         bankName: 'Яндекс Банк',
+        qrImageUrl: '',
+        minAmount: 1000,
+        enabled: false,
+      },
+      RUB_VTB_BANK: {
+        cardNumber: '',
+        holderName: DEFAULT_HOLDER,
+        bankName: 'ВТБ',
         qrImageUrl: '',
         minAmount: 1000,
         enabled: true,
@@ -119,13 +130,16 @@ export function getDefaultPaymentSettings(): PaymentSettingsFile {
       KZT_FOREIGN_CARD: { enabled: true, label: 'Visa/Mastercard KZT' },
       KZT_KASPI: { enabled: true, label: 'Kaspi KZT' },
       RUB_FOREIGN_CARD: { enabled: false, label: 'Visa/Mastercard RUB' },
-      RUB_SBERBANK: { enabled: true, label: 'Сбербанк' },
-      RUB_YANDEX_BANK: { enabled: true, label: 'Яндекс Банк' },
+      RUB_SBERBANK: { enabled: false, label: 'Сбербанк' },
+      RUB_YANDEX_BANK: { enabled: false, label: 'Яндекс Банк' },
+      RUB_VTB_BANK: { enabled: true, label: 'ВТБ' },
       USDT_TRC20: { enabled: true, label: 'USDT TRC-20' },
-      NirvanaPay: { enabled: true, label: 'NirvanaPay' },
-      Aaio: { enabled: true, label: 'Aaio / Карты' },
+      NirvanaPay: { enabled: false, label: 'NirvanaPay' },
+      Bova: { enabled: false, label: 'Bova' },
+      Aaio: { enabled: false, label: 'Aaio / Карты' },
       Greengo: { enabled: false, label: 'Greengo' },
       Crocopay: { enabled: false, label: 'Crocopay' },
+      PayGateCore: { enabled: false, label: 'PayGateCore P2P (RUB)' },
     },
     notifications: {
       telegramDepositNotify: true,
@@ -164,6 +178,11 @@ export function loadPaymentSettings(): PaymentSettingsFile {
           'RUB_YANDEX_BANK',
           parsed.manualDeposit?.RUB_YANDEX_BANK,
           defaults.manualDeposit.RUB_YANDEX_BANK,
+        ),
+        RUB_VTB_BANK: mergeManualDepositItem(
+          'RUB_VTB_BANK',
+          parsed.manualDeposit?.RUB_VTB_BANK,
+          defaults.manualDeposit.RUB_VTB_BANK,
         ),
         USDT: mergeManualDepositItem('USDT', parsed.manualDeposit?.USDT, defaults.manualDeposit.USDT),
       },

@@ -53,6 +53,40 @@ describe("isWcMatchEffectivelyFinished", () => {
     ).toBe(true);
   });
 
+  it("marks finished when feed status is Закончен", () => {
+    expect(
+      isWcMatchEffectivelyFinished(liveEvent({ feedStatus: "Закончен" })),
+    ).toBe(true);
+  });
+
+  it("does not treat EVENT_ENDED as finished during extra time", () => {
+    expect(
+      isWcMatchEffectivelyFinished(
+        liveEvent({
+          feedStatus: "EVENT_ENDED",
+          parsedScore: {
+            seconds: 91 * 60,
+            text: { time: "91:00" },
+            period: 3,
+            gamePhase: "extra_time_1",
+          },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("does not treat lone EVENT_ENDED as finished while still live", () => {
+    expect(
+      isWcMatchEffectivelyFinished(liveEvent({ feedStatus: "EVENT_ENDED" })),
+    ).toBe(false);
+  });
+
+  it("does not treat Итог labels as finished", () => {
+    expect(
+      isWcMatchEffectivelyFinished(liveEvent({ feedStatus: "Итог 1 карты" })),
+    ).toBe(false);
+  });
+
   it("does not treat extra-time break at 105 min as finished", () => {
     expect(
       isWcMatchEffectivelyFinished(

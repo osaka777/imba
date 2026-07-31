@@ -4,12 +4,15 @@ import {
   createContext,
   useCallback,
   useContext,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
+
+import {
+  isBroadcastAuthed,
+  requestBroadcastAuth,
+} from "~/entities/wc-odds/lib/wcBroadcastAuth";
 
 const CLOSED_KEY_PREFIX = "wc-broadcast-closed:";
 
@@ -41,9 +44,11 @@ type WcBroadcastContextValue = {
   meta: WcBroadcastMeta | null;
   hasBroadcast: boolean;
   visible: boolean;
+  /** True after the user explicitly opened the player (survives route changes). */
+  userOpened: boolean;
   register: (eventRef: string, hasBroadcast: boolean, meta?: WcBroadcastMeta) => void;
   unregister: () => void;
-  /** Force-clear broadcast state when leaving a match page. */
+  /** Clear auto-registered state when leaving a match page — never kills a user-opened player. */
   release: () => void;
   open: () => void;
   /** Atomically bind event + show player (mobile-safe). */
@@ -58,25 +63,20 @@ type WcBroadcastContextValue = {
 const WcBroadcastContext = createContext<WcBroadcastContextValue | null>(null);
 
 export function WcBroadcastProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const [eventRef, setEventRef] = useState<string | null>(null);
   const [meta, setMeta] = useState<WcBroadcastMeta | null>(null);
   const [hasBroadcast, setHasBroadcast] = useState(false);
   const [visible, setVisible] = useState(false);
   const [userClosed, setUserClosed] = useState(false);
+  const [userOpened, setUserOpened] = useState(false);
   const userOpenedRef = useRef(false);
-
-  useLayoutEffect(() => {
-    userOpenedRef.current = false;
-    setVisible(false);
-    setEventRef(null);
-    setMeta(null);
-    setHasBroadcast(false);
-    setUserClosed(false);
-  }, [pathname]);
 
   const register = useCallback(
     (ref: string, broadcast: boolean, nextMeta?: WcBroadcastMeta) => {
+      // Don't steal focus from an already user-opened stream on another event.
+      if (userOpenedRef.current && eventRef && eventRef !== ref) {
+        return;
+      }
       const closed = wasBroadcastClosed(ref) && !userOpenedRef.current;
       setEventRef(ref);
       setMeta(nextMeta ?? null);
@@ -92,7 +92,7 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
         return current;
       });
     },
-    [],
+    [eventRef],
   );
 
   const unregister = useCallback(() => {
@@ -105,17 +105,26 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const release = useCallback(() => {
-    userOpenedRef.current = false;
+    // Match-page unmount must not kill a player the user explicitly opened —
+    // they may navigate elsewhere while keeping the stream.
+    if (userOpenedRef.current) return;
     setEventRef(null);
     setMeta(null);
     setHasBroadcast(false);
     setUserClosed(false);
     setVisible(false);
+    setUserOpened(false);
   }, []);
 
   const open = useCallback(() => {
+    // Guest click must not steal the Live Tracker rail with an auth gate.
+    if (!isBroadcastAuthed()) {
+      requestBroadcastAuth("login");
+      return;
+    }
     if (eventRef) clearBroadcastClosed(eventRef);
     userOpenedRef.current = true;
+    setUserOpened(true);
     setUserClosed(false);
     setVisible(true);
   }, [eventRef]);
@@ -123,11 +132,18 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
   const openBroadcast = useCallback(
     (ref: string, broadcast: boolean, nextMeta?: WcBroadcastMeta) => {
       if (!broadcast) return;
-      clearBroadcastClosed(ref);
-      userOpenedRef.current = true;
+      // Bind match meta, but only open the video slot when the user can play.
+      // Otherwise guests lose the 1win Live Tracker above the coupon.
       setEventRef(ref);
       setMeta(nextMeta ?? null);
       setHasBroadcast(true);
+      if (!isBroadcastAuthed()) {
+        requestBroadcastAuth("login");
+        return;
+      }
+      clearBroadcastClosed(ref);
+      userOpenedRef.current = true;
+      setUserOpened(true);
       setUserClosed(false);
       setVisible(true);
     },
@@ -136,6 +152,7 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
 
   const close = useCallback(() => {
     userOpenedRef.current = false;
+    setUserOpened(false);
     if (eventRef) markBroadcastClosed(eventRef);
     setUserClosed(true);
     setVisible(false);
@@ -147,6 +164,7 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
       meta,
       hasBroadcast,
       visible,
+      userOpened,
       register,
       unregister,
       release,
@@ -154,7 +172,19 @@ export function WcBroadcastProvider({ children }: { children: React.ReactNode })
       openBroadcast,
       close,
     }),
-    [eventRef, meta, hasBroadcast, visible, register, unregister, release, open, openBroadcast, close],
+    [
+      eventRef,
+      meta,
+      hasBroadcast,
+      visible,
+      userOpened,
+      register,
+      unregister,
+      release,
+      open,
+      openBroadcast,
+      close,
+    ],
   );
 
   return (

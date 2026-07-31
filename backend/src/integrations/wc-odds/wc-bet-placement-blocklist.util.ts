@@ -92,7 +92,7 @@ export function isWcBetPlacementBlockedOutcome(
   if (!outcomeKey) return false;
 
   const normalized = normalizeWcMarketKey(marketKey);
-  if (normalized === 'handicap') {
+  if (normalized === 'handicap' || /^map_\d+_(?:handicap|spreads)$/i.test(marketKey)) {
     return !/^(HOME|AWAY)_HCP_/.test(outcomeKey);
   }
   if (normalized === 'handicap_3way') {

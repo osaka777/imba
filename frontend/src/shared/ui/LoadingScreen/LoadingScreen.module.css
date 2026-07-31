@@ -1,12 +1,56 @@
 .LoadingScreen {
-  background-color: var(--blue-00);
+  --loader-blue: #108de7;
+  --loader-bg: var(--blue-00, var(--blue-00));
 
   width: 100%;
-  height: 780px;
+  min-height: min(780px, 100dvh);
+  height: 100%;
+  box-sizing: border-box;
 
   display: flex;
   justify-content: center;
   align-items: center;
 
-  font-size: 5vw;
+  background-color: var(--loader-bg);
+  color: #fff;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.logo {
+  width: auto;
+  height: clamp(28px, 4.2vw, 40px);
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.ring {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  border-top-color: var(--loader-blue);
+  border-right-color: var(--loader-blue);
+  animation: spin 0.75s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+    border-color: rgba(16, 141, 231, 0.25);
+    border-top-color: var(--loader-blue);
+  }
 }

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 
 import { fetchWcBetShare } from "~/entities/wc-odds/api/client";
 import { getSessionClient } from "~/entities/user/lib/getSessionClient";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./WcBetShareButton.module.css";
 
@@ -14,12 +15,13 @@ type WcBetShareButtonProps = {
 };
 
 export function WcBetShareButton({ betId, className }: WcBetShareButtonProps) {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
 
   const onShare = async () => {
     const token = getSessionClient();
     if (!token) {
-      toast.error("Войдите в аккаунт");
+      toast.error(t("wc.tgLoginRequired"));
       return;
     }
     setLoading(true);
@@ -30,10 +32,10 @@ export function WcBetShareButton({ betId, className }: WcBetShareButtonProps) {
         return;
       }
       await navigator.clipboard.writeText(`${share.text}\n${share.url}`);
-      toast.success("Скопировано в буфер");
+      toast.success(t("wc.shareCopied"));
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") {
-        toast.error("Не удалось поделиться");
+        toast.error(t("wc.shareFailed"));
       }
     } finally {
       setLoading(false);
@@ -47,7 +49,7 @@ export function WcBetShareButton({ betId, className }: WcBetShareButtonProps) {
       onClick={onShare}
       type="button"
     >
-      {loading ? "…" : "Поделиться"}
+      {loading ? "…" : t("wc.shareBtn")}
     </button>
   );
 }

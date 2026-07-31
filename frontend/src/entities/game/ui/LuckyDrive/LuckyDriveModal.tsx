@@ -17,6 +17,8 @@ import { CheckIcon } from '~/shared/assets';
 import { cn } from '~/shared/lib';
 
 import { ModalInlineAuth } from './ModalInlineAuth';
+import { IMBA_GAMES_MODAL_TITLE } from './luckyDriveImage';
+import { useLocale } from '~/shared/model/useLocale';
 import styles from './LuckyDriveModal.module.css';
 
 type WizardStep = 'intro' | 'deposit' | 'waiting' | 'claim' | 'success';
@@ -45,6 +47,7 @@ function resolveStatusStep(
 }
 
 export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useLocale();
   const router = useRouter();
   const [settings, setSettings] = useState<PublicPromoModalSettings | null>(null);
   const [status, setStatus] = useState<PromoModalUserStatus | null>(null);
@@ -91,7 +94,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
     } else if (stepRef.current === 'deposit') {
       setStep('deposit');
       if (opts?.manualCheck) {
-        setError('Активная заявка не найдена. Создайте пополнение и отправьте заявку.');
+        setError(t('promo.gameNoActiveOrder'));
       }
     } else if (opts?.manualCheck) {
       setError(null);
@@ -151,7 +154,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
       await refresh({ keepPage: true });
       setStep('success');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Не удалось получить бонус');
+      setError(e instanceof Error ? e.message : t('promo.gameClaimFail'));
     } finally {
       setActionLoading(false);
     }
@@ -165,7 +168,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
 
   const goToDeposit = () => {
     if (!isAuthenticated) {
-      setError('Войдите или зарегистрируйтесь, чтобы продолжить');
+      setError(t('promo.authRequired'));
       return;
     }
     setError(null);
@@ -183,17 +186,17 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
 
   const stepSubtitle =
     step === 'intro'
-      ? settings?.modalSubtitle
+      ? t('promo.gameModalSubtitle')
       : step === 'deposit'
         ? settings
-          ? `Минимум ${settings.minDepositLabel}. Промокод ${settings.promoCode} подставится автоматически.`
+          ? t('promo.gameDepositHint', { min: settings.minDepositLabel, code: settings.promoCode })
           : null
         : step === 'waiting'
-          ? 'Заявка принята. Бонус начислится после подтверждения платежа.'
+          ? t('promo.gameWaitingSubtitle')
           : step === 'claim'
-            ? 'Условия выполнены — нажмите кнопку ниже.'
+            ? t('promo.gameClaimSubtitle')
             : step === 'success'
-              ? settings?.successSubtitle
+              ? t('promo.gameSuccessSubtitle')
               : null;
 
   const showAuth = authModalType !== 'closed';
@@ -201,7 +204,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={cn(styles.modalContent, showAuth && styles.modalContentAuth)} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label={t("promo.close")}>
           ×
         </button>
         <main className={styles.modalBody}>
@@ -209,14 +212,14 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
             <ModalInlineAuth
               variant={authModalType}
               onBack={() => setAuthModalType('closed')}
-              backLabel="← Назад к акции"
+              backLabel={t("promo.backToPromo")}
             />
           ) : (
             <div className={cn(styles.base, step === 'deposit' && styles.baseDeposit)} style={gradientStyle}>
               {step !== 'success' ? (
                 <nav
                   className={cn(styles.stepper, step === 'deposit' && styles.stepperCompact)}
-                  aria-label="Шаги"
+                  aria-label={t("promo.stepsAria")}
                 >
                   <div className={styles.stepperTrack} aria-hidden>
                     <div
@@ -224,7 +227,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                       style={{ width: pageIndex >= 1 ? '100%' : '0%' }}
                     />
                   </div>
-                  {['Ознакомление', 'Пополнение'].map((label, index) => (
+                  {[t('promo.stepIntro'), t('promo.stepDeposit')].map((label, index) => (
                     <div
                       key={label}
                       className={cn(
@@ -246,12 +249,12 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                 <header className={styles.head}>
                   <h2 className={styles.title}>
                     {step === 'waiting'
-                        ? 'Проверяем оплату'
+                        ? t('promo.gameWaitingTitle')
                         : step === 'claim'
-                          ? 'Получите бонус'
+                          ? t('promo.gameClaimTitle')
                           : step === 'success'
-                            ? settings?.successTitle || 'Готово!'
-                            : settings?.modalTitle || 'World Cup 2026'}
+                            ? t('promo.readyExclaim')
+                            : IMBA_GAMES_MODAL_TITLE}
                   </h2>
                   {stepSubtitle ? <p className={styles.subtitle}>{stepSubtitle}</p> : null}
                 </header>
@@ -265,13 +268,13 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                       setStep('intro');
                     }}
                   >
-                    ← Назад
+                    {t('promo.back')}
                   </button>
                   <div className={styles.depositHeadMain}>
-                    <h2 className={styles.depositTitle}>Пополнение</h2>
+                    <h2 className={styles.depositTitle}>{t('promo.gameDepositTitle')}</h2>
                     {settings ? (
                       <div className={styles.depositMeta}>
-                        <span>от {settings.minDepositLabel}</span>
+                        <span>{t('promo.fromAmount', { amount: settings.minDepositLabel })}</span>
                         <span className={styles.depositMetaDot} aria-hidden>
                           ·
                         </span>
@@ -285,7 +288,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                 {error ? <div className={styles.errorMessage}>{error}</div> : null}
 
                 {isLoading ? (
-                  <div className={styles.loading}>Загрузка...</div>
+                  <div className={styles.loading}>{t('promo.loading')}</div>
                 ) : (
                   <div className={styles.actions}>
                     {step === 'intro' && (
@@ -294,11 +297,11 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                           <article className={cn(styles.task, isAuthenticated && styles.taskDone)}>
                             <span className={styles.taskNumber}>1</span>
                             <div className={styles.taskBody}>
-                              <p className={styles.taskText}>{settings?.stepRegisterText}</p>
+                              <p className={styles.taskText}>{t('promo.gameStepRegister')}</p>
                               {isAuthenticated ? (
                                 <span className={styles.taskDoneLabel}>
                                   <CheckIcon className={styles.taskDoneLabelCheckIcon} />
-                                  Выполнено
+                                  {t('promo.done')}
                                 </span>
                               ) : (
                                 <div className={styles.taskActions}>
@@ -307,14 +310,14 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                                     className={styles.taskBtn}
                                     onClick={() => setAuthModalType('login')}
                                   >
-                                    Войти
+                                    {t('promo.login')}
                                   </button>
                                   <button
                                     type="button"
                                     className={cn(styles.taskBtn, styles.taskBtnSecondary)}
                                     onClick={() => setAuthModalType('register')}
                                   >
-                                    Регистрация
+                                    {t('promo.register')}
                                   </button>
                                 </div>
                               )}
@@ -324,16 +327,16 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                             <span className={styles.taskNumber}>2</span>
                             <div className={styles.taskBody}>
                               <p className={styles.taskText}>
-                                {settings?.stepDepositText} — от {settings?.minDepositLabel}
+                                {t('promo.gameStepDeposit')}
                               </p>
                               <p className={styles.taskHint}>
-                                На следующем шаге выберите способ оплаты и отправьте заявку.
+                                {t('promo.gameTaskHint')}
                               </p>
                             </div>
                           </article>
                         </div>
                         <button type="button" className={styles.button} onClick={goToDeposit}>
-                          Далее
+                          {t('promo.next')}
                         </button>
                       </>
                     )}
@@ -358,7 +361,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                           className={styles.linkBtn}
                           onClick={() => void refresh({ keepPage: true, manualCheck: true })}
                         >
-                          Проверить статус пополнения
+                          {t('promo.checkDepositStatus')}
                         </button>
                       </>
                     )}
@@ -368,17 +371,17 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                         <div className={styles.waitingCard}>
                           {status?.pendingDeposit ? (
                             <>
-                              <p>Заявка #{status.pendingDeposit.id}</p>
+                              <p>{t('promo.gameOrderId', { id: status.pendingDeposit.id })}</p>
                               <p className={styles.waitingAmount}>
                                 {status.pendingDeposit.amount.toLocaleString('ru-RU')}{' '}
                                 {status.pendingDeposit.currency}
                               </p>
                               <p className={styles.waitingHint}>
-                                Ожидаем подтверждение администратором
+                                {t('promo.gameWaitingAdmin')}
                               </p>
                             </>
                           ) : (
-                            <p className={styles.waitingHint}>Проверяем статус пополнения...</p>
+                            <p className={styles.waitingHint}>{t('promo.gameCheckingStatus')}</p>
                           )}
                         </div>
                         <button
@@ -386,14 +389,14 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                           className={styles.button}
                           onClick={() => void refresh({ keepPage: true })}
                         >
-                          Обновить статус
+                          {t('promo.refreshStatus')}
                         </button>
                         <button
                           type="button"
                           className={styles.linkBtn}
                           onClick={() => setStep('deposit')}
                         >
-                          Вернуться к пополнению
+                          {t('promo.backToDeposit')}
                         </button>
                       </>
                     )}
@@ -405,7 +408,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                         disabled={actionLoading}
                         onClick={() => void handleClaim()}
                       >
-                        {actionLoading ? 'Начисляем...' : settings?.ctaClaim || 'Получить бонус'}
+                        {actionLoading ? t('promo.gameClaiming') : t('promo.gameCta')}
                       </button>
                     )}
 
@@ -413,7 +416,7 @@ export const LuckyDriveModal: React.FC<LuckyDriveModalProps> = ({ isOpen, onClos
                       <>
                         <div className={styles.successIcon}>🎉</div>
                         <button type="button" className={styles.button} onClick={goToWc}>
-                          {settings?.ctaGoToWc || 'Смотреть матчи ЧМ'}
+                          {t('promo.gamePlay')}
                         </button>
                       </>
                     )}

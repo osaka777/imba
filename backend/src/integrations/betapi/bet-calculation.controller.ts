@@ -450,7 +450,9 @@ export class BetCalculationController {
     }
   }
 
-  @Get('health')
+  // Keep the global /api/health route lightweight. This controller previously
+  // shadowed HealthController and could wait indefinitely for external BetAPI.
+  @Get('bet-calculation/health')
   async checkHealth() {
     try {
       const healthy = await this.betCalculationService.checkApiHealth();

@@ -3,26 +3,25 @@
   min-width: 0;
   margin-bottom: 16px;
   padding: 14px 12px 12px;
-  border-radius: 14px;
-  background: linear-gradient(165deg, #121214 0%, #0a0a0b 100%);
-  border: 1px solid rgb(255 255 255 / 0.08);
-  box-shadow: 0 10px 32px rgb(0 0 0 / 0.18);
-  /* Kick tokens scoped to this block only — does not affect main home line/live */
-  --kick-text: #fff;
-  --kick-text-secondary: #a8a8a8;
-  --kick-text-muted: #666;
-  --kick-green: #53fc18;
-  --kick-green-dim: rgb(83 252 24 / 0.12);
-  --kick-green-border: rgb(83 252 24 / 0.45);
-  --kick-border: rgb(255 255 255 / 0.07);
-  --kick-border-strong: rgb(255 255 255 / 0.12);
-  --kick-bg-card: #161617;
-  --kick-bg-surface: #0f0f10;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e1e6ed;
+  box-shadow: none;
+  --kick-text: #101828;
+  --kick-text-secondary: #667085;
+  --kick-text-muted: #8b93a1;
+  --kick-green: #0085ff;
+  --kick-green-dim: #eef4ff;
+  --kick-green-border: #93c5fd;
+  --kick-border: #e1e6ed;
+  --kick-border-strong: #d7dde5;
+  --kick-bg-card: #ffffff;
+  --kick-bg-surface: #f8fafc;
   --kick-live: #ff4646;
   --kick-live-dim: rgb(255 70 70 / 0.14);
   --kick-live-border: rgb(255 70 70 / 0.42);
   --kick-radius: 10px;
-  --cy-text-secondary: #909090;
+  --cy-text-secondary: #667085;
 }
 
 .head {
@@ -38,17 +37,17 @@
   font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: #101828;
 }
 
 .titleAccent {
-  color: var(--kick-green);
+  color: #2563eb;
 }
 
 .hubLink {
   font-size: 12px;
   font-weight: 700;
-  color: var(--kick-green);
+  color: #2563eb;
   text-decoration: none;
   white-space: nowrap;
 }

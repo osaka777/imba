@@ -195,8 +195,8 @@
   }
 
   .wcMatchPage :global(.oddCoef) {
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 600;
     padding: 0;
     min-width: 44px;
     color: #111827;
@@ -240,7 +240,7 @@
   .wcMatchPage :global(.oddsTotalsRow .oddCoef) {
     min-width: 0;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     color: #111827;
   }
 
@@ -268,7 +268,7 @@
   .wcMatchPage :global(.oddsBlockPairOU .oddCoef) {
     min-width: 32px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .wcMatchPage :global(.oddsHandicapRow .handicapPivotWrap .totalsPivot) {
@@ -286,7 +286,7 @@
 
   .wcMatchPage :global(.oddsHandicapRow .oddCoef) {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .wcMatchPage :global(.oddsHandicapRow .pairSideLabel_start),

@@ -112,16 +112,28 @@
 }
 
 .benefit {
-  padding: 10px 10px;
-  border-radius: 10px;
+  padding: 12px 12px 11px;
+  border-radius: 12px;
   background: rgb(255 255 255 / 0.04);
   border: 1px solid rgb(255 255 255 / 0.06);
 }
 
 .benefitIcon {
-  font-size: 14px;
-  line-height: 1;
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 8px;
+  border-radius: 9px;
+  background: rgba(49, 188, 105, 0.14);
+  color: #4ade80;
+}
+
+.benefitIcon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .benefitLabel {
@@ -211,9 +223,10 @@
   align-items: center;
   gap: 8px;
   margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.2);
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 @media (min-width: 768px) {
@@ -222,10 +235,27 @@
   }
 }
 
+@media (min-width: 1024px) {
+  .desktopConnectRow {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .desktopQr {
+    margin-top: 0;
+  }
+
+  .benefits {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .desktopQrImg {
-  width: 160px;
-  height: 160px;
-  border-radius: 12px;
+  width: 148px;
+  height: 148px;
+  border-radius: 8px;
   background: #fff;
   padding: 8px;
 }
@@ -235,4 +265,5 @@
   font-size: 12px;
   color: #94a3b8;
   text-align: center;
+  line-height: 1.35;
 }

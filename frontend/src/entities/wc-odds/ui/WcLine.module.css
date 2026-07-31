@@ -377,7 +377,7 @@
 
   .wcOddsRow :global([class*="oddCoefficient"]) {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     color: #101828;
     min-width: 0;
     min-height: 0;

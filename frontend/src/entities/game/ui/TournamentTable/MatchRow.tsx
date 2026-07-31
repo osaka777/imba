@@ -11,6 +11,7 @@ import {
 } from "~/entities/cybersport/lib/cyberGameToWcEvent";
 import { FireIcon, TimeIcon, BroadcastIcon } from "~/shared/assets";
 import { cn } from "~/shared/lib";
+import { useLocale } from "~/shared/model/useLocale";
 import { Button } from "~/shared/ui";
 import { Game } from "~/entities/game/types";
 import {  SubGameDto } from "../SubGames";
@@ -60,6 +61,7 @@ export const MatchRow: React.FC<MatchRowProps> = ({
   gameLinkPrefix = "/game/",
   matchData,
 }) => {
+  const { t } = useLocale();
   const { markets, marketsCount, score } = useMatchRow(matchData) as {
     markets: any;
     marketsCount: number;
@@ -155,8 +157,8 @@ export const MatchRow: React.FC<MatchRowProps> = ({
                   </div>
                 )}
                 {showPrematchBadge && (
-                  <span className={styles.prematchBadge} title="Коэффициенты из prematch-линии">
-                    Линия
+                  <span className={styles.prematchBadge} title={t("common.lineFromPrematch")}>
+                    {t("common.lineBadge")}
                   </span>
                 )}
                 {showCyberBroadcast && (
@@ -168,7 +170,7 @@ export const MatchRow: React.FC<MatchRowProps> = ({
                       if (!cyberBroadcastRef) return;
                       router.push(`${gameLinkPrefix}${matchData.eventId}`);
                     }}
-                    title="Трансляция"
+                    title={t("cyber.broadcast")}
                     type="button"
                   >
                     <BroadcastIcon className={styles.broadcastIcon} />

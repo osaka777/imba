@@ -1,0 +1,13 @@
+{
+  "colTime": "Vaxt",
+  "colTeams": "Komandalar",
+  "topEvents": "İndi populyar",
+  "topEventsLive": "Oyunçu aktivliyi",
+  "topEventsSubtitle": "Trend matçlar və izləyicilərin seçimi real vaxtda",
+  "topEventsLegend": "Daha yüksək faiz daha populyar seçim deməkdir",
+  "emptyLive": "{sport} üçün live hadisə yoxdur",
+  "emptyLine": "{sport} üçün xətt hadisəsi yoxdur",
+  "emptyHint": "Başqa idmana baxın və ya tam bölməni açın",
+  "viewAllLive": "Bütün live-a bax",
+  "goToLine": "Xəttə keç"
+}

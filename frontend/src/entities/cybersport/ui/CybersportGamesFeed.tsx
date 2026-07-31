@@ -4,21 +4,25 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import InfiniteScroll from "react-infinite-scroller";
 import Link from "next/link";
 import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 import {
   fetchCybersportLine,
   fetchCybersportLive,
 } from "~/entities/cybersport/api/client";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { resolveCyberSportLabel } from "~/entities/cybersport/lib/cyberSportsList";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
 import { transformApiGames } from "~/entities/game/lib/transformApiGames";
 import { CybersportMatchSkeleton } from "~/entities/cybersport/ui/CybersportMatchSkeleton";
 import { TournamentTable } from "~/entities/game/ui/TournamentTable";
+import { useLocale } from "~/shared/model/useLocale";
 
 import styles from "./CybersportGamesFeed.module.css";
 
 type CybersportGamesFeedProps = {
   variant: "live" | "prematch";
+  /** Empty = all live disciplines. */
   sport: string;
   sportLabel?: string;
   alternateHref?: string;
@@ -32,10 +36,16 @@ export function CybersportGamesFeed({
   sportLabel,
   alternateHref,
 }: CybersportGamesFeedProps) {
+  const { t } = useLocale();
+  const searchParams = useSearchParams();
+  const broadcastOnly =
+    searchParams.get("broadcast") === "1" || searchParams.get("broadcast") === "true";
   const isLive = variant === "live";
-  const label = sportLabel ?? resolveCyberSportLabel(sport);
+  const sportKey = sport?.trim() || "";
+  const label = sportLabel ?? (sportKey ? resolveCyberSportLabel(sportKey) : t("cyber.title"));
   const ctaHref = alternateHref ?? (isLive ? "/cybersport/line" : "/cybersport/live");
-  const ctaLabel = isLive ? "Смотреть линию" : "Смотреть live";
+  const ctaLabel = isLive ? t("partner.watchLine") : t("cyber.watchLive");
+  const liveLimit = sportKey ? PAGE_SIZE : 48;
 
   const {
     data,
@@ -45,11 +55,11 @@ export function CybersportGamesFeed({
     isFetchingNextPage,
     error,
   } = useInfiniteQuery({
-    queryKey: ["cybersport-feed", variant, sport],
+    queryKey: ["cybersport-feed", variant, sportKey || "all"],
     queryFn: ({ pageParam = 0 }) =>
       isLive
-        ? fetchCybersportLive(sport, PAGE_SIZE)
-        : fetchCybersportLine(sport, PAGE_SIZE, pageParam),
+        ? fetchCybersportLive(sportKey || undefined, liveLimit)
+        : fetchCybersportLine(sportKey || "esports.cs", PAGE_SIZE, pageParam),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) => {
       if (isLive) return undefined;
@@ -61,15 +71,18 @@ export function CybersportGamesFeed({
   });
 
   const leagues = useMemo(() => {
-    const flat = (data?.pages ?? []).flat().map((game) => ({
-      ...game,
-      leagueName: maskCybersportLabel(game.leagueName),
-      team1: maskCybersportLabel(game.team1),
-      team2: maskCybersportLabel(game.team2),
-      eventName: maskCybersportLabel(game.eventName),
-    }));
+    const flat = (data?.pages ?? [])
+      .flat()
+      .filter((game) => !broadcastOnly || cyberGameHasVideo(game))
+      .map((game) => ({
+        ...game,
+        leagueName: maskCybersportLabel(game.leagueName),
+        team1: maskCybersportLabel(game.team1),
+        team2: maskCybersportLabel(game.team2),
+        eventName: maskCybersportLabel(game.eventName),
+      }));
     return transformApiGames(flat);
-  }, [data]);
+  }, [broadcastOnly, data]);
 
   if (isLoading) {
     return <CybersportMatchSkeleton rows={4} />;
@@ -78,27 +91,34 @@ export function CybersportGamesFeed({
   if (error) {
     return (
       <div className={styles.emptyState}>
-        <p className={styles.emptyTitle}>Не удалось загрузить матчи</p>
-        <p className={styles.emptyHint}>Попробуйте обновить страницу</p>
+        <p className={styles.emptyTitle}>{t("cyber.loadFailed")}</p>
+        <p className={styles.emptyHint}>{t("cyber.tryRefresh")}</p>
       </div>
     );
   }
 
   if (leagues.length === 0) {
+    const emptyTitle = broadcastOnly
+      ? t("cyber.noLiveBroadcastAny")
+      : isLive
+        ? sportKey
+          ? t("cyber.noLiveSport", { sport: label.toLowerCase() })
+          : t("cyber.noLiveAny")
+        : t("cyber.noLineSport", { sport: label.toLowerCase() });
+
     return (
       <div className={styles.emptyState}>
-        <p className={styles.emptyTitle}>
-          {isLive
-            ? `Сейчас нет live по ${label.toLowerCase()}`
-            : `Нет матчей в линии по ${label.toLowerCase()}`}
+        <p className={styles.emptyTitle}>{emptyTitle}</p>
+        <p className={styles.emptyHint}>
+          {broadcastOnly
+            ? t("cyber.clearBroadcastFilter")
+            : t("cyber.tryOtherDiscipline")}
         </p>
-        <p className={styles.emptyHint}>Попробуйте другую дисциплину или откройте полный список</p>
-        <Link className={styles.emptyCta} href={ctaHref}>
-          {ctaLabel}
-        </Link>
-        <Link className={styles.emptyLink} href="/cybersport">
-          Все дисциплины →
-        </Link>
+        {!isLive || sportKey ? (
+          <Link className={styles.emptyCta} href={ctaHref}>
+            {ctaLabel}
+          </Link>
+        ) : null}
       </div>
     );
   }
@@ -120,8 +140,7 @@ export function CybersportGamesFeed({
           isLive={isLive}
           key={league.leagueName}
           league={league.leagueName}
-          sport={sport}
-          variant="cyber"
+          sport={sportKey || league.games[0]?.sport || "esports.cs"}
         />
       ))}
     </InfiniteScroll>

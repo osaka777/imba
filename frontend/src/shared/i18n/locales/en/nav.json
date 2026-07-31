@@ -1,11 +1,16 @@
 {
   "home": "Home",
   "live": "Live",
-  "line": "Line",
+  "line": "Prematch",
+  "results": "Results",
   "cybersport": "Esports",
   "cyberShort": "Esports",
   "snake": "Snake",
-  "btc": "BTC 5m",
+  "btc": "Trading",
+  "more": "More",
+  "imbaGames": "Imba Games",
+  "games": "Games",
   "history": "History",
-  "freeMoney": "Free money"
+  "freeMoney": "Free money",
+  "markets": "Markets"
 }

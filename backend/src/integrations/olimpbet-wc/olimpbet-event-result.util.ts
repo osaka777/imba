@@ -22,6 +22,9 @@ const CANCELLED_STATUS_MARKERS = [
   'CANCEL',
   'ABANDON',
   'POSTPON',
+  'RETIRE',
+  'WALKOVER',
+  'DEFAULT',
 ];
 
 const LIVE_ACTIVE_STATUS_MARKERS = [
@@ -30,8 +33,27 @@ const LIVE_ACTIVE_STATUS_MARKERS = [
   'EVENT_INTERRUPTED',
 ];
 
-/** Sportradar-style phase codes for ended matches. */
-const FINISHED_MATCH_PHASES = new Set(['100', '110', '120', '130']);
+/**
+ * Sportradar match_status / Olimpbet match_phase → refund (VOID) all unsettled bets.
+ * Tennis: walkover / retired / defaulted; also abandoned / cancelled.
+ * @see https://docs.sportradar.com/live-data/.../tennis
+ */
+const REFUND_MATCH_PHASES = new Set([
+  '70',  // CANCELLED
+  '90',  // ABANDONED
+  '93',  // WALKOVER1 (home wins by walkover / away withdrew)
+  '94',  // WALKOVER2
+  '95',  // RETIRED1 (home retired → away wins)
+  '96',  // RETIRED2
+  '97',  // DEFAULTED1
+  '98',  // DEFAULTED2
+]);
+
+/** Sportradar-style phase codes for ended matches (incl. refund endings). */
+const FINISHED_MATCH_PHASES = new Set([
+  '100', '110', '120', '130',
+  ...REFUND_MATCH_PHASES,
+]);
 
 export function statValue(
   detail: Pick<OlimpbetEventDetail, 'statistics'>,
@@ -172,9 +194,16 @@ export function isOlimpbetFeedBettingOpen(
   return true;
 }
 
-export function isOlimpbetEventCancelled(detail: Pick<OlimpbetEventDetail, 'status'>): boolean {
+export function isOlimpbetEventCancelled(
+  detail: Pick<OlimpbetEventDetail, 'status' | 'statistics'>,
+): boolean {
   const status = (detail.status ?? '').toUpperCase();
-  return CANCELLED_STATUS_MARKERS.some((marker) => status.includes(marker));
+  if (CANCELLED_STATUS_MARKERS.some((marker) => status.includes(marker))) {
+    return true;
+  }
+
+  const matchPhase = statValue(detail, 'match_phase');
+  return Boolean(matchPhase && REFUND_MATCH_PHASES.has(matchPhase));
 }
 
 export function isOlimpbetEventCompleted(
@@ -183,13 +212,20 @@ export function isOlimpbetEventCompleted(
 ): boolean {
   if (isOlimpbetEventCancelled(detail)) return true;
 
-  const status = (detail.status ?? '').toUpperCase();
-  if (FINISHED_STATUS_MARKERS.some((marker) => status.includes(marker))) {
-    return true;
-  }
-
   const matchPhase = statValue(detail, 'match_phase');
-  if (matchPhase && FINISHED_MATCH_PHASES.has(matchPhase)) {
+  const status = (detail.status ?? '').toUpperCase();
+  const finishedStatus = FINISHED_STATUS_MARKERS.some((marker) =>
+    status.includes(marker),
+  );
+
+  // Olimpbet often flashes EVENT_ENDED at FT→ET / brief glitches while
+  // `live` is still true and Sportradar match_phase is not finished. Treating
+  // that as completed makes the UI show «Окончена» and then reopen live.
+  if (finishedStatus) {
+    if (!detail.live) return true;
+    if (matchPhase && FINISHED_MATCH_PHASES.has(matchPhase)) return true;
+    // Still live without a finished phase — fall through to zombie / age checks.
+  } else if (matchPhase && FINISHED_MATCH_PHASES.has(matchPhase)) {
     return true;
   }
 

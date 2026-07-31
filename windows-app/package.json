@@ -1,0 +1,68 @@
+{
+  "name": "imba-bet-windows",
+  "version": "1.4.0",
+  "description": "Official Imba.bet Windows app",
+  "main": "main.js",
+  "author": "Imba.bet",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "dist:portable": "electron-builder --win portable --x64 --publish never"
+  },
+  "build": {
+    "appId": "bet.imba.windows",
+    "productName": "Imba",
+    "copyright": "Copyright © Imba.bet",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "settings.html",
+      "settings-preload.js",
+      "icon.png",
+      "icon.ico"
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://imba.bet/"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico",
+      "artifactName": "imba-bet-windows-setup.exe",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Imba",
+      "runAfterFinish": true,
+      "artifactName": "imba-bet-windows-setup.exe",
+      "deleteAppDataOnUninstall": false
+    },
+    "compression": "maximum",
+    "asar": true
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  }
+}

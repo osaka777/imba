@@ -1,11 +1,13 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 import { WcLinePage } from "~/entities/wc-odds/ui/WcLinePage";
-import { makeMetadata } from "~/shared/lib";
+import { makeSeoMetadata } from "~/shared/i18n/seo-metadata";
 
 import styles from "../line/layout.module.css";
 
-export const metadata: Metadata = makeMetadata("ЧМ — линия");
+export async function generateMetadata(): Promise<Metadata> {
+  return makeSeoMetadata("common.seoWcLine");
+}
 
 export default function WorldCupLinePage() {
   return (

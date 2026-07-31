@@ -1,3 +1,9 @@
+import type { WcGroupedMarkets } from '../wc-odds/wc-odds-markets.util';
+import {
+  stripFlatPlaceholderEsportsMarkets,
+  stripPlaceholderMapCorrectScoreMarkets,
+} from './olimpbet-map-correct-score.util';
+
 export type WcResolvedMarketKey = {
   marketKey: string;
   bettable: boolean;
@@ -203,7 +209,9 @@ export function stripJunkSpecialtyGroupedMarkets<
     const kept = groups.filter((group) => !isJunkSpecialtyMarketKey(group.marketKey));
     if (kept.length > 0) out[category] = kept;
   }
-  return out;
+  return stripFlatPlaceholderEsportsMarkets(
+    stripPlaceholderMapCorrectScoreMarkets(out as unknown as WcGroupedMarkets),
+  ) as unknown as Record<string, T[]>;
 }
 
 export function resolveWcMarketKey(

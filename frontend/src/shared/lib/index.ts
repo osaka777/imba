@@ -10,7 +10,7 @@ export const init = (() => {
   })();
 export * from "./twMerge";
 export { makeMetadata, noIndexMetadata, SITE_DESCRIPTION } from "./metadata";
-export { ANDROID_APP_VERSION } from "./appVersion";
+export { ANDROID_APP_VERSION, WINDOWS_APP_VERSION } from "./appVersion";
 export { 
   memoryManager,
   useMemoryManager,

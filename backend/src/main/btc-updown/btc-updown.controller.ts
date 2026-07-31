@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -83,6 +84,32 @@ export class BtcUpdownController {
     @Query('currencyCode') currencyCode?: string,
   ) {
     return this.btc.getDailyStats(req.user.id, currencyCode ?? 'KZT');
+  }
+
+  @Get('stats/public-pnl')
+  publicPnl(
+    @Query('range') range?: string,
+    @Query('currencyCode') currencyCode?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.btc.getPublicPnlBoard({
+      range,
+      currencyCode,
+      limit: limit != null ? Number(limit) : undefined,
+    });
+  }
+
+  @Get('traders/:idOrNick')
+  publicTrader(
+    @Param('idOrNick') idOrNick: string,
+    @Query('range') range?: string,
+    @Query('currencyCode') currencyCode?: string,
+  ) {
+    return this.btc.getPublicTraderProfile({
+      idOrNick,
+      range,
+      currencyCode,
+    });
   }
 
   @UseGuards(AuthenticationGuard)

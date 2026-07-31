@@ -1,5 +1,3 @@
-export const paymentSystemFormsList = [
-  "AaioForm",
-  "BovaForm",
-  //  "GreengoForm"
+export const paymentSystemFormsList: string[] = [
+  // Bova / CrocoPay / NirvanaPay отключены
 ];

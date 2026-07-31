@@ -13,6 +13,7 @@ import {
   cyberGameToWcEventDetail,
   readCyberWcMeta,
 } from "~/entities/cybersport/lib/cyberGameToWcEvent";
+import { cyberGameHasVideo } from "~/entities/cybersport/lib/cyberGameHasVideo";
 import { maskCybersportLabel } from "~/entities/cybersport/lib/maskCybersportLabel";
 import { fetchWcEventDetail, type WcEventDetail } from "~/entities/wc-odds/api/client";
 import { useWcBroadcast } from "~/entities/wc-odds/lib/WcBroadcastContext";
@@ -20,18 +21,21 @@ import { mergeWcEventDetail } from "~/entities/wc-odds/lib/wcEventDetail";
 import { useWcOddsEventStream } from "~/entities/wc-odds/lib/useWcOddsStream";
 import { wcOddsFeedStore } from "~/entities/wc-odds/lib/wcOddsFeedStore";
 import { WcOddsSection } from "~/entities/wc-odds/ui/WcOddsSection";
+import { WcMatchPage } from "~/entities/wc-odds/ui/WcMatchPage";
 import { CyberStreamScoreBoard } from "~/entities/cybersport/ui/CyberStreamScoreBoard";
 import { WcBroadcastPlayer } from "~/entities/wc-odds/ui/WcBroadcastPlayer";
 import { OddsTable, type MarketDto } from "~/entities/game/ui/Match/OddsTable";
 import { CyberStreamPlaceholder } from "~/entities/cybersport/ui/CyberStreamPlaceholder";
 import kickStyles from "~/entities/cybersport/ui/CyberMatchPage.module.css";
+import { useLocale } from "~/shared/model/useLocale";
 
 import matchStyles from "~/entities/game/ui/Match/Match.module.css";
 import pageStyles from "~/entities/wc-odds/ui/WcMatchPage.module.css";
 
 function CyberOddsSkeleton() {
+  const { t } = useLocale();
   return (
-    <div aria-busy="true" aria-label="Загрузка коэффициентов" className={kickStyles.oddsSkeleton}>
+    <div aria-busy="true" aria-label={t("cyber.loadingOdds")} className={kickStyles.oddsSkeleton}>
       <div className={kickStyles.oddsSkeletonPinned}>
         <div className={kickStyles.oddsSkeletonChip} />
         <div className={kickStyles.oddsSkeletonChip} />
@@ -82,7 +86,8 @@ function broadcastMeta(game: CyberGame) {
   };
 }
 
-export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: CyberMatchPageProps) {
+function CyberLegacyMatchPage({ eventId, initialData, initialWcEvent = null }: CyberMatchPageProps) {
+  const { t } = useLocale();
   const [game, setGame] = useState<CyberGame>(() => maskGame(initialData));
   const isLive = isCyberLive(game);
   const isFinished = game.status === "FINISHED" || game.status === "CANCELED";
@@ -100,15 +105,7 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
   );
   const [wcLoading, setWcLoading] = useState(useWcOdds && !initialWcEvent);
 
-  const hasBroadcast = useMemo(() => {
-    if (wcEvent?.hasBroadcast) return true;
-    const meta = readCyberWcMeta(game);
-    return Boolean(
-      meta.wcHasBroadcast
-      || meta.hasBroadcast
-      || (game.meta as { hasBroadcast?: boolean } | undefined)?.hasBroadcast,
-    );
-  }, [game, wcEvent?.hasBroadcast]);
+  const hasBroadcast = useMemo(() => cyberGameHasVideo(game), [game]);
 
   const scoreboardEvent = useMemo(() => {
     const base = cyberGameToWcEventDetail(game);
@@ -234,7 +231,7 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
       awayTeamIcon: game.team2Icon ?? wcEvent.awayTeamIcon,
       homeTeam: game.team1 ?? wcEvent.homeTeam,
       awayTeam: game.team2 ?? wcEvent.awayTeam,
-      hasBroadcast: hasBroadcast || wcEvent.hasBroadcast,
+      hasBroadcast,
     };
   }, [game, hasBroadcast, wcEvent]);
 
@@ -266,7 +263,7 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
   const mobileBackHref = disciplineSlug
     ? `/cybersport/${disciplineSlug}`
     : "/cybersport";
-  const mobileBackLabel = disciplineLabel ?? "Киберспорт";
+  const mobileBackLabel = disciplineLabel ?? t("cyber.title");
 
   const showBroadcastBtn =
     !showInlineStream && hasBroadcast && Boolean(broadcast) && !broadcast?.visible;
@@ -287,7 +284,7 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
             <div className={matchStyles.oddsTables}>
               {isLive ? (
                 <p className={kickStyles.prematchNote}>
-                  Prematch · live-рынки откроются у поставщика чуть позже
+                  {t("cyber.prematchHint")}
                 </p>
               ) : null}
               <div className={matchStyles.oddsTable}>
@@ -299,7 +296,7 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
                     isParentExpanded
                     key={name}
                     markets={data}
-                    name={name === "WIN" ? "Победитель" : name}
+                    name={name === "WIN" ? t("cyber.winner") : name}
                   />
                 ))}
               </div>
@@ -307,20 +304,20 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
           ) : (
             <div className={kickStyles.emptyState}>
               <h3 className={kickStyles.emptyTitle}>
-                {isLive ? "Live-коэффициенты обновляются" : "Коэффициенты временно недоступны"}
+                {isLive ? t("cyber.liveUpdating") : t("cyber.oddsUnavailable")}
               </h3>
               <p className={kickStyles.emptyHint}>
                 {isLive
-                  ? "Рынки на live-матч ещё не открыты у поставщика линии. Проверьте prematch или обновите страницу через минуту."
-                  : "Попробуйте обновить страницу чуть позже — линия синхронизируется автоматически."}
+                  ? t("cyber.liveMarketsClosed")
+                  : t("cyber.oddsSyncHint")}
               </p>
             </div>
           )
         ) : shouldShowLegacyNoMarkets ? (
           <h3 className={kickStyles.closedTitle}>
             {game.status === "FINISHED" || game.status === "CANCELED"
-              ? "Ставки закрыты"
-              : "Ставок больше нет"}
+              ? t("cyber.betsClosed")
+              : t("cyber.noMoreBets")}
           </h3>
         ) : (
           <div className={matchStyles.oddsTables}>
@@ -333,7 +330,7 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
                   isParentExpanded
                   key={name}
                   markets={data}
-                  name={name === "WIN" ? "Победитель" : name}
+                  name={name === "WIN" ? t("cyber.winner") : name}
                 />
               ))}
             </div>
@@ -352,9 +349,9 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
           {breadcrumbMatch}
         </span>
       </Link>
-      <nav aria-label="Хлебные крошки" className={kickStyles.breadcrumbs}>
+      <nav aria-label={t("cyber.breadcrumbs")} className={kickStyles.breadcrumbs}>
         <Link className={kickStyles.breadcrumbLink} href="/cybersport">
-          Киберспорт
+          {t("cyber.title")}
         </Link>
         {disciplineSlug && disciplineLabel ? (
           <>
@@ -398,14 +395,14 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
             </div>
           </div>
 
-          <div className={kickStyles.oddsCol} data-cyber-odds-col>
+          <div className={kickStyles.oddsCol}>
             <div className={kickStyles.oddsHead}>
               <span
                 className={`${kickStyles.oddsHeadPill} ${!isLive ? kickStyles.oddsHeadPill_muted : ""}`}
               >
-                {isLive ? "LIVE" : "ЛИНИЯ"}
+                {isLive ? "LIVE" : t("cyber.line").toUpperCase()}
               </span>
-              <h2 className={kickStyles.oddsHeadTitle}>Ставки</h2>
+              <h2 className={kickStyles.oddsHeadTitle}>{t("cyber.bets")}</h2>
             </div>
             <section className={`${matchStyles.TournamentOdds} ${kickStyles.oddsSection}`}>
               {oddsContent}
@@ -415,4 +412,20 @@ export function CyberMatchPage({ eventId, initialData, initialWcEvent = null }: 
       </div>
     </div>
   );
+}
+
+export function CyberMatchPage(props: CyberMatchPageProps) {
+  const game = maskGame(props.initialData);
+  const wcRef = readCyberWcMeta(game).wcEventRef ?? "";
+
+  if (cyberGameSupportsWcBetting(game) && wcRef) {
+    return (
+      <WcMatchPage
+        initialData={props.initialWcEvent ?? cyberGameToWcEventDetail(game)}
+        slug={wcRef}
+      />
+    );
+  }
+
+  return <CyberLegacyMatchPage {...props} />;
 }

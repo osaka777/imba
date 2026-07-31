@@ -141,37 +141,21 @@ function playIncomingSound() {
 
 function ChatBubblesIcon() {
   return (
-    <svg className={styles.launcherSvg} viewBox="0 0 24 24" aria-hidden>
+    <svg className={styles.launcherSvg} viewBox="0 0 576 512" aria-hidden>
       <path
-        d="M5 6.5A2.5 2.5 0 0 1 7.5 4h7A2.5 2.5 0 0 1 17 6.5V12a2.5 2.5 0 0 1-2.5 2.5H10L6.5 18v-3.5A2.5 2.5 0 0 1 5 12V6.5Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.5 9.5h5M9.5 12h3"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M11 14.5h5.5A2 2 0 0 0 18.5 12.5V8.5A2 2 0 0 0 16.5 6.5H12"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
+        fill="currentColor"
+        d="M416 192c0-88.4-93.1-160-208-160S0 103.6 0 192c0 34.3 14.1 65.9 38 92-13.4 30.2-35.5 54.2-35.8 54.5-2.2 2.3-2.8 5.7-1.5 8.7S4.8 352 8 352c36.6 0 66.9-12.3 88.7-25 32.2 15.7 70.3 25 111.3 25 114.9 0 208-71.6 208-160zm122 220c23.9-26 38-57.7 38-92 0-66.9-53.5-124.2-129.3-148.1.9 6.6 1.3 13.3 1.3 20.1 0 105.9-107.7 192-240 192-10.8 0-21.3-.8-31.7-1.9C207.8 439.6 281.8 480 368 480c41 0 79.1-9.2 111.3-25 21.8 12.7 52.1 25 88.7 25 3.2 0 6.1-1.9 7.3-4.8 1.3-2.9.7-6.3-1.5-8.7-.3-.3-22.4-24.2-35.8-54.5z"
       />
     </svg>
   );
 }
 
-function PhoneIcon() {
+function TelegramLauncherIcon() {
   return (
     <svg className={styles.launcherSvg} viewBox="0 0 24 24" aria-hidden>
       <path
-        d="M8.2 4.8c-.4 0-.8.2-1 .6l-1.2 2.1a1.4 1.4 0 0 0 .3 1.7l1.6 1.6a12.8 12.8 0 0 0 5.8 5.8l1.6 1.6a1.4 1.4 0 0 0 1.7.3l2.1-1.2c.4-.2.6-.6.6-1V8.9a1 1 0 0 0-1-1l-2.8-.4a1 1 0 0 0-1 .6l-.5 1.6a10.2 10.2 0 0 1-2.2-2.2l1.6-.5a1 1 0 0 0 .6-1L9.2 5.8a1 1 0 0 0-1-.9Z"
         fill="currentColor"
+        d="M21.805 3.197 2.696 10.7c-1.305.522-1.292 1.25-.223 1.574l4.9 1.53 1.89 5.838c.233.72.42.99.98.99.645 0 .927-.3 1.282-.65l2.9-2.81 5.62 4.15c1.03.567 1.778.274 2.036-.958L23.72 4.82c.38-1.52-.547-2.2-1.915-1.623ZM9.4 14.086l-.23 3.25-1.04-3.43L20.6 6.2 9.4 14.086Z"
       />
     </svg>
   );
@@ -211,7 +195,7 @@ export function LiveSupportChat() {
   const [readAt, setReadAt] = useState(0);
   const [config, setConfig] = useState<SupportConfig>({
     botUsername: "imbabetalert_bot",
-    telegramLabel: "Чат поддержки",
+    telegramLabel: t("support.chatLabel"),
     telegramUrl: "https://t.me/imbabetchat",
   });
   const [chat, setChat] = useState<StoredChat>(() => ({
@@ -277,7 +261,7 @@ export function LiveSupportChat() {
     }));
   }, [welcome]);
 
-  const pageHint = useMemo(() => getSupportPageHint(pathname), [pathname]);
+  const pageHint = useMemo(() => getSupportPageHint(pathname, t), [pathname, t]);
 
   useEffect(() => {
     fetchSupportConfig().then(setConfig).catch(() => undefined);
@@ -378,7 +362,7 @@ export function LiveSupportChat() {
       const optimistic: SupportChatMessage = {
         id: tempId,
         role: "user",
-        text: text.trim() || "📎 Скриншот",
+        text: text.trim() || t("support.screenshotFallback"),
         at: Date.now(),
         status: "sending",
         imageUrl,
@@ -404,9 +388,7 @@ export function LiveSupportChat() {
           const offlineMessage: SupportChatMessage = {
             id: `offline-${Date.now()}`,
             role: "agent",
-            text:
-              result.error ||
-              "Оператор offline. Откройте @Imbabetsupport_bot в Telegram и отправьте /start.",
+            text: result.error || t("support.operatorOfflineTg"),
             at: Date.now(),
           };
           setChat((prev) => ({
@@ -466,7 +448,7 @@ export function LiveSupportChat() {
               {
                 id: `upload-fail-${Date.now()}`,
                 role: "agent",
-                text: uploaded.error || "Не удалось загрузить скрин",
+                text: uploaded.error || t("support.uploadFailed"),
                 at: Date.now(),
               },
             ]),
@@ -480,7 +462,7 @@ export function LiveSupportChat() {
         setUploading(false);
       }
     },
-    [dispatchMessage, input, sending, uploading],
+    [dispatchMessage, input, sending, uploading, t],
   );
 
   const onCsat = useCallback(
@@ -622,7 +604,7 @@ export function LiveSupportChat() {
                     type="button"
                     className={styles.csatStar}
                     disabled={csatSending}
-                    aria-label={`Оценка ${rating}`}
+                    aria-label={t("support.ratingAria", { rating })}
                     onClick={() => void onCsat(rating)}
                   >
                     {rating}
@@ -644,7 +626,7 @@ export function LiveSupportChat() {
               <button
                 type="button"
                 className={styles.attach}
-                aria-label="Прикрепить скрин"
+                aria-label={t("support.attachScreenshot")}
                 disabled={sending || uploading}
                 onClick={() => fileRef.current?.click()}
               >
@@ -664,7 +646,7 @@ export function LiveSupportChat() {
               <button
                 type="button"
                 className={styles.send}
-                aria-label="Отправить"
+                aria-label={t("support.send")}
                 disabled={sending || uploading || !input.trim()}
                 onClick={() => void onSend()}
               >
@@ -677,19 +659,19 @@ export function LiveSupportChat() {
 
       <div className={styles.launcher} role="group" aria-label={t("support.247")}>
         <a
-          className={styles.launcherSegment}
-          href={config.telegramUrl}
+          className={`${styles.launcherSegment} ${styles.launcherTelegram}`}
+          href="https://t.me/imbabetchat"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Telegram поддержка"
+          aria-label="Telegram @imbabetchat"
         >
-          <PhoneIcon />
+          <TelegramLauncherIcon />
         </a>
         <span className={styles.launcherLabel}>24/7</span>
         {!chatBlocked ? (
           <button
             type="button"
-            className={`${styles.launcherSegment} ${open ? styles.launcherSegmentActive : ""}`}
+            className={`${styles.launcherSegment} ${styles.launcherChat} ${open ? styles.launcherSegmentActive : ""}`}
             aria-label={open ? t("support.collapseChat") : t("support.openChat")}
             aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
@@ -700,7 +682,7 @@ export function LiveSupportChat() {
               <>
                 <ChatBubblesIcon />
                 {unreadCount > 0 ? (
-                  <span className={styles.unreadBadge} aria-label={`${unreadCount} новых сообщений`}>
+                  <span className={styles.unreadBadge} aria-label={t("support.unreadAria", { n: unreadCount })}>
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 ) : null}

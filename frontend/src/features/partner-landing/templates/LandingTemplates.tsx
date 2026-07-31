@@ -1,5 +1,8 @@
+"use client";
+
 import type { PublicPartnerLanding } from "../types";
 import { EventCard } from "../components/EventCard";
+import { useLocale } from "~/shared/model/useLocale";
 import styles from "../landing.module.css";
 
 type Props = {
@@ -7,6 +10,7 @@ type Props = {
 };
 
 export function HeroMatchTemplate({ landing }: Props) {
+  const { t } = useLocale();
   const event = landing.events[0];
   if (!event) return null;
 
@@ -16,14 +20,14 @@ export function HeroMatchTemplate({ landing }: Props) {
       <div className={styles.heroInner}>
         <p className={styles.heroEyebrow}>Imba.bet · RevShare {landing.partnerPercent}%</p>
         <h1 className={styles.heroTitle}>
-          {landing.headline || landing.title || "Топ-матч дня"}
+          {landing.headline || landing.title || t("partner.topMatch")}
         </h1>
         {landing.subheadline ? (
           <p className={styles.heroSubtitle}>{landing.subheadline}</p>
         ) : null}
         {landing.promoCode ? (
           <div className={styles.promoRibbon}>
-            Промокод: <strong>{landing.promoCode}</strong>
+            {t("partner.promoCode")} <strong>{landing.promoCode}</strong>
           </div>
         ) : null}
         <EventCard event={event} ctaUrl={landing.ctaUrl} large />
@@ -53,10 +57,12 @@ export function EventsGridTemplate({ landing }: Props) {
 }
 
 export function PromoFocusTemplate({ landing }: Props) {
+  const { t } = useLocale();
+
   return (
     <div className={styles.promoWrap}>
       <div className={styles.promoBanner}>
-        <p className={styles.promoEyebrow}>Эксклюзив для новых игроков</p>
+        <p className={styles.promoEyebrow}>{t("partner.exclusiveNew")}</p>
         <h1 className={styles.promoTitle}>
           {landing.headline || landing.title}
         </h1>
@@ -67,7 +73,7 @@ export function PromoFocusTemplate({ landing }: Props) {
           <div className={styles.promoCodeBig}>{landing.promoCode}</div>
         ) : null}
         <a href={landing.ctaUrl} className={styles.promoCta}>
-          Забрать бонус и зарегистрироваться
+          {t("partner.claimBonus")}
         </a>
       </div>
       <div className={styles.promoEvents}>

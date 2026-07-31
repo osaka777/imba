@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "layoutMode" TEXT NOT NULL DEFAULT 'classic';
+ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "showSecondaryButton" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "secondaryButtonText" TEXT;
+ALTER TABLE "slide" ADD COLUMN IF NOT EXISTS "secondaryButtonLink" TEXT;

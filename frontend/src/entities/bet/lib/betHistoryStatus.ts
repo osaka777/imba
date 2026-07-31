@@ -52,11 +52,11 @@ export function matchesHistoryStatusFilter(
   }
 }
 
-export const HISTORY_STATUS_FILTERS: { id: HistoryStatusFilter; label: string }[] = [
-  { id: "all", label: "Все статусы" },
-  { id: "pending", label: "В игре" },
-  { id: "cashout", label: "Продажа" },
-  { id: "win", label: "Выигрыш" },
-  { id: "lose", label: "Проигрыш" },
-  { id: "return", label: "Возврат" },
+export const HISTORY_STATUS_FILTERS: { id: HistoryStatusFilter }[] = [
+  { id: "all" },
+  { id: "pending" },
+  { id: "cashout" },
+  { id: "win" },
+  { id: "lose" },
+  { id: "return" },
 ];

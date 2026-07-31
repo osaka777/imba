@@ -4,6 +4,10 @@ export type NativeAppBridge = {
   requestNotificationPermission: () => void;
   getFcmToken: () => string;
   getAppVersion: () => string;
+  getPlatform?: () => string;
+  openUrl?: (url: string) => void;
+  showNotification?: (title: string, body: string) => void;
+  openSettings?: () => void;
 };
 
 declare global {
@@ -14,7 +18,10 @@ declare global {
       notifications: boolean;
       fcmToken: string;
       statusBarHeight?: number;
+      appVersion?: string;
+      platform?: string;
     };
+    __IMBA_WIN_NOTIFY__?: boolean;
   }
 }
 
@@ -35,7 +42,14 @@ export function isNativeApp(): boolean {
   if (typeof window === "undefined") return false;
   if (window.ImbaApp?.isNativeApp?.()) return true;
   if (window.__IMBA_APP__?.native) return true;
-  return /ImbaBetApp\//i.test(navigator.userAgent);
+  return /ImbaBetApp\//i.test(navigator.userAgent)
+    || /ImbaBetWindows\//i.test(navigator.userAgent);
+}
+
+export function isWindowsNativeApp(): boolean {
+  if (typeof window === "undefined") return false;
+  if (window.ImbaApp?.getPlatform?.() === "windows") return true;
+  return /ImbaBetWindows\//i.test(navigator.userAgent);
 }
 
 export function getNativeFcmToken(): string {
@@ -55,7 +69,14 @@ export function requestNativeNotificationPermission(): void {
   window.ImbaApp?.requestNotificationPermission?.();
 }
 
-/** Native app with push enabled — FCM handles alerts, skip duplicate in-app toasts. */
+export function showNativeNotification(title: string, body: string): void {
+  if (typeof window === "undefined") return;
+  window.ImbaApp?.showNotification?.(title, body);
+}
+
+/** Native Android app with FCM — skip duplicate in-app toasts. */
 export function shouldDeferToNativePush(): boolean {
-  return isNativeApp() && hasNativeNotificationPermission();
+  return isNativeApp()
+    && hasNativeNotificationPermission()
+    && Boolean(getNativeFcmToken());
 }

@@ -26,6 +26,7 @@ function oddsEqual(a: WcEvent, b: WcEvent): boolean {
     a.homeTeamIcon === b.homeTeamIcon &&
     a.awayTeamIcon === b.awayTeamIcon &&
     a.hasBroadcast === b.hasBroadcast &&
+    a.hasLiveTracker === b.hasLiveTracker &&
     a.priorityLevel === b.priorityLevel &&
     a.isPriority === b.isPriority &&
     JSON.stringify(a.parsedScore) === JSON.stringify(b.parsedScore) &&
@@ -105,6 +106,7 @@ export function mergeWcEvent(prev: WcEvent, incoming: WcEvent): WcEvent {
     homeTeamIcon: incoming.homeTeamIcon ?? prev.homeTeamIcon,
     awayTeamIcon: incoming.awayTeamIcon ?? prev.awayTeamIcon,
     hasBroadcast: incoming.hasBroadcast ?? prev.hasBroadcast,
+    hasLiveTracker: incoming.hasLiveTracker ?? prev.hasLiveTracker,
     priorityLevel: Math.max(incoming.priorityLevel ?? 0, prev.priorityLevel ?? 0),
     isPriority: Boolean(incoming.isPriority || prev.isPriority || (incoming.priorityLevel ?? 0) > 0 || (prev.priorityLevel ?? 0) > 0),
     marketsCount: incoming.marketsCount ?? prev.marketsCount,
