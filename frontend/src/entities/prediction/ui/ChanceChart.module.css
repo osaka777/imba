@@ -1,0 +1,182 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  height: clamp(200px, 28vw, 260px);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.scrubbing {
+  cursor: ew-resize;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ghost {
+  transition: opacity 0.12s ease;
+}
+
+/* Traveling lightning streak along the path (Polymarket-style). */
+.streakYes,
+.streakNo {
+  stroke-dasharray: 0.07 0.93;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.streakYes {
+  animation: streakSweep 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.streakNo {
+  animation: streakSweep 3.6s cubic-bezier(0.4, 0, 0.2, 1) 1.8s infinite;
+}
+
+@keyframes streakSweep {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  55% {
+    opacity: 0.7;
+  }
+  72% {
+    stroke-dashoffset: -0.07;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: -0.07;
+    opacity: 0;
+  }
+}
+
+/* Live tip — solid core + expanding pulse ring. */
+.liveTip {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.liveTip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  animation: tipPulse 1.7s ease-out infinite;
+  pointer-events: none;
+}
+
+.liveTipYes {
+  background: #0acf97;
+  color: #0acf97;
+  box-shadow: 0 0 10px rgba(10, 207, 151, 0.55);
+}
+
+.liveTipNo {
+  background: #ef473a;
+  color: #ef473a;
+  box-shadow: 0 0 10px rgba(239, 71, 58, 0.45);
+}
+
+.liveTipNo::after {
+  animation-delay: 0.35s;
+}
+
+@keyframes tipPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.scrubLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.08)
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.scrubDot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.scrubDotYes {
+  background: #eaecef;
+  box-shadow:
+    0 0 0 3px rgba(10, 207, 151, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.scrubDotNo {
+  background: #eaecef;
+  box-shadow:
+    0 0 0 3px rgba(239, 71, 58, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    min-height: 168px;
+    height: 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streakYes,
+  .streakNo,
+  .liveTip::after {
+    animation: none !important;
+  }
+
+  .streakYes,
+  .streakNo {
+    opacity: 0;
+  }
+}

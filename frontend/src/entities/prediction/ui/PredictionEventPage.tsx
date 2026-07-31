@@ -298,7 +298,7 @@ export function PredictionEventPage({ slug }: { slug: string }) {
   const event = query.data?.event;
   const comments = (query.data?.comments || []) as PredictionCommentDto[];
 
-  /* Canonical latin slug in the address bar. */
+  /* Settle celebration once per session. */
   useEffect(() => {
     if (!spectacleFlags.settleDrama) return;
     if (!event || event.status !== "SETTLED" || !event.winningOutcomeId) return;
@@ -312,6 +312,7 @@ export function PredictionEventPage({ slug }: { slug: string }) {
     setSettleOpen(true);
   }, [event]);
 
+  /* Canonical latin slug in the address bar. */
   useEffect(() => {
     if (!event?.slug) return;
     let current = slug;
